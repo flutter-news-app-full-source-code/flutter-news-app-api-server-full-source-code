@@ -4,7 +4,7 @@ import 'package:ht_countries_inmemory/ht_countries_inmemory.dart';
 
 /// Provides an instance of [HtCountriesClient] to the request context.
 ///
-/// This middleware uses the inmemory implementation 
+/// This middleware uses the inmemory implementation
 /// [HtCountriesInMemoryClient].
 Middleware countriesClientProvider() {
   // Create the client instance once when the middleware is initialized.
