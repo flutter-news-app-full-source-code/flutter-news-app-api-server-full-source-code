@@ -6,7 +6,7 @@
 
 ## Overview
 
-`ht_api` is the backend API component of the **Headlines Toolkit (HT)** project. Built with Dart Frog, it serves data and functionality to the corresponding HT Flutter mobile application and Flutter web dashboard. Currently, its primary focus is managing country-related data via the `ht_countries_client` package.
+`ht_api` is the backend API component of the **Headlines Toolkit (HT)** project. Built with Dart Frog, it serves data and functionality to the corresponding HT Flutter mobile application and web dashboard.
 
 ## Features
 
