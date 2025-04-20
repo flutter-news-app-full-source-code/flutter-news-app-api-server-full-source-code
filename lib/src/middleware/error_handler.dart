@@ -1,3 +1,6 @@
+//
+// ignore_for_file: avoid_catches_without_on_clauses
+
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';

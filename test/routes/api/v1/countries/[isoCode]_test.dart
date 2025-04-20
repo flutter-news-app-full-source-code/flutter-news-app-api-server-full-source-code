@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
@@ -65,7 +64,7 @@ void main() {
     });
 
     test('lets CountryNotFound bubble up (handled globally)', () async {
-      final exception = CountryNotFound('Country $isoCode not found');
+      const exception = CountryNotFound('Country $isoCode not found');
       when(() => mockClient.fetchCountry(isoCode)).thenThrow(exception);
 
       expect(
@@ -76,7 +75,7 @@ void main() {
     });
 
     test('lets CountryFetchFailure bubble up (handled globally)', () async {
-      final exception = CountryFetchFailure('Network error');
+      const exception = CountryFetchFailure('Network error');
       when(() => mockClient.fetchCountry(isoCode)).thenThrow(exception);
 
       expect(
@@ -123,13 +122,15 @@ void main() {
     });
 
     test('returns 400 Bad Request for invalid JSON body', () async {
-      when(() => request.json()).thenThrow(FormatException('Bad JSON'));
+      when(() => request.json()).thenThrow(const FormatException('Bad JSON'));
 
       final response = await route.onRequest(context, isoCode);
 
       expect(response.statusCode, equals(HttpStatus.badRequest));
-      expect(await response.body(),
-          equals('Invalid JSON format in request body.'));
+      expect(
+        await response.body(),
+        equals('Invalid JSON format in request body.'),
+      );
       verifyNever(() => mockClient.updateCountry(any()));
     });
 
@@ -161,14 +162,14 @@ void main() {
         await response.json(),
         equals({
           'error': 'ISO code in request body ("XX") does not match ISO code '
-              'in URL path ("US").'
+              'in URL path ("US").',
         }),
       );
       verifyNever(() => mockClient.updateCountry(any()));
     });
 
     test('lets CountryNotFound bubble up (handled globally)', () async {
-      final exception = CountryNotFound('Cannot update non-existent country');
+      const exception = CountryNotFound('Cannot update non-existent country');
       // Ensure the specific exception is thrown by the mock
       when(() => mockClient.updateCountry(any())).thenThrow(exception);
 
@@ -180,7 +181,7 @@ void main() {
     });
 
     test('lets CountryUpdateFailure bubble up (handled globally)', () async {
-      final exception = CountryUpdateFailure('DB conflict during update');
+      const exception = CountryUpdateFailure('DB conflict during update');
       // Ensure the specific exception is thrown by the mock
       when(() => mockClient.updateCountry(any())).thenThrow(exception);
 
@@ -207,7 +208,7 @@ void main() {
     });
 
     test('lets CountryNotFound bubble up (handled globally)', () async {
-      final exception = CountryNotFound('Cannot delete non-existent country');
+      const exception = CountryNotFound('Cannot delete non-existent country');
       when(() => mockClient.deleteCountry(isoCode)).thenThrow(exception);
 
       expect(
@@ -218,7 +219,7 @@ void main() {
     });
 
     test('lets CountryDeleteFailure bubble up (handled globally)', () async {
-      final exception = CountryDeleteFailure('Permission error');
+      const exception = CountryDeleteFailure('Permission error');
       when(() => mockClient.deleteCountry(isoCode)).thenThrow(exception);
 
       expect(

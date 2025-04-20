@@ -10,6 +10,7 @@ import 'package:test/test.dart';
 class _MockRequestContext extends Mock implements RequestContext {}
 
 // Define a class that can be called like a Handler function
+// ignore: one_member_abstracts
 abstract class _CallableHandler {
   Future<Response> call(RequestContext context);
 }
@@ -42,7 +43,8 @@ void main() {
       () async {
     final expectedResponse = Response(body: 'Success');
     // Configure the mock handler's 'call' method
-    when(() => mockHandler.call(any())).thenAnswer((_) async => expectedResponse);
+    when(() => mockHandler.call(any()))
+        .thenAnswer((_) async => expectedResponse);
 
     // Execute the middleware chain, passing the mock handler's call method
     final response = await executeMiddleware(context, mockHandler.call);

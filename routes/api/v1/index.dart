@@ -6,10 +6,10 @@ import 'package:dart_frog/dart_frog.dart';
 ///
 /// Returns a simple welcome message indicating the API is running.
 Response onRequest(RequestContext context) {
-  // You could potentially add more information here 
+  // You could potentially add more information here
   // like links to documentation.
   return Response.json(
     statusCode: HttpStatus.ok, // 200
-    body: {'message': 'Welcome to the Headlines Toolkit API V1!'}, 
+    body: {'message': 'Welcome to the Headlines Toolkit API V1!'},
   );
 }
