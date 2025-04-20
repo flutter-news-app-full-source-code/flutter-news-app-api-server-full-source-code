@@ -11,6 +11,9 @@ dependencies:
   ht_countries_client:
     git:
       url: https://github.com/headlines-toolkit/ht-countries-client.git
+  ht_countries_inmemory:
+    git:
+      url: https://github.com/headlines-toolkit/ht-countries-inmemory.git
   meta: ^1.16.0
   uuid: ^4.5.1
 
