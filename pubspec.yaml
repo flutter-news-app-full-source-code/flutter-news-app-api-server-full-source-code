@@ -1,6 +1,6 @@
 name: ht_api
-description: A new Dart Frog application
-version: 1.0.0+1
+description: ht_api is the backend API component of the Headlines Toolkit (HT) project.
+repository: https://github.com/headlines-toolkit/ht-api
 publish_to: none
 
 environment:
