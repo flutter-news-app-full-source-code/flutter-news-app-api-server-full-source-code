@@ -7,7 +7,7 @@ import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_http_client/ht_http_client.dart'; // Import exceptions
-import 'package:ht_shared/ht_shared.dart'; // Import models if needed for casting
+import 'package:ht_shared/ht_shared.dart'; // Import models
 
 /// Handles requests for the /api/v1/data collection endpoint.
 /// Supports:
@@ -16,115 +16,168 @@ import 'package:ht_shared/ht_shared.dart'; // Import models if needed for castin
 Future<Response> onRequest(RequestContext context) async {
   // Read dependencies provided by middleware
   final modelName = context.read<String>();
+  // Read ModelConfig for fromJson (needed for POST)
   final modelConfig = context.read<ModelConfig<dynamic>>();
 
-  // Determine which repository to use based on the model name
-  // Assumes repositories are provided globally (e.g., in routes/_middleware.dart)
-  HtDataRepository<dynamic> repository;
   try {
-    switch (modelName) {
-      case 'headline':
-        repository = context.read<HtDataRepository<Headline>>();
-      case 'category':
-        repository = context.read<HtDataRepository<Category>>();
-      case 'source':
-        repository = context.read<HtDataRepository<Source>>();
-      case 'country': // Added case for Country
-        repository = context.read<HtDataRepository<Country>>();
-      default:
-        // This should technically be caught by the middleware, but added for safety.
+    // --- GET Request ---
+    if (context.request.method == HttpMethod.get) {
+      // Read query parameters
+      final queryParams = context.request.uri.queryParameters;
+      final startAfterId = queryParams['startAfterId'];
+      final limitParam = queryParams['limit'];
+      final limit = limitParam != null ? int.tryParse(limitParam) : null;
+      final specificQuery = Map<String, dynamic>.from(queryParams)
+        ..remove('model')
+        ..remove('startAfterId')
+        ..remove('limit');
+
+      // Process based on model type
+      List<Map<String, dynamic>> jsonList;
+      try {
+        switch (modelName) {
+          case 'headline':
+            final repo = context.read<HtDataRepository<Headline>>();
+            final results = specificQuery.isNotEmpty
+                ? await repo.readAllByQuery(
+                    specificQuery,
+                    startAfterId: startAfterId,
+                    limit: limit,
+                  )
+                : await repo.readAll(startAfterId: startAfterId, limit: limit);
+            // Serialize using the specific model's toJson method
+            jsonList = results.map((item) => item.toJson()).toList();
+          case 'category':
+            final repo = context.read<HtDataRepository<Category>>();
+            final results = specificQuery.isNotEmpty
+                ? await repo.readAllByQuery(
+                    specificQuery,
+                    startAfterId: startAfterId,
+                    limit: limit,
+                  )
+                : await repo.readAll(startAfterId: startAfterId, limit: limit);
+            // Serialize using the specific model's toJson method
+            jsonList = results.map((item) => item.toJson()).toList();
+          case 'source':
+            final repo = context.read<HtDataRepository<Source>>();
+            final results = specificQuery.isNotEmpty
+                ? await repo.readAllByQuery(
+                    specificQuery,
+                    startAfterId: startAfterId,
+                    limit: limit,
+                  )
+                : await repo.readAll(startAfterId: startAfterId, limit: limit);
+            // Serialize using the specific model's toJson method
+            jsonList = results.map((item) => item.toJson()).toList();
+          case 'country':
+            final repo = context.read<HtDataRepository<Country>>();
+            final results = specificQuery.isNotEmpty
+                ? await repo.readAllByQuery(
+                    specificQuery,
+                    startAfterId: startAfterId,
+                    limit: limit,
+                  )
+                : await repo.readAll(startAfterId: startAfterId, limit: limit);
+            // Serialize using the specific model's toJson method
+            jsonList = results.map((item) => item.toJson()).toList();
+          default:
+            // This case should be caught by middleware, but added for safety
+            return Response(
+              statusCode: HttpStatus.internalServerError,
+              body:
+                  'Internal Server Error: Unsupported model type "$modelName" reached handler.',
+            );
+        }
+      } catch (e) {
+        // Catch potential provider errors during context.read
+        print(
+          'Error reading repository provider for model "$modelName" in GET: $e',
+        );
         return Response(
           statusCode: HttpStatus.internalServerError,
           body:
-              'Internal Server Error: Unsupported model type "$modelName" reached handler.',
+              'Internal Server Error: Could not resolve repository for model "$modelName".',
         );
+      }
+      // Return the serialized list
+      return Response.json(body: jsonList);
     }
-  } catch (e) {
-    // Catch potential provider errors if a repository wasn't provided correctly
-    print('Error reading repository provider for model "$modelName": $e');
-    return Response(
-      statusCode: HttpStatus.internalServerError,
-      body:
-          'Internal Server Error: Could not resolve repository for model "$modelName".',
-    );
-  }
 
-  try {
-    switch (context.request.method) {
-      case HttpMethod.get:
-        // Read query parameters for pagination/filtering
-        final queryParams = context.request.uri.queryParameters;
-        final startAfterId = queryParams['startAfterId'];
-        final limitParam = queryParams['limit'];
-        final limit = limitParam != null ? int.tryParse(limitParam) : null;
-
-        // Extract other query params for readAllByQuery, excluding pagination/model
-        final specificQuery = Map<String, dynamic>.from(queryParams)
-          ..remove('model')
-          ..remove('startAfterId')
-          ..remove('limit');
-
-        List<dynamic> results;
-        if (specificQuery.isNotEmpty) {
-          // Use readAllByQuery if specific filters are present
-          results = await repository.readAllByQuery(
-            specificQuery,
-            startAfterId: startAfterId,
-            limit: limit,
-          );
-        } else {
-          // Otherwise, use readAll
-          results = await repository.readAll(
-            startAfterId: startAfterId,
-            limit: limit,
-          );
-        }
-        // Serialize the list using the model-specific toJson from ModelConfig
-        final jsonList = results.map(modelConfig.toJson).toList();
-        return Response.json(body: jsonList);
-
-      case HttpMethod.post:
-        final requestBody =
-            await context.request.json() as Map<String, dynamic>?;
-        if (requestBody == null) {
-          return Response(
-            statusCode: HttpStatus.badRequest,
-            body: 'Missing or invalid request body.',
-          );
-        }
-        // Deserialize using the model-specific fromJson from ModelConfig
-        final newItem = modelConfig.fromJson(requestBody);
-        final createdItem = await repository.create(newItem);
-        // Serialize the response using the model-specific toJson
-        return Response.json(
-          statusCode: HttpStatus.created,
-          body: modelConfig.toJson(createdItem),
+    // --- POST Request ---
+    if (context.request.method == HttpMethod.post) {
+      final requestBody = await context.request.json() as Map<String, dynamic>?;
+      if (requestBody == null) {
+        return Response(
+          statusCode: HttpStatus.badRequest,
+          body: 'Missing or invalid request body.',
         );
+      }
 
-      // Methods not allowed on the collection endpoint
-      case HttpMethod.put:
-      case HttpMethod.delete:
-      case HttpMethod.patch:
-      case HttpMethod.head:
-      case HttpMethod.options:
-        return Response(statusCode: HttpStatus.methodNotAllowed);
+      // Deserialize using ModelConfig's fromJson
+      final newItem = modelConfig.fromJson(requestBody);
+
+      // Process based on model type
+      Map<String, dynamic> createdJson;
+      try {
+        switch (modelName) {
+          case 'headline':
+            final repo = context.read<HtDataRepository<Headline>>();
+            // Cast newItem to the specific type expected by the repository's create method
+            final createdItem = await repo.create(newItem as Headline);
+            // Serialize using the specific model's toJson method
+            createdJson = createdItem.toJson();
+          case 'category':
+            final repo = context.read<HtDataRepository<Category>>();
+            final createdItem = await repo.create(newItem as Category);
+            createdJson = createdItem.toJson();
+          case 'source':
+            final repo = context.read<HtDataRepository<Source>>();
+            final createdItem = await repo.create(newItem as Source);
+            createdJson = createdItem.toJson();
+          case 'country':
+            final repo = context.read<HtDataRepository<Country>>();
+            final createdItem = await repo.create(newItem as Country);
+            createdJson = createdItem.toJson();
+          default:
+            return Response(
+              statusCode: HttpStatus.internalServerError,
+              body:
+                  'Internal Server Error: Unsupported model type "$modelName" reached handler.',
+            );
+        }
+      } catch (e) {
+        // Catch potential provider errors during context.read
+        print(
+          'Error reading repository provider for model "$modelName" in POST: $e',
+        );
+        return Response(
+          statusCode: HttpStatus.internalServerError,
+          body:
+              'Internal Server Error: Could not resolve repository for model "$modelName".',
+        );
+      }
+      // Return the serialized created item
+      return Response.json(statusCode: HttpStatus.created, body: createdJson);
     }
+
+    // --- Other Methods ---
+    // Methods not allowed on the collection endpoint
+    return Response(statusCode: HttpStatus.methodNotAllowed);
   } on HtHttpException catch (e) {
     // Handle known HTTP exceptions from the repository/client layer
-    // You might want to map these to specific status codes
-    // This requires a helper function or using your existing error handler middleware
+    // These should ideally be caught by the central error handler middleware,
+    // but handling here provides a fallback.
     if (e is BadRequestException) {
       return Response(statusCode: HttpStatus.badRequest, body: e.message);
     }
-    // Add other specific exception mappings (NotFound, Unauthorized, etc.) if needed
-    print('HtHttpException occurred: $e'); // Log the error
+    print('HtHttpException occurred in /data/index.dart: $e'); // Log the error
     return Response(
       statusCode: HttpStatus.internalServerError,
       body: 'API Error: ${e.message}',
     );
   } on FormatException catch (e) {
-    // Handle potential JSON parsing/serialization errors
-    print('FormatException occurred: $e'); // Log the error
+    // Handle potential JSON parsing/serialization errors during POST
+    print('FormatException occurred in /data/index.dart: $e'); // Log the error
     return Response(
       statusCode: HttpStatus.badRequest,
       body: 'Invalid data format: ${e.message}',
@@ -132,7 +185,7 @@ Future<Response> onRequest(RequestContext context) async {
   } catch (e, stackTrace) {
     // Catch any other unexpected errors
     print(
-      'Unexpected error in /data handler: $e\n$stackTrace',
+      'Unexpected error in /data/index.dart handler: $e\n$stackTrace',
     ); // Log the error and stack trace
     return Response(
       statusCode: HttpStatus.internalServerError,

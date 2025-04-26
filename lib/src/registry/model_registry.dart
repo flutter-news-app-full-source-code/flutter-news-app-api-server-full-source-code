@@ -3,35 +3,29 @@
 
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_data_client/ht_data_client.dart';
-// HtDataRepository import is no longer needed here
 import 'package:ht_shared/ht_shared.dart';
 
 /// {@template model_config}
 /// Configuration holder for a specific data model type [T].
 ///
-/// Contains the necessary functions (serialization, ID extraction)
-/// required to handle requests for this model type within the
-/// generic `/data` endpoint.
+/// Contains the necessary functions (deserialization, ID extraction) required
+/// to handle requests for this model type within the generic `/data` endpoint.
 /// {@endtemplate}
 class ModelConfig<T> {
   /// {@macro model_config}
   const ModelConfig({
     required this.fromJson,
-    required this.toJson,
+    // toJson removed
     required this.getId,
-    // repositoryProvider removed
   });
 
   /// Function to deserialize JSON into an object of type [T].
   final FromJson<T> fromJson;
 
-  /// Function to serialize an object of type [T] into JSON.
-  final ToJson<T> toJson;
+  // toJson field removed
 
   /// Function to extract the unique string ID from an item of type [T].
   final String Function(T item) getId;
-
-  // repositoryProvider field removed
 }
 
 // Repository providers are no longer defined here.
@@ -47,23 +41,22 @@ class ModelConfig<T> {
 final modelRegistry = <String, ModelConfig>{
   'headline': ModelConfig<Headline>(
     fromJson: Headline.fromJson,
-    toJson: (h) => h.toJson(),
+    // toJson removed
     getId: (h) => h.id,
   ),
   'category': ModelConfig<Category>(
     fromJson: Category.fromJson,
-    toJson: (c) => c.toJson(),
+    // toJson removed
     getId: (c) => c.id,
   ),
   'source': ModelConfig<Source>(
     fromJson: Source.fromJson,
-    toJson: (s) => s.toJson(),
+    // toJson removed
     getId: (s) => s.id,
   ),
-  // Add entry for Country model
   'country': ModelConfig<Country>(
     fromJson: Country.fromJson,
-    toJson: (c) => c.toJson(),
+    // toJson removed
     getId: (c) => c.id, // Assuming Country has an 'id' field
   ),
 };
