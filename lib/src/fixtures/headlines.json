@@ -1,0 +1,40 @@
+[
+  {
+    "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+    "title": "Dart Frog 1.0 Released!",
+    "description": "The minimalist backend framework for Dart reaches a major milestone.",
+    "url": "https://dartfrog.vgv.dev/docs/overview",
+    "imageUrl": null,
+    "publishedAt": "2025-04-20T10:00:00Z",
+    "source": {
+      "id": "s1a2b3c4-d5e6-f789-0123-456789abcdef",
+      "name": "Very Good Ventures Blog",
+      "url": "https://vgv.dev/blog",
+      "type": "blog"
+    },
+    "category": {
+      "id": "c1a2b3c4-d5e6-f789-0123-456789abcdef",
+      "name": "Technology",
+      "description": "News about software development and frameworks."
+    }
+  },
+  {
+    "id": "b2c3d4e5-f6a7-8901-2345-67890abcdef0",
+    "title": "Flutter Adaptive UI Best Practices",
+    "description": "Building responsive and adaptive user interfaces in Flutter.",
+    "url": "https://docs.flutter.dev/ui/layout/adaptive",
+    "imageUrl": null,
+    "publishedAt": "2025-04-22T14:30:00Z",
+    "source": {
+      "id": "s2b3c4d5-e6f7-a890-1234-567890abcdef",
+      "name": "Flutter Dev",
+      "url": "https://flutter.dev",
+      "type": "specializedPublisher"
+    },
+    "category": {
+      "id": "c2b3c4d5-e6f7-a890-1234-567890abcdef",
+      "name": "Mobile Development",
+      "description": "Articles related to mobile app development."
+    }
+  }
+]
