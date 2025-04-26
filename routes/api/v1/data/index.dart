@@ -1,5 +1,5 @@
 //
-// ignore_for_file: lines_longer_than_80_chars, avoid_catches_without_on_clauses
+// ignore_for_file: lines_longer_than_80_chars, avoid_catches_without_on_clauses, avoid_catching_errors
 
 import 'dart:io';
 
@@ -140,30 +140,30 @@ Future<Response> onRequest(RequestContext context) async {
       switch (modelName) {
         case 'headline':
           final repo = context.read<HtDataRepository<Headline>>();
-            // Cast newItem to the specific type expected by the repository's create method
-            final createdItem = await repo.create(newItem as Headline);
-            // Serialize using the specific model's toJson method
-            createdJson = createdItem.toJson();
-          case 'category':
-            final repo = context.read<HtDataRepository<Category>>();
-            final createdItem = await repo.create(newItem as Category);
-            createdJson = createdItem.toJson();
-          case 'source':
-            final repo = context.read<HtDataRepository<Source>>();
-            final createdItem = await repo.create(newItem as Source);
-            createdJson = createdItem.toJson();
-          case 'country':
-            final repo = context.read<HtDataRepository<Country>>();
-            final createdItem = await repo.create(newItem as Country);
-            createdJson = createdItem.toJson();
-          default:
-            // This case should ideally be caught by middleware, but added for safety
-            return Response(
-              statusCode: HttpStatus.internalServerError,
-              body:
-                  'Internal Server Error: Unsupported model type "$modelName" reached handler.',
-            );
-        }
+          // Cast newItem to the specific type expected by the repository's create method
+          final createdItem = await repo.create(newItem as Headline);
+          // Serialize using the specific model's toJson method
+          createdJson = createdItem.toJson();
+        case 'category':
+          final repo = context.read<HtDataRepository<Category>>();
+          final createdItem = await repo.create(newItem as Category);
+          createdJson = createdItem.toJson();
+        case 'source':
+          final repo = context.read<HtDataRepository<Source>>();
+          final createdItem = await repo.create(newItem as Source);
+          createdJson = createdItem.toJson();
+        case 'country':
+          final repo = context.read<HtDataRepository<Country>>();
+          final createdItem = await repo.create(newItem as Country);
+          createdJson = createdItem.toJson();
+        default:
+          // This case should ideally be caught by middleware, but added for safety
+          return Response(
+            statusCode: HttpStatus.internalServerError,
+            body:
+                'Internal Server Error: Unsupported model type "$modelName" reached handler.',
+          );
+      }
       // Return the serialized created item
       return Response.json(statusCode: HttpStatus.created, body: createdJson);
     }

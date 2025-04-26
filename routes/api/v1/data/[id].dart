@@ -1,5 +1,5 @@
 //
-// ignore_for_file: lines_longer_than_80_chars, avoid_catches_without_on_clauses
+// ignore_for_file: lines_longer_than_80_chars, avoid_catches_without_on_clauses, avoid_catching_errors
 
 import 'dart:io';
 
@@ -28,29 +28,29 @@ Future<Response> onRequest(RequestContext context, String id) async {
       switch (modelName) {
         case 'headline':
           final repo = context.read<HtDataRepository<Headline>>();
-            final item = await repo.read(id);
-            // Serialize using the specific model's toJson method
-            itemJson = item.toJson();
-          case 'category':
-            final repo = context.read<HtDataRepository<Category>>();
-            final item = await repo.read(id);
-            itemJson = item.toJson();
-          case 'source':
-            final repo = context.read<HtDataRepository<Source>>();
-            final item = await repo.read(id);
-            itemJson = item.toJson();
-          case 'country':
-            final repo = context.read<HtDataRepository<Country>>();
-            final item = await repo.read(id);
-            itemJson = item.toJson();
-          default:
-            // This case should ideally be caught by middleware, but added for safety
-            return Response(
-              statusCode: HttpStatus.internalServerError,
-              body:
-                  'Internal Server Error: Unsupported model type "$modelName" reached handler.',
-            );
-        }
+          final item = await repo.read(id);
+          // Serialize using the specific model's toJson method
+          itemJson = item.toJson();
+        case 'category':
+          final repo = context.read<HtDataRepository<Category>>();
+          final item = await repo.read(id);
+          itemJson = item.toJson();
+        case 'source':
+          final repo = context.read<HtDataRepository<Source>>();
+          final item = await repo.read(id);
+          itemJson = item.toJson();
+        case 'country':
+          final repo = context.read<HtDataRepository<Country>>();
+          final item = await repo.read(id);
+          itemJson = item.toJson();
+        default:
+          // This case should ideally be caught by middleware, but added for safety
+          return Response(
+            statusCode: HttpStatus.internalServerError,
+            body:
+                'Internal Server Error: Unsupported model type "$modelName" reached handler.',
+          );
+      }
       // Return the serialized item
       return Response.json(body: itemJson);
     }
@@ -91,7 +91,8 @@ Future<Response> onRequest(RequestContext context, String id) async {
       // Removed inner try-catch block to allow exceptions to propagate
       switch (modelName) {
         case 'headline':
-          { // Added block scope
+          {
+            // Added block scope
             final repo = context.read<HtDataRepository<Headline>>();
             final typedItem = itemToUpdate as Headline; // Cast to specific type
             // Validate ID consistency
@@ -105,8 +106,9 @@ Future<Response> onRequest(RequestContext context, String id) async {
             final updatedItem = await repo.update(id, typedItem);
             updatedJson = updatedItem.toJson();
           } // End block scope
-          case 'category':
-          { // Added block scope
+        case 'category':
+          {
+            // Added block scope
             final repo = context.read<HtDataRepository<Category>>();
             final typedItem = itemToUpdate as Category; // Cast to specific type
             // Validate ID consistency
@@ -120,8 +122,9 @@ Future<Response> onRequest(RequestContext context, String id) async {
             final updatedItem = await repo.update(id, typedItem);
             updatedJson = updatedItem.toJson();
           } // End block scope
-          case 'source':
-          { // Added block scope
+        case 'source':
+          {
+            // Added block scope
             final repo = context.read<HtDataRepository<Source>>();
             final typedItem = itemToUpdate as Source; // Cast to specific type
             // Validate ID consistency
@@ -135,8 +138,9 @@ Future<Response> onRequest(RequestContext context, String id) async {
             final updatedItem = await repo.update(id, typedItem);
             updatedJson = updatedItem.toJson();
           } // End block scope
-          case 'country':
-          { // Added block scope
+        case 'country':
+          {
+            // Added block scope
             final repo = context.read<HtDataRepository<Country>>();
             final typedItem = itemToUpdate as Country; // Cast to specific type
             // Validate ID consistency
@@ -150,14 +154,14 @@ Future<Response> onRequest(RequestContext context, String id) async {
             final updatedItem = await repo.update(id, typedItem);
             updatedJson = updatedItem.toJson();
           } // End block scope
-          default:
-            // This case should ideally be caught by middleware, but added for safety
-            return Response(
-              statusCode: HttpStatus.internalServerError,
-              body:
-                  'Internal Server Error: Unsupported model type "$modelName" reached handler.',
-            );
-        }
+        default:
+          // This case should ideally be caught by middleware, but added for safety
+          return Response(
+            statusCode: HttpStatus.internalServerError,
+            body:
+                'Internal Server Error: Unsupported model type "$modelName" reached handler.',
+          );
+      }
       // Return the serialized updated item
       return Response.json(body: updatedJson);
     }
@@ -168,21 +172,21 @@ Future<Response> onRequest(RequestContext context, String id) async {
       // No serialization needed, just call delete based on type
       switch (modelName) {
         case 'headline':
-            await context.read<HtDataRepository<Headline>>().delete(id);
-          case 'category':
-            await context.read<HtDataRepository<Category>>().delete(id);
-          case 'source':
-            await context.read<HtDataRepository<Source>>().delete(id);
-          case 'country':
-            await context.read<HtDataRepository<Country>>().delete(id);
-          default:
-            // This case should ideally be caught by middleware, but added for safety
-            return Response(
-              statusCode: HttpStatus.internalServerError,
-              body:
-                  'Internal Server Error: Unsupported model type "$modelName" reached handler.',
-            );
-        }
+          await context.read<HtDataRepository<Headline>>().delete(id);
+        case 'category':
+          await context.read<HtDataRepository<Category>>().delete(id);
+        case 'source':
+          await context.read<HtDataRepository<Source>>().delete(id);
+        case 'country':
+          await context.read<HtDataRepository<Country>>().delete(id);
+        default:
+          // This case should ideally be caught by middleware, but added for safety
+          return Response(
+            statusCode: HttpStatus.internalServerError,
+            body:
+                'Internal Server Error: Unsupported model type "$modelName" reached handler.',
+          );
+      }
       // Return 204 No Content for successful deletion
       return Response(statusCode: HttpStatus.noContent);
     }
