@@ -113,15 +113,33 @@ Future<Response> onRequest(RequestContext context) async {
         );
       }
 
-      // Deserialize using ModelConfig's fromJson
-      final newItem = modelConfig.fromJson(requestBody);
+      // Deserialize using ModelConfig's fromJson, catching TypeErrors
+      dynamic newItem; // Use dynamic initially
+      try {
+        newItem = modelConfig.fromJson(requestBody);
+      } on TypeError catch (e) {
+        // Catch errors during deserialization (e.g., missing required fields)
+        print('Deserialization TypeError in POST /data: $e');
+        return Response.json(
+          statusCode: HttpStatus.badRequest, // 400
+          body: {
+            'error': {
+              'code': 'INVALID_REQUEST_BODY',
+              'message':
+                  'Invalid request body: Missing or invalid required field(s).',
+              // 'details': e.toString(), // Optional: Include details in dev
+            },
+          },
+        );
+      }
 
       // Process based on model type
       Map<String, dynamic> createdJson;
-      try {
-        switch (modelName) {
-          case 'headline':
-            final repo = context.read<HtDataRepository<Headline>>();
+      // Removed inner try-catch block to allow exceptions like BadRequestException
+      // from repo.create() to propagate to the outer handlers.
+      switch (modelName) {
+        case 'headline':
+          final repo = context.read<HtDataRepository<Headline>>();
             // Cast newItem to the specific type expected by the repository's create method
             final createdItem = await repo.create(newItem as Headline);
             // Serialize using the specific model's toJson method
@@ -139,23 +157,13 @@ Future<Response> onRequest(RequestContext context) async {
             final createdItem = await repo.create(newItem as Country);
             createdJson = createdItem.toJson();
           default:
+            // This case should ideally be caught by middleware, but added for safety
             return Response(
               statusCode: HttpStatus.internalServerError,
               body:
                   'Internal Server Error: Unsupported model type "$modelName" reached handler.',
             );
         }
-      } catch (e) {
-        // Catch potential provider errors during context.read
-        print(
-          'Error reading repository provider for model "$modelName" in POST: $e',
-        );
-        return Response(
-          statusCode: HttpStatus.internalServerError,
-          body:
-              'Internal Server Error: Could not resolve repository for model "$modelName".',
-        );
-      }
       // Return the serialized created item
       return Response.json(statusCode: HttpStatus.created, body: createdJson);
     }
