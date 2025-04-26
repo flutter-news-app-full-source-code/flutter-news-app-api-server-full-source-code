@@ -65,8 +65,25 @@ Future<Response> onRequest(RequestContext context, String id) async {
         );
       }
 
-      // Deserialize using ModelConfig's fromJson
-      final itemToUpdate = modelConfig.fromJson(requestBody);
+      // Deserialize using ModelConfig's fromJson, catching TypeErrors
+      dynamic itemToUpdate; // Use dynamic initially
+      try {
+        itemToUpdate = modelConfig.fromJson(requestBody);
+      } on TypeError catch (e) {
+        // Catch errors during deserialization (e.g., missing required fields)
+        print('Deserialization TypeError in PUT /data/[id]: $e');
+        return Response.json(
+          statusCode: HttpStatus.badRequest, // 400
+          body: {
+            'error': {
+              'code': 'INVALID_REQUEST_BODY',
+              'message':
+                  'Invalid request body: Missing or invalid required field(s).',
+              // 'details': e.toString(), // Optional: Include details in dev
+            },
+          },
+        );
+      }
 
       // ID validation moved inside the switch block after type casting
 
