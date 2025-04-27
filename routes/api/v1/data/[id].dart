@@ -194,11 +194,14 @@ Future<Response> onRequest(RequestContext context, String id) async {
     // --- Other Methods ---
     // Methods not allowed on the item endpoint
     return Response(statusCode: HttpStatus.methodNotAllowed);
+  } on HtHttpException catch (_) {
+    // Let the errorHandler middleware handle HtHttpExceptions (incl. NotFound)
+    rethrow;
+  } on FormatException catch (_) {
+    // Let the errorHandler middleware handle FormatExceptions (e.g., from PUT body)
+    rethrow;
   } catch (e, stackTrace) {
-    // Catch any other unexpected errors (e.g., provider resolution, etc.)
-    // Specific HtHttpException (including NotFoundException), FormatException,
-    // and TypeError should be caught by the central errorHandler middleware
-    // or handled specifically within the PUT/POST logic for request body validation.
+    // Handle any other unexpected errors locally (e.g., provider resolution)
     print(
       'Unexpected error in /data/[id].dart handler: $e\n$stackTrace',
     );

@@ -171,13 +171,17 @@ Future<Response> onRequest(RequestContext context) async {
     // --- Other Methods ---
     // Methods not allowed on the collection endpoint
     return Response(statusCode: HttpStatus.methodNotAllowed);
+  } on HtHttpException catch (_) {
+    // Let the errorHandler middleware handle HtHttpExceptions
+    rethrow;
+  } on FormatException catch (_) {
+    // Let the errorHandler middleware handle FormatExceptions
+    rethrow;
   } catch (e, stackTrace) {
-    // Catch any other unexpected errors (e.g., provider resolution, etc.)
-    // Specific HtHttpException and FormatException should be caught by
-    // the central errorHandler middleware.
+    // Handle any other unexpected errors locally (e.g., provider resolution)
     print(
       'Unexpected error in /data/index.dart handler: $e\n$stackTrace',
-    ); // Log the error and stack trace
+    );
     return Response(
       statusCode: HttpStatus.internalServerError,
       body: 'Internal Server Error.',
