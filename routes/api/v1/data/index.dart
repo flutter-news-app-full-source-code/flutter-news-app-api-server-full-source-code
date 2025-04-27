@@ -171,27 +171,10 @@ Future<Response> onRequest(RequestContext context) async {
     // --- Other Methods ---
     // Methods not allowed on the collection endpoint
     return Response(statusCode: HttpStatus.methodNotAllowed);
-  } on HtHttpException catch (e) {
-    // Handle known HTTP exceptions from the repository/client layer
-    // These should ideally be caught by the central error handler middleware,
-    // but handling here provides a fallback.
-    if (e is BadRequestException) {
-      return Response(statusCode: HttpStatus.badRequest, body: e.message);
-    }
-    print('HtHttpException occurred in /data/index.dart: $e'); // Log the error
-    return Response(
-      statusCode: HttpStatus.internalServerError,
-      body: 'API Error: ${e.message}',
-    );
-  } on FormatException catch (e) {
-    // Handle potential JSON parsing/serialization errors during POST
-    print('FormatException occurred in /data/index.dart: $e'); // Log the error
-    return Response(
-      statusCode: HttpStatus.badRequest,
-      body: 'Invalid data format: ${e.message}',
-    );
   } catch (e, stackTrace) {
-    // Catch any other unexpected errors
+    // Catch any other unexpected errors (e.g., provider resolution, etc.)
+    // Specific HtHttpException and FormatException should be caught by
+    // the central errorHandler middleware.
     print(
       'Unexpected error in /data/index.dart handler: $e\n$stackTrace',
     ); // Log the error and stack trace

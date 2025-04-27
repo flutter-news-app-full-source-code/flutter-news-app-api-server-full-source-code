@@ -194,30 +194,11 @@ Future<Response> onRequest(RequestContext context, String id) async {
     // --- Other Methods ---
     // Methods not allowed on the item endpoint
     return Response(statusCode: HttpStatus.methodNotAllowed);
-  } on NotFoundException catch (e) {
-    // Handle specific case where the item ID is not found
-    // This should be caught by the central error handler, but added as fallback
-    return Response(statusCode: HttpStatus.notFound, body: e.message);
-  } on HtHttpException catch (e) {
-    // Handle other known HTTP exceptions
-    // These should ideally be caught by the central error handler middleware
-    if (e is BadRequestException) {
-      return Response(statusCode: HttpStatus.badRequest, body: e.message);
-    }
-    print('HtHttpException occurred in /data/[id].dart: $e');
-    return Response(
-      statusCode: HttpStatus.internalServerError,
-      body: 'API Error: ${e.message}',
-    );
-  } on FormatException catch (e) {
-    // Handle potential JSON parsing/serialization errors during PUT
-    print('FormatException occurred in /data/[id].dart: $e');
-    return Response(
-      statusCode: HttpStatus.badRequest,
-      body: 'Invalid data format: ${e.message}',
-    );
   } catch (e, stackTrace) {
-    // Catch any other unexpected errors
+    // Catch any other unexpected errors (e.g., provider resolution, etc.)
+    // Specific HtHttpException (including NotFoundException), FormatException,
+    // and TypeError should be caught by the central errorHandler middleware
+    // or handled specifically within the PUT/POST logic for request body validation.
     print(
       'Unexpected error in /data/[id].dart handler: $e\n$stackTrace',
     );

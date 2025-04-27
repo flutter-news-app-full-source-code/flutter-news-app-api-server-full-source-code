@@ -129,5 +129,5 @@ Handler middleware(Handler handler) {
 
       // Add other essential middleware like error handling
       .use(requestLogger()) // Basic request logging
-      .use(errorHandler()); // Removed as the file was deleted
+      .use(errorHandler()); // Centralized error handling
 }
