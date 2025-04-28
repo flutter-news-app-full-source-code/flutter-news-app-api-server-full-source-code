@@ -5,9 +5,11 @@ import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/registry/model_registry.dart';
+import 'package:dart_frog/dart_frog.dart';
+import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_http_client/ht_http_client.dart'; // Import exceptions
-import 'package:ht_shared/ht_shared.dart'; // Import models
+import 'package:ht_shared/ht_shared.dart'; // Import models, SuccessApiResponse
 
 /// Handles requests for the /api/v1/data/[id] endpoint.
 /// Dispatches requests to specific handlers based on the HTTP method.
@@ -55,25 +57,21 @@ Future<Response> _handleGet(
   String id,
   String modelName,
 ) async {
-  Map<String, dynamic> itemJson;
+  dynamic item; // Use dynamic
   // Repository exceptions (like NotFoundException) will propagate up.
   switch (modelName) {
     case 'headline':
       final repo = context.read<HtDataRepository<Headline>>();
-      final item = await repo.read(id);
-      itemJson = item.toJson();
+      item = await repo.read(id);
     case 'category':
       final repo = context.read<HtDataRepository<Category>>();
-      final item = await repo.read(id);
-      itemJson = item.toJson();
+      item = await repo.read(id);
     case 'source':
       final repo = context.read<HtDataRepository<Source>>();
-      final item = await repo.read(id);
-      itemJson = item.toJson();
+      item = await repo.read(id);
     case 'country':
       final repo = context.read<HtDataRepository<Country>>();
-      final item = await repo.read(id);
-      itemJson = item.toJson();
+      item = await repo.read(id);
     default:
       // This case should ideally be caught by middleware, but added for safety
       return Response(
@@ -82,8 +80,20 @@ Future<Response> _handleGet(
             'Internal Server Error: Unsupported model type "$modelName" reached handler.',
       );
   }
-  // Return the serialized item
-  return Response.json(body: itemJson);
+
+  // Wrap the item in SuccessApiResponse and serialize
+  final successResponse = SuccessApiResponse<dynamic>(
+    data: item,
+    // metadata: ResponseMetadata(timestamp: DateTime.now()), // Optional
+  );
+
+  // Provide the correct toJsonT for the specific model type
+  final responseJson = successResponse.toJson(
+    (item) => (item as dynamic).toJson(), // Assuming all models have toJson
+  );
+
+  // Return the serialized response
+  return Response.json(body: responseJson);
 }
 
 // --- PUT Handler ---
@@ -121,7 +131,7 @@ Future<Response> _handlePut(
     );
   }
 
-  Map<String, dynamic> updatedJson;
+  dynamic updatedItem; // Use dynamic
   // Repository exceptions (like NotFoundException, BadRequestException)
   // will propagate up.
   switch (modelName) {
@@ -136,8 +146,7 @@ Future<Response> _handlePut(
                 'Bad Request: ID in request body ("${typedItem.id}") does not match ID in path ("$id").',
           );
         }
-        final updatedItem = await repo.update(id, typedItem);
-        updatedJson = updatedItem.toJson();
+        updatedItem = await repo.update(id, typedItem);
       }
     case 'category':
       {
@@ -150,8 +159,7 @@ Future<Response> _handlePut(
                 'Bad Request: ID in request body ("${typedItem.id}") does not match ID in path ("$id").',
           );
         }
-        final updatedItem = await repo.update(id, typedItem);
-        updatedJson = updatedItem.toJson();
+        updatedItem = await repo.update(id, typedItem);
       }
     case 'source':
       {
@@ -164,8 +172,7 @@ Future<Response> _handlePut(
                 'Bad Request: ID in request body ("${typedItem.id}") does not match ID in path ("$id").',
           );
         }
-        final updatedItem = await repo.update(id, typedItem);
-        updatedJson = updatedItem.toJson();
+        updatedItem = await repo.update(id, typedItem);
       }
     case 'country':
       {
@@ -178,8 +185,7 @@ Future<Response> _handlePut(
                 'Bad Request: ID in request body ("${typedItem.id}") does not match ID in path ("$id").',
           );
         }
-        final updatedItem = await repo.update(id, typedItem);
-        updatedJson = updatedItem.toJson();
+        updatedItem = await repo.update(id, typedItem);
       }
     default:
       // This case should ideally be caught by middleware, but added for safety
@@ -189,8 +195,20 @@ Future<Response> _handlePut(
             'Internal Server Error: Unsupported model type "$modelName" reached handler.',
       );
   }
-  // Return the serialized updated item
-  return Response.json(body: updatedJson);
+
+  // Wrap the updated item in SuccessApiResponse and serialize
+  final successResponse = SuccessApiResponse<dynamic>(
+    data: updatedItem,
+    // metadata: ResponseMetadata(timestamp: DateTime.now()), // Optional
+  );
+
+  // Provide the correct toJsonT for the specific model type
+  final responseJson = successResponse.toJson(
+    (item) => (item as dynamic).toJson(), // Assuming all models have toJson
+  );
+
+  // Return the serialized response
+  return Response.json(body: responseJson);
 }
 
 // --- DELETE Handler ---
