@@ -34,4 +34,6 @@
 //
 // This `providers` directory is kept primarily as a reference to the standard
 // individual provider pattern or for potential future use with dependencies
+// ignore_for_file: lines_longer_than_80_chars
+
 // that don't fit the generic data model structure.

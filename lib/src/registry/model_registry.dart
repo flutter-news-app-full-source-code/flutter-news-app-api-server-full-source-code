@@ -1,5 +1,5 @@
 //
-// ignore_for_file: strict_raw_type
+// ignore_for_file: strict_raw_type, lines_longer_than_80_chars
 
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_data_client/ht_data_client.dart';
@@ -51,7 +51,7 @@ class ModelConfig<T> {
 /// *metadata* needed to work with those repositories generically based on the
 /// request's `model` parameter.
 /// {@endtemplate}
-final modelRegistry = <String, ModelConfig>{
+final modelRegistry = <String, ModelConfig<dynamic>>{
   'headline': ModelConfig<Headline>(
     fromJson: Headline.fromJson,
     // toJson removed
@@ -75,7 +75,7 @@ final modelRegistry = <String, ModelConfig>{
 };
 
 /// Type alias for the ModelRegistry map for easier provider usage.
-typedef ModelRegistryMap = Map<String, ModelConfig>;
+typedef ModelRegistryMap = Map<String, ModelConfig<dynamic>>;
 
 /// Dart Frog provider function factory for the entire [modelRegistry].
 ///

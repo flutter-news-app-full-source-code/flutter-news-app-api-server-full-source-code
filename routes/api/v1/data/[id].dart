@@ -1,3 +1,6 @@
+//
+// ignore_for_file: lines_longer_than_80_chars, no_default_cases, avoid_catches_without_on_clauses, avoid_catching_errors
+
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
@@ -129,7 +132,7 @@ Future<Response> _handlePut(
   RequestContext context,
   String id,
   String modelName,
-  ModelConfig modelConfig,
+  ModelConfig<dynamic> modelConfig,
   String requestId, // Receive requestId
 ) async {
   final requestBody = await context.request.json() as Map<String, dynamic>?;
