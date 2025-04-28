@@ -5,9 +5,11 @@ import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/registry/model_registry.dart';
+import 'package:dart_frog/dart_frog.dart';
+import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_http_client/ht_http_client.dart'; // Import exceptions
-import 'package:ht_shared/ht_shared.dart'; // Import models
+import 'package:ht_shared/ht_shared.dart'; // Import models, SuccessApiResponse, PaginatedResponse
 
 /// Handles requests for the /api/v1/data collection endpoint.
 /// Dispatches requests to specific handlers based on the HTTP method.
@@ -61,49 +63,45 @@ Future<Response> _handleGet(RequestContext context, String modelName) async {
     ..remove('limit');
 
   // Process based on model type
-  List<Map<String, dynamic>> jsonList;
+  PaginatedResponse<dynamic> paginatedResponse; // Use dynamic for the list
   try {
     switch (modelName) {
       case 'headline':
         final repo = context.read<HtDataRepository<Headline>>();
-        final results = specificQuery.isNotEmpty
+        paginatedResponse = specificQuery.isNotEmpty
             ? await repo.readAllByQuery(
                 specificQuery,
                 startAfterId: startAfterId,
                 limit: limit,
               )
             : await repo.readAll(startAfterId: startAfterId, limit: limit);
-        jsonList = results.map((item) => item.toJson()).toList();
       case 'category':
         final repo = context.read<HtDataRepository<Category>>();
-        final results = specificQuery.isNotEmpty
+        paginatedResponse = specificQuery.isNotEmpty
             ? await repo.readAllByQuery(
                 specificQuery,
                 startAfterId: startAfterId,
                 limit: limit,
               )
             : await repo.readAll(startAfterId: startAfterId, limit: limit);
-        jsonList = results.map((item) => item.toJson()).toList();
       case 'source':
         final repo = context.read<HtDataRepository<Source>>();
-        final results = specificQuery.isNotEmpty
+        paginatedResponse = specificQuery.isNotEmpty
             ? await repo.readAllByQuery(
                 specificQuery,
                 startAfterId: startAfterId,
                 limit: limit,
               )
             : await repo.readAll(startAfterId: startAfterId, limit: limit);
-        jsonList = results.map((item) => item.toJson()).toList();
       case 'country':
         final repo = context.read<HtDataRepository<Country>>();
-        final results = specificQuery.isNotEmpty
+        paginatedResponse = specificQuery.isNotEmpty
             ? await repo.readAllByQuery(
                 specificQuery,
                 startAfterId: startAfterId,
                 limit: limit,
               )
             : await repo.readAll(startAfterId: startAfterId, limit: limit);
-        jsonList = results.map((item) => item.toJson()).toList();
       default:
         // This case should be caught by middleware, but added for safety
         return Response(
@@ -123,8 +121,21 @@ Future<Response> _handleGet(RequestContext context, String modelName) async {
           'Internal Server Error: Could not resolve repository for model "$modelName".',
     );
   }
-  // Return the serialized list
-  return Response.json(body: jsonList);
+
+  // Wrap the PaginatedResponse in SuccessApiResponse and serialize
+  final successResponse = SuccessApiResponse<PaginatedResponse<dynamic>>(
+    data: paginatedResponse,
+    // metadata: ResponseMetadata(timestamp: DateTime.now()), // Optional
+  );
+
+  // Need to provide the correct toJsonT for PaginatedResponse
+  final responseJson = successResponse.toJson(
+    (paginated) => paginated.toJson(
+      (item) => (item as dynamic).toJson(), // Assuming all models have toJson
+    ),
+  );
+
+  return Response.json(body: responseJson);
 }
 
 // --- POST Handler ---
@@ -162,26 +173,22 @@ Future<Response> _handlePost(
   }
 
   // Process based on model type
-  Map<String, dynamic> createdJson;
+  dynamic createdItem; // Use dynamic
   // Repository exceptions (like BadRequestException from create) will propagate
   // up to the main onRequest try/catch and be re-thrown to the middleware.
   switch (modelName) {
     case 'headline':
       final repo = context.read<HtDataRepository<Headline>>();
-      final createdItem = await repo.create(newItem as Headline);
-      createdJson = createdItem.toJson();
+      createdItem = await repo.create(newItem as Headline);
     case 'category':
       final repo = context.read<HtDataRepository<Category>>();
-      final createdItem = await repo.create(newItem as Category);
-      createdJson = createdItem.toJson();
+      createdItem = await repo.create(newItem as Category);
     case 'source':
       final repo = context.read<HtDataRepository<Source>>();
-      final createdItem = await repo.create(newItem as Source);
-      createdJson = createdItem.toJson();
+      createdItem = await repo.create(newItem as Source);
     case 'country':
       final repo = context.read<HtDataRepository<Country>>();
-      final createdItem = await repo.create(newItem as Country);
-      createdJson = createdItem.toJson();
+      createdItem = await repo.create(newItem as Country);
     default:
       // This case should ideally be caught by middleware, but added for safety
       return Response(
@@ -190,6 +197,18 @@ Future<Response> _handlePost(
             'Internal Server Error: Unsupported model type "$modelName" reached handler.',
       );
   }
-  // Return the serialized created item
-  return Response.json(statusCode: HttpStatus.created, body: createdJson);
+
+  // Wrap the created item in SuccessApiResponse and serialize
+  final successResponse = SuccessApiResponse<dynamic>(
+    data: createdItem,
+    // metadata: ResponseMetadata(timestamp: DateTime.now()), // Optional
+  );
+
+  // Provide the correct toJsonT for the specific model type
+  final responseJson = successResponse.toJson(
+    (item) => (item as dynamic).toJson(), // Assuming all models have toJson
+  );
+
+  // Return the serialized response
+  return Response.json(statusCode: HttpStatus.created, body: responseJson);
 }
