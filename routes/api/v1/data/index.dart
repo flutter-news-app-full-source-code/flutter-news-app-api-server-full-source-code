@@ -3,6 +3,24 @@
 
 import 'dart:io';
 
+// --- Error Handling Strategy ---
+// Route-specific handlers (_handleGet, _handlePost, etc.) should generally
+// allow HtHttpExceptions (like NotFoundException, BadRequestException)
+// and FormatExceptions thrown by lower layers (Repositories, Clients, JSON parsing)
+// to propagate upwards.
+//
+// These specific exceptions are caught and re-thrown by the main `onRequest`
+// handler in this file.
+//
+// The centralized `errorHandler` middleware (defined in lib/src/middlewares/)
+// is responsible for catching these re-thrown exceptions and mapping them to
+// appropriate, standardized JSON error responses (e.g., 400, 404, 500).
+//
+// Local try-catch blocks within specific _handle* methods should be reserved
+// for handling errors that require immediate, localized responses (like the
+// TypeError during deserialization in _handlePost) or for logging specific
+// context before allowing propagation.
+
 import 'package:dart_frog/dart_frog.dart';
 // Import RequestId from the middleware file where it's defined
 import 'package:ht_api/src/registry/model_registry.dart';
