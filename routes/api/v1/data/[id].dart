@@ -3,6 +3,24 @@
 
 import 'dart:io';
 
+// --- Error Handling Strategy ---
+// Route-specific handlers (_handleGet, _handlePut, _handleDelete, etc.) should
+// generally allow HtHttpExceptions (like NotFoundException, BadRequestException)
+// and FormatExceptions thrown by lower layers (Repositories, Clients, JSON parsing)
+// to propagate upwards.
+//
+// These specific exceptions are caught and re-thrown by the main `onRequest`
+// handler in this file.
+//
+// The centralized `errorHandler` middleware (defined in lib/src/middlewares/)
+// is responsible for catching these re-thrown exceptions and mapping them to
+// appropriate, standardized JSON error responses (e.g., 400, 404, 500).
+//
+// Local try-catch blocks within specific _handle* methods should be reserved
+// for handling errors that require immediate, localized responses (like the
+// TypeError during deserialization in _handlePut) or for logging specific
+// context before allowing propagation.
+
 import 'package:dart_frog/dart_frog.dart';
 // Import RequestId from the middleware file where it's defined
 import 'package:ht_api/src/registry/model_registry.dart';
@@ -275,40 +293,33 @@ Future<Response> _handleDelete(
   RequestContext context,
   String id,
   String modelName,
-  String
-      requestId, // Receive requestId for logging, though not used in response
+  String requestId, // Receive requestId for logging
 ) async {
-  // Repository exceptions (like NotFoundException) will propagate up.
-  try {
-    switch (modelName) {
-      case 'headline':
-        await context.read<HtDataRepository<Headline>>().delete(id);
-      case 'category':
-        await context.read<HtDataRepository<Category>>().delete(id);
-      case 'source':
-        await context.read<HtDataRepository<Source>>().delete(id);
-      case 'country':
-        await context.read<HtDataRepository<Country>>().delete(id);
-      default:
-        // This case should ideally be caught by middleware, but added for safety
-        return Response(
-          statusCode: HttpStatus.internalServerError,
-          body:
-              'Internal Server Error: Unsupported model type "$modelName" reached handler.',
-        );
-    }
-  } catch (e) {
-    // Catch potential provider errors during context.read within this handler
-    // Include requestId in the server log
-    print(
-      '[ReqID: $requestId] Error reading repository provider for model "$modelName" in _handleDelete [id]: $e',
-    );
-    return Response(
-      statusCode: HttpStatus.internalServerError,
-      body:
-          'Internal Server Error: Could not resolve repository for model "$modelName".',
-    );
+  // Allow repository exceptions (e.g., NotFoundException) to propagate
+  // upwards to be handled by the standard error handling mechanism.
+  // (Removed the overly broad try-catch block that was previously here).
+  switch (modelName) {
+    case 'headline':
+      await context.read<HtDataRepository<Headline>>().delete(id);
+    case 'category':
+      await context.read<HtDataRepository<Category>>().delete(id);
+    case 'source':
+      await context.read<HtDataRepository<Source>>().delete(id);
+    case 'country':
+      await context.read<HtDataRepository<Country>>().delete(id);
+    default:
+      // This case should ideally be caught by the data/_middleware.dart,
+      // but added for safety. Consider logging this unexpected state.
+      print(
+        '[ReqID: $requestId] Error: Unsupported model type "$modelName" reached _handleDelete.',
+      );
+      return Response(
+        statusCode: HttpStatus.internalServerError,
+        body:
+            'Internal Server Error: Unsupported model type "$modelName" reached handler.',
+      );
   }
+
   // Return 204 No Content for successful deletion (no body, no metadata)
   return Response(statusCode: HttpStatus.noContent);
 }
