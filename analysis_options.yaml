@@ -3,6 +3,7 @@ analyzer:
   errors:
     avoid_redundant_argument_values: ignore
     avoid_print: ignore
+    no_default_cases: ignore
   exclude:
     - build/**
 linter:

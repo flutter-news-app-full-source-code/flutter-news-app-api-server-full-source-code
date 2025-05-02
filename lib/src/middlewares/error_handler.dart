@@ -85,6 +85,5 @@ String _mapExceptionToCodeString(HtHttpException exception) {
     NetworkException() => 'NETWORK_ERROR',
     UnknownException() => 'UNKNOWN_ERROR',
     _ => 'UNKNOWN_ERROR',
-    
   };
 }
