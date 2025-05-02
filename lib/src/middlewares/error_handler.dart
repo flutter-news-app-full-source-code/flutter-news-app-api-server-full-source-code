@@ -4,7 +4,7 @@
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
-import 'package:ht_http_client/ht_http_client.dart';
+import 'package:ht_shared/ht_shared.dart';
 
 /// Middleware that catches errors and converts them into
 /// standardized JSON responses.
@@ -70,6 +70,7 @@ int _mapExceptionToStatusCode(HtHttpException exception) {
     ServerException() => HttpStatus.internalServerError, // 500
     NetworkException() => HttpStatus.serviceUnavailable, // 503 (or 500)
     UnknownException() => HttpStatus.internalServerError, // 500
+    _ => HttpStatus.internalServerError,
   };
 }
 
@@ -81,7 +82,9 @@ String _mapExceptionToCodeString(HtHttpException exception) {
     ForbiddenException() => 'FORBIDDEN',
     NotFoundException() => 'NOT_FOUND',
     ServerException() => 'SERVER_ERROR',
-    NetworkException() => 'NETWORK_ERROR', // Or 'SERVICE_UNAVAILABLE'
+    NetworkException() => 'NETWORK_ERROR',
     UnknownException() => 'UNKNOWN_ERROR',
+    _ => 'UNKNOWN_ERROR',
+    
   };
 }

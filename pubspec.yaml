@@ -14,6 +14,15 @@ dependencies:
   # ht_countries_inmemory:
   #   git:
   #     url: https://github.com/headlines-toolkit/ht-countries-inmemory.git
+  ht_app_settings_client:
+    git:
+      url: https://github.com/headlines-toolkit/ht-app-settings-client.git
+  ht_app_settings_inmemory:
+    git:
+      url: https://github.com/headlines-toolkit/ht-app-settings-inmemory.git
+  ht_app_settings_repository:
+    git:
+      url: https://github.com/headlines-toolkit/ht-app-settings-repository.git
   ht_data_client:
     git:
       url: https://github.com/headlines-toolkit/ht-data-client.git
