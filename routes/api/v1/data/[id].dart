@@ -25,7 +25,7 @@ import 'package:dart_frog/dart_frog.dart';
 // Import RequestId from the middleware file where it's defined
 import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
-import 'package:ht_http_client/ht_http_client.dart'; // Import exceptions
+// Import exceptions
 // Import models, SuccessApiResponse, ResponseMetadata
 import 'package:ht_shared/ht_shared.dart';
 
