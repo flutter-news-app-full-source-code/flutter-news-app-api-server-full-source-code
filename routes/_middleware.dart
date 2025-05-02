@@ -8,6 +8,8 @@ import 'dart:io';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/middlewares/error_handler.dart';
 import 'package:ht_api/src/registry/model_registry.dart';
+import 'package:ht_app_settings_inmemory/ht_app_settings_inmemory.dart';
+import 'package:ht_app_settings_repository/ht_app_settings_repository.dart';
 import 'package:ht_data_inmemory/ht_data_inmemory.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
@@ -157,6 +159,9 @@ Handler middleware(Handler handler) {
   final categoryRepository = _createCategoryRepository();
   final sourceRepository = _createSourceRepository();
   final countryRepository = _createCountryRepository();
+  // Instantiate settings client and repository
+  final settingsClient = HtAppSettingsInMemory(); // Using in-memory for now
+  final settingsRepository = HtAppSettingsRepository(client: settingsClient);
 
   // Create a UUID generator instance
   const uuid = Uuid();
@@ -184,6 +189,8 @@ Handler middleware(Handler handler) {
       .use(provider<HtDataRepository<Category>>((_) => categoryRepository))
       .use(provider<HtDataRepository<Source>>((_) => sourceRepository))
       .use(provider<HtDataRepository<Country>>((_) => countryRepository))
+      // Provide the settings repository
+      .use(provider<HtAppSettingsRepository>((_) => settingsRepository))
 
       // Add other essential middleware like error handling
       .use(requestLogger()) // Basic request logging
