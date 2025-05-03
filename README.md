@@ -97,9 +97,9 @@ This endpoint serves as the single entry point for accessing different data mode
 2.  **Create Item**
     *   **Method:** `POST`
     *   **Path:** `/api/v1/data?model=<model_name>`
-    *   **Request Body:** JSON object representing the item to create.
+    *   **Request Body:** JSON object representing the item to create (using `camelCase` keys).
     *   **Success Response:** `201 Created` with `SuccessApiResponse<T>` containing the created item.
-    *   **Example:** `POST /api/v1/data?model=category` with body `{"name": "Sports", ...}`
+    *   **Example:** `POST /api/v1/data?model=category` with body `{"name": "Sports", "description": "News about sports"}`
 
 3.  **Get Item by ID**
     *   **Method:** `GET`
@@ -111,10 +111,10 @@ This endpoint serves as the single entry point for accessing different data mode
 4.  **Update Item by ID**
     *   **Method:** `PUT`
     *   **Path:** `/api/v1/data/<item_id>?model=<model_name>`
-    *   **Request Body:** JSON object representing the complete updated item (must include `id`).
+    *   **Request Body:** JSON object representing the complete updated item (must include `id`, using `camelCase` keys).
     *   **Success Response:** `200 OK` with `SuccessApiResponse<T>`.
     *   **Error Response:** `404 Not Found`, `400 Bad Request`.
-    *   **Example:** `PUT /api/v1/data/some-category-id?model=category` with updated category JSON.
+    *   **Example:** `PUT /api/v1/data/some-category-id?model=category` with updated category JSON (e.g., `{"id": "...", "name": "...", "description": "..."}`).
 
 5.  **Delete Item by ID**
     *   **Method:** `DELETE`
@@ -140,9 +140,9 @@ These endpoints manage application settings. Currently, they operate on a global
 2.  **Update Display Settings**
     *   **Method:** `PUT`
     *   **Path:** `/api/v1/users/me/settings/display`
-    *   **Request Body:** JSON object representing the complete `DisplaySettings`.
+    *   **Request Body:** JSON object representing the complete `DisplaySettings` (using `camelCase` keys).
     *   **Success Response:** `200 OK` with `SuccessApiResponse<DisplaySettings>` containing the updated settings.
-    *   **Example:** `PUT /api/v1/users/me/settings/display` with `DisplaySettings` JSON in the body.
+    *   **Example:** `PUT /api/v1/users/me/settings/display` with body `{"baseTheme": "dark", "accentTheme": "newsRed", ...}`.
 
 3.  **Get Language Setting**
     *   **Method:** `GET`
