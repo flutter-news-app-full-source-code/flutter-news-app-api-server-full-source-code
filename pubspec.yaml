@@ -8,12 +8,6 @@ environment:
 
 dependencies:
   dart_frog: ^1.1.0
-  # ht_countries_client:
-  #   git:
-  #     url: https://github.com/headlines-toolkit/ht-countries-client.git
-  # ht_countries_inmemory:
-  #   git:
-  #     url: https://github.com/headlines-toolkit/ht-countries-inmemory.git
   ht_app_settings_client:
     git:
       url: https://github.com/headlines-toolkit/ht-app-settings-client.git
@@ -32,6 +26,15 @@ dependencies:
   ht_data_repository:
     git:
       url: https://github.com/headlines-toolkit/ht-data-repository.git
+  ht_email_client:
+    git:
+      url: https://github.com/headlines-toolkit/ht-email-client.git
+  ht_email_inmemory:
+    git:
+      url: https://github.com/headlines-toolkit/ht-email-inmemory.git
+  ht_email_repository:
+    git:
+      url: https://github.com/headlines-toolkit/ht-email-repository.git
   ht_http_client:
     git:
       url: https://github.com/headlines-toolkit/ht-http-client.git

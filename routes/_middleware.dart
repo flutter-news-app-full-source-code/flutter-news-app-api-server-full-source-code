@@ -6,12 +6,18 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
+import 'package:ht_api/src/middlewares/authentication_middleware.dart';
 import 'package:ht_api/src/middlewares/error_handler.dart';
 import 'package:ht_api/src/registry/model_registry.dart';
+import 'package:ht_api/src/services/auth_service.dart';
+import 'package:ht_api/src/services/auth_token_service.dart';
+import 'package:ht_api/src/services/verification_code_storage_service.dart';
 import 'package:ht_app_settings_inmemory/ht_app_settings_inmemory.dart';
 import 'package:ht_app_settings_repository/ht_app_settings_repository.dart';
 import 'package:ht_data_inmemory/ht_data_inmemory.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
+import 'package:ht_email_inmemory/ht_email_inmemory.dart';
+import 'package:ht_email_repository/ht_email_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 import 'package:uuid/uuid.dart'; // Import the uuid package
 
@@ -159,12 +165,34 @@ Handler middleware(Handler handler) {
   final categoryRepository = _createCategoryRepository();
   final sourceRepository = _createSourceRepository();
   final countryRepository = _createCountryRepository();
-  // Instantiate settings client and repository
   final settingsClient = HtAppSettingsInMemory(); // Using in-memory for now
   final settingsRepository = HtAppSettingsRepository(client: settingsClient);
-
-  // Create a UUID generator instance
   const uuid = Uuid();
+
+  // --- Auth Dependencies ---
+  // User Repo (using InMemory for now)
+  final userRepository = HtDataRepository<User>(
+    dataClient: HtDataInMemoryClient<User>(
+      toJson: (u) => u.toJson(),
+      getId: (u) => u.id,
+      // No initial user data fixture needed for auth flow typically
+    ),
+  );
+  // Email Repo (using InMemory)
+  const emailRepository = HtEmailRepository(
+    emailClient: HtEmailInMemoryClient(),
+  );
+  // Auth Services (using simple/in-memory implementations)
+  const authTokenService = SimpleAuthTokenService();
+  final verificationCodeStorageService =
+      InMemoryVerificationCodeStorageService();
+  final authService = AuthService(
+    userRepository: userRepository,
+    authTokenService: authTokenService,
+    verificationCodeStorageService: verificationCodeStorageService,
+    emailRepository: emailRepository,
+    uuidGenerator: uuid,
+  );
 
   // Chain the providers and other middleware
   return handler
@@ -189,10 +217,24 @@ Handler middleware(Handler handler) {
       .use(provider<HtDataRepository<Category>>((_) => categoryRepository))
       .use(provider<HtDataRepository<Source>>((_) => sourceRepository))
       .use(provider<HtDataRepository<Country>>((_) => countryRepository))
-      // Provide the settings repository
       .use(provider<HtAppSettingsRepository>((_) => settingsRepository))
+      // --- Provide Auth Dependencies ---
+      .use(provider<HtDataRepository<User>>((_) => userRepository))
+      .use(provider<HtEmailRepository>((_) => emailRepository))
+      .use(provider<AuthTokenService>((_) => authTokenService))
+      .use(
+        provider<VerificationCodeStorageService>(
+          (_) => verificationCodeStorageService,
+        ),
+      )
+      .use(provider<AuthService>((_) => authService))
+      // --- Provide UUID ---
+      .use(provider<Uuid>((_) => uuid)) // Provide Uuid instance
 
-      // Add other essential middleware like error handling
+      // --- Core Middleware ---
       .use(requestLogger()) // Basic request logging
-      .use(errorHandler()); // Centralized error handling
+      // Apply authenticationProvider to make User? available downstream
+      .use(authenticationProvider())
+      // Error handler should generally be last to catch all upstream errors
+      .use(errorHandler());
 }
