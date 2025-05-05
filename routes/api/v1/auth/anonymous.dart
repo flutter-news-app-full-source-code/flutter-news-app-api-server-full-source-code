@@ -2,7 +2,8 @@ import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/services/auth_service.dart';
-import 'package:ht_shared/ht_shared.dart'; // For exceptions and models
+// Import exceptions, User, SuccessApiResponse, AND AuthSuccessResponse
+import 'package:ht_shared/ht_shared.dart';
 
 /// Handles POST requests to `/api/v1/auth/anonymous`.
 ///
@@ -21,12 +22,23 @@ Future<Response> onRequest(RequestContext context) async {
     // Call the AuthService to handle anonymous sign-in logic
     final result = await authService.performAnonymousSignIn();
 
-    // Return 200 OK with the user and token
+    // Create the specific payload containing user and token
+    final authPayload = AuthSuccessResponse(
+      user: result.user,
+      token: result.token,
+    );
+
+    // Wrap the payload in the standard SuccessApiResponse
+    final responsePayload = SuccessApiResponse<AuthSuccessResponse>(
+      data: authPayload,
+      // Optionally add metadata if needed/available
+      // metadata: ResponseMetadata(timestamp: DateTime.now().toUtc()),
+    );
+
+    // Return 200 OK with the standardized, serialized response
     return Response.json(
-      body: {
-        'user': result.user.toJson(), // Serialize the User object
-        'token': result.token,
-      },
+      // Use the toJson method, providing the toJson factory for the inner type
+      body: responsePayload.toJson((authSuccess) => authSuccess.toJson()),
     );
   } on HtHttpException catch (_) {
     // Let the central errorHandler middleware handle known exceptions
