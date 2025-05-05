@@ -86,11 +86,11 @@ void main() {
     });
 
     test('removeCode does nothing for non-existent identifier', () async {
-      // Expect no errors when removing a non-existent code
-      await expectLater(
-        () => service.removeCode('nonexistent@example.com'),
-        completes,
-      );
+      // Expect no errors when removing a non-existent code.
+      // Simply call the function; if it throws, the test fails.
+      await service.removeCode('nonexistent@example.com');
+      // Optionally add a dummy expect to make the test runner happy if needed
+      expect(true, isTrue);
     });
 
     // Note: Testing the automatic cleanup timer (`_cleanupExpiredCodes`)
