@@ -79,7 +79,8 @@ void main() {
       // Assert
       expect(response.statusCode, equals(HttpStatus.methodNotAllowed));
       verifyNever(
-          () => mockAuthService.performSignOut(userId: any(named: 'userId')),);
+        () => mockAuthService.performSignOut(userId: any(named: 'userId')),
+      );
     });
 
     test('throws UnauthorizedException if user is null in context', () async {
@@ -108,7 +109,8 @@ void main() {
         ),
       );
       verifyNever(
-          () => mockAuthService.performSignOut(userId: any(named: 'userId')),);
+        () => mockAuthService.performSignOut(userId: any(named: 'userId')),
+      );
     });
 
     test('rethrows HtHttpException from AuthService', () async {
