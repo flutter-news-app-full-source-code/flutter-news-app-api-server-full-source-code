@@ -92,7 +92,8 @@ class JwtAuthTokenService implements AuthTokenService {
         print('Token validation failed: Missing "sub" claim.');
         // Throw specific exception for malformed token
         throw const BadRequestException(
-            'Malformed token: Missing subject claim.',);
+          'Malformed token: Missing subject claim.',
+        );
       }
 
       // Fetch the full user object from the repository
