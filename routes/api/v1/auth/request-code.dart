@@ -22,34 +22,29 @@ Future<Response> onRequest(RequestContext context) async {
   try {
     body = await context.request.json();
   } catch (_) {
-    // Handle JSON parsing errors
-    return Response(
-      statusCode: HttpStatus.badRequest,
-      body: 'Invalid JSON format in request body.',
-    );
+    // Handle JSON parsing errors by throwing
+    throw const InvalidInputException('Invalid JSON format in request body.');
   }
 
   if (body is! Map<String, dynamic>) {
-    return Response(
-      statusCode: HttpStatus.badRequest,
-      body: 'Request body must be a JSON object.',
-    );
+    throw const InvalidInputException('Request body must be a JSON object.');
   }
 
   final email = body['email'] as String?;
   if (email == null || email.isEmpty) {
-    return Response(
-      statusCode: HttpStatus.badRequest,
-      body: 'Missing or empty "email" field in request body.',
+    throw const InvalidInputException(
+      'Missing or empty "email" field in request body.',
     );
   }
 
   // Basic email format check (more robust validation can be added)
-  if (!RegExp(r'^.+@.+\..+$').hasMatch(email)) {
-    return Response(
-      statusCode: HttpStatus.badRequest,
-      body: 'Invalid email format provided.',
-    );
+  // Using a slightly more common regex pattern
+  final emailRegex = RegExp(
+    r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@"
+    r'[a-zA-Z0-9]+\.[a-zA-Z]+',
+  );
+  if (!emailRegex.hasMatch(email)) {
+    throw const InvalidInputException('Invalid email format provided.');
   }
 
   try {

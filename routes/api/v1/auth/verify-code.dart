@@ -2,7 +2,8 @@ import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/services/auth_service.dart';
-import 'package:ht_shared/ht_shared.dart'; // For exceptions and models
+// Import exceptions, User, SuccessApiResponse, AND AuthSuccessResponse
+import 'package:ht_shared/ht_shared.dart';
 
 /// Handles POST requests to `/api/v1/auth/verify-code`.
 ///
@@ -22,47 +23,41 @@ Future<Response> onRequest(RequestContext context) async {
   try {
     body = await context.request.json();
   } catch (_) {
-    return Response(
-      statusCode: HttpStatus.badRequest,
-      body: 'Invalid JSON format in request body.',
-    );
+    // Handle JSON parsing errors by throwing
+    throw const InvalidInputException('Invalid JSON format in request body.');
   }
 
   if (body is! Map<String, dynamic>) {
-    return Response(
-      statusCode: HttpStatus.badRequest,
-      body: 'Request body must be a JSON object.',
-    );
+    throw const InvalidInputException('Request body must be a JSON object.');
   }
 
   // Extract and validate email
   final email = body['email'] as String?;
   if (email == null || email.isEmpty) {
-    return Response(
-      statusCode: HttpStatus.badRequest,
-      body: 'Missing or empty "email" field in request body.',
+    throw const InvalidInputException(
+      'Missing or empty "email" field in request body.',
     );
   }
-  if (!RegExp(r'^.+@.+\..+$').hasMatch(email)) {
-    return Response(
-      statusCode: HttpStatus.badRequest,
-      body: 'Invalid email format provided.',
-    );
+  // Using a slightly more common regex pattern
+  final emailRegex = RegExp(
+    r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@"
+    r'[a-zA-Z0-9]+\.[a-zA-Z]+',
+  );
+  if (!emailRegex.hasMatch(email)) {
+    throw const InvalidInputException('Invalid email format provided.');
   }
 
   // Extract and validate code
   final code = body['code'] as String?;
   if (code == null || code.isEmpty) {
-    return Response(
-      statusCode: HttpStatus.badRequest,
-      body: 'Missing or empty "code" field in request body.',
+    throw const InvalidInputException(
+      'Missing or empty "code" field in request body.',
     );
   }
   // Basic validation (e.g., check if it's 6 digits)
   if (!RegExp(r'^\d{6}$').hasMatch(code)) {
-    return Response(
-      statusCode: HttpStatus.badRequest,
-      body: 'Invalid code format. Code must be 6 digits.',
+    throw const InvalidInputException(
+      'Invalid code format. Code must be 6 digits.',
     );
   }
 
@@ -70,12 +65,23 @@ Future<Response> onRequest(RequestContext context) async {
     // Call the AuthService to handle the verification and sign-in logic
     final result = await authService.completeEmailSignIn(email, code);
 
-    // Return 200 OK with the user and token
+    // Create the specific payload containing user and token
+    final authPayload = AuthSuccessResponse(
+      user: result.user,
+      token: result.token,
+    );
+
+    // Wrap the payload in the standard SuccessApiResponse
+    final responsePayload = SuccessApiResponse<AuthSuccessResponse>(
+      data: authPayload,
+      // Optionally add metadata if needed/available
+      // metadata: ResponseMetadata(timestamp: DateTime.now().toUtc()),
+    );
+
+    // Return 200 OK with the standardized, serialized response
     return Response.json(
-      body: {
-        'user': result.user.toJson(), // Serialize the User object
-        'token': result.token,
-      },
+      // Use the toJson method, providing the toJson factory for the inner type
+      body: responsePayload.toJson((authSuccess) => authSuccess.toJson()),
     );
   } on HtHttpException catch (_) {
     // Let the central errorHandler middleware handle known exceptions
