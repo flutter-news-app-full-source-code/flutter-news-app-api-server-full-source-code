@@ -69,7 +69,9 @@ void main() {
       // Check metadata structure and requestId presence
       expect(decodedBody['metadata'], isA<Map<String, dynamic>>());
       expect(
-          decodedBody['metadata']?['request_id'], equals(testRequestIdValue),);
+        decodedBody['metadata']?['request_id'],
+        equals(testRequestIdValue),
+      );
       expect(decodedBody['metadata']?['timestamp'], isNotNull);
     });
 
