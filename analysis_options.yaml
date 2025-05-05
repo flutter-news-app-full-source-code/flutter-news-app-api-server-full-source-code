@@ -6,6 +6,7 @@ analyzer:
     no_default_cases: ignore
     avoid_catches_without_on_clauses: ignore
     lines_longer_than_80_chars: ignore
+    avoid_dynamic_calls: ignore
   exclude:
     - build/**
 linter:

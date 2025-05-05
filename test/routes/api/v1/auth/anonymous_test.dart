@@ -7,10 +7,10 @@ import 'package:ht_shared/ht_shared.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
-import '../../../../helpers/create_mock_request_context.dart';
-import '../../../../helpers/mock_classes.dart';
 // Import the actual route handler
 import '../../../../../routes/api/v1/auth/anonymous.dart' as route;
+import '../../../../helpers/create_mock_request_context.dart';
+import '../../../../helpers/mock_classes.dart';
 
 void main() {
   group('POST /api/v1/auth/anonymous', () {
@@ -18,12 +18,12 @@ void main() {
     late MockRequest mockRequest;
 
     // Define a sample user and token for success cases
-    final testUser = User(id: 'anon-123', isAnonymous: true);
+    const testUser = User(id: 'anon-123', isAnonymous: true);
     const testToken = 'test-auth-token';
-    final authResult = (user: testUser, token: testToken);
+    const authResult = (user: testUser, token: testToken);
 
     // Expected success response payload
-    final successPayload = SuccessApiResponse<AuthSuccessResponse>(
+    const successPayload = SuccessApiResponse<AuthSuccessResponse>(
       data: AuthSuccessResponse(user: testUser, token: testToken),
     );
     final expectedSuccessBody = jsonEncode(
@@ -40,7 +40,8 @@ void main() {
       when(() => mockRequest.headers).thenReturn({});
       // Default stub for body (can be overridden)
       when(() => mockRequest.body()).thenAnswer((_) async => '');
-      when(() => mockRequest.json()).thenAnswer((_) async => <String, dynamic>{});
+      when(() => mockRequest.json())
+          .thenAnswer((_) async => <String, dynamic>{});
     });
 
     test('returns 200 OK with user and token on successful anonymous sign-in',
@@ -90,7 +91,8 @@ void main() {
       verifyNever(() => mockAuthService.performAnonymousSignIn());
     });
 
-    test('returns 500 Internal Server Error when AuthService throws OperationFailedException',
+    test(
+        'returns 500 Internal Server Error when AuthService throws OperationFailedException',
         () async {
       // Arrange
       const exception = OperationFailedException('Database connection failed');
@@ -114,7 +116,7 @@ void main() {
       // The final 500 response format is tested in the error handler middleware tests.
     });
 
-     test('returns 500 Internal Server Error for unexpected errors', () async {
+    test('returns 500 Internal Server Error for unexpected errors', () async {
       // Arrange
       final exception = Exception('Something unexpected went wrong');
       when(() => mockAuthService.performAnonymousSignIn()).thenThrow(exception);
@@ -130,11 +132,13 @@ void main() {
       // The handler catches generic exceptions and throws OperationFailedException
       expect(
         () => route.onRequest(context),
-        throwsA(isA<OperationFailedException>().having(
-              (e) => e.message,
-              'message',
-              'An unexpected error occurred during anonymous sign-in.',
-            )),
+        throwsA(
+          isA<OperationFailedException>().having(
+            (e) => e.message,
+            'message',
+            'An unexpected error occurred during anonymous sign-in.',
+          ),
+        ),
       );
       verify(() => mockAuthService.performAnonymousSignIn()).called(1);
     });

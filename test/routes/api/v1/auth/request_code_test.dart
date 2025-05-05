@@ -7,10 +7,10 @@ import 'package:ht_shared/ht_shared.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
-import '../../../../helpers/create_mock_request_context.dart';
-import '../../../../helpers/mock_classes.dart';
 // Import the actual route handler
 import '../../../../../routes/api/v1/auth/request-code.dart' as route;
+import '../../../../helpers/create_mock_request_context.dart';
+import '../../../../helpers/mock_classes.dart';
 
 void main() {
   group('POST /api/v1/auth/request-code', () {
@@ -72,7 +72,8 @@ void main() {
 
     test('throws InvalidInputException for invalid JSON body', () async {
       // Arrange
-      when(() => mockRequest.json()).thenThrow(FormatException('Invalid JSON'));
+      when(() => mockRequest.json())
+          .thenThrow(const FormatException('Invalid JSON'));
       final context = createMockRequestContext(
         request: mockRequest,
         dependencies: {AuthService: mockAuthService},
@@ -81,11 +82,13 @@ void main() {
       // Act & Assert
       expect(
         () => route.onRequest(context),
-        throwsA(isA<InvalidInputException>().having(
-          (e) => e.message,
-          'message',
-          'Invalid JSON format in request body.',
-        )),
+        throwsA(
+          isA<InvalidInputException>().having(
+            (e) => e.message,
+            'message',
+            'Invalid JSON format in request body.',
+          ),
+        ),
       );
       verifyNever(() => mockAuthService.initiateEmailSignIn(any()));
     });
@@ -101,19 +104,21 @@ void main() {
       // Act & Assert
       expect(
         () => route.onRequest(context),
-        throwsA(isA<InvalidInputException>().having(
-          (e) => e.message,
-          'message',
-          'Request body must be a JSON object.',
-        )),
+        throwsA(
+          isA<InvalidInputException>().having(
+            (e) => e.message,
+            'message',
+            'Request body must be a JSON object.',
+          ),
+        ),
       );
-       verifyNever(() => mockAuthService.initiateEmailSignIn(any()));
+      verifyNever(() => mockAuthService.initiateEmailSignIn(any()));
     });
-
 
     test('throws InvalidInputException for missing email field', () async {
       // Arrange
-      when(() => mockRequest.json()).thenAnswer((_) async => <String, dynamic>{});
+      when(() => mockRequest.json())
+          .thenAnswer((_) async => <String, dynamic>{});
       final context = createMockRequestContext(
         request: mockRequest,
         dependencies: {AuthService: mockAuthService},
@@ -122,18 +127,20 @@ void main() {
       // Act & Assert
       expect(
         () => route.onRequest(context),
-        throwsA(isA<InvalidInputException>().having(
-          (e) => e.message,
-          'message',
-          'Missing or empty "email" field in request body.',
-        )),
+        throwsA(
+          isA<InvalidInputException>().having(
+            (e) => e.message,
+            'message',
+            'Missing or empty "email" field in request body.',
+          ),
+        ),
       );
-       verifyNever(() => mockAuthService.initiateEmailSignIn(any()));
+      verifyNever(() => mockAuthService.initiateEmailSignIn(any()));
     });
 
     test('throws InvalidInputException for empty email field', () async {
       // Arrange
-       when(() => mockRequest.json()).thenAnswer((_) async => {'email': ''});
+      when(() => mockRequest.json()).thenAnswer((_) async => {'email': ''});
       final context = createMockRequestContext(
         request: mockRequest,
         dependencies: {AuthService: mockAuthService},
@@ -142,20 +149,22 @@ void main() {
       // Act & Assert
       expect(
         () => route.onRequest(context),
-        throwsA(isA<InvalidInputException>().having(
-          (e) => e.message,
-          'message',
-          'Missing or empty "email" field in request body.',
-        )),
+        throwsA(
+          isA<InvalidInputException>().having(
+            (e) => e.message,
+            'message',
+            'Missing or empty "email" field in request body.',
+          ),
+        ),
       );
-       verifyNever(() => mockAuthService.initiateEmailSignIn(any()));
+      verifyNever(() => mockAuthService.initiateEmailSignIn(any()));
     });
-
 
     test('throws InvalidInputException for invalid email format', () async {
       // Arrange
       const invalidEmail = 'not-an-email';
-       when(() => mockRequest.json()).thenAnswer((_) async => {'email': invalidEmail});
+      when(() => mockRequest.json())
+          .thenAnswer((_) async => {'email': invalidEmail});
       final context = createMockRequestContext(
         request: mockRequest,
         dependencies: {AuthService: mockAuthService},
@@ -164,15 +173,16 @@ void main() {
       // Act & Assert
       expect(
         () => route.onRequest(context),
-        throwsA(isA<InvalidInputException>().having(
-          (e) => e.message,
-          'message',
-          'Invalid email format provided.',
-        )),
+        throwsA(
+          isA<InvalidInputException>().having(
+            (e) => e.message,
+            'message',
+            'Invalid email format provided.',
+          ),
+        ),
       );
-       verifyNever(() => mockAuthService.initiateEmailSignIn(any()));
+      verifyNever(() => mockAuthService.initiateEmailSignIn(any()));
     });
-
 
     test('rethrows HtHttpException from AuthService', () async {
       // Arrange
@@ -205,11 +215,13 @@ void main() {
       // Act & Assert
       expect(
         () => route.onRequest(context),
-        throwsA(isA<OperationFailedException>().having(
-              (e) => e.message,
-              'message',
-              'An unexpected error occurred while requesting the sign-in code.',
-            )),
+        throwsA(
+          isA<OperationFailedException>().having(
+            (e) => e.message,
+            'message',
+            'An unexpected error occurred while requesting the sign-in code.',
+          ),
+        ),
       );
       verify(() => mockAuthService.initiateEmailSignIn(validEmail)).called(1);
     });

@@ -1,10 +1,10 @@
 import 'package:dart_frog/dart_frog.dart';
-import 'package:ht_api/src/registry/model_registry.dart'; // For RequestId
+// For RequestId
 import 'package:ht_api/src/services/auth_service.dart'; // Import necessary types
 import 'package:ht_data_repository/ht_data_repository.dart'; // For HtDataRepository
 import 'package:ht_shared/ht_shared.dart'; // For User
 import 'package:mocktail/mocktail.dart';
-import 'package:test/test.dart'; // Import for TypeMatcher and isA
+// Import for TypeMatcher and isA
 
 import '../../routes/_middleware.dart'; // Import for RequestId
 import 'mock_classes.dart'; // Import your mock classes
@@ -28,7 +28,8 @@ RequestContext createMockRequestContext({
   dependencies.forEach((type, instance) {
     // Add specific stubs for known types. Extend this list as needed.
     if (type == AuthService) {
-      when(() => context.read<AuthService>()).thenReturn(instance as AuthService);
+      when(() => context.read<AuthService>())
+          .thenReturn(instance as AuthService);
     } else if (type == HtDataRepository<User>) {
       when(() => context.read<HtDataRepository<User>>())
           .thenReturn(instance as HtDataRepository<User>);
@@ -52,12 +53,12 @@ RequestContext createMockRequestContext({
       // This generic stub might not always work as expected.
       // Use a specific type if possible, otherwise fallback carefully.
       try {
-         // Stubbing read<dynamic>() can be tricky. Prefer specific types.
-         // If absolutely needed, ensure the call signature matches.
-         // Mocktail's `any` matcher doesn't take arguments for `read`.
-         when(() => context.read<dynamic>()).thenReturn(instance);
+        // Stubbing read<dynamic>() can be tricky. Prefer specific types.
+        // If absolutely needed, ensure the call signature matches.
+        // Mocktail's `any` matcher doesn't take arguments for `read`.
+        when(() => context.read<dynamic>()).thenReturn(instance);
       } catch (e) {
-         print('Failed to setup generic read stub for $type: $e');
+        print('Failed to setup generic read stub for $type: $e');
       }
     }
   });
@@ -77,7 +78,8 @@ RequestContext createMockRequestContext({
   // to allow chaining, which is typical for provider middleware.
   // Corrected: provide takes one argument (the provider function).
   // Use `any<T>()` with explicit type argument for the function.
-  when(() => context.provide<dynamic>(any<dynamic Function()>())).thenReturn(context);
+  when(() => context.provide<dynamic>(any<dynamic Function()>()))
+      .thenReturn(context);
 
   return context;
 }

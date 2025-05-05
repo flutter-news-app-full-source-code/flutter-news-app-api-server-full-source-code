@@ -58,16 +58,16 @@ void main() {
       expect(isValid, isFalse);
     });
 
-     test('validateCode returns false for non-existent identifier', () async {
-      final isValid = await service.validateCode('nonexistent@example.com', '123456');
+    test('validateCode returns false for non-existent identifier', () async {
+      final isValid =
+          await service.validateCode('nonexistent@example.com', '123456');
       expect(isValid, isFalse);
     });
 
-
     test('validateCode removes code after successful validation', () async {
-       final code = await service.generateAndStoreCode(
+      final code = await service.generateAndStoreCode(
         testIdentifier,
-         expiry: const Duration(seconds: 1),
+        expiry: const Duration(seconds: 1),
       );
       // First validation succeeds and removes code
       final isValidFirst = await service.validateCode(testIdentifier, code);
@@ -85,7 +85,7 @@ void main() {
       expect(isValid, isFalse); // Should be false as code was removed
     });
 
-     test('removeCode does nothing for non-existent identifier', () async {
+    test('removeCode does nothing for non-existent identifier', () async {
       // Expect no errors when removing a non-existent code
       await expectLater(
         () => service.removeCode('nonexistent@example.com'),

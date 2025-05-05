@@ -11,25 +11,38 @@ import 'package:uuid/uuid.dart';
 
 // Core Dart Frog Mocks
 class MockRequestContext extends Mock implements RequestContext {}
+
 class MockRequest extends Mock implements Request {}
+
 class MockResponse extends Mock implements Response {}
+
 class MockUri extends Mock implements Uri {}
 
 // Service Mocks
 class MockAuthService extends Mock implements AuthService {}
+
 class MockAuthTokenService extends Mock implements AuthTokenService {}
+
 class MockVerificationCodeStorageService extends Mock
     implements VerificationCodeStorageService {}
 
 // Repository Mocks
 class MockHtDataRepository<T> extends Mock implements HtDataRepository<T> {}
+
 class MockUserRepository extends MockHtDataRepository<User> {}
+
 class MockHeadlineRepository extends MockHtDataRepository<Headline> {}
+
 class MockCategoryRepository extends MockHtDataRepository<Category> {}
+
 class MockSourceRepository extends MockHtDataRepository<Source> {}
+
 class MockCountryRepository extends MockHtDataRepository<Country> {}
+
 // Corrected: Use 'extends Mock implements' for concrete classes
-class MockAppSettingsRepository extends Mock implements HtAppSettingsRepository {}
+class MockAppSettingsRepository extends Mock
+    implements HtAppSettingsRepository {}
+
 class MockEmailRepository extends Mock implements HtEmailRepository {}
 
 // Utility Mocks

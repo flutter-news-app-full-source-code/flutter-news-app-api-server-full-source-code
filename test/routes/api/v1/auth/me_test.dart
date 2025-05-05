@@ -6,20 +6,19 @@ import 'package:ht_shared/ht_shared.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
-import '../../../../helpers/create_mock_request_context.dart';
-import '../../../../helpers/mock_classes.dart';
-// Import the actual route handler
-import '../../../../../routes/api/v1/auth/me.dart' as route;
 // Import RequestId definition from middleware file
 import '../../../../../routes/_middleware.dart' show RequestId;
-
+// Import the actual route handler
+import '../../../../../routes/api/v1/auth/me.dart' as route;
+import '../../../../helpers/create_mock_request_context.dart';
+import '../../../../helpers/mock_classes.dart';
 
 void main() {
   group('GET /api/v1/auth/me', () {
     late MockRequest mockRequest;
 
     // Define a sample authenticated user
-    final testUser = User(
+    const testUser = User(
       id: 'user-123',
       email: 'test@example.com',
       isAnonymous: false,
@@ -38,11 +37,10 @@ void main() {
     test('returns 200 OK with user data for authenticated user', () async {
       // Arrange
       // Expected success response payload (metadata timestamp will vary)
-      final expectedPayload = SuccessApiResponse<User>(data: testUser);
+      const expectedPayload = SuccessApiResponse<User>(data: testUser);
       final expectedBody = jsonEncode(
         // We ignore metadata for direct comparison as timestamp varies
-        expectedPayload.toJson((user) => user.toJson())
-          ..remove('metadata'),
+        expectedPayload.toJson((user) => user.toJson())..remove('metadata'),
       );
 
       final context = createMockRequestContext(
@@ -70,18 +68,19 @@ void main() {
       );
       // Check metadata structure and requestId presence
       expect(decodedBody['metadata'], isA<Map<String, dynamic>>());
-      expect(decodedBody['metadata']?['request_id'], equals(testRequestIdValue));
+      expect(
+          decodedBody['metadata']?['request_id'], equals(testRequestIdValue),);
       expect(decodedBody['metadata']?['timestamp'], isNotNull);
     });
 
-     test('returns 200 OK with user data when RequestId is not in context', () async {
+    test('returns 200 OK with user data when RequestId is not in context',
+        () async {
       // Arrange
       // Expected success response payload (metadata timestamp will vary)
-      final expectedPayload = SuccessApiResponse<User>(data: testUser);
+      const expectedPayload = SuccessApiResponse<User>(data: testUser);
       final expectedBody = jsonEncode(
         // We ignore metadata for direct comparison as timestamp varies
-        expectedPayload.toJson((user) => user.toJson())
-          ..remove('metadata'),
+        expectedPayload.toJson((user) => user.toJson())..remove('metadata'),
       );
 
       final context = createMockRequestContext(
@@ -111,7 +110,6 @@ void main() {
       expect(decodedBody['metadata']?['request_id'], isNull); // Should be null
       expect(decodedBody['metadata']?['timestamp'], isNotNull);
     });
-
 
     test('returns 405 Method Not Allowed for non-GET requests', () async {
       // Arrange

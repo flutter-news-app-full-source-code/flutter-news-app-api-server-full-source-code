@@ -7,10 +7,10 @@ import 'package:ht_shared/ht_shared.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
-import '../../../../helpers/create_mock_request_context.dart';
-import '../../../../helpers/mock_classes.dart';
 // Import the actual route handler
 import '../../../../../routes/api/v1/auth/verify-code.dart' as route;
+import '../../../../helpers/create_mock_request_context.dart';
+import '../../../../helpers/mock_classes.dart';
 
 void main() {
   group('POST /api/v1/auth/verify-code', () {
@@ -24,22 +24,21 @@ void main() {
     });
 
     // Define a sample user and token for success cases
-    final testUser = User(
+    const testUser = User(
       id: 'user-456',
       email: validEmail,
       isAnonymous: false,
     );
     const testToken = 'verified-auth-token';
-    final authResult = (user: testUser, token: testToken);
+    const authResult = (user: testUser, token: testToken);
 
     // Expected success response payload
-    final successPayload = SuccessApiResponse<AuthSuccessResponse>(
+    const successPayload = SuccessApiResponse<AuthSuccessResponse>(
       data: AuthSuccessResponse(user: testUser, token: testToken),
     );
     final expectedSuccessBody = jsonEncode(
       successPayload.toJson((auth) => auth.toJson()),
     );
-
 
     setUp(() {
       mockAuthService = MockAuthService();
@@ -104,7 +103,8 @@ void main() {
 
     test('throws InvalidInputException for invalid JSON body', () async {
       // Arrange
-      when(() => mockRequest.json()).thenThrow(FormatException('Invalid JSON'));
+      when(() => mockRequest.json())
+          .thenThrow(const FormatException('Invalid JSON'));
       final context = createMockRequestContext(
         request: mockRequest,
         dependencies: {AuthService: mockAuthService},
@@ -113,16 +113,18 @@ void main() {
       // Act & Assert
       expect(
         () => route.onRequest(context),
-        throwsA(isA<InvalidInputException>().having(
-          (e) => e.message,
-          'message',
-          'Invalid JSON format in request body.',
-        )),
+        throwsA(
+          isA<InvalidInputException>().having(
+            (e) => e.message,
+            'message',
+            'Invalid JSON format in request body.',
+          ),
+        ),
       );
       verifyNever(() => mockAuthService.completeEmailSignIn(any(), any()));
     });
 
-     test('throws InvalidInputException for non-object JSON body', () async {
+    test('throws InvalidInputException for non-object JSON body', () async {
       // Arrange
       when(() => mockRequest.json()).thenAnswer((_) async => []); // Array body
       final context = createMockRequestContext(
@@ -133,18 +135,21 @@ void main() {
       // Act & Assert
       expect(
         () => route.onRequest(context),
-        throwsA(isA<InvalidInputException>().having(
-          (e) => e.message,
-          'message',
-          'Request body must be a JSON object.',
-        )),
+        throwsA(
+          isA<InvalidInputException>().having(
+            (e) => e.message,
+            'message',
+            'Request body must be a JSON object.',
+          ),
+        ),
       );
-       verifyNever(() => mockAuthService.completeEmailSignIn(any(), any()));
+      verifyNever(() => mockAuthService.completeEmailSignIn(any(), any()));
     });
 
     test('throws InvalidInputException for missing email field', () async {
       // Arrange
-      when(() => mockRequest.json()).thenAnswer((_) async => {'code': validCode});
+      when(() => mockRequest.json())
+          .thenAnswer((_) async => {'code': validCode});
       final context = createMockRequestContext(
         request: mockRequest,
         dependencies: {AuthService: mockAuthService},
@@ -153,19 +158,22 @@ void main() {
       // Act & Assert
       expect(
         () => route.onRequest(context),
-        throwsA(isA<InvalidInputException>().having(
-          (e) => e.message,
-          'message',
-          'Missing or empty "email" field in request body.',
-        )),
+        throwsA(
+          isA<InvalidInputException>().having(
+            (e) => e.message,
+            'message',
+            'Missing or empty "email" field in request body.',
+          ),
+        ),
       );
-       verifyNever(() => mockAuthService.completeEmailSignIn(any(), any()));
+      verifyNever(() => mockAuthService.completeEmailSignIn(any(), any()));
     });
 
-     test('throws InvalidInputException for invalid email format', () async {
+    test('throws InvalidInputException for invalid email format', () async {
       // Arrange
       const invalidEmail = 'not-an-email';
-       when(() => mockRequest.json()).thenAnswer((_) async => {'email': invalidEmail, 'code': validCode});
+      when(() => mockRequest.json())
+          .thenAnswer((_) async => {'email': invalidEmail, 'code': validCode});
       final context = createMockRequestContext(
         request: mockRequest,
         dependencies: {AuthService: mockAuthService},
@@ -174,18 +182,21 @@ void main() {
       // Act & Assert
       expect(
         () => route.onRequest(context),
-        throwsA(isA<InvalidInputException>().having(
-          (e) => e.message,
-          'message',
-          'Invalid email format provided.',
-        )),
+        throwsA(
+          isA<InvalidInputException>().having(
+            (e) => e.message,
+            'message',
+            'Invalid email format provided.',
+          ),
+        ),
       );
-       verifyNever(() => mockAuthService.completeEmailSignIn(any(), any()));
+      verifyNever(() => mockAuthService.completeEmailSignIn(any(), any()));
     });
 
     test('throws InvalidInputException for missing code field', () async {
       // Arrange
-      when(() => mockRequest.json()).thenAnswer((_) async => {'email': validEmail});
+      when(() => mockRequest.json())
+          .thenAnswer((_) async => {'email': validEmail});
       final context = createMockRequestContext(
         request: mockRequest,
         dependencies: {AuthService: mockAuthService},
@@ -194,19 +205,23 @@ void main() {
       // Act & Assert
       expect(
         () => route.onRequest(context),
-        throwsA(isA<InvalidInputException>().having(
-          (e) => e.message,
-          'message',
-          'Missing or empty "code" field in request body.',
-        )),
+        throwsA(
+          isA<InvalidInputException>().having(
+            (e) => e.message,
+            'message',
+            'Missing or empty "code" field in request body.',
+          ),
+        ),
       );
-       verifyNever(() => mockAuthService.completeEmailSignIn(any(), any()));
+      verifyNever(() => mockAuthService.completeEmailSignIn(any(), any()));
     });
 
-     test('throws InvalidInputException for invalid code format (not 6 digits)', () async {
+    test('throws InvalidInputException for invalid code format (not 6 digits)',
+        () async {
       // Arrange
       const invalidCode = '123';
-       when(() => mockRequest.json()).thenAnswer((_) async => {'email': validEmail, 'code': invalidCode});
+      when(() => mockRequest.json())
+          .thenAnswer((_) async => {'email': validEmail, 'code': invalidCode});
       final context = createMockRequestContext(
         request: mockRequest,
         dependencies: {AuthService: mockAuthService},
@@ -215,15 +230,16 @@ void main() {
       // Act & Assert
       expect(
         () => route.onRequest(context),
-        throwsA(isA<InvalidInputException>().having(
-          (e) => e.message,
-          'message',
-          'Invalid code format. Code must be 6 digits.',
-        )),
+        throwsA(
+          isA<InvalidInputException>().having(
+            (e) => e.message,
+            'message',
+            'Invalid code format. Code must be 6 digits.',
+          ),
+        ),
       );
-       verifyNever(() => mockAuthService.completeEmailSignIn(any(), any()));
+      verifyNever(() => mockAuthService.completeEmailSignIn(any(), any()));
     });
-
 
     test('rethrows InvalidInputException from AuthService (e.g., wrong code)',
         () async {
@@ -245,7 +261,7 @@ void main() {
           .called(1);
     });
 
-     test('rethrows other HtHttpException from AuthService', () async {
+    test('rethrows other HtHttpException from AuthService', () async {
       // Arrange
       const exception = OperationFailedException('User creation failed');
       when(() => mockAuthService.completeEmailSignIn(validEmail, validCode))
@@ -277,11 +293,13 @@ void main() {
       // Act & Assert
       expect(
         () => route.onRequest(context),
-        throwsA(isA<OperationFailedException>().having(
-              (e) => e.message,
-              'message',
-              'An unexpected error occurred while verifying the sign-in code.',
-            )),
+        throwsA(
+          isA<OperationFailedException>().having(
+            (e) => e.message,
+            'message',
+            'An unexpected error occurred while verifying the sign-in code.',
+          ),
+        ),
       );
       verify(() => mockAuthService.completeEmailSignIn(validEmail, validCode))
           .called(1);

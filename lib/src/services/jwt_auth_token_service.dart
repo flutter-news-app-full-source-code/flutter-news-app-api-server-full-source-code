@@ -75,7 +75,7 @@ class JwtAuthTokenService implements AuthTokenService {
       print('Error generating JWT for user ${user.id}: $e');
       // Map to a standard exception
       throw OperationFailedException(
-        'Failed to generate authentication token: ${e.toString()}',
+        'Failed to generate authentication token: $e',
       );
     }
   }
@@ -91,7 +91,8 @@ class JwtAuthTokenService implements AuthTokenService {
       if (userId == null) {
         print('Token validation failed: Missing "sub" claim.');
         // Throw specific exception for malformed token
-        throw const BadRequestException('Malformed token: Missing subject claim.');
+        throw const BadRequestException(
+            'Malformed token: Missing subject claim.',);
       }
 
       // Fetch the full user object from the repository
@@ -107,7 +108,8 @@ class JwtAuthTokenService implements AuthTokenService {
       print('Token validation failed: Invalid token. Reason: ${e.message}');
       // Throw specific exception for invalid token signature/format
       throw UnauthorizedException('Invalid token: ${e.message}');
-    } on JWTException catch (e) { // Use JWTException as the general catch-all
+    } on JWTException catch (e) {
+      // Use JWTException as the general catch-all
       print('Token validation failed: JWT Exception. Reason: ${e.message}');
       // Treat other JWT exceptions as invalid tokens
       throw UnauthorizedException('Invalid token: ${e.message}');
@@ -121,7 +123,7 @@ class JwtAuthTokenService implements AuthTokenService {
       print('Unexpected error during token validation: $e');
       // Wrap unexpected errors in a standard exception type
       throw OperationFailedException(
-        'Token validation failed unexpectedly: ${e.toString()}',
+        'Token validation failed unexpectedly: $e',
       );
     }
   }

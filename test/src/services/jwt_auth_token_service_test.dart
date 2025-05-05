@@ -1,10 +1,8 @@
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:ht_api/src/services/jwt_auth_token_service.dart';
-import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../helpers/mock_classes.dart'; // Import mock classes
 
@@ -17,7 +15,7 @@ void main() {
     late MockUserRepository mockUserRepository;
     late MockUuid mockUuid;
 
-    final testUser = User(
+    const testUser = User(
       id: 'user-jwt-123',
       email: 'jwt@example.com',
       isAnonymous: false,
@@ -26,7 +24,7 @@ void main() {
 
     setUpAll(() {
       // Register fallback values for argument matchers
-      registerFallbackValue(User(id: 'fallback', isAnonymous: true));
+      registerFallbackValue(const User(id: 'fallback', isAnonymous: true));
     });
 
     setUp(() {
@@ -86,16 +84,19 @@ void main() {
         // For simplicity, we'll assume an internal error could occur.
         // This test case is more conceptual unless we mock the JWT class itself.
         // We can test the catch block by mocking the uuid generator to throw.
-        when(() => mockUuid.v4()).thenThrow(Exception('UUID generation failed'));
+        when(() => mockUuid.v4())
+            .thenThrow(Exception('UUID generation failed'));
 
         // Act & Assert
         await expectLater(
           () => service.generateToken(testUser),
-          throwsA(isA<OperationFailedException>().having(
-            (e) => e.message,
-            'message',
-            contains('Failed to generate authentication token'),
-          )),
+          throwsA(
+            isA<OperationFailedException>().having(
+              (e) => e.message,
+              'message',
+              contains('Failed to generate authentication token'),
+            ),
+          ),
         );
       });
     });
@@ -125,8 +126,8 @@ void main() {
         // Arrange: Manually create a token with an expired timestamp.
         // Use the same hardcoded key as the service for signing.
         final expiredTimestamp = DateTime.now()
-            .subtract(const Duration(hours: 2)) // Expired 2 hours ago
-            .millisecondsSinceEpoch ~/
+                .subtract(const Duration(hours: 2)) // Expired 2 hours ago
+                .millisecondsSinceEpoch ~/
             1000;
         final expiredJwt = JWT(
           {
@@ -140,18 +141,21 @@ void main() {
           jwtId: mockUuid.v4(), // Use mocked uuid
         );
         final expiredToken = expiredJwt.sign(
-          SecretKey('your-very-hardcoded-super-secret-key-replace-this-in-prod'),
+          SecretKey(
+              'your-very-hardcoded-super-secret-key-replace-this-in-prod',),
           algorithm: JWTAlgorithm.HS256,
         );
 
         // Act & Assert
         await expectLater(
           () => service.validateToken(expiredToken),
-          throwsA(isA<UnauthorizedException>().having(
-            (e) => e.message,
-            'message',
-            'Token expired.',
-          )),
+          throwsA(
+            isA<UnauthorizedException>().having(
+              (e) => e.message,
+              'message',
+              'Token expired.',
+            ),
+          ),
         );
         verifyNever(() => mockUserRepository.read(any()));
       });
@@ -165,16 +169,19 @@ void main() {
         // Act & Assert
         await expectLater(
           () => service.validateToken(invalidSignatureToken),
-          throwsA(isA<UnauthorizedException>().having(
-            (e) => e.message,
-            'message',
-            contains('Invalid token'), // Message might vary slightly
-          )),
+          throwsA(
+            isA<UnauthorizedException>().having(
+              (e) => e.message,
+              'message',
+              contains('Invalid token'), // Message might vary slightly
+            ),
+          ),
         );
-         verifyNever(() => mockUserRepository.read(any()));
+        verifyNever(() => mockUserRepository.read(any()));
       });
 
-       test('throws BadRequestException for token missing "sub" claim', () async {
+      test('throws BadRequestException for token missing "sub" claim',
+          () async {
         // Arrange: Create a token without the 'sub' claim and sign manually
         final jwt = JWT(
           {'email': testUser.email}, // No 'sub'
@@ -182,22 +189,24 @@ void main() {
         );
         final noSubToken = jwt.sign(
           // Sign with the *correct* key for this test, as we're testing claim validation
-          SecretKey('your-very-hardcoded-super-secret-key-replace-this-in-prod'),
+          SecretKey(
+              'your-very-hardcoded-super-secret-key-replace-this-in-prod',),
           expiresIn: const Duration(minutes: 5),
         );
 
         // Act & Assert
         await expectLater(
           () => service.validateToken(noSubToken),
-          throwsA(isA<BadRequestException>().having(
-            (e) => e.message,
-            'message',
-            'Malformed token: Missing subject claim.',
-          )),
+          throwsA(
+            isA<BadRequestException>().having(
+              (e) => e.message,
+              'message',
+              'Malformed token: Missing subject claim.',
+            ),
+          ),
         );
-         verifyNever(() => mockUserRepository.read(any()));
+        verifyNever(() => mockUserRepository.read(any()));
       });
-
 
       test('rethrows NotFoundException if user from token not found', () async {
         // Arrange
@@ -212,7 +221,7 @@ void main() {
         verify(() => mockUserRepository.read(testUser.id)).called(1);
       });
 
-       test('rethrows other HtHttpException from user repository', () async {
+      test('rethrows other HtHttpException from user repository', () async {
         // Arrange
         const exception = ServerException('Database error');
         when(() => mockUserRepository.read(testUser.id)).thenThrow(exception);
@@ -225,22 +234,24 @@ void main() {
         verify(() => mockUserRepository.read(testUser.id)).called(1);
       });
 
-
-      test('throws OperationFailedException for unexpected validation error', () async {
+      test('throws OperationFailedException for unexpected validation error',
+          () async {
         // Arrange
         final exception = Exception('Unexpected read error');
-         when(() => mockUserRepository.read(testUser.id)).thenThrow(exception);
+        when(() => mockUserRepository.read(testUser.id)).thenThrow(exception);
 
         // Act & Assert
         await expectLater(
           () => service.validateToken(validToken),
-          throwsA(isA<OperationFailedException>().having(
-            (e) => e.message,
-            'message',
-            contains('Token validation failed unexpectedly'),
-          )),
+          throwsA(
+            isA<OperationFailedException>().having(
+              (e) => e.message,
+              'message',
+              contains('Token validation failed unexpectedly'),
+            ),
+          ),
         );
-         verify(() => mockUserRepository.read(testUser.id)).called(1);
+        verify(() => mockUserRepository.read(testUser.id)).called(1);
       });
     });
   });

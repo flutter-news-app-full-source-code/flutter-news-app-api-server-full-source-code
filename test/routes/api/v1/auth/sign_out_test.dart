@@ -6,10 +6,10 @@ import 'package:ht_shared/ht_shared.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
-import '../../../../helpers/create_mock_request_context.dart';
-import '../../../../helpers/mock_classes.dart';
 // Import the actual route handler
 import '../../../../../routes/api/v1/auth/sign-out.dart' as route;
+import '../../../../helpers/create_mock_request_context.dart';
+import '../../../../helpers/mock_classes.dart';
 
 void main() {
   group('POST /api/v1/auth/sign-out', () {
@@ -17,7 +17,7 @@ void main() {
     late MockRequest mockRequest;
 
     // Define a sample authenticated user
-    final testUser = User(
+    const testUser = User(
       id: 'user-789',
       email: 'signout@example.com',
       isAnonymous: false,
@@ -33,7 +33,8 @@ void main() {
       when(() => mockRequest.headers).thenReturn({});
       // Sign-out doesn't typically have a body
       when(() => mockRequest.body()).thenAnswer((_) async => '');
-      when(() => mockRequest.json()).thenAnswer((_) async => <String, dynamic>{});
+      when(() => mockRequest.json())
+          .thenAnswer((_) async => <String, dynamic>{});
     });
 
     test('returns 204 No Content on successful sign-out', () async {
@@ -56,12 +57,14 @@ void main() {
       // Assert
       expect(response.statusCode, equals(HttpStatus.noContent));
       // Verify the service method was called correctly
-      verify(() => mockAuthService.performSignOut(userId: testUser.id)).called(1);
+      verify(() => mockAuthService.performSignOut(userId: testUser.id))
+          .called(1);
     });
 
     test('returns 405 Method Not Allowed for non-POST requests', () async {
       // Arrange
-      when(() => mockRequest.method).thenReturn(HttpMethod.delete); // Test DELETE
+      when(() => mockRequest.method)
+          .thenReturn(HttpMethod.delete); // Test DELETE
       final context = createMockRequestContext(
         request: mockRequest,
         dependencies: {
@@ -75,7 +78,8 @@ void main() {
 
       // Assert
       expect(response.statusCode, equals(HttpStatus.methodNotAllowed));
-      verifyNever(() => mockAuthService.performSignOut(userId: any(named: 'userId')));
+      verifyNever(
+          () => mockAuthService.performSignOut(userId: any(named: 'userId')),);
     });
 
     test('throws UnauthorizedException if user is null in context', () async {
@@ -95,13 +99,16 @@ void main() {
       // Expect the handler to throw the exception
       expect(
         () => route.onRequest(context),
-        throwsA(isA<UnauthorizedException>().having(
-          (e) => e.message,
-          'message',
-          'Authentication required to sign out.',
-        )),
+        throwsA(
+          isA<UnauthorizedException>().having(
+            (e) => e.message,
+            'message',
+            'Authentication required to sign out.',
+          ),
+        ),
       );
-      verifyNever(() => mockAuthService.performSignOut(userId: any(named: 'userId')));
+      verifyNever(
+          () => mockAuthService.performSignOut(userId: any(named: 'userId')),);
     });
 
     test('rethrows HtHttpException from AuthService', () async {
@@ -124,7 +131,8 @@ void main() {
         () => route.onRequest(context),
         throwsA(isA<OperationFailedException>()),
       );
-      verify(() => mockAuthService.performSignOut(userId: testUser.id)).called(1);
+      verify(() => mockAuthService.performSignOut(userId: testUser.id))
+          .called(1);
     });
 
     test('throws OperationFailedException for unexpected errors', () async {
@@ -144,13 +152,16 @@ void main() {
       // Act & Assert
       expect(
         () => route.onRequest(context),
-        throwsA(isA<OperationFailedException>().having(
-              (e) => e.message,
-              'message',
-              'An unexpected error occurred during sign-out.',
-            )),
+        throwsA(
+          isA<OperationFailedException>().having(
+            (e) => e.message,
+            'message',
+            'An unexpected error occurred during sign-out.',
+          ),
+        ),
       );
-      verify(() => mockAuthService.performSignOut(userId: testUser.id)).called(1);
+      verify(() => mockAuthService.performSignOut(userId: testUser.id))
+          .called(1);
     });
   });
 }
