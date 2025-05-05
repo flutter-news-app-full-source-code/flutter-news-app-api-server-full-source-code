@@ -243,8 +243,7 @@ These endpoints manage application settings. Currently, they operate on a global
     # Ensure very_good_cli is activated: dart pub global activate very_good_cli
     very_good test --min-coverage 90
     ```
-*   Update the coverage badge in this README after tests pass.
-
+    
 ## License
 
 This package is licensed under the [PolyForm Free Trial 1.0.0](LICENSE). Please review the terms before use.
