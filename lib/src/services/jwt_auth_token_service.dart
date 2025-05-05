@@ -33,7 +33,7 @@ class JwtAuthTokenService implements AuthTokenService {
       'your-very-hardcoded-super-secret-key-replace-this-in-prod';
 
   // Define token issuer and default expiry duration
-  static const String _issuer = 'https://your-api-domain.com'; // Replace
+  static const String _issuer = 'http://localhost:8080';
   static const Duration _tokenExpiryDuration = Duration(hours: 1);
 
   // --- Interface Implementation ---
