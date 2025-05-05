@@ -142,7 +142,8 @@ void main() {
         );
         final expiredToken = expiredJwt.sign(
           SecretKey(
-              'your-very-hardcoded-super-secret-key-replace-this-in-prod',),
+            'your-very-hardcoded-super-secret-key-replace-this-in-prod',
+          ),
           algorithm: JWTAlgorithm.HS256,
         );
 
@@ -190,7 +191,8 @@ void main() {
         final noSubToken = jwt.sign(
           // Sign with the *correct* key for this test, as we're testing claim validation
           SecretKey(
-              'your-very-hardcoded-super-secret-key-replace-this-in-prod',),
+            'your-very-hardcoded-super-secret-key-replace-this-in-prod',
+          ),
           expiresIn: const Duration(minutes: 5),
         );
 
