@@ -4,6 +4,8 @@ analyzer:
     avoid_redundant_argument_values: ignore
     avoid_print: ignore
     no_default_cases: ignore
+    avoid_catches_without_on_clauses: ignore
+    lines_longer_than_80_chars: ignore
   exclude:
     - build/**
 linter:

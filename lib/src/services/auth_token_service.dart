@@ -39,6 +39,7 @@ class SimpleAuthTokenService implements AuthTokenService {
     String secretKey = 'very-secret-key-replace-me',
   }) : _secretKey = secretKey;
 
+  //
   // ignore: unused_field
   final String _secretKey;
 

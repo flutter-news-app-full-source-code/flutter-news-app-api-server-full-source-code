@@ -1,10 +1,9 @@
+import 'package:ht_api/src/services/auth_token_service.dart';
+import 'package:ht_api/src/services/verification_code_storage_service.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_email_repository/ht_email_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 import 'package:uuid/uuid.dart';
-
-import 'package:ht_api/src/services/auth_token_service.dart';
-import 'package:ht_api/src/services/verification_code_storage_service.dart';
 
 /// {@template auth_service}
 /// Service responsible for orchestrating authentication logic on the backend.
@@ -82,7 +81,8 @@ class AuthService {
       // Consider distinguishing between expired and simply incorrect codes
       // For now, treat both as invalid input.
       throw const InvalidInputException(
-          'Invalid or expired verification code.',);
+        'Invalid or expired verification code.',
+      );
     }
 
     // 2. Find or create the user
@@ -112,7 +112,8 @@ class AuthService {
     } on HtHttpException catch (e) {
       print('Error finding/creating user for $email: $e');
       throw const OperationFailedException(
-          'Failed to find or create user account.',);
+        'Failed to find or create user account.',
+      );
     } catch (e) {
       print('Unexpected error during user lookup/creation for $email: $e');
       throw const OperationFailedException('Failed to process user account.');
@@ -126,7 +127,8 @@ class AuthService {
     } catch (e) {
       print('Error generating token for user ${user.id}: $e');
       throw const OperationFailedException(
-          'Failed to generate authentication token.',);
+        'Failed to generate authentication token.',
+      );
     }
   }
 
@@ -152,7 +154,8 @@ class AuthService {
     } catch (e) {
       print('Unexpected error during anonymous user creation: $e');
       throw const OperationFailedException(
-          'Failed to process anonymous sign-in.',);
+        'Failed to process anonymous sign-in.',
+      );
     }
 
     // 2. Generate token
@@ -163,7 +166,8 @@ class AuthService {
     } catch (e) {
       print('Error generating token for anonymous user ${user.id}: $e');
       throw const OperationFailedException(
-          'Failed to generate authentication token.',);
+        'Failed to generate authentication token.',
+      );
     }
   }
 

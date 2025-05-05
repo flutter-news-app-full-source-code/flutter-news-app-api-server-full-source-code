@@ -10,7 +10,7 @@ import 'package:ht_shared/ht_shared.dart';
 ///
 /// If a route requires authentication (determined by where this middleware is
 /// applied) and the token is missing or invalid, it should ideally throw an
-/// [UnauthorizedException] to be caught by the [errorHandler].
+/// [UnauthorizedException] to be caught by the errorHandler.
 ///
 /// **Usage:** Apply this middleware to routes or groups of routes that require
 /// access to the authenticated user's identity or need protection.
@@ -71,7 +71,8 @@ Middleware requireAuthentication() {
       final user = context.read<User?>();
       if (user == null) {
         print(
-            'Authentication required but no valid user found. Denying access.',);
+          'Authentication required but no valid user found. Denying access.',
+        );
         // Throwing allows the central errorHandler to create the 401 response.
         throw const UnauthorizedException('Authentication required.');
       }
