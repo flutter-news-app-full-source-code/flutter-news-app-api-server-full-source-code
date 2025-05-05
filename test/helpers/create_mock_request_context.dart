@@ -23,8 +23,7 @@ RequestContext createMockRequestContext({
   // Stub the request getter
   when(() => context.request).thenReturn(effectiveRequest);
 
-  // Stub the read<T>() method for each provided dependency.
-  // Use specific types for clarity and type safety.
+  // Stub the read<T>() method for each explicitly provided dependency.
   dependencies.forEach((type, instance) {
     // Add specific stubs for known types. Extend this list as needed.
     if (type == AuthService) {
@@ -34,47 +33,30 @@ RequestContext createMockRequestContext({
       when(() => context.read<HtDataRepository<User>>())
           .thenReturn(instance as HtDataRepository<User>);
     } else if (type == RequestId) {
-      // Handle RequestId specifically if provided
       when(() => context.read<RequestId>()).thenReturn(instance as RequestId);
+    } else if (type == User) {
+      // Explicitly handle providing the User object for auth tests
+      // Note: The type provided should be User, but we stub read<User?>
+      when(() => context.read<User?>()).thenReturn(instance as User?);
     }
-    // Add other common types here...
-    // Example for another repository type:
-    // else if (type == HtDataRepository<Headline>) {
-    //   when(() => context.read<HtDataRepository<Headline>>())
-    //       .thenReturn(instance as HtDataRepository<Headline>);
-    // }
+    // Add other specific types used in your tests here...
+    // e.g., HtDataRepository<Headline>, AuthTokenService, etc.
     else {
-      // Attempt a generic stub for other types, but warn if it fails.
-      // Using `any()` in read is generally discouraged, prefer specific types.
+      // Log a warning for unhandled types, but don't attempt generic stubbing
       print(
-        'Warning: Attempting generic stub for context.read<$type>. '
-        'Consider adding a specific stub in createMockRequestContext.',
+        'Warning: Unhandled dependency type in createMockRequestContext: $type. '
+        'Add a specific `when(() => context.read<$type>())` stub if needed.',
       );
-      // This generic stub might not always work as expected.
-      // Use a specific type if possible, otherwise fallback carefully.
-      try {
-        // Stubbing read<dynamic>() can be tricky. Prefer specific types.
-        // If absolutely needed, ensure the call signature matches.
-        // Mocktail's `any` matcher doesn't take arguments for `read`.
-        when(() => context.read<dynamic>()).thenReturn(instance);
-      } catch (e) {
-        print('Failed to setup generic read stub for $type: $e');
-      }
     }
   });
 
-  // Provide a fallback for read<T>() for types *not* explicitly provided.
-  // This helps catch errors in test setup.
-  // Corrected: `any()` doesn't take arguments here.
-  when(() => context.read<dynamic>()).thenThrow(
-    Exception(
-      'Dependency not found in mock context. '
-      'Ensure all required dependencies are provided in the test setup.',
-    ),
-  );
+  // IMPORTANT: Remove generic fallbacks for read<dynamic>().
+  // Tests should explicitly provide *all* dependencies they intend to read.
+  // If a test tries to read something not provided, Mocktail will throw a
+  // MissingStubError, which is more informative than a generic exception.
 
   // Stub provide<T>(). It expects a function that returns the value.
-  // We match any function using `any()` and return the same context
+  // Match any function using `any()` and return the same context
   // to allow chaining, which is typical for provider middleware.
   // Corrected: provide takes one argument (the provider function).
   // Use `any<T>()` with explicit type argument for the function.
