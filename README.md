@@ -15,7 +15,8 @@
 *   **Standardized Success Responses:** Returns consistent JSON success responses wrapped in a `SuccessApiResponse` structure, including request metadata (`requestId`, `timestamp`).
 *   **Standardized Error Handling:** Returns consistent JSON error responses via centralized middleware (`lib/src/middlewares/error_handler.dart`) for predictable client-side handling.
 *   **Request Traceability:** Generates a unique `requestId` (UUID v4) for each incoming request, included in success response metadata and available for server-side logging via context.
-*   **In-Memory Demo Mode:** Utilizes pre-loaded fixture data (`lib/src/fixtures/`) for demonstration and development purposes, simulating a live backend without external dependencies for core data and settings.
+*   **In-Memory Demo Mode:** Utilizes pre-loaded fixture data (`lib/src/fixtures/`) for demonstration and development purposes, simulating a live backend without external dependencies for core data, settings, and email sending.
+*   **Authentication:** Provides endpoints for user sign-in/sign-up via email code and anonymous sign-in. Includes token generation and validation via middleware.
 
 ### Data API (`/api/v1/data`)
 
@@ -42,20 +43,72 @@
 *   **Key Packages & Shared Core:**
     *   `dart_frog`: The web framework foundation.
     *   `uuid`: Used to generate unique request IDs.
-    *   `ht_shared`: Contains shared data models (`Headline`, `Category`, etc.), API response wrappers (`SuccessApiResponse`, `ResponseMetadata`), and standard exceptions (`HtHttpException`).
+    *   `ht_shared`: Contains shared data models (`Headline`, `Category`, `User`, `AuthSuccessResponse`, etc.), API response wrappers (`SuccessApiResponse`, `ResponseMetadata`), and standard exceptions (`HtHttpException`).
     *   `ht_data_client`: Defines the generic `HtDataClient<T>` interface.
     *   `ht_data_inmemory`: Provides the `HtDataInMemoryClient<T>` implementation for data.
     *   `ht_data_repository`: Defines the generic `HtDataRepository<T>` for data access.
     *   `ht_app_settings_client`: Defines the `HtAppSettingsClient` interface for settings.
     *   `ht_app_settings_inmemory`: Provides the `HtAppSettingsInMemory` implementation for settings.
     *   `ht_app_settings_repository`: Defines the `HtAppSettingsRepository` for settings management.
+    *   `ht_email_client`: Defines the `HtEmailClient` interface for sending emails.
+    *   `ht_email_inmemory`: Provides the `HtEmailInMemoryClient` implementation for emails.
+    *   `ht_email_repository`: Defines the `HtEmailRepository` for email operations.
     *   `ht_http_client`: Provides custom HTTP exceptions (`HtHttpException` subtypes) used for consistent error signaling.
 *   **Key Patterns:**
-    *   **Repository Pattern:** `HtDataRepository<T>` and `HtAppSettingsRepository` provide clean abstractions over data/settings logic. Route handlers interact with repositories.
+    *   **Repository Pattern:** `HtDataRepository<T>`, `HtAppSettingsRepository`, and `HtEmailRepository` provide clean abstractions over data/settings/email logic. Route handlers interact with repositories.
+    *   **Service Layer:** Services like `AuthService` orchestrate complex operations involving multiple repositories or logic (e.g., authentication flow).
     *   **Generic Data Endpoint:** A single set of route handlers serves multiple data models via `/api/v1/data`.
     *   **Model Registry:** A central map (`lib/src/registry/model_registry.dart`) links data model names to configurations (`ModelConfig`) for the generic data endpoint.
-    *   **Dependency Injection (Dart Frog Providers):** Middleware (`routes/_middleware.dart`) provides singleton instances of repositories (`HtDataRepository<T>`, `HtAppSettingsRepository`), the `ModelRegistryMap`, and a unique `RequestId`.
+    *   **Dependency Injection (Dart Frog Providers):** Middleware (`routes/_middleware.dart`) provides singleton instances of repositories, services (`AuthService`, `AuthTokenService`, etc.), the `ModelRegistryMap`, and a unique `RequestId`.
     *   **Centralized Error Handling:** The `errorHandler` middleware intercepts exceptions and maps them to standardized JSON error responses.
+    *   **Authentication Middleware:** `authenticationProvider` validates tokens and provides `User?` context; `requireAuthentication` enforces access for protected routes.
+
+## API Endpoints: Authentication (`/api/v1/auth`)
+
+These endpoints handle user authentication flows.
+
+**Standard Response Structure:** Uses the same `SuccessApiResponse` and error structure as the Data API. Authentication success responses typically use `SuccessApiResponse<AuthSuccessResponse>` (containing User and token) or `SuccessApiResponse<User>`.
+
+**Authentication Operations:**
+
+1.  **Request Sign-In Code**
+    *   **Method:** `POST`
+    *   **Path:** `/api/v1/auth/request-code`
+    *   **Request Body:** JSON object `{"email": "user@example.com"}`.
+    *   **Success Response:** `202 Accepted` (Indicates request accepted, email sending initiated).
+    *   **Example:** `POST /api/v1/auth/request-code` with body `{"email": "test@example.com"}`
+
+2.  **Verify Sign-In Code**
+    *   **Method:** `POST`
+    *   **Path:** `/api/v1/auth/verify-code`
+    *   **Request Body:** JSON object `{"email": "user@example.com", "code": "123456"}`.
+    *   **Success Response:** `200 OK` with `SuccessApiResponse<AuthSuccessResponse>` containing the `User` object and the authentication `token`.
+    *   **Error Response:** `400 Bad Request` (e.g., invalid code/email format), `400 Bad Request` via `InvalidInputException` (e.g., code incorrect/expired).
+    *   **Example:** `POST /api/v1/auth/verify-code` with body `{"email": "test@example.com", "code": "654321"}`
+
+3.  **Sign In Anonymously**
+    *   **Method:** `POST`
+    *   **Path:** `/api/v1/auth/anonymous`
+    *   **Request Body:** None.
+    *   **Success Response:** `200 OK` with `SuccessApiResponse<AuthSuccessResponse>` containing the anonymous `User` object and the authentication `token`.
+    *   **Example:** `POST /api/v1/auth/anonymous`
+
+4.  **Get Current User Details**
+    *   **Method:** `GET`
+    *   **Path:** `/api/v1/auth/me`
+    *   **Authentication:** Required (Bearer Token).
+    *   **Success Response:** `200 OK` with `SuccessApiResponse<User>` containing the details of the authenticated user.
+    *   **Error Response:** `401 Unauthorized`.
+    *   **Example:** `GET /api/v1/auth/me` with `Authorization: Bearer <token>` header.
+
+5.  **Sign Out**
+    *   **Method:** `POST`
+    *   **Path:** `/api/v1/auth/sign-out`
+    *   **Authentication:** Required (Bearer Token).
+    *   **Request Body:** None.
+    *   **Success Response:** `204 No Content` (Indicates successful server-side action, if any). Client is responsible for clearing local token.
+    *   **Error Response:** `401 Unauthorized`.
+    *   **Example:** `POST /api/v1/auth/sign-out` with `Authorization: Bearer <token>` header.
 
 ## API Endpoints: Data (`/api/v1/data`)
 
