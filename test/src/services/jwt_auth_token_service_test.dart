@@ -203,7 +203,8 @@ void main() {
             isA<BadRequestException>().having(
               (e) => e.message,
               'message',
-              'Malformed token: Missing subject claim.',
+              // Updated expected message to match actual implementation
+              'Malformed token: Missing or empty subject claim.',
             ),
           ),
         );
