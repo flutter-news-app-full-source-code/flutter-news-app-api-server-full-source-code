@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:meta/meta.dart';
 import 'package:ht_shared/ht_shared.dart'; // Added for OperationFailedException
+import 'package:meta/meta.dart';
 
 /// {@template token_blacklist_service}
 /// Defines the interface for a service that manages a blacklist of
@@ -68,7 +68,7 @@ class InMemoryTokenBlacklistService implements TokenBlacklistService {
     );
   }
 
-  // Stores jti -> expiry DateTime
+  /// Stores jti -> expiry DateTime
   @visibleForTesting
   final Map<String, DateTime> blacklistStore = {};
   Timer? _cleanupTimer;
@@ -95,7 +95,7 @@ class InMemoryTokenBlacklistService implements TokenBlacklistService {
         '[InMemoryTokenBlacklistService] Error adding jti $jti to store: $e',
       );
       throw OperationFailedException(
-        'Failed to add token to blacklist: ${e.toString()}',
+        'Failed to add token to blacklist: $e',
       );
     }
   }
@@ -128,7 +128,7 @@ class InMemoryTokenBlacklistService implements TokenBlacklistService {
         '[InMemoryTokenBlacklistService] Error checking blacklist for jti $jti: $e',
       );
       throw OperationFailedException(
-        'Failed to check token blacklist: ${e.toString()}',
+        'Failed to check token blacklist: $e',
       );
     }
   }

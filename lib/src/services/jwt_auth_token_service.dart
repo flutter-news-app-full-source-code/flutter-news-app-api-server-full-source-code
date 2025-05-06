@@ -1,4 +1,4 @@
-import 'dart:convert'; // For potential base64 decoding if needed
+// For potential base64 decoding if needed
 
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:ht_api/src/services/auth_token_service.dart';
@@ -103,7 +103,7 @@ class JwtAuthTokenService implements AuthTokenService {
       final jti = jwt.payload['jti'] as String?;
       if (jti == null || jti.isEmpty) {
         print(
-            '[validateToken] Token validation failed: Missing or empty "jti" claim.');
+            '[validateToken] Token validation failed: Missing or empty "jti" claim.',);
         // Throw specific exception for malformed token
         throw const BadRequestException(
           'Malformed token: Missing or empty JWT ID (jti) claim.',
@@ -114,7 +114,7 @@ class JwtAuthTokenService implements AuthTokenService {
       final isBlacklisted = await _blacklistService.isBlacklisted(jti);
       if (isBlacklisted) {
         print(
-            '[validateToken] Token validation failed: Token is blacklisted (jti: $jti).');
+            '[validateToken] Token validation failed: Token is blacklisted (jti: $jti).',);
         // Throw specific exception for blacklisted token
         throw const UnauthorizedException('Token has been invalidated.');
       }
