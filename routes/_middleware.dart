@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
-// import 'package:ht_api/src/middlewares/authentication_middleware.dart';
+import 'package:ht_api/src/middlewares/authentication_middleware.dart';
 import 'package:ht_api/src/middlewares/error_handler.dart';
 import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_api/src/services/auth_service.dart';
@@ -180,18 +180,22 @@ Handler middleware(Handler handler) {
       // No initial user data fixture needed for auth flow typically
     ),
   );
+  print('[MiddlewareSetup] HtDataRepository<User> instantiated.'); // Added log
   // Email Repo (using InMemory)
   const emailRepository = HtEmailRepository(
     emailClient: HtEmailInMemoryClient(),
   );
+  print('[MiddlewareSetup] HtEmailRepository instantiated.'); // Added log
   // Auth Services (using JWT and in-memory implementations)
   // Instantiate the new JWT service, passing its dependencies
   final authTokenService = JwtAuthTokenService(
     userRepository: userRepository,
     uuidGenerator: uuid,
   );
+  print('[MiddlewareSetup] JwtAuthTokenService instantiated.'); // Added log
   final verificationCodeStorageService =
       InMemoryVerificationCodeStorageService();
+  print('[MiddlewareSetup] InMemoryVerificationCodeStorageService instantiated.'); // Added log
   final authService = AuthService(
     userRepository: userRepository,
     authTokenService: authTokenService,
@@ -199,6 +203,7 @@ Handler middleware(Handler handler) {
     emailRepository: emailRepository,
     uuidGenerator: uuid,
   );
+  print('[MiddlewareSetup] AuthService instantiated.'); // Added log
 
   // Chain the providers and other middleware
   return handler
@@ -240,7 +245,7 @@ Handler middleware(Handler handler) {
       // --- Core Middleware ---
       .use(requestLogger()) // Basic request logging
       // Apply authenticationProvider to make User? available downstream
-      // .use(authenticationProvider())
+      .use(authenticationProvider())
       // Error handler should generally be last to catch all upstream errors
       .use(errorHandler());
 }

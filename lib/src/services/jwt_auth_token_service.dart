@@ -82,46 +82,83 @@ class JwtAuthTokenService implements AuthTokenService {
 
   @override
   Future<User?> validateToken(String token) async {
+    print('[validateToken] Attempting to validate token...');
     try {
       // Verify the token's signature and expiry
+      print('[validateToken] Verifying token signature and expiry...');
       final jwt = JWT.verify(token, SecretKey(_secretKey));
+      print('[validateToken] Token verified. Payload: ${jwt.payload}');
 
       // Extract user ID from the subject claim
-      final userId = jwt.payload['sub'] as String?;
-      if (userId == null) {
-        print('Token validation failed: Missing "sub" claim.');
-        // Throw specific exception for malformed token
-        throw const BadRequestException(
-          'Malformed token: Missing subject claim.',
+      final subClaim = jwt.payload['sub'];
+      print(
+        '[validateToken] Extracted "sub" claim: $subClaim '
+        '(Type: ${subClaim.runtimeType})',
+      );
+
+      // Safely attempt to cast to String
+      String? userId;
+      if (subClaim is String) {
+        userId = subClaim;
+        print('[validateToken] "sub" claim successfully cast to String: $userId');
+      } else if (subClaim != null) {
+        print(
+          '[validateToken] WARNING: "sub" claim is not a String. '
+          'Attempting toString().',
+        );
+        // Handle potential non-string types if necessary, or throw error
+        // For now, let's treat non-string sub as an error
+        throw BadRequestException(
+          'Malformed token: "sub" claim is not a String '
+          '(Type: ${subClaim.runtimeType}).',
         );
       }
 
+      if (userId == null || userId.isEmpty) {
+        print('[validateToken] Token validation failed: Missing or empty "sub" claim.');
+        // Throw specific exception for malformed token
+        throw const BadRequestException(
+          'Malformed token: Missing or empty subject claim.',
+        );
+      }
+
+      print('[validateToken] Attempting to fetch user with ID: $userId');
       // Fetch the full user object from the repository
       // This ensures the user still exists and is valid
       final user = await _userRepository.read(userId);
-      print('Token validated successfully for user ${user.id}');
+      print('[validateToken] User repository read successful for ID: $userId');
+      print('[validateToken] Token validated successfully for user ${user.id}');
       return user;
-    } on JWTExpiredException {
-      print('Token validation failed: Token expired.');
+    } on JWTExpiredException catch (e, s) {
+      print('[validateToken] CATCH JWTExpiredException: Token expired. $e\n$s');
       // Throw specific exception for expired token
       throw const UnauthorizedException('Token expired.');
-    } on JWTInvalidException catch (e) {
-      print('Token validation failed: Invalid token. Reason: ${e.message}');
+    } on JWTInvalidException catch (e, s) {
+      print(
+        '[validateToken] CATCH JWTInvalidException: Invalid token. '
+        'Reason: ${e.message}\n$s',
+      );
       // Throw specific exception for invalid token signature/format
       throw UnauthorizedException('Invalid token: ${e.message}');
-    } on JWTException catch (e) {
+    } on JWTException catch (e, s) {
       // Use JWTException as the general catch-all
-      print('Token validation failed: JWT Exception. Reason: ${e.message}');
+      print(
+        '[validateToken] CATCH JWTException: General JWT error. '
+        'Reason: ${e.message}\n$s',
+      );
       // Treat other JWT exceptions as invalid tokens
       throw UnauthorizedException('Invalid token: ${e.message}');
-    } on HtHttpException catch (e) {
+    } on HtHttpException catch (e, s) {
       // Handle errors from the user repository (e.g., user not found)
-      print('Token validation failed: Error fetching user $e');
+      print(
+        '[validateToken] CATCH HtHttpException: Error fetching user. '
+        'Type: ${e.runtimeType}, Message: $e\n$s',
+      );
       // Re-throw repository exceptions directly for the error handler
       rethrow;
-    } catch (e) {
+    } catch (e, s) {
       // Catch unexpected errors during validation
-      print('Unexpected error during token validation: $e');
+      print('[validateToken] CATCH UNEXPECTED Exception: $e\n$s');
       // Wrap unexpected errors in a standard exception type
       throw OperationFailedException(
         'Token validation failed unexpectedly: $e',
