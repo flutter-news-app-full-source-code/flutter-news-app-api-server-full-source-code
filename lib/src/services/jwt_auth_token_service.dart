@@ -101,7 +101,8 @@ class JwtAuthTokenService implements AuthTokenService {
       if (subClaim is String) {
         userId = subClaim;
         print(
-            '[validateToken] "sub" claim successfully cast to String: $userId',);
+          '[validateToken] "sub" claim successfully cast to String: $userId',
+        );
       } else if (subClaim != null) {
         print(
           '[validateToken] WARNING: "sub" claim is not a String. '
@@ -117,7 +118,8 @@ class JwtAuthTokenService implements AuthTokenService {
 
       if (userId == null || userId.isEmpty) {
         print(
-            '[validateToken] Token validation failed: Missing or empty "sub" claim.',);
+          '[validateToken] Token validation failed: Missing or empty "sub" claim.',
+        );
         // Throw specific exception for malformed token
         throw const BadRequestException(
           'Malformed token: Missing or empty subject claim.',

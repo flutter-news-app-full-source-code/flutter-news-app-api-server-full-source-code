@@ -22,34 +22,44 @@ Middleware authenticationProvider() {
       // Read the interface type
       AuthTokenService tokenService;
       try {
-        print('[AuthMiddleware] Attempting to read AuthTokenService...'); // Log 2: Before read
+        print(
+            '[AuthMiddleware] Attempting to read AuthTokenService...'); // Log 2: Before read
         tokenService = context.read<AuthTokenService>();
-        print('[AuthMiddleware] Successfully read AuthTokenService.'); // Log 3: After read
+        print(
+            '[AuthMiddleware] Successfully read AuthTokenService.'); // Log 3: After read
       } catch (e, s) {
-        print('[AuthMiddleware] FAILED to read AuthTokenService: $e\n$s'); // Log Error
+        print(
+            '[AuthMiddleware] FAILED to read AuthTokenService: $e\n$s'); // Log Error
         // Re-throw the error to be caught by the main error handler
         rethrow;
       }
       User? user; // Initialize user as null
 
       // Extract the Authorization header
-      print('[AuthMiddleware] Attempting to read Authorization header...'); // Log 4: Before header read
+      print(
+          '[AuthMiddleware] Attempting to read Authorization header...'); // Log 4: Before header read
       final authHeader = context.request.headers['Authorization'];
-      print('[AuthMiddleware] Authorization header value: $authHeader'); // Log 5: Header value
+      print(
+          '[AuthMiddleware] Authorization header value: $authHeader'); // Log 5: Header value
 
       if (authHeader != null && authHeader.startsWith('Bearer ')) {
         // Extract the token string
         final token = authHeader.substring(7); // Length of 'Bearer '
-        print('[AuthMiddleware] Extracted Bearer token.'); // Log 6: Token extracted
+        print(
+            '[AuthMiddleware] Extracted Bearer token.'); // Log 6: Token extracted
         try {
-          print('[AuthMiddleware] Attempting to validate token...'); // Log 7: Before validate
+          print(
+              '[AuthMiddleware] Attempting to validate token...'); // Log 7: Before validate
           // Validate the token using the service
           user = await tokenService.validateToken(token);
-          print('[AuthMiddleware] Token validation returned: ${user?.id ?? 'null'}'); // Log 8: After validate
+          print(
+              '[AuthMiddleware] Token validation returned: ${user?.id ?? 'null'}'); // Log 8: After validate
           if (user != null) {
-            print('[AuthMiddleware] Authentication successful for user: ${user.id}');
+            print(
+                '[AuthMiddleware] Authentication successful for user: ${user.id}');
           } else {
-            print('[AuthMiddleware] Invalid token provided (validateToken returned null).');
+            print(
+                '[AuthMiddleware] Invalid token provided (validateToken returned null).');
             // Optional: Could throw UnauthorizedException here if *all* routes
             // using this middleware strictly require a valid token.
             // However, providing null allows routes to handle optional auth.
@@ -62,7 +72,8 @@ Middleware authenticationProvider() {
           user = null; // Keep user null if HtHttpException occurred
         } catch (e, s) {
           // Catch unexpected errors during validation
-          print('[AuthMiddleware] Unexpected error during token validation: $e\n$s');
+          print(
+              '[AuthMiddleware] Unexpected error during token validation: $e\n$s');
           user = null; // Keep user null if unexpected error occurred
         }
       } else {
@@ -71,7 +82,8 @@ Middleware authenticationProvider() {
 
       // Provide the User object (or null) into the context
       // This makes `context.read<User?>()` available downstream.
-      print('[AuthMiddleware] Providing User (${user?.id ?? 'null'}) to context.'); // Log 9: Before provide
+      print(
+          '[AuthMiddleware] Providing User (${user?.id ?? 'null'}) to context.'); // Log 9: Before provide
       return handler(context.provide<User?>(() => user));
     };
   };

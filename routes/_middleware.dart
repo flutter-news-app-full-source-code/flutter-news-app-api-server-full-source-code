@@ -195,7 +195,9 @@ Handler middleware(Handler handler) {
   print('[MiddlewareSetup] JwtAuthTokenService instantiated.'); // Updated log
   final verificationCodeStorageService =
       InMemoryVerificationCodeStorageService();
-  print('[MiddlewareSetup] InMemoryVerificationCodeStorageService instantiated.'); // Added log
+  print(
+    '[MiddlewareSetup] InMemoryVerificationCodeStorageService instantiated.',
+  ); // Added log
   final authService = AuthService(
     userRepository: userRepository,
     authTokenService: authTokenService,
@@ -205,11 +207,23 @@ Handler middleware(Handler handler) {
   );
   print('[MiddlewareSetup] AuthService instantiated.'); // Added log
 
-  // Chain the providers and other middleware
+  // ==========================================================================
+  //                            MIDDLEWARE CHAIN
+  // ==========================================================================
+  // IMPORTANT: The order of middleware matters significantly!
+  // Middleware is applied in layers (like an onion). A request flows "in"
+  // through the chain, hits the route handler, and the response flows "out".
+  // Providers must be added *before* the middleware/handlers that read them.
+  // Error handlers should typically be placed late in the "request" phase
+  // (or early in the "response" phase) to catch errors from upstream.
+  // ==========================================================================
   return handler
-      // --- Request ID Provider ---
-      // Generate a unique ID for each request and provide it via context.
-      // Using the RequestId wrapper ensures type safety for context reads.
+      // --- 1. Request ID Provider (Early Setup) ---
+      // PURPOSE: Generates a unique ID (UUID v4) for each incoming request.
+      //          Provides `RequestId` instance via context.
+      // ORDER:   Placed *very early* so the ID is available for logging and
+      //          tracing throughout the entire request lifecycle in all
+      //          subsequent middleware and handlers.
       .use((innerHandler) {
         return (context) {
           final requestIdValue = uuid.v4();
@@ -218,35 +232,74 @@ Handler middleware(Handler handler) {
           return innerHandler(context.provide<RequestId>(() => requestId));
         };
       })
-      // Provide the Model Registry Map
-      .use(
-        modelRegistryProvider,
-      ) // Uses the provider defined in model_registry.dart
 
-      // Provide each specific repository instance
+      // --- 2. Model Registry Provider (Early Setup) ---
+      // PURPOSE: Provides the `ModelRegistry` map for dynamic JSON
+      //          serialization/deserialization lookups.
+      // ORDER:   Needed by some repository clients or handlers dealing with
+      //          generic data types. Placed early, after RequestId.
+      .use(modelRegistryProvider)
+
+      // --- 3. Repository Providers (Core Data Access) ---
+      // PURPOSE: Provide singleton instances of all data repositories.
+      // ORDER:   These MUST be provided BEFORE any middleware or route handlers
+      //          that need to interact with data (e.g., AuthService,
+      //          authenticationProvider indirectly via AuthService/TokenService,
+      //          specific route logic).
       .use(provider<HtDataRepository<Headline>>((_) => headlineRepository))
       .use(provider<HtDataRepository<Category>>((_) => categoryRepository))
       .use(provider<HtDataRepository<Source>>((_) => sourceRepository))
       .use(provider<HtDataRepository<Country>>((_) => countryRepository))
+      .use(provider<HtDataRepository<User>>(
+          (_) => userRepository)) // Used by Auth services
       .use(provider<HtAppSettingsRepository>((_) => settingsRepository))
-      // --- Provide Auth Dependencies ---
-      .use(provider<HtDataRepository<User>>((_) => userRepository))
-      .use(provider<HtEmailRepository>((_) => emailRepository))
-      // Provide the AuthTokenService interface type
-      .use(provider<AuthTokenService>((_) => authTokenService))
+      .use(provider<HtEmailRepository>(
+          (_) => emailRepository)) // Used by AuthService
+
+      // --- 4. Authentication Service Providers (Auth Logic Dependencies) ---
+      // PURPOSE: Provide the core services needed for authentication logic.
+      // ORDER:   These MUST be provided BEFORE `authenticationProvider` and
+      //          any route handlers that perform authentication/authorization.
+      //          - `AuthTokenService` is read directly by `authenticationProvider`.
+      //          - `AuthService` uses several repositories and `AuthTokenService`.
+      //          - `VerificationCodeStorageService` is used by `AuthService`.
+      //          - `Uuid` is used by `AuthService` and `JwtAuthTokenService`.
+      .use(provider<AuthTokenService>(
+          (_) => authTokenService)) // Read by authenticationProvider
       .use(
         provider<VerificationCodeStorageService>(
           (_) => verificationCodeStorageService,
         ),
-      )
-      .use(provider<AuthService>((_) => authService))
-      // --- Provide UUID ---
-      .use(provider<Uuid>((_) => uuid)) // Provide Uuid instance
+      ) // Read by AuthService
+      .use(provider<AuthService>(
+          (_) => authService)) // Reads other services/repos
+      .use(provider<Uuid>((_) => uuid)) // Read by AuthService & TokenService
 
-      // --- Core Middleware ---
-      // Apply authenticationProvider first (after providers)
+      // --- 5. Authentication Middleware (User Context Population) ---
+      // PURPOSE: Reads the `Authorization: Bearer <token>` header, validates
+      //          the token using `AuthTokenService`, and provides the
+      //          resulting `User?` object into the context.
+      // ORDER:   MUST come AFTER `AuthTokenService` is provided (which it reads).
+      //          Should come BEFORE any route handlers that need to know the
+      //          currently authenticated user (`context.read<User?>()`).
       .use(authenticationProvider())
-      .use(requestLogger()) // Then basic request logging
-      // Error handler should generally be last to catch all upstream errors
+
+      // --- 6. Request Logger (Logging) ---
+      // PURPOSE: Logs details about the incoming request and outgoing response.
+      // ORDER:   Often placed late in the request phase / early in the response
+      //          phase. Placing it here logs the request *before* the handler
+      //          runs and the response *after* the handler (and error handler)
+      //          completes. Can access `RequestId` and potentially `User?`.
+      .use(requestLogger())
+
+      // --- 7. Error Handler (Catch-All) ---
+      // PURPOSE: Catches exceptions thrown by upstream middleware or route
+      //          handlers and converts them into standardized JSON error responses.
+      // ORDER:   MUST be placed *late* in the chain (typically last before the
+      //          actual handler is invoked by the framework, or first in the
+      //          response processing flow) so it can catch errors from
+      //          everything that came before it (providers, auth middleware,
+      //          route handlers). If placed too early, it won't catch errors
+      //          from middleware/handlers defined after it.
       .use(errorHandler());
 }

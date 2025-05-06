@@ -45,12 +45,14 @@ class SimpleAuthTokenService implements AuthTokenService {
     }
 
     try {
-      print('[SimpleAuthTokenService] Attempting to read user from repository...');
+      print(
+          '[SimpleAuthTokenService] Attempting to read user from repository...');
       final user = await _userRepository.read(userId);
       print('[SimpleAuthTokenService] User read successful: ${user.id}');
       return user;
     } on NotFoundException {
-      print('[SimpleAuthTokenService] Validation failed: User ID $userId not found.');
+      print(
+          '[SimpleAuthTokenService] Validation failed: User ID $userId not found.');
       // Return null if user not found, mimicking successful validation
       // of a token for a non-existent user. The middleware handles this.
       return null;
