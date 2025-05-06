@@ -1,4 +1,5 @@
 import 'package:dart_frog/dart_frog.dart';
+// Import the interface type
 import 'package:ht_api/src/services/auth_token_service.dart';
 import 'package:ht_shared/ht_shared.dart';
 
@@ -18,6 +19,7 @@ Middleware authenticationProvider() {
   return (handler) {
     return (context) async {
       print('[AuthMiddleware] Entered.'); // Log 1: Entry
+      // Read the interface type
       AuthTokenService tokenService;
       try {
         print('[AuthMiddleware] Attempting to read AuthTokenService...'); // Log 2: Before read

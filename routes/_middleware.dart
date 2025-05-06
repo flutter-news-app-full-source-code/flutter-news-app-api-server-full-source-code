@@ -232,8 +232,8 @@ Handler middleware(Handler handler) {
       // --- Provide Auth Dependencies ---
       .use(provider<HtDataRepository<User>>((_) => userRepository))
       .use(provider<HtEmailRepository>((_) => emailRepository))
-      // Provide the concrete JwtAuthTokenService type for diagnosis
-      .use(provider<JwtAuthTokenService>((_) => authTokenService))
+      // Provide the AuthTokenService interface type
+      .use(provider<AuthTokenService>((_) => authTokenService))
       .use(
         provider<VerificationCodeStorageService>(
           (_) => verificationCodeStorageService,
@@ -244,9 +244,9 @@ Handler middleware(Handler handler) {
       .use(provider<Uuid>((_) => uuid)) // Provide Uuid instance
 
       // --- Core Middleware ---
-      .use(requestLogger()) // Basic request logging
-      // Apply authenticationProvider to make User? available downstream
+      // Apply authenticationProvider first (after providers)
       .use(authenticationProvider())
+      .use(requestLogger()) // Then basic request logging
       // Error handler should generally be last to catch all upstream errors
       .use(errorHandler());
 }
