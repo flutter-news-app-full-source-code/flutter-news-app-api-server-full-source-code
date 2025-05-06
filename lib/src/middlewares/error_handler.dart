@@ -63,27 +63,33 @@ Middleware errorHandler() {
 /// Maps HtHttpException subtypes to appropriate HTTP status codes.
 int _mapExceptionToStatusCode(HtHttpException exception) {
   return switch (exception) {
+    InvalidInputException() => HttpStatus.badRequest, // 400
+    AuthenticationException() => HttpStatus.unauthorized, // 401
     BadRequestException() => HttpStatus.badRequest, // 400
     UnauthorizedException() => HttpStatus.unauthorized, // 401
     ForbiddenException() => HttpStatus.forbidden, // 403
     NotFoundException() => HttpStatus.notFound, // 404
     ServerException() => HttpStatus.internalServerError, // 500
+    OperationFailedException() => HttpStatus.internalServerError, // 500
     NetworkException() => HttpStatus.serviceUnavailable, // 503 (or 500)
     UnknownException() => HttpStatus.internalServerError, // 500
-    _ => HttpStatus.internalServerError,
+    _ => HttpStatus.internalServerError, // Default
   };
 }
 
 /// Maps HtHttpException subtypes to consistent error code strings.
 String _mapExceptionToCodeString(HtHttpException exception) {
   return switch (exception) {
+    InvalidInputException() => 'INVALID_INPUT',
+    AuthenticationException() => 'AUTHENTICATION_FAILED',
     BadRequestException() => 'BAD_REQUEST',
     UnauthorizedException() => 'UNAUTHORIZED',
     ForbiddenException() => 'FORBIDDEN',
     NotFoundException() => 'NOT_FOUND',
     ServerException() => 'SERVER_ERROR',
+    OperationFailedException() => 'OPERATION_FAILED',
     NetworkException() => 'NETWORK_ERROR',
     UnknownException() => 'UNKNOWN_ERROR',
-    _ => 'UNKNOWN_ERROR',
+    _ => 'UNKNOWN_ERROR', // Default
   };
 }
