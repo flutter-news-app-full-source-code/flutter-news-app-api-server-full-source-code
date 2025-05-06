@@ -23,6 +23,15 @@ abstract class AuthTokenService {
   /// Throws [OperationFailedException] for unexpected validation errors.
   Future<User?> validateToken(String token);
 
-  // Potential future methods:
-  // Future<void> invalidateToken(String token); // For token blacklisting
+  /// Invalidates the given token, preventing its further use.
+  ///
+  /// Implementations might achieve this by adding the token's identifier
+  /// (e.g., JWT ID 'jti') to a blacklist until its original expiry time.
+  ///
+  /// - [token]: The token string to invalidate.
+  ///
+  /// Throws:
+  /// - [InvalidInputException] if the token format is invalid.
+  /// - [OperationFailedException] if the invalidation process fails unexpectedly.
+  Future<void> invalidateToken(String token);
 }

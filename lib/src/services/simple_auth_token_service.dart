@@ -73,4 +73,18 @@ class SimpleAuthTokenService implements AuthTokenService {
       );
     }
   }
+
+  @override
+  Future<void> invalidateToken(String token) async {
+    // This service uses simple prefixed tokens, not JWTs with JTI.
+    // True invalidation/blacklisting isn't applicable here.
+    // This method is implemented to satisfy the AuthTokenService interface.
+    print(
+      '[SimpleAuthTokenService] Received request to invalidate token: $token. '
+      'No server-side invalidation is performed for simple tokens.',
+    );
+    // Simulate async operation
+    await Future<void>.delayed(Duration.zero);
+    // No specific exceptions thrown here.
+  }
 }

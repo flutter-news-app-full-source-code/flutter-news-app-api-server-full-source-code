@@ -1,5 +1,9 @@
+import 'dart:convert'; // For potential base64 decoding if needed
+
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:ht_api/src/services/auth_token_service.dart';
+// Import the blacklist service
+import 'package:ht_api/src/services/token_blacklist_service.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 import 'package:uuid/uuid.dart';
@@ -7,22 +11,27 @@ import 'package:uuid/uuid.dart';
 /// {@template jwt_auth_token_service}
 /// An implementation of [AuthTokenService] using JSON Web Tokens (JWT).
 ///
-/// Handles the creation (signing) and validation (verification) of JWTs
-/// for user authentication.
+/// Handles the creation (signing) and validation (verification) of JWTs,
+/// including support for token invalidation via blacklisting.
 /// {@endtemplate}
 class JwtAuthTokenService implements AuthTokenService {
   /// {@macro jwt_auth_token_service}
   ///
-  /// Requires an [HtDataRepository<User>] to fetch user details after
-  /// validating the token's subject claim.
-  /// Also requires a [Uuid] generator for creating unique JWT IDs (jti).
+  /// Requires:
+  /// - [userRepository]: To fetch user details after validating the token's
+  ///   subject claim.
+  /// - [blacklistService]: To manage the blacklist of invalidated tokens.
+  /// - [uuidGenerator]: For creating unique JWT IDs (jti).
   const JwtAuthTokenService({
     required HtDataRepository<User> userRepository,
+    required TokenBlacklistService blacklistService,
     required Uuid uuidGenerator,
   })  : _userRepository = userRepository,
+        _blacklistService = blacklistService,
         _uuid = uuidGenerator;
 
   final HtDataRepository<User> _userRepository;
+  final TokenBlacklistService _blacklistService;
   final Uuid _uuid;
 
   // --- Configuration ---
@@ -89,7 +98,30 @@ class JwtAuthTokenService implements AuthTokenService {
       final jwt = JWT.verify(token, SecretKey(_secretKey));
       print('[validateToken] Token verified. Payload: ${jwt.payload}');
 
-      // Extract user ID from the subject claim
+      // --- Blacklist Check ---
+      // Extract the JWT ID (jti) claim
+      final jti = jwt.payload['jti'] as String?;
+      if (jti == null || jti.isEmpty) {
+        print(
+            '[validateToken] Token validation failed: Missing or empty "jti" claim.');
+        // Throw specific exception for malformed token
+        throw const BadRequestException(
+          'Malformed token: Missing or empty JWT ID (jti) claim.',
+        );
+      }
+
+      print('[validateToken] Checking blacklist for jti: $jti');
+      final isBlacklisted = await _blacklistService.isBlacklisted(jti);
+      if (isBlacklisted) {
+        print(
+            '[validateToken] Token validation failed: Token is blacklisted (jti: $jti).');
+        // Throw specific exception for blacklisted token
+        throw const UnauthorizedException('Token has been invalidated.');
+      }
+      print('[validateToken] Token is not blacklisted (jti: $jti).');
+      // --- End Blacklist Check ---
+
+      // Extract user ID from the subject claim ('sub')
       final subClaim = jwt.payload['sub'];
       print(
         '[validateToken] Extracted "sub" claim: $subClaim '
@@ -104,12 +136,11 @@ class JwtAuthTokenService implements AuthTokenService {
           '[validateToken] "sub" claim successfully cast to String: $userId',
         );
       } else if (subClaim != null) {
+        // Treat non-string sub as an error
         print(
-          '[validateToken] WARNING: "sub" claim is not a String. '
-          'Attempting toString().',
+          '[validateToken] ERROR: "sub" claim is not a String '
+          '(Type: ${subClaim.runtimeType}).',
         );
-        // Handle potential non-string types if necessary, or throw error
-        // For now, let's treat non-string sub as an error
         throw BadRequestException(
           'Malformed token: "sub" claim is not a String '
           '(Type: ${subClaim.runtimeType}).',
@@ -135,8 +166,8 @@ class JwtAuthTokenService implements AuthTokenService {
       return user;
     } on JWTExpiredException catch (e, s) {
       print('[validateToken] CATCH JWTExpiredException: Token expired. $e\n$s');
-      // Throw specific exception for expired token
-      throw const UnauthorizedException('Token expired.');
+      // Let the specific UnauthorizedException for expiry propagate
+      rethrow;
     } on JWTInvalidException catch (e, s) {
       print(
         '[validateToken] CATCH JWTInvalidException: Invalid token. '
@@ -145,7 +176,7 @@ class JwtAuthTokenService implements AuthTokenService {
       // Throw specific exception for invalid token signature/format
       throw UnauthorizedException('Invalid token: ${e.message}');
     } on JWTException catch (e, s) {
-      // Use JWTException as the general catch-all
+      // Use JWTException as the general catch-all for other JWT issues
       print(
         '[validateToken] CATCH JWTException: General JWT error. '
         'Reason: ${e.message}\n$s',
@@ -154,11 +185,12 @@ class JwtAuthTokenService implements AuthTokenService {
       throw UnauthorizedException('Invalid token: ${e.message}');
     } on HtHttpException catch (e, s) {
       // Handle errors from the user repository (e.g., user not found)
+      // or blacklist check (if it threw HtHttpException)
       print(
-        '[validateToken] CATCH HtHttpException: Error fetching user. '
+        '[validateToken] CATCH HtHttpException: Error during validation. '
         'Type: ${e.runtimeType}, Message: $e\n$s',
       );
-      // Re-throw repository exceptions directly for the error handler
+      // Re-throw repository/blacklist exceptions directly
       rethrow;
     } catch (e, s) {
       // Catch unexpected errors during validation
@@ -166,6 +198,73 @@ class JwtAuthTokenService implements AuthTokenService {
       // Wrap unexpected errors in a standard exception type
       throw OperationFailedException(
         'Token validation failed unexpectedly: $e',
+      );
+    }
+  }
+
+  @override
+  Future<void> invalidateToken(String token) async {
+    print('[invalidateToken] Attempting to invalidate token...');
+    try {
+      // 1. Verify the token signature FIRST, but ignore expiry for blacklisting
+      //    We want to blacklist even if it's already expired, to be safe.
+      print('[invalidateToken] Verifying token signature (ignoring expiry)...');
+      final jwt = JWT.verify(
+        token,
+        SecretKey(_secretKey),
+        checkExpiresIn: false, // IMPORTANT: Don't fail if expired here
+        checkHeaderType: true, // Keep other standard checks
+        // checkIssuedAt: true, // This parameter doesn't exist
+      );
+      print('[invalidateToken] Token signature verified.');
+
+      // 2. Extract JTI (JWT ID)
+      final jti = jwt.payload['jti'] as String?;
+      if (jti == null || jti.isEmpty) {
+        print('[invalidateToken] Failed: Missing or empty "jti" claim.');
+        throw const InvalidInputException(
+          'Cannot invalidate token: Missing or empty JWT ID (jti) claim.',
+        );
+      }
+      print('[invalidateToken] Extracted jti: $jti');
+
+      // 3. Extract Expiry Time (exp)
+      final expClaim = jwt.payload['exp'];
+      if (expClaim == null || expClaim is! int) {
+        print('[invalidateToken] Failed: Missing or invalid "exp" claim.');
+        throw const InvalidInputException(
+          'Cannot invalidate token: Missing or invalid expiry (exp) claim.',
+        );
+      }
+      final expiryDateTime =
+          DateTime.fromMillisecondsSinceEpoch(expClaim * 1000, isUtc: true);
+      print('[invalidateToken] Extracted expiry: $expiryDateTime');
+
+      // 4. Add JTI to the blacklist
+      print('[invalidateToken] Adding jti $jti to blacklist...');
+      await _blacklistService.blacklist(jti, expiryDateTime);
+      print('[invalidateToken] Token (jti: $jti) successfully blacklisted.');
+    } on JWTException catch (e, s) {
+      // Catch errors during the initial verification (e.g., bad signature)
+      print(
+        '[invalidateToken] CATCH JWTException: Invalid token format/signature. '
+        'Reason: ${e.message}\n$s',
+      );
+      // Treat as invalid input for invalidation purposes
+      throw InvalidInputException('Invalid token format: ${e.message}');
+    } on HtHttpException catch (e, s) {
+      // Catch errors from the blacklist service itself
+      print(
+        '[invalidateToken] CATCH HtHttpException: Error during blacklisting. '
+        'Type: ${e.runtimeType}, Message: $e\n$s',
+      );
+      // Re-throw blacklist service exceptions
+      rethrow;
+    } catch (e, s) {
+      // Catch unexpected errors
+      print('[invalidateToken] CATCH UNEXPECTED Exception: $e\n$s');
+      throw OperationFailedException(
+        'Token invalidation failed unexpectedly: $e',
       );
     }
   }

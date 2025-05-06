@@ -171,17 +171,46 @@ class AuthService {
     }
   }
 
-  /// Performs sign-out actions (currently placeholder).
+  /// Performs server-side sign-out actions.
   ///
-  /// In a real implementation, this might involve invalidating the token
-  /// on the server-side (e.g., adding to a blacklist if using JWTs).
-  /// The primary sign-out action (clearing local token) happens client-side.
+  /// Currently, this method logs the sign-out attempt. True server-side
+  /// token invalidation (e.g., blacklisting a JWT) is not implemented
+  /// in the underlying [AuthTokenService] and would require adding that
+  /// capability (e.g., an `invalidateToken` method and a blacklist store).
+  ///
+  /// The primary client-side action (clearing the local token) is handled
+  /// separately by the client application.
+  ///
+  /// Throws: This implementation currently does not throw exceptions under
+  /// normal circumstances. Future implementations involving token
+  /// invalidation might throw [OperationFailedException] if invalidation fails.
   Future<void> performSignOut({required String userId}) async {
-    // Placeholder: Server-side token invalidation logic would go here.
-    // For the current SimpleAuthTokenService, there's nothing server-side
-    // to invalidate easily. A real JWT implementation might use a blacklist.
-    print('Performing server-side sign-out actions for user $userId (if any).');
-    await Future<void>.delayed(Duration.zero); // Simulate async
-    // No exceptions thrown here unless invalidation fails.
+    // Log the attempt.
+    print(
+      '[AuthService] Received request for server-side sign-out actions '
+      'for user $userId.',
+    );
+
+    // --- Placeholder for Future Token Invalidation ---
+    // If AuthTokenService had an invalidateToken method, it would be called here:
+    // try {
+    //   // Assuming the token itself or its JTI was passed or derivable
+    //   // String tokenToInvalidate = ...;
+    //   // await _authTokenService.invalidateToken(tokenToInvalidate);
+    //   print('[AuthService] Token invalidation logic executed (if implemented).');
+    // } catch (e) {
+    //   print('[AuthService] Error during token invalidation for user $userId: $e');
+    //   // Decide whether to rethrow or just log
+    //   // throw OperationFailedException('Failed server-side sign-out: $e');
+    // }
+    // ------------------------------------------------
+
+    // Simulate potential async work if needed in the future.
+    await Future<void>.delayed(Duration.zero);
+
+    print(
+      '[AuthService] Server-side sign-out actions complete for user $userId.',
+    );
+    // No specific exceptions are thrown in this placeholder implementation.
   }
 }

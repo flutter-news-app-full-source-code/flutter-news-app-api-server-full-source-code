@@ -11,8 +11,9 @@ import 'package:ht_api/src/middlewares/error_handler.dart';
 import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_api/src/services/auth_service.dart';
 import 'package:ht_api/src/services/auth_token_service.dart';
-// Import the JWT service
+// Import the JWT service and blacklist service
 import 'package:ht_api/src/services/jwt_auth_token_service.dart';
+import 'package:ht_api/src/services/token_blacklist_service.dart';
 import 'package:ht_api/src/services/verification_code_storage_service.dart';
 import 'package:ht_app_settings_inmemory/ht_app_settings_inmemory.dart';
 import 'package:ht_app_settings_repository/ht_app_settings_repository.dart';
@@ -187,17 +188,20 @@ Handler middleware(Handler handler) {
   );
   print('[MiddlewareSetup] HtEmailRepository instantiated.'); // Added log
   // Auth Services (using JWT and in-memory implementations)
+  final tokenBlacklistService = InMemoryTokenBlacklistService();
+  print('[MiddlewareSetup] InMemoryTokenBlacklistService instantiated.');
   // Instantiate the JWT service, passing its dependencies
   final authTokenService = JwtAuthTokenService(
     userRepository: userRepository,
-    uuidGenerator: uuid, // Ensure uuidGenerator is passed
+    blacklistService: tokenBlacklistService, // Pass the blacklist service
+    uuidGenerator: uuid,
   );
-  print('[MiddlewareSetup] JwtAuthTokenService instantiated.'); // Updated log
+  print('[MiddlewareSetup] JwtAuthTokenService instantiated.');
   final verificationCodeStorageService =
       InMemoryVerificationCodeStorageService();
   print(
     '[MiddlewareSetup] InMemoryVerificationCodeStorageService instantiated.',
-  ); // Added log
+  );
   final authService = AuthService(
     userRepository: userRepository,
     authTokenService: authTokenService,
@@ -266,10 +270,16 @@ Handler middleware(Handler handler) {
       // PURPOSE: Provide the core services needed for authentication logic.
       // ORDER:   These MUST be provided BEFORE `authenticationProvider` and
       //          any route handlers that perform authentication/authorization.
-      //          - `AuthTokenService` is read directly by `authenticationProvider`.
+      //          - `AuthTokenService` is read by `authenticationProvider`.
       //          - `AuthService` uses several repositories and `AuthTokenService`.
       //          - `VerificationCodeStorageService` is used by `AuthService`.
+      //          - `TokenBlacklistService` is used by `JwtAuthTokenService`.
       //          - `Uuid` is used by `AuthService` and `JwtAuthTokenService`.
+      .use(
+        provider<TokenBlacklistService>(
+          (_) => tokenBlacklistService,
+        ),
+      ) // Read by JwtAuthTokenService
       .use(
         provider<AuthTokenService>(
           (_) => authTokenService,
