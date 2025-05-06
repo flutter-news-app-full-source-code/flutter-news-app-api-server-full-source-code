@@ -11,8 +11,8 @@ import 'package:ht_api/src/middlewares/error_handler.dart';
 import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_api/src/services/auth_service.dart';
 import 'package:ht_api/src/services/auth_token_service.dart';
-// Import the simple service for debugging
-import 'package:ht_api/src/services/simple_auth_token_service.dart';
+// Import the JWT service
+import 'package:ht_api/src/services/jwt_auth_token_service.dart';
 import 'package:ht_api/src/services/verification_code_storage_service.dart';
 import 'package:ht_app_settings_inmemory/ht_app_settings_inmemory.dart';
 import 'package:ht_app_settings_repository/ht_app_settings_repository.dart';
@@ -186,13 +186,13 @@ Handler middleware(Handler handler) {
     emailClient: HtEmailInMemoryClient(),
   );
   print('[MiddlewareSetup] HtEmailRepository instantiated.'); // Added log
-  // Auth Services (using Simple and in-memory implementations for debugging)
-  // Instantiate the simple service, passing its dependencies
-  final authTokenService = SimpleAuthTokenService(
+  // Auth Services (using JWT and in-memory implementations)
+  // Instantiate the JWT service, passing its dependencies
+  final authTokenService = JwtAuthTokenService(
     userRepository: userRepository,
-    // No uuidGenerator needed for SimpleAuthTokenService
+    uuidGenerator: uuid, // Ensure uuidGenerator is passed
   );
-  print('[MiddlewareSetup] SimpleAuthTokenService instantiated.'); // Updated log
+  print('[MiddlewareSetup] JwtAuthTokenService instantiated.'); // Updated log
   final verificationCodeStorageService =
       InMemoryVerificationCodeStorageService();
   print('[MiddlewareSetup] InMemoryVerificationCodeStorageService instantiated.'); // Added log
@@ -232,7 +232,8 @@ Handler middleware(Handler handler) {
       // --- Provide Auth Dependencies ---
       .use(provider<HtDataRepository<User>>((_) => userRepository))
       .use(provider<HtEmailRepository>((_) => emailRepository))
-      .use(provider<AuthTokenService>((_) => authTokenService))
+      // Provide the concrete JwtAuthTokenService type for diagnosis
+      .use(provider<JwtAuthTokenService>((_) => authTokenService))
       .use(
         provider<VerificationCodeStorageService>(
           (_) => verificationCodeStorageService,
