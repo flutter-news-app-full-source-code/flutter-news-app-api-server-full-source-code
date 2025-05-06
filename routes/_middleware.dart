@@ -250,11 +250,17 @@ Handler middleware(Handler handler) {
       .use(provider<HtDataRepository<Category>>((_) => categoryRepository))
       .use(provider<HtDataRepository<Source>>((_) => sourceRepository))
       .use(provider<HtDataRepository<Country>>((_) => countryRepository))
-      .use(provider<HtDataRepository<User>>(
-          (_) => userRepository)) // Used by Auth services
+      .use(
+        provider<HtDataRepository<User>>(
+          (_) => userRepository,
+        ),
+      ) // Used by Auth services
       .use(provider<HtAppSettingsRepository>((_) => settingsRepository))
-      .use(provider<HtEmailRepository>(
-          (_) => emailRepository)) // Used by AuthService
+      .use(
+        provider<HtEmailRepository>(
+          (_) => emailRepository,
+        ),
+      ) // Used by AuthService
 
       // --- 4. Authentication Service Providers (Auth Logic Dependencies) ---
       // PURPOSE: Provide the core services needed for authentication logic.
@@ -264,15 +270,21 @@ Handler middleware(Handler handler) {
       //          - `AuthService` uses several repositories and `AuthTokenService`.
       //          - `VerificationCodeStorageService` is used by `AuthService`.
       //          - `Uuid` is used by `AuthService` and `JwtAuthTokenService`.
-      .use(provider<AuthTokenService>(
-          (_) => authTokenService)) // Read by authenticationProvider
+      .use(
+        provider<AuthTokenService>(
+          (_) => authTokenService,
+        ),
+      ) // Read by authenticationProvider
       .use(
         provider<VerificationCodeStorageService>(
           (_) => verificationCodeStorageService,
         ),
       ) // Read by AuthService
-      .use(provider<AuthService>(
-          (_) => authService)) // Reads other services/repos
+      .use(
+        provider<AuthService>(
+          (_) => authService,
+        ),
+      ) // Reads other services/repos
       .use(provider<Uuid>((_) => uuid)) // Read by AuthService & TokenService
 
       // --- 5. Authentication Middleware (User Context Population) ---
