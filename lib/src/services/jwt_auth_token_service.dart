@@ -103,7 +103,8 @@ class JwtAuthTokenService implements AuthTokenService {
       final jti = jwt.payload['jti'] as String?;
       if (jti == null || jti.isEmpty) {
         print(
-            '[validateToken] Token validation failed: Missing or empty "jti" claim.',);
+          '[validateToken] Token validation failed: Missing or empty "jti" claim.',
+        );
         // Throw specific exception for malformed token
         throw const BadRequestException(
           'Malformed token: Missing or empty JWT ID (jti) claim.',
@@ -114,7 +115,8 @@ class JwtAuthTokenService implements AuthTokenService {
       final isBlacklisted = await _blacklistService.isBlacklisted(jti);
       if (isBlacklisted) {
         print(
-            '[validateToken] Token validation failed: Token is blacklisted (jti: $jti).',);
+          '[validateToken] Token validation failed: Token is blacklisted (jti: $jti).',
+        );
         // Throw specific exception for blacklisted token
         throw const UnauthorizedException('Token has been invalidated.');
       }
@@ -166,8 +168,8 @@ class JwtAuthTokenService implements AuthTokenService {
       return user;
     } on JWTExpiredException catch (e, s) {
       print('[validateToken] CATCH JWTExpiredException: Token expired. $e\n$s');
-      // Let the specific UnauthorizedException for expiry propagate
-      rethrow;
+      // Throw the standardized exception instead of rethrowing the specific one
+      throw const UnauthorizedException('Token expired.');
     } on JWTInvalidException catch (e, s) {
       print(
         '[validateToken] CATCH JWTInvalidException: Invalid token. '
@@ -214,7 +216,6 @@ class JwtAuthTokenService implements AuthTokenService {
         SecretKey(_secretKey),
         checkExpiresIn: false, // IMPORTANT: Don't fail if expired here
         checkHeaderType: true, // Keep other standard checks
-        // checkIssuedAt: true, // This parameter doesn't exist
       );
       print('[invalidateToken] Token signature verified.');
 

@@ -1,6 +1,7 @@
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/services/auth_service.dart';
 import 'package:ht_api/src/services/auth_token_service.dart';
+import 'package:ht_api/src/services/token_blacklist_service.dart'; // Added import
 import 'package:ht_api/src/services/verification_code_storage_service.dart';
 import 'package:ht_app_settings_repository/ht_app_settings_repository.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
@@ -25,6 +26,8 @@ class MockAuthTokenService extends Mock implements AuthTokenService {}
 
 class MockVerificationCodeStorageService extends Mock
     implements VerificationCodeStorageService {}
+
+class MockTokenBlacklistService extends Mock implements TokenBlacklistService {}
 
 // Repository Mocks
 class MockHtDataRepository<T> extends Mock implements HtDataRepository<T> {}

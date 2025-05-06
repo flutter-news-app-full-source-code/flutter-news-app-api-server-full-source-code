@@ -1,5 +1,6 @@
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:ht_api/src/services/jwt_auth_token_service.dart';
+// Import blacklist service
 import 'package:ht_shared/ht_shared.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
@@ -13,6 +14,8 @@ void main() {
   group('JwtAuthTokenService', () {
     late JwtAuthTokenService service;
     late MockUserRepository mockUserRepository;
+    late MockTokenBlacklistService
+        mockBlacklistService; // Add mock blacklist service
     late MockUuid mockUuid;
 
     const testUser = User(
@@ -25,13 +28,17 @@ void main() {
     setUpAll(() {
       // Register fallback values for argument matchers
       registerFallbackValue(const User(id: 'fallback', isAnonymous: true));
+      // Register fallback for DateTime if needed for blacklist mock
+      registerFallbackValue(DateTime(2024));
     });
 
     setUp(() {
       mockUserRepository = MockUserRepository();
+      mockBlacklistService = MockTokenBlacklistService(); // Instantiate mock
       mockUuid = MockUuid();
       service = JwtAuthTokenService(
         userRepository: mockUserRepository,
+        blacklistService: mockBlacklistService, // Provide mock
         uuidGenerator: mockUuid,
       );
 
@@ -110,6 +117,9 @@ void main() {
         // Stub user repository to return the user when read is called
         when(() => mockUserRepository.read(testUser.id))
             .thenAnswer((_) async => testUser);
+        // Stub blacklist service to return false (not blacklisted) by default
+        when(() => mockBlacklistService.isBlacklisted(any()))
+            .thenAnswer((_) async => false);
       });
 
       test('successfully validates a correct token and returns user', () async {
@@ -257,7 +267,160 @@ void main() {
         verify(() => mockUserRepository.read(testUser.id)).called(1);
       });
     });
+
+    group('invalidateToken', () {
+      late String validToken;
+      late String validJti;
+      late DateTime validExpiry;
+
+      setUp(() async {
+        // Generate a valid token and extract its details for tests
+        validToken = await service.generateToken(testUser);
+        final jwt = JWT.verify(
+          validToken,
+          SecretKey(
+            'your-very-hardcoded-super-secret-key-replace-this-in-prod',
+          ),
+        );
+        validJti = jwt.payload['jti'] as String;
+        final expClaim = jwt.payload['exp'] as int;
+        validExpiry =
+            DateTime.fromMillisecondsSinceEpoch(expClaim * 1000, isUtc: true);
+
+        // Default stub for blacklist success
+        when(
+          () => mockBlacklistService.blacklist(any(), any()),
+        ).thenAnswer((_) async => Future.value());
+      });
+
+      test('successfully invalidates a valid token', () async {
+        // Act
+        await service.invalidateToken(validToken);
+
+        // Assert
+        verify(
+          () => mockBlacklistService.blacklist(validJti, validExpiry),
+        ).called(1);
+      });
+
+      test('throws InvalidInputException for invalid token signature',
+          () async {
+        // Arrange: Sign with a different key
+        final jwt = JWT({'sub': testUser.id}, subject: testUser.id);
+        final invalidSignatureToken = jwt.sign(SecretKey(_invalidSecretKey));
+
+        // Act & Assert
+        await expectLater(
+          () => service.invalidateToken(invalidSignatureToken),
+          throwsA(
+            isA<InvalidInputException>().having(
+              (e) => e.message,
+              'message',
+              contains('Invalid token format'),
+            ),
+          ),
+        );
+        verifyNever(() => mockBlacklistService.blacklist(any(), any()));
+      });
+
+      test('throws InvalidInputException for token missing "jti" claim',
+          () async {
+        // Arrange: Create token without jti
+        final jwt = JWT(
+          {
+            'sub': testUser.id,
+            'exp': validExpiry.millisecondsSinceEpoch ~/ 1000,
+          },
+          subject: testUser.id,
+          // No jti
+        );
+        final noJtiToken = jwt.sign(
+          SecretKey(
+            'your-very-hardcoded-super-secret-key-replace-this-in-prod',
+          ),
+        );
+
+        // Act & Assert
+        await expectLater(
+          () => service.invalidateToken(noJtiToken),
+          throwsA(
+            isA<InvalidInputException>().having(
+              (e) => e.message,
+              'message',
+              'Cannot invalidate token: Missing or empty JWT ID (jti) claim.',
+            ),
+          ),
+        );
+        verifyNever(() => mockBlacklistService.blacklist(any(), any()));
+      });
+
+      test('throws InvalidInputException for token missing "exp" claim',
+          () async {
+        // Arrange: Create token without exp
+        final jwt = JWT(
+          {'sub': testUser.id, 'jti': testUuidValue},
+          subject: testUser.id,
+          jwtId: testUuidValue,
+          // No exp
+        );
+        final noExpToken = jwt.sign(
+          SecretKey(
+            'your-very-hardcoded-super-secret-key-replace-this-in-prod',
+          ),
+        );
+
+        // Act & Assert
+        await expectLater(
+          () => service.invalidateToken(noExpToken),
+          throwsA(
+            isA<InvalidInputException>().having(
+              (e) => e.message,
+              'message',
+              'Cannot invalidate token: Missing or invalid expiry (exp) claim.',
+            ),
+          ),
+        );
+        verifyNever(() => mockBlacklistService.blacklist(any(), any()));
+      });
+
+      test('rethrows HtHttpException from blacklist service', () async {
+        // Arrange
+        const exception = ServerException('Blacklist database error');
+        when(() => mockBlacklistService.blacklist(validJti, validExpiry))
+            .thenThrow(exception);
+
+        // Act & Assert
+        await expectLater(
+          () => service.invalidateToken(validToken),
+          throwsA(isA<ServerException>()),
+        );
+        verify(
+          () => mockBlacklistService.blacklist(validJti, validExpiry),
+        ).called(1);
+      });
+
+      test('throws OperationFailedException for unexpected blacklist error',
+          () async {
+        // Arrange
+        final exception = Exception('Unexpected blacklist failure');
+        when(() => mockBlacklistService.blacklist(validJti, validExpiry))
+            .thenThrow(exception);
+
+        // Act & Assert
+        await expectLater(
+          () => service.invalidateToken(validToken),
+          throwsA(
+            isA<OperationFailedException>().having(
+              (e) => e.message,
+              'message',
+              contains('Token invalidation failed unexpectedly'),
+            ),
+          ),
+        );
+        verify(
+          () => mockBlacklistService.blacklist(validJti, validExpiry),
+        ).called(1);
+      });
+    });
   });
 }
-
-// Removed the extension trying to access the private secret key.
