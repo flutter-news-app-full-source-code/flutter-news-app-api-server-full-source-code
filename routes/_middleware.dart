@@ -266,25 +266,12 @@ Handler middleware(Handler handler) {
         ),
       ) // Used by AuthService
 
-      // --- 4. Authentication Middleware (User Context Population) ---
-      // PURPOSE: Reads the `Authorization: Bearer <token>` header, validates
-      //          the token using `AuthTokenService`, and provides the
-      //          resulting `User?` object into the context.
-      // ORDER:   Empirically found to work best in this position.
-      //          While it reads `AuthTokenService` (provided in the next step),
-      //          this order is critical for correct runtime behavior. The
-      //          `AuthTokenService` instance is created before the chain and
-      //          captured by its provider closure. Should come BEFORE any
-      //          route handlers that need `context.read<User?>()`.
-      .use(authenticationProvider())
-
-      // --- 5. Authentication Service Providers (Auth Logic Dependencies) ---
+      // --- 4. Authentication Service Providers (Auth Logic Dependencies) ---
       // PURPOSE: Provide the core services needed for authentication logic.
-      // ORDER:   These MUST be provided BEFORE any route handlers that perform
-      //          authentication/authorization.
+      // ORDER:   These MUST be provided BEFORE `authenticationProvider` and
+      //          any route handlers that perform authentication/authorization.
       //          - `Uuid` is used by `AuthService` and `JwtAuthTokenService`.
-      //          - `AuthTokenService` is used by `AuthService` and read by
-      //            `authenticationProvider` (previous step).
+      //          - `AuthTokenService` is read by `authenticationProvider`.
       //          - `AuthService` uses several repositories and `AuthTokenService`.
       //          - `VerificationCodeStorageService` is used by `AuthService`.
       //          - `TokenBlacklistService` is used by `JwtAuthTokenService`.
@@ -310,7 +297,7 @@ Handler middleware(Handler handler) {
         ),
       ) // Reads other services/repos
 
-      // --- 6. Request Logger (Logging) ---
+      // --- 5. Request Logger (Logging) ---
       // PURPOSE: Logs details about the incoming request and outgoing response.
       // ORDER:   Often placed late in the request phase / early in the response
       //          phase. Placing it here logs the request *before* the handler
