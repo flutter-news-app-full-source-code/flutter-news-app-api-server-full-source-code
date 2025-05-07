@@ -266,25 +266,39 @@ Handler middleware(Handler handler) {
         ),
       ) // Used by AuthService
 
-      // --- 4. Authentication Service Providers (Auth Logic Dependencies) ---
+      // --- 4. Authentication Middleware (User Context Population) ---
+      // PURPOSE: Reads the `Authorization: Bearer <token>` header, validates
+      //          the token using `AuthTokenService`, and provides the
+      //          resulting `User?` object into the context.
+      // ORDER:   Empirically found to work best in this position.
+      //          While it reads `AuthTokenService` (provided in the next step),
+      //          this order is critical for correct runtime behavior. The
+      //          `AuthTokenService` instance is created before the chain and
+      //          captured by its provider closure. Should come BEFORE any
+      //          route handlers that need `context.read<User?>()`.
+      .use(authenticationProvider())
+
+      // --- 5. Authentication Service Providers (Auth Logic Dependencies) ---
       // PURPOSE: Provide the core services needed for authentication logic.
-      // ORDER:   These MUST be provided BEFORE `authenticationProvider` and
-      //          any route handlers that perform authentication/authorization.
-      //          - `AuthTokenService` is read by `authenticationProvider`.
+      // ORDER:   These MUST be provided BEFORE any route handlers that perform
+      //          authentication/authorization.
+      //          - `Uuid` is used by `AuthService` and `JwtAuthTokenService`.
+      //          - `AuthTokenService` is used by `AuthService` and read by
+      //            `authenticationProvider` (previous step).
       //          - `AuthService` uses several repositories and `AuthTokenService`.
       //          - `VerificationCodeStorageService` is used by `AuthService`.
       //          - `TokenBlacklistService` is used by `JwtAuthTokenService`.
-      //          - `Uuid` is used by `AuthService` and `JwtAuthTokenService`.
+      .use(provider<Uuid>((_) => uuid)) // Read by AuthService & TokenService
       .use(
         provider<TokenBlacklistService>(
           (_) => tokenBlacklistService,
         ),
-      ) // Read by JwtAuthTokenService
+      ) // Read by AuthTokenService
       .use(
         provider<AuthTokenService>(
           (_) => authTokenService,
         ),
-      ) // Read by authenticationProvider
+      ) // Read by AuthService
       .use(
         provider<VerificationCodeStorageService>(
           (_) => verificationCodeStorageService,
@@ -295,16 +309,6 @@ Handler middleware(Handler handler) {
           (_) => authService,
         ),
       ) // Reads other services/repos
-      .use(provider<Uuid>((_) => uuid)) // Read by AuthService & TokenService
-
-      // --- 5. Authentication Middleware (User Context Population) ---
-      // PURPOSE: Reads the `Authorization: Bearer <token>` header, validates
-      //          the token using `AuthTokenService`, and provides the
-      //          resulting `User?` object into the context.
-      // ORDER:   MUST come AFTER `AuthTokenService` is provided (which it reads).
-      //          Should come BEFORE any route handlers that need to know the
-      //          currently authenticated user (`context.read<User?>()`).
-      .use(authenticationProvider())
 
       // --- 6. Request Logger (Logging) ---
       // PURPOSE: Logs details about the incoming request and outgoing response.
