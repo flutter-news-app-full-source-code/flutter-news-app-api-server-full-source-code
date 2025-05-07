@@ -6,7 +6,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
-import 'package:ht_api/src/middlewares/authentication_middleware.dart';
 import 'package:ht_api/src/middlewares/error_handler.dart';
 import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_api/src/services/auth_service.dart';
