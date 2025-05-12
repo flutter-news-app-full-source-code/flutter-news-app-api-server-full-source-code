@@ -93,7 +93,25 @@ These endpoints handle user authentication flows.
     *   **Success Response:** `200 OK` with `SuccessApiResponse<AuthSuccessResponse>` containing the anonymous `User` object and the authentication `token`.
     *   **Example:** `POST /api/v1/auth/anonymous`
 
-4.  **Get Current User Details**
+4.  **Initiate Account Linking (Anonymous User)**
+    *   **Method:** `POST`
+    *   **Path:** `/api/v1/auth/link-email`
+    *   **Authentication:** Required (Bearer Token of an *anonymous* user).
+    *   **Request Body:** JSON object `{"email": "user@example.com"}`.
+    *   **Success Response:** `202 Accepted` (Indicates request accepted, email sending initiated).
+    *   **Error Response:** `401 Unauthorized` (if not authenticated), `400 Bad Request` (if not anonymous or invalid email), `409 Conflict` (if email is already in use or linking is pending).
+    *   **Example:** `POST /api/v1/auth/link-email` with body `{"email": "permanent@example.com"}` and `Authorization: Bearer <anonymous_token>` header.
+
+5.  **Complete Account Linking (Anonymous User)**
+    *   **Method:** `POST`
+    *   **Path:** `/api/v1/auth/verify-link-email`
+    *   **Authentication:** Required (Bearer Token of the *anonymous* user who initiated the link).
+    *   **Request Body:** JSON object `{"code": "123456"}`.
+    *   **Success Response:** `200 OK` with `SuccessApiResponse<AuthSuccessResponse>` containing the updated (now permanent) `User` object and a **new** authentication `token`.
+    *   **Error Response:** `401 Unauthorized` (if not authenticated), `400 Bad Request` (if not anonymous or invalid code), `400 Bad Request` via `InvalidInputException` (if code is incorrect/expired).
+    *   **Example:** `POST /api/v1/auth/verify-link-email` with body `{"code": "654321"}` and `Authorization: Bearer <anonymous_token>` header.
+
+6.  **Get Current User Details**
     *   **Method:** `GET`
     *   **Path:** `/api/v1/auth/me`
     *   **Authentication:** Required (Bearer Token).
@@ -101,7 +119,7 @@ These endpoints handle user authentication flows.
     *   **Error Response:** `401 Unauthorized`.
     *   **Example:** `GET /api/v1/auth/me` with `Authorization: Bearer <token>` header.
 
-5.  **Sign Out**
+7.  **Sign Out**
     *   **Method:** `POST`
     *   **Path:** `/api/v1/auth/sign-out`
     *   **Authentication:** Required (Bearer Token).
