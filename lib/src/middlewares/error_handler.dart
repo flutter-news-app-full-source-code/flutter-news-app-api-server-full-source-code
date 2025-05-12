@@ -72,6 +72,7 @@ int _mapExceptionToStatusCode(HtHttpException exception) {
     ServerException() => HttpStatus.internalServerError, // 500
     OperationFailedException() => HttpStatus.internalServerError, // 500
     NetworkException() => HttpStatus.serviceUnavailable, // 503 (or 500)
+    ConflictException() => HttpStatus.conflict, // 409
     UnknownException() => HttpStatus.internalServerError, // 500
     _ => HttpStatus.internalServerError, // Default
   };
@@ -89,6 +90,7 @@ String _mapExceptionToCodeString(HtHttpException exception) {
     ServerException() => 'SERVER_ERROR',
     OperationFailedException() => 'OPERATION_FAILED',
     NetworkException() => 'NETWORK_ERROR',
+    ConflictException() => 'CONFLICT', // Added for 409
     UnknownException() => 'UNKNOWN_ERROR',
     _ => 'UNKNOWN_ERROR', // Default
   };

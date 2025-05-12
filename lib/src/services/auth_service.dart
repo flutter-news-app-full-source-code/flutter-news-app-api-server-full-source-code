@@ -38,8 +38,9 @@ class AuthService {
   /// Throws [OperationFailedException] if code generation/storage/email fails.
   Future<void> initiateEmailSignIn(String email) async {
     try {
-      // Generate and store the code
-      final code = await _verificationCodeStorageService.generateAndStoreCode(
+      // Generate and store the code for standard sign-in
+      final code =
+          await _verificationCodeStorageService.generateAndStoreSignInCode(
         email,
       );
 
@@ -71,17 +72,27 @@ class AuthService {
   Future<({User user, String token})> completeEmailSignIn(
     String email,
     String code,
+    // User? currentAuthUser, // Parameter for potential future linking logic
   ) async {
-    // 1. Validate the code
-    final isValidCode = await _verificationCodeStorageService.validateCode(
+    // 1. Validate the code for standard sign-in
+    final isValidCode =
+        await _verificationCodeStorageService.validateSignInCode(
       email,
       code,
     );
     if (!isValidCode) {
-      // Consider distinguishing between expired and simply incorrect codes
-      // For now, treat both as invalid input.
       throw const InvalidInputException(
         'Invalid or expired verification code.',
+      );
+    }
+
+    // After successful code validation, clear the sign-in code
+    try {
+      await _verificationCodeStorageService.clearSignInCode(email);
+    } catch (e) {
+      // Log or handle if clearing fails, but don't let it block sign-in
+      print(
+        'Warning: Failed to clear sign-in code for $email after validation: $e',
       );
     }
 
@@ -212,5 +223,154 @@ class AuthService {
       '[AuthService] Server-side sign-out actions complete for user $userId.',
     );
     // No specific exceptions are thrown in this placeholder implementation.
+  }
+
+  /// Initiates the process of linking an [emailToLink] to an existing
+  /// authenticated [anonymousUser]'s account.
+  ///
+  /// Throws [ConflictException] if the [emailToLink] is already in use by
+  /// another permanent account, or if the [anonymousUser] is not actually
+  /// anonymous, or if the [emailToLink] is already pending verification for
+  /// another linking process.
+  /// Throws [OperationFailedException] for other errors.
+  Future<void> initiateLinkEmailProcess({
+    required User anonymousUser,
+    required String emailToLink,
+  }) async {
+    if (!anonymousUser.isAnonymous) {
+      throw const BadRequestException(
+        'Account is already permanent. Cannot link email.',
+      );
+    }
+
+    try {
+      // 1. Check if emailToLink is already used by another *permanent* user.
+      final query = {'email': emailToLink, 'isAnonymous': false};
+      final existingUsers = await _userRepository.readAllByQuery(query);
+      if (existingUsers.items.isNotEmpty) {
+        // Ensure it's not the same user if somehow an anonymous user had an email
+        // (though current logic prevents this for new anonymous users).
+        // This check is more for emails used by *other* permanent accounts.
+        if (existingUsers.items.any((u) => u.id != anonymousUser.id)) {
+          throw ConflictException(
+            'Email address "$emailToLink" is already in use by another account.',
+          );
+        }
+      }
+
+      // 2. Generate and store the link code.
+      // The storage service itself might throw ConflictException if emailToLink
+      // is pending for another user or if this user has a pending code.
+      final code =
+          await _verificationCodeStorageService.generateAndStoreLinkCode(
+        userId: anonymousUser.id,
+        emailToLink: emailToLink,
+      );
+
+      // 3. Send the code via email
+      await _emailRepository.sendOtpEmail(
+        recipientEmail: emailToLink,
+        otpCode: code,
+      );
+      print(
+        'Initiated email link for user ${anonymousUser.id} to email $emailToLink, code sent.',
+      );
+    } on HtHttpException {
+      rethrow;
+    } catch (e) {
+      print(
+        'Error during initiateLinkEmailProcess for user ${anonymousUser.id}, email $emailToLink: $e',
+      );
+      throw OperationFailedException(
+        'Failed to initiate email linking process: ${e.toString()}',
+      );
+    }
+  }
+
+  /// Completes the email linking process for an [anonymousUser] by verifying
+  /// the [codeFromUser].
+  ///
+  /// If successful, updates the user to be permanent with the linked email
+  /// and returns the updated User and a new authentication token.
+  /// Throws [InvalidInputException] if the code is invalid or expired.
+  /// Throws [OperationFailedException] for other errors.
+  Future<({User user, String token})> completeLinkEmailProcess({
+    required User anonymousUser,
+    required String codeFromUser,
+    required String oldAnonymousToken, // Needed to invalidate it
+  }) async {
+    if (!anonymousUser.isAnonymous) {
+      // Should ideally not happen if flow is correct, but good safeguard.
+      throw const BadRequestException(
+        'Account is already permanent. Cannot complete email linking.',
+      );
+    }
+
+    try {
+      // 1. Validate the link code and retrieve the email that was being linked.
+      final linkedEmail =
+          await _verificationCodeStorageService.validateAndRetrieveLinkedEmail(
+        userId: anonymousUser.id,
+        linkCode: codeFromUser,
+      );
+
+      if (linkedEmail == null) {
+        throw const InvalidInputException(
+          'Invalid or expired verification code for email linking.',
+        );
+      }
+
+      // 2. Update the user to be permanent.
+      final updatedUser = User(
+        id: anonymousUser.id, // Preserve original ID
+        email: linkedEmail,
+        isAnonymous: false, // Now a permanent user
+      );
+      final permanentUser = await _userRepository.update(
+        updatedUser.id,
+        updatedUser,
+      );
+      print(
+        'User ${permanentUser.id} successfully linked with email $linkedEmail.',
+      );
+
+      // 3. Generate a new authentication token for the now-permanent user.
+      final newToken = await _authTokenService.generateToken(permanentUser);
+      print('Generated new token for linked user ${permanentUser.id}');
+
+      // 4. Invalidate the old anonymous token.
+      try {
+        await _authTokenService.invalidateToken(oldAnonymousToken);
+        print(
+          'Successfully invalidated old anonymous token for user ${permanentUser.id}.',
+        );
+      } catch (e) {
+        // Log error but don't fail the whole linking process if invalidation fails.
+        // The new token is more important.
+        print(
+          'Warning: Failed to invalidate old anonymous token for user ${permanentUser.id}: $e',
+        );
+      }
+
+      // 5. Clear the link code from storage.
+      try {
+        await _verificationCodeStorageService.clearLinkCode(anonymousUser.id);
+      } catch (e) {
+        print(
+          'Warning: Failed to clear link code for user ${anonymousUser.id} after linking: $e',
+        );
+      }
+
+      return (user: permanentUser, token: newToken);
+    } on HtHttpException {
+      rethrow;
+    } catch (e) {
+      print(
+        'Error during completeLinkEmailProcess for user ${anonymousUser.id}: $e',
+      );
+      throw OperationFailedException(
+        'Failed to complete email linking process: ${e.toString()}',
+      );
+    }
   }
 }
