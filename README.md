@@ -1,6 +1,6 @@
 # ht_api
 
-![coverage: percentage](https://img.shields.io/badge/coverage-48-green)
+![coverage: percentage](https://img.shields.io/badge/coverage-22-green)
 [![style: very good analysis](https://img.shields.io/badge/style-very_good_analysis-B22C89.svg)](https://pub.dev/packages/very_good_analysis)
 [![License: PolyForm Free Trial](https://img.shields.io/badge/License-PolyForm%20Free%20Trial-blue)](https://polyformproject.org/licenses/free-trial/1.0.0)
 
@@ -127,6 +127,15 @@ These endpoints handle user authentication flows.
     *   **Success Response:** `204 No Content` (Indicates successful server-side action, if any). Client is responsible for clearing local token.
     *   **Error Response:** `401 Unauthorized`.
     *   **Example:** `POST /api/v1/auth/sign-out` with `Authorization: Bearer <token>` header.
+
+8.  **Delete Account**
+    *   **Method:** `DELETE`
+    *   **Path:** `/api/v1/auth/delete-account`
+    *   **Authentication:** Required (Bearer Token).
+    *   **Request Body:** None.
+    *   **Success Response:** `204 No Content` (Indicates successful deletion).
+    *   **Error Response:** `401 Unauthorized` (if not authenticated), `404 Not Found` (if the user was already deleted), or other standard errors via the error handler middleware.
+    *   **Example:** `DELETE /api/v1/auth/delete-account` with `Authorization: Bearer <token>` header.
 
 ## API Endpoints: Data (`/api/v1/data`)
 

@@ -273,7 +273,7 @@ class AuthService {
         otpCode: code,
       );
       print(
-        'Initiated email link for user ${anonymousUser.id} to email $emailToLink, code sent.',
+        'Initiated email link for user ${anonymousUser.id} to email $emailToLink, code sent: $code .',
       );
     } on HtHttpException {
       rethrow;
@@ -370,6 +370,75 @@ class AuthService {
       );
       throw OperationFailedException(
         'Failed to complete email linking process: $e',
+      );
+    }
+  }
+
+  /// Deletes a user account and associated authentication data.
+  ///
+  /// This includes deleting the user record from the repository and clearing
+  /// any pending verification codes.
+  ///
+  /// Throws [NotFoundException] if the user does not exist.
+  /// Throws [OperationFailedException] for other errors during deletion or cleanup.
+  Future<void> deleteAccount({required String userId}) async {
+    try {
+      // Fetch the user first to get their email if needed for cleanup
+      final userToDelete = await _userRepository.read(userId);
+      print('[AuthService] Found user ${userToDelete.id} for deletion.');
+
+      // 1. Delete the user record from the repository.
+      // This implicitly invalidates tokens that rely on user lookup.
+      await _userRepository.delete(userId);
+      print('[AuthService] User ${userToDelete.id} deleted from repository.');
+
+      // 2. Clear any pending verification codes for this user ID (linking).
+      try {
+        await _verificationCodeStorageService.clearLinkCode(userId);
+        print(
+          '[AuthService] Cleared link code for user ${userToDelete.id}.',
+        );
+      } catch (e) {
+        // Log but don't fail deletion if clearing codes fails
+        print(
+          '[AuthService] Warning: Failed to clear link code for user ${userToDelete.id}: $e',
+        );
+      }
+
+      // 3. Clear any pending sign-in codes for the user's email (if they had one).
+      if (userToDelete.email != null) {
+        try {
+          await _verificationCodeStorageService
+              .clearSignInCode(userToDelete.email!);
+          print(
+            '[AuthService] Cleared sign-in code for email ${userToDelete.email}.',
+          );
+        } catch (e) {
+          // Log but don't fail deletion if clearing codes fails
+          print(
+            '[AuthService] Warning: Failed to clear sign-in code for email ${userToDelete.email}: $e',
+          );
+        }
+      }
+
+      // TODO(fulleni): Add logic here to delete or anonymize other
+      // user-related data (e.g., settings, content) from other repositories
+      // once those features are implemented.
+
+      print(
+        '[AuthService] Account deletion process completed for user $userId.',
+      );
+    } on NotFoundException {
+      // Propagate NotFoundException if user doesn't exist
+      rethrow;
+    } on HtHttpException catch (_) {
+      // Propagate other known exceptions from dependencies
+      rethrow;
+    } catch (e) {
+      // Catch unexpected errors during orchestration
+      print('Error during deleteAccount for user $userId: $e');
+      throw OperationFailedException(
+        'Failed to delete user account: $e',
       );
     }
   }

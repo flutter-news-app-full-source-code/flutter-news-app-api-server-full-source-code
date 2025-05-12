@@ -1,3 +1,6 @@
+//
+// ignore_for_file: library_private_types_in_public_api
+
 import 'dart:async';
 import 'dart:math';
 
@@ -84,7 +87,7 @@ abstract class VerificationCodeStorageService {
 
   /// Validates the [linkCode] provided by the user with [userId] who is
   /// attempting to link an email.
-  /// Returns the [emailToLink] if the code is valid and matches the one
+  /// Returns the "emailToLink" if the code is valid and matches the one
   /// stored for this [userId]. Returns `null` if invalid or expired.
   /// Throws [OperationFailedException] on validation failure if an unexpected
   /// error occurs during the check.
@@ -138,11 +141,11 @@ class InMemoryVerificationCodeStorageService
   /// Duration for which generated codes are considered valid.
   final Duration codeExpiryDuration;
 
-  // Store for standard sign-in codes: Key is email.
+  /// Store for standard sign-in codes: Key is email.
   @visibleForTesting
   final Map<String, _SignInCodeEntry> signInCodesStore = {};
 
-  // Store for account linking codes: Key is userId.
+  /// Store for account linking codes: Key is userId.
   @visibleForTesting
   final Map<String, _LinkCodeEntry> linkCodesStore = {};
 
@@ -151,11 +154,11 @@ class InMemoryVerificationCodeStorageService
   final Random _random = Random();
 
   String _generateNumericCode({int length = 6}) {
-    var code = '';
+    final buffer = StringBuffer();
     for (var i = 0; i < length; i++) {
-      code += _random.nextInt(10).toString();
+      buffer.write(_random.nextInt(10).toString());
     }
-    return code;
+    return buffer.toString();
   }
 
   @override
@@ -168,7 +171,7 @@ class InMemoryVerificationCodeStorageService
     final expiresAt = DateTime.now().add(codeExpiryDuration);
     signInCodesStore[email] = _SignInCodeEntry(code, expiresAt);
     print(
-      '[InMemoryVerificationCodeStorageService] Stored sign-in code for $email (expires: $expiresAt)',
+      '[InMemoryVerificationCodeStorageService] Stored sign-in code: $code for $email (expires: $expiresAt)',
     );
     return code;
   }
@@ -263,7 +266,6 @@ class InMemoryVerificationCodeStorageService
   Future<void> cleanupExpiredCodes() async {
     if (_isDisposed) return;
     await Future<void>.delayed(Duration.zero); // Simulate async
-    final now = DateTime.now();
     var cleanedCount = 0;
 
     signInCodesStore.removeWhere((key, entry) {
