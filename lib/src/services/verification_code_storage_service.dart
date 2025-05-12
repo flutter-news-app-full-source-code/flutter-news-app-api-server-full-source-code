@@ -245,7 +245,8 @@ class InMemoryVerificationCodeStorageService
     if (entry == null || entry.isExpired || entry.code != linkCode) {
       return null;
     }
-    return entry.emailToLink; // Return the email associated with this valid code
+    return entry
+        .emailToLink; // Return the email associated with this valid code
   }
 
   @override
