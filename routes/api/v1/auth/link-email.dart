@@ -77,7 +77,7 @@ Future<Response> onRequest(RequestContext context) async {
       'Unexpected error in /link-email handler for user ${authenticatedUser.id}: $e',
     );
     throw OperationFailedException(
-      'An unexpected error occurred while initiating email linking: ${e.toString()}',
+      'An unexpected error occurred while initiating email linking: $e',
     );
   }
 }

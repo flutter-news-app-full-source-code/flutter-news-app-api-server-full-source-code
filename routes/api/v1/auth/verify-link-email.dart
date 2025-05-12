@@ -105,7 +105,7 @@ Future<Response> onRequest(RequestContext context) async {
       'Unexpected error in /verify-link-email handler for user ${authenticatedUser.id}: $e',
     );
     throw OperationFailedException(
-      'An unexpected error occurred while verifying email link: ${e.toString()}',
+      'An unexpected error occurred while verifying email link: $e',
     );
   }
 }

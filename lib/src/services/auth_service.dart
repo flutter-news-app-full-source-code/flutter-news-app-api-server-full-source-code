@@ -282,7 +282,7 @@ class AuthService {
         'Error during initiateLinkEmailProcess for user ${anonymousUser.id}, email $emailToLink: $e',
       );
       throw OperationFailedException(
-        'Failed to initiate email linking process: ${e.toString()}',
+        'Failed to initiate email linking process: $e',
       );
     }
   }
@@ -369,7 +369,7 @@ class AuthService {
         'Error during completeLinkEmailProcess for user ${anonymousUser.id}: $e',
       );
       throw OperationFailedException(
-        'Failed to complete email linking process: ${e.toString()}',
+        'Failed to complete email linking process: $e',
       );
     }
   }

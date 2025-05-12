@@ -220,7 +220,7 @@ class InMemoryVerificationCodeStorageService
               userId,
     );
     if (isEmailPendingForOther) {
-      throw ConflictException(
+      throw const ConflictException(
         'Email is already pending verification for another account linking process.',
       );
     }
