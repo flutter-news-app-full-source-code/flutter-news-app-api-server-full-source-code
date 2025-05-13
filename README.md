@@ -16,21 +16,24 @@
 *   **Standardized Error Handling:** Returns consistent JSON error responses via centralized middleware (`lib/src/middlewares/error_handler.dart`) for predictable client-side handling.
 *   **Request Traceability:** Generates a unique `requestId` (UUID v4) for each incoming request, included in success response metadata and available for server-side logging via context.
 *   **In-Memory Demo Mode:** Utilizes pre-loaded fixture data (`lib/src/fixtures/`) for demonstration and development purposes, simulating a live backend without external dependencies for core data, settings, and email sending.
-*   **Authentication:** Provides endpoints for user sign-in/sign-up via email code and anonymous sign-in. Includes token generation and validation via middleware.
+    *   **Authentication:** Provides endpoints for user sign-in/sign-up via email code and anonymous sign-in. Includes token generation and validation. All Data and User Settings API endpoints now require authentication.
 
 ### Data API (`/api/v1/data`)
 
+*   **Authentication Required:** All operations on this endpoint require a valid authentication token.
 *   **Generic Data Endpoint:** Provides a unified RESTful interface for performing CRUD (Create, Read, Update, Delete) operations on multiple data models.
 *   **Model Agnostic Design:** Supports various data types through a single endpoint structure, determined by the `?model=` query parameter.
-*   **Currently Supported Data Models:**
+*   **Data Scoping:** Can serve global data (e.g., news articles, accessible to any authenticated user) or user-specific data (for future models, accessible only to the authenticated owner), based on the model's server-side configuration (`ModelConfig.ownership`).
+*   **Currently Supported Data Models (as global):**
     *   `headline`
     *   `category`
     *   `source`
     *   `country`
 
-### User Settings API (`/api/v1/users/me/settings`)
+### User Settings API (`/api/v1/users/{userId}/settings`)
 
-*   **User-Specific Settings Management:** Provides RESTful endpoints for managing application settings (currently treated globally, future enhancement for user-specific).
+*   **User-Specific Settings Management:** Provides RESTful endpoints for an authenticated user to manage their own application settings. The `{userId}` in the path must match the ID of the authenticated user.
+*   **Authentication Required:** All operations require a valid authentication token.
 *   **Supported Settings:**
     *   Display Settings (Theme, Font, etc.)
     *   Language Preference
@@ -139,9 +142,11 @@ These endpoints handle user authentication flows.
 
 ## API Endpoints: Data (`/api/v1/data`)
 
+**Authentication required for all operations.**
+
 This endpoint serves as the single entry point for accessing different data models. The specific model is determined by the `model` query parameter.
 
-**Supported `model` values:** `headline`, `category`, `source`, `country`
+**Supported `model` values (currently global):** `headline`, `category`, `source`, `country`
 
 **Standard Response Structure:** (Applies to both Data and Settings APIs)
 
@@ -179,33 +184,38 @@ This endpoint serves as the single entry point for accessing different data mode
     *   **Path:** `/api/v1/data?model=<model_name>`
     *   **Request Body:** JSON object representing the item to create (using `camelCase` keys).
     *   **Success Response:** `201 Created` with `SuccessApiResponse<T>` containing the created item.
-    *   **Example:** `POST /api/v1/data?model=category` with body `{"name": "Sports", "description": "News about sports"}`
+    *   **Example:** `POST /api/v1/data?model=category` with body `{"name": "Sports", "description": "News about sports"}` (Requires Bearer token)
 
 3.  **Get Item by ID**
     *   **Method:** `GET`
     *   **Path:** `/api/v1/data/<item_id>?model=<model_name>`
+    *   **Authentication:** Required (Bearer Token).
     *   **Success Response:** `200 OK` with `SuccessApiResponse<T>`.
-    *   **Error Response:** `404 Not Found`.
-    *   **Example:** `GET /api/v1/data/some-headline-id?model=headline`
+    *   **Error Response:** `401 Unauthorized`, `404 Not Found`.
+    *   **Example:** `GET /api/v1/data/some-headline-id?model=headline` (Requires Bearer token)
 
 4.  **Update Item by ID**
     *   **Method:** `PUT`
     *   **Path:** `/api/v1/data/<item_id>?model=<model_name>`
+    *   **Authentication:** Required (Bearer Token).
     *   **Request Body:** JSON object representing the complete updated item (must include `id`, using `camelCase` keys).
     *   **Success Response:** `200 OK` with `SuccessApiResponse<T>`.
-    *   **Error Response:** `404 Not Found`, `400 Bad Request`.
-    *   **Example:** `PUT /api/v1/data/some-category-id?model=category` with updated category JSON (e.g., `{"id": "...", "name": "...", "description": "..."}`).
+    *   **Error Response:** `401 Unauthorized`, `404 Not Found`, `400 Bad Request`.
+    *   **Example:** `PUT /api/v1/data/some-category-id?model=category` with updated category JSON (Requires Bearer token).
 
 5.  **Delete Item by ID**
     *   **Method:** `DELETE`
     *   **Path:** `/api/v1/data/<item_id>?model=<model_name>`
+    *   **Authentication:** Required (Bearer Token).
     *   **Success Response:** `204 No Content`.
-    *   **Error Response:** `404 Not Found`.
-    *   **Example:** `DELETE /api/v1/data/some-source-id?model=source`
+    *   **Error Response:** `401 Unauthorized`, `404 Not Found`.
+    *   **Example:** `DELETE /api/v1/data/some-source-id?model=source` (Requires Bearer token)
 
-## API Endpoints: User Settings (`/api/v1/users/me/settings`)
+## API Endpoints: User Settings (`/api/v1/users/{userId}/settings`)
 
-These endpoints manage application settings. Currently, they operate on a global set of settings due to the lack of authentication; future enhancements will make them user-specific.
+These endpoints manage application settings for an authenticated user. The `{userId}` in the path must match the ID of the authenticated user.
+
+**Authentication Required for all operations.**
 
 **Standard Response Structure:** Uses the same `SuccessApiResponse` and error structure as the Data API.
 
@@ -213,35 +223,40 @@ These endpoints manage application settings. Currently, they operate on a global
 
 1.  **Get Display Settings**
     *   **Method:** `GET`
-    *   **Path:** `/api/v1/users/me/settings/display`
+    *   **Path:** `/api/v1/users/{userId}/settings/display`
     *   **Success Response:** `200 OK` with `SuccessApiResponse<DisplaySettings>`.
-    *   **Example:** `GET /api/v1/users/me/settings/display`
+    *   **Error Response:** `401 Unauthorized`, `403 Forbidden`.
+    *   **Example:** `GET /api/v1/users/user-abc-123/settings/display` (Requires Bearer token for user-abc-123)
 
 2.  **Update Display Settings**
     *   **Method:** `PUT`
-    *   **Path:** `/api/v1/users/me/settings/display`
+    *   **Path:** `/api/v1/users/{userId}/settings/display`
     *   **Request Body:** JSON object representing the complete `DisplaySettings` (using `camelCase` keys).
     *   **Success Response:** `200 OK` with `SuccessApiResponse<DisplaySettings>` containing the updated settings.
-    *   **Example:** `PUT /api/v1/users/me/settings/display` with body `{"baseTheme": "dark", "accentTheme": "newsRed", ...}`.
+    *   **Error Response:** `401 Unauthorized`, `403 Forbidden`, `400 Bad Request`.
+    *   **Example:** `PUT /api/v1/users/user-abc-123/settings/display` with body `{"baseTheme": "dark", ...}` (Requires Bearer token for user-abc-123).
 
 3.  **Get Language Setting**
     *   **Method:** `GET`
-    *   **Path:** `/api/v1/users/me/settings/language`
+    *   **Path:** `/api/v1/users/{userId}/settings/language`
     *   **Success Response:** `200 OK` with `SuccessApiResponse<Map<String, String>>` (e.g., `{"data": {"language": "en"}, ...}`).
-    *   **Example:** `GET /api/v1/users/me/settings/language`
+    *   **Error Response:** `401 Unauthorized`, `403 Forbidden`.
+    *   **Example:** `GET /api/v1/users/user-abc-123/settings/language` (Requires Bearer token for user-abc-123)
 
 4.  **Update Language Setting**
     *   **Method:** `PUT`
-    *   **Path:** `/api/v1/users/me/settings/language`
+    *   **Path:** `/api/v1/users/{userId}/settings/language`
     *   **Request Body:** JSON object `{"language": "<code>"}` (e.g., `{"language": "es"}`).
     *   **Success Response:** `200 OK` with `SuccessApiResponse<Map<String, String>>` containing the updated language setting.
-    *   **Example:** `PUT /api/v1/users/me/settings/language` with body `{"language": "fr"}`.
+    *   **Error Response:** `401 Unauthorized`, `403 Forbidden`, `400 Bad Request`.
+    *   **Example:** `PUT /api/v1/users/user-abc-123/settings/language` with body `{"language": "fr"}` (Requires Bearer token for user-abc-123).
 
 5.  **Clear All Settings**
     *   **Method:** `DELETE`
-    *   **Path:** `/api/v1/users/me/settings`
+    *   **Path:** `/api/v1/users/{userId}/settings`
     *   **Success Response:** `204 No Content`.
-    *   **Example:** `DELETE /api/v1/users/me/settings`
+    *   **Error Response:** `401 Unauthorized`, `403 Forbidden`.
+    *   **Example:** `DELETE /api/v1/users/user-abc-123/settings` (Requires Bearer token for user-abc-123)
 
 ## Setup & Running
 
