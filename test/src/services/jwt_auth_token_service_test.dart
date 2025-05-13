@@ -168,7 +168,8 @@ void main() {
             ),
           ),
         );
-        verifyNever(() => mockUserRepository.read(id: any<String>(named: 'id')));
+        verifyNever(
+            () => mockUserRepository.read(id: any<String>(named: 'id')));
       });
 
       // Removed the duplicated and incorrect test case above this line.
@@ -188,7 +189,8 @@ void main() {
             ),
           ),
         );
-        verifyNever(() => mockUserRepository.read(id: any<String>(named: 'id')));
+        verifyNever(
+            () => mockUserRepository.read(id: any<String>(named: 'id')));
       });
 
       test('throws BadRequestException for token missing "sub" claim',
@@ -218,13 +220,15 @@ void main() {
             ),
           ),
         );
-        verifyNever(() => mockUserRepository.read(id: any<String>(named: 'id')));
+        verifyNever(
+            () => mockUserRepository.read(id: any<String>(named: 'id')));
       });
 
       test('rethrows NotFoundException if user from token not found', () async {
         // Arrange
         const exception = NotFoundException('User not found');
-        when(() => mockUserRepository.read(id: testUser.id)).thenThrow(exception);
+        when(() => mockUserRepository.read(id: testUser.id))
+            .thenThrow(exception);
 
         // Act & Assert
         await expectLater(
@@ -237,7 +241,8 @@ void main() {
       test('rethrows other HtHttpException from user repository', () async {
         // Arrange
         const exception = ServerException('Database error');
-        when(() => mockUserRepository.read(id: testUser.id)).thenThrow(exception);
+        when(() => mockUserRepository.read(id: testUser.id))
+            .thenThrow(exception);
 
         // Act & Assert
         await expectLater(
@@ -251,7 +256,8 @@ void main() {
           () async {
         // Arrange
         final exception = Exception('Unexpected read error');
-        when(() => mockUserRepository.read(id: testUser.id)).thenThrow(exception);
+        when(() => mockUserRepository.read(id: testUser.id))
+            .thenThrow(exception);
 
         // Act & Assert
         await expectLater(
@@ -320,7 +326,8 @@ void main() {
             ),
           ),
         );
-        verifyNever(() => mockBlacklistService.blacklist(any<String>(), any<DateTime>()));
+        verifyNever(() =>
+            mockBlacklistService.blacklist(any<String>(), any<DateTime>()));
       });
 
       test('throws InvalidInputException for token missing "jti" claim',
@@ -351,7 +358,8 @@ void main() {
             ),
           ),
         );
-        verifyNever(() => mockBlacklistService.blacklist(any<String>(), any<DateTime>()));
+        verifyNever(() =>
+            mockBlacklistService.blacklist(any<String>(), any<DateTime>()));
       });
 
       test('throws InvalidInputException for token missing "exp" claim',
@@ -380,7 +388,8 @@ void main() {
             ),
           ),
         );
-        verifyNever(() => mockBlacklistService.blacklist(any<String>(), any<DateTime>()));
+        verifyNever(() =>
+            mockBlacklistService.blacklist(any<String>(), any<DateTime>()));
       });
 
       test('rethrows HtHttpException from blacklist service', () async {
