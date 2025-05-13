@@ -115,7 +115,7 @@ void main() {
         // Generate a valid token for validation tests
         validToken = await service.generateToken(testUser);
         // Stub user repository to return the user when read is called
-        when(() => mockUserRepository.read(testUser.id))
+        when(() => mockUserRepository.read(id: testUser.id))
             .thenAnswer((_) async => testUser);
         // Stub blacklist service to return false (not blacklisted) by default
         when(() => mockBlacklistService.isBlacklisted(any()))
@@ -129,7 +129,7 @@ void main() {
         // Assert
         expect(user, isNotNull);
         expect(user, equals(testUser));
-        verify(() => mockUserRepository.read(testUser.id)).called(1);
+        verify(() => mockUserRepository.read(id: testUser.id)).called(1);
       });
 
       test('throws UnauthorizedException for an expired token', () async {
@@ -168,7 +168,7 @@ void main() {
             ),
           ),
         );
-        verifyNever(() => mockUserRepository.read(any()));
+        verifyNever(() => mockUserRepository.read(id: any<String>(named: 'id')));
       });
 
       // Removed the duplicated and incorrect test case above this line.
@@ -188,7 +188,7 @@ void main() {
             ),
           ),
         );
-        verifyNever(() => mockUserRepository.read(any()));
+        verifyNever(() => mockUserRepository.read(id: any<String>(named: 'id')));
       });
 
       test('throws BadRequestException for token missing "sub" claim',
@@ -218,40 +218,40 @@ void main() {
             ),
           ),
         );
-        verifyNever(() => mockUserRepository.read(any()));
+        verifyNever(() => mockUserRepository.read(id: any<String>(named: 'id')));
       });
 
       test('rethrows NotFoundException if user from token not found', () async {
         // Arrange
         const exception = NotFoundException('User not found');
-        when(() => mockUserRepository.read(testUser.id)).thenThrow(exception);
+        when(() => mockUserRepository.read(id: testUser.id)).thenThrow(exception);
 
         // Act & Assert
         await expectLater(
           () => service.validateToken(validToken),
           throwsA(isA<NotFoundException>()),
         );
-        verify(() => mockUserRepository.read(testUser.id)).called(1);
+        verify(() => mockUserRepository.read(id: testUser.id)).called(1);
       });
 
       test('rethrows other HtHttpException from user repository', () async {
         // Arrange
         const exception = ServerException('Database error');
-        when(() => mockUserRepository.read(testUser.id)).thenThrow(exception);
+        when(() => mockUserRepository.read(id: testUser.id)).thenThrow(exception);
 
         // Act & Assert
         await expectLater(
           () => service.validateToken(validToken),
           throwsA(isA<ServerException>()),
         );
-        verify(() => mockUserRepository.read(testUser.id)).called(1);
+        verify(() => mockUserRepository.read(id: testUser.id)).called(1);
       });
 
       test('throws OperationFailedException for unexpected validation error',
           () async {
         // Arrange
         final exception = Exception('Unexpected read error');
-        when(() => mockUserRepository.read(testUser.id)).thenThrow(exception);
+        when(() => mockUserRepository.read(id: testUser.id)).thenThrow(exception);
 
         // Act & Assert
         await expectLater(
@@ -264,7 +264,7 @@ void main() {
             ),
           ),
         );
-        verify(() => mockUserRepository.read(testUser.id)).called(1);
+        verify(() => mockUserRepository.read(id: testUser.id)).called(1);
       });
     });
 
@@ -320,7 +320,7 @@ void main() {
             ),
           ),
         );
-        verifyNever(() => mockBlacklistService.blacklist(any(), any()));
+        verifyNever(() => mockBlacklistService.blacklist(any<String>(), any<DateTime>()));
       });
 
       test('throws InvalidInputException for token missing "jti" claim',
@@ -351,7 +351,7 @@ void main() {
             ),
           ),
         );
-        verifyNever(() => mockBlacklistService.blacklist(any(), any()));
+        verifyNever(() => mockBlacklistService.blacklist(any<String>(), any<DateTime>()));
       });
 
       test('throws InvalidInputException for token missing "exp" claim',
@@ -380,7 +380,7 @@ void main() {
             ),
           ),
         );
-        verifyNever(() => mockBlacklistService.blacklist(any(), any()));
+        verifyNever(() => mockBlacklistService.blacklist(any<String>(), any<DateTime>()));
       });
 
       test('rethrows HtHttpException from blacklist service', () async {
