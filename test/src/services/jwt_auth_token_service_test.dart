@@ -169,7 +169,8 @@ void main() {
           ),
         );
         verifyNever(
-            () => mockUserRepository.read(id: any<String>(named: 'id')));
+          () => mockUserRepository.read(id: any<String>(named: 'id')),
+        );
       });
 
       // Removed the duplicated and incorrect test case above this line.
@@ -190,7 +191,8 @@ void main() {
           ),
         );
         verifyNever(
-            () => mockUserRepository.read(id: any<String>(named: 'id')));
+          () => mockUserRepository.read(id: any<String>(named: 'id')),
+        );
       });
 
       test('throws BadRequestException for token missing "sub" claim',
@@ -221,7 +223,8 @@ void main() {
           ),
         );
         verifyNever(
-            () => mockUserRepository.read(id: any<String>(named: 'id')));
+          () => mockUserRepository.read(id: any<String>(named: 'id')),
+        );
       });
 
       test('rethrows NotFoundException if user from token not found', () async {
@@ -326,8 +329,9 @@ void main() {
             ),
           ),
         );
-        verifyNever(() =>
-            mockBlacklistService.blacklist(any<String>(), any<DateTime>()));
+        verifyNever(
+          () => mockBlacklistService.blacklist(any<String>(), any<DateTime>()),
+        );
       });
 
       test('throws InvalidInputException for token missing "jti" claim',
@@ -358,8 +362,9 @@ void main() {
             ),
           ),
         );
-        verifyNever(() =>
-            mockBlacklistService.blacklist(any<String>(), any<DateTime>()));
+        verifyNever(
+          () => mockBlacklistService.blacklist(any<String>(), any<DateTime>()),
+        );
       });
 
       test('throws InvalidInputException for token missing "exp" claim',
@@ -388,8 +393,9 @@ void main() {
             ),
           ),
         );
-        verifyNever(() =>
-            mockBlacklistService.blacklist(any<String>(), any<DateTime>()));
+        verifyNever(
+          () => mockBlacklistService.blacklist(any<String>(), any<DateTime>()),
+        );
       });
 
       test('rethrows HtHttpException from blacklist service', () async {
