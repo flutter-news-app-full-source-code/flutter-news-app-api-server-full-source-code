@@ -117,7 +117,7 @@ class AuthService {
           email: email,
           isAnonymous: false, // Email verified user is not anonymous
         );
-        user = await _userRepository.create(user); // Save the new user
+        user = await _userRepository.create(item: user); // Save the new user
         print('Created new user: ${user.id}');
       }
     } on HtHttpException catch (e) {
@@ -157,7 +157,7 @@ class AuthService {
         isAnonymous: true,
         email: null, // Anonymous users don't have an email initially
       );
-      user = await _userRepository.create(user);
+      user = await _userRepository.create(item: user);
       print('Created anonymous user: ${user.id}');
     } on HtHttpException catch (e) {
       print('Error creating anonymous user: $e');
@@ -327,8 +327,8 @@ class AuthService {
         isAnonymous: false, // Now a permanent user
       );
       final permanentUser = await _userRepository.update(
-        updatedUser.id,
-        updatedUser,
+        id: updatedUser.id,
+        item: updatedUser,
       );
       print(
         'User ${permanentUser.id} successfully linked with email $linkedEmail.',
@@ -384,12 +384,12 @@ class AuthService {
   Future<void> deleteAccount({required String userId}) async {
     try {
       // Fetch the user first to get their email if needed for cleanup
-      final userToDelete = await _userRepository.read(userId);
+      final userToDelete = await _userRepository.read(id: userId);
       print('[AuthService] Found user ${userToDelete.id} for deletion.');
 
       // 1. Delete the user record from the repository.
       // This implicitly invalidates tokens that rely on user lookup.
-      await _userRepository.delete(userId);
+      await _userRepository.delete(id: userId);
       print('[AuthService] User ${userToDelete.id} deleted from repository.');
 
       // 2. Clear any pending verification codes for this user ID (linking).

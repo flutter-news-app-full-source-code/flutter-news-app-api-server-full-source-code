@@ -48,7 +48,7 @@ class SimpleAuthTokenService implements AuthTokenService {
       print(
         '[SimpleAuthTokenService] Attempting to read user from repository...',
       );
-      final user = await _userRepository.read(userId);
+      final user = await _userRepository.read(id: userId);
       print('[SimpleAuthTokenService] User read successful: ${user.id}');
       return user;
     } on NotFoundException {

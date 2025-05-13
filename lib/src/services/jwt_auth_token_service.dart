@@ -162,7 +162,7 @@ class JwtAuthTokenService implements AuthTokenService {
       print('[validateToken] Attempting to fetch user with ID: $userId');
       // Fetch the full user object from the repository
       // This ensures the user still exists and is valid
-      final user = await _userRepository.read(userId);
+      final user = await _userRepository.read(id: userId);
       print('[validateToken] User repository read successful for ID: $userId');
       print('[validateToken] Token validated successfully for user ${user.id}');
       return user;
