@@ -8,65 +8,9 @@
 
 `ht_api` is the central backend API service for the Headlines Toolkit (HT) project. Built with Dart using the Dart Frog framework, it provides essential APIs to support HT client applications (like the mobile app and web dashboard). It aims for simplicity, maintainability, and scalability, currently offering APIs for data access and user settings management.
 
-## Features
+## API Endpoints: 
 
-### Core Functionality
-
-*   **Standardized Success Responses:** Returns consistent JSON success responses wrapped in a `SuccessApiResponse` structure, including request metadata (`requestId`, `timestamp`).
-*   **Standardized Error Handling:** Returns consistent JSON error responses via centralized middleware (`lib/src/middlewares/error_handler.dart`) for predictable client-side handling.
-*   **Request Traceability:** Generates a unique `requestId` (UUID v4) for each incoming request, included in success response metadata and available for server-side logging via context.
-*   **In-Memory Demo Mode:** Utilizes pre-loaded fixture data (`lib/src/fixtures/`) for demonstration and development purposes, simulating a live backend without external dependencies for core data, settings, and email sending.
-    *   **Authentication:** Provides endpoints for user sign-in/sign-up via email code and anonymous sign-in. Includes token generation and validation. All Data and User Settings API endpoints now require authentication.
-
-### Data API (`/api/v1/data`)
-
-*   **Authentication Required:** All operations on this endpoint require a valid authentication token.
-*   **Generic Data Endpoint:** Provides a unified RESTful interface for performing CRUD (Create, Read, Update, Delete) operations on multiple data models.
-*   **Model Agnostic Design:** Supports various data types through a single endpoint structure, determined by the `?model=` query parameter.
-*   **Data Scoping:** Can serve global data (e.g., news articles, accessible to any authenticated user) or user-specific data (for future models, accessible only to the authenticated owner), based on the model's server-side configuration (`ModelConfig.ownership`).
-*   **Currently Supported Data Models (as global):**
-    *   `headline`
-    *   `category`
-    *   `source`
-    *   `country`
-
-### User Settings API (`/api/v1/users/{userId}/settings`)
-
-*   **User-Specific Settings Management:** Provides RESTful endpoints for an authenticated user to manage their own application settings. The `{userId}` in the path must match the ID of the authenticated user.
-*   **Authentication Required:** All operations require a valid authentication token.
-*   **Supported Settings:**
-    *   Display Settings (Theme, Font, etc.)
-    *   Language Preference
-
-## Technical Overview
-
-*   **Language:** Dart (`>=3.0.0 <4.0.0`)
-*   **Framework:** Dart Frog (`^1.1.0`)
-*   **Architecture:** Layered architecture leveraging shared packages.
-*   **Key Packages & Shared Core:**
-    *   `dart_frog`: The web framework foundation.
-    *   `uuid`: Used to generate unique request IDs.
-    *   `ht_shared`: Contains shared data models (`Headline`, `Category`, `User`, `AuthSuccessResponse`, etc.), API response wrappers (`SuccessApiResponse`, `ResponseMetadata`), and standard exceptions (`HtHttpException`).
-    *   `ht_data_client`: Defines the generic `HtDataClient<T>` interface.
-    *   `ht_data_inmemory`: Provides the `HtDataInMemoryClient<T>` implementation for data.
-    *   `ht_data_repository`: Defines the generic `HtDataRepository<T>` for data access.
-    *   `ht_app_settings_client`: Defines the `HtAppSettingsClient` interface for settings.
-    *   `ht_app_settings_inmemory`: Provides the `HtAppSettingsInMemory` implementation for settings.
-    *   `ht_app_settings_repository`: Defines the `HtAppSettingsRepository` for settings management.
-    *   `ht_email_client`: Defines the `HtEmailClient` interface for sending emails.
-    *   `ht_email_inmemory`: Provides the `HtEmailInMemoryClient` implementation for emails.
-    *   `ht_email_repository`: Defines the `HtEmailRepository` for email operations.
-    *   `ht_http_client`: Provides custom HTTP exceptions (`HtHttpException` subtypes) used for consistent error signaling.
-*   **Key Patterns:**
-    *   **Repository Pattern:** `HtDataRepository<T>`, `HtAppSettingsRepository`, and `HtEmailRepository` provide clean abstractions over data/settings/email logic. Route handlers interact with repositories.
-    *   **Service Layer:** Services like `AuthService` orchestrate complex operations involving multiple repositories or logic (e.g., authentication flow).
-    *   **Generic Data Endpoint:** A single set of route handlers serves multiple data models via `/api/v1/data`.
-    *   **Model Registry:** A central map (`lib/src/registry/model_registry.dart`) links data model names to configurations (`ModelConfig`) for the generic data endpoint.
-    *   **Dependency Injection (Dart Frog Providers):** Middleware (`routes/_middleware.dart`) provides singleton instances of repositories, services (`AuthService`, `AuthTokenService`, etc.), the `ModelRegistryMap`, and a unique `RequestId`.
-    *   **Centralized Error Handling:** The `errorHandler` middleware intercepts exceptions and maps them to standardized JSON error responses.
-    *   **Authentication Middleware:** `authenticationProvider` validates tokens and provides `User?` context; `requireAuthentication` enforces access for protected routes.
-
-## API Endpoints: Authentication (`/api/v1/auth`)
+### Authentication (`/api/v1/auth`)
 
 These endpoints handle user authentication flows.
 
@@ -140,7 +84,7 @@ These endpoints handle user authentication flows.
     *   **Error Response:** `401 Unauthorized` (if not authenticated), `404 Not Found` (if the user was already deleted), or other standard errors via the error handler middleware.
     *   **Example:** `DELETE /api/v1/auth/delete-account` with `Authorization: Bearer <token>` header.
 
-## API Endpoints: Data (`/api/v1/data`)
+### Data (`/api/v1/data`)
 
 **Authentication required for all operations.**
 
@@ -211,7 +155,7 @@ This endpoint serves as the single entry point for accessing different data mode
     *   **Error Response:** `401 Unauthorized`, `404 Not Found`.
     *   **Example:** `DELETE /api/v1/data/some-source-id?model=source` (Requires Bearer token)
 
-## API Endpoints: User Settings (`/api/v1/users/{userId}/settings`)
+### User Settings (`/api/v1/users/{userId}/settings`)
 
 These endpoints manage application settings for an authenticated user. The `{userId}` in the path must match the ID of the authenticated user.
 
@@ -288,4 +232,4 @@ These endpoints manage application settings for an authenticated user. The `{use
     
 ## License
 
-This package is licensed under the [PolyForm Free Trial 1.0.0](LICENSE). Please review the terms before use.
+This package is licensed under the [PolyForm Free Trial](LICENSE). Please review the terms before use.
