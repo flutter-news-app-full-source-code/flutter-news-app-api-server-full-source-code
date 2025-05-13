@@ -63,12 +63,32 @@ Middleware _modelValidationAndProviderMiddleware() {
 // Main middleware exported for the /api/v1/data route group.
 Handler middleware(Handler handler) {
   // This 'handler' is the actual route handler from index.dart or [id].dart.
-  // The .use() method applies middleware in an "onion-skin" fashion.
-  // The last .use() is the outermost layer.
-  // So, requireAuthentication() runs first. If it passes,
-  // _modelValidationAndProviderMiddleware() runs next.
-  // If that passes, the actual route handler is executed.
+  //
+  // The .use() method applies middleware in an "onion-skin" fashion, where
+  // the last .use() call in the chain represents the outermost middleware layer.
+  // Therefore, the execution order for an incoming request is:
+  //
+  // 1. `requireAuthentication()`:
+  //    - This runs first. It relies on `authenticationProvider()` (from the
+  //      parent `/api/v1/_middleware.dart`) having already attempted to
+  //      authenticate the user and provide `User?` into the context.
+  //    - If `User` is null (no valid authentication), `requireAuthentication()`
+  //      throws an `UnauthorizedException`, and the request is aborted (usually
+  //      resulting in a 401 response via the global `errorHandler`).
+  //    - If `User` is present, the request proceeds to the next middleware.
+  //
+  // 2. `_modelValidationAndProviderMiddleware()`:
+  //    - This runs if `requireAuthentication()` passes.
+  //    - It validates the `?model=` query parameter and provides the
+  //      `ModelConfig` and `modelName` into the context.
+  //    - If model validation fails, it returns a 400 Bad Request response directly.
+  //    - If successful, it calls the next handler in the chain.
+  //
+  // 3. Actual Route Handler (from `index.dart` or `[id].dart`):
+  //    - This runs last, only if both preceding middlewares pass. It will have
+  //      access to a non-null `User`, `ModelConfig`, and `modelName` from the context.
+  //
   return handler
-      .use(_modelValidationAndProviderMiddleware())
-      .use(requireAuthentication());
+      .use(_modelValidationAndProviderMiddleware()) // Applied second (inner)
+      .use(requireAuthentication()); // Applied first (outermost)
 }
