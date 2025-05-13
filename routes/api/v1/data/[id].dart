@@ -36,22 +36,40 @@ import '../../../_middleware.dart';
 Future<Response> onRequest(RequestContext context, String id) async {
   // Read dependencies provided by middleware
   final modelName = context.read<String>();
-  // Read ModelConfig for fromJson (needed for PUT)
   final modelConfig = context.read<ModelConfig<dynamic>>();
-  // Read the unique RequestId provided by the root middleware
   final requestId = context.read<RequestId>().id;
+  // Since requireAuthentication is used, User is guaranteed to be non-null.
+  final authenticatedUser = context.read<User>();
 
   try {
     switch (context.request.method) {
       case HttpMethod.get:
-        // Pass requestId down to the handler
-        return await _handleGet(context, id, modelName, requestId);
+        return await _handleGet(
+          context,
+          id,
+          modelName,
+          modelConfig, // Pass modelConfig
+          authenticatedUser,
+          requestId,
+        );
       case HttpMethod.put:
-        // Pass requestId down to the handler
-        return await _handlePut(context, id, modelName, modelConfig, requestId);
+        return await _handlePut(
+          context,
+          id,
+          modelName,
+          modelConfig,
+          authenticatedUser,
+          requestId,
+        );
       case HttpMethod.delete:
-        // DELETE doesn't return a body, so no metadata needed here
-        return await _handleDelete(context, id, modelName, requestId);
+        return await _handleDelete(
+          context,
+          id,
+          modelName,
+          modelConfig, // Pass modelConfig
+          authenticatedUser,
+          requestId,
+        );
       // Add cases for other methods if needed in the future
       default:
         // Methods not allowed on the item endpoint
@@ -83,24 +101,34 @@ Future<Response> _handleGet(
   RequestContext context,
   String id,
   String modelName,
-  String requestId, // Receive requestId
+  ModelConfig<dynamic> modelConfig, // Receive modelConfig
+  User authenticatedUser, // Receive authenticatedUser
+  String requestId,
 ) async {
   dynamic item; // Use dynamic
+
+  String? userIdForRepoCall;
+  if (modelConfig.ownership == ModelOwnership.userOwned) {
+    userIdForRepoCall = authenticatedUser.id;
+  } else {
+    userIdForRepoCall = null;
+  }
+
   // Repository exceptions (like NotFoundException) will propagate up.
   try {
     switch (modelName) {
       case 'headline':
         final repo = context.read<HtDataRepository<Headline>>();
-        item = await repo.read(id);
+        item = await repo.read(id: id, userId: userIdForRepoCall);
       case 'category':
         final repo = context.read<HtDataRepository<Category>>();
-        item = await repo.read(id);
+        item = await repo.read(id: id, userId: userIdForRepoCall);
       case 'source':
         final repo = context.read<HtDataRepository<Source>>();
-        item = await repo.read(id);
+        item = await repo.read(id: id, userId: userIdForRepoCall);
       case 'country':
         final repo = context.read<HtDataRepository<Country>>();
-        item = await repo.read(id);
+        item = await repo.read(id: id, userId: userIdForRepoCall);
       default:
         // This case should ideally be caught by middleware, but added for safety
         return Response(
@@ -151,7 +179,8 @@ Future<Response> _handlePut(
   String id,
   String modelName,
   ModelConfig<dynamic> modelConfig,
-  String requestId, // Receive requestId
+  User authenticatedUser, // Receive authenticatedUser
+  String requestId,
 ) async {
   final requestBody = await context.request.json() as Map<String, dynamic>?;
   if (requestBody == null) {
@@ -185,6 +214,16 @@ Future<Response> _handlePut(
   }
 
   dynamic updatedItem; // Use dynamic
+
+  String? userIdForRepoCall;
+  if (modelConfig.ownership == ModelOwnership.userOwned) {
+    userIdForRepoCall = authenticatedUser.id;
+  } else {
+    // For global models, update might imply admin rights.
+    // For now, pass null, assuming repo handles global updates or has other checks.
+    userIdForRepoCall = null;
+  }
+
   // Repository exceptions (like NotFoundException, BadRequestException)
   // will propagate up.
   try {
@@ -193,7 +232,6 @@ Future<Response> _handlePut(
         {
           final repo = context.read<HtDataRepository<Headline>>();
           final typedItem = itemToUpdate as Headline;
-          // Validate ID match between path and body
           if (typedItem.id != id) {
             return Response(
               statusCode: HttpStatus.badRequest,
@@ -201,13 +239,16 @@ Future<Response> _handlePut(
                   'Bad Request: ID in request body ("${typedItem.id}") does not match ID in path ("$id").',
             );
           }
-          updatedItem = await repo.update(id, typedItem);
+          updatedItem = await repo.update(
+            id: id,
+            item: typedItem,
+            userId: userIdForRepoCall,
+          );
         }
       case 'category':
         {
           final repo = context.read<HtDataRepository<Category>>();
           final typedItem = itemToUpdate as Category;
-          // Validate ID match between path and body
           if (typedItem.id != id) {
             return Response(
               statusCode: HttpStatus.badRequest,
@@ -215,13 +256,16 @@ Future<Response> _handlePut(
                   'Bad Request: ID in request body ("${typedItem.id}") does not match ID in path ("$id").',
             );
           }
-          updatedItem = await repo.update(id, typedItem);
+          updatedItem = await repo.update(
+            id: id,
+            item: typedItem,
+            userId: userIdForRepoCall,
+          );
         }
       case 'source':
         {
           final repo = context.read<HtDataRepository<Source>>();
           final typedItem = itemToUpdate as Source;
-          // Validate ID match between path and body
           if (typedItem.id != id) {
             return Response(
               statusCode: HttpStatus.badRequest,
@@ -229,13 +273,16 @@ Future<Response> _handlePut(
                   'Bad Request: ID in request body ("${typedItem.id}") does not match ID in path ("$id").',
             );
           }
-          updatedItem = await repo.update(id, typedItem);
+          updatedItem = await repo.update(
+            id: id,
+            item: typedItem,
+            userId: userIdForRepoCall,
+          );
         }
       case 'country':
         {
           final repo = context.read<HtDataRepository<Country>>();
           final typedItem = itemToUpdate as Country;
-          // Validate ID match between path and body
           if (typedItem.id != id) {
             return Response(
               statusCode: HttpStatus.badRequest,
@@ -243,7 +290,11 @@ Future<Response> _handlePut(
                   'Bad Request: ID in request body ("${typedItem.id}") does not match ID in path ("$id").',
             );
           }
-          updatedItem = await repo.update(id, typedItem);
+          updatedItem = await repo.update(
+            id: id,
+            item: typedItem,
+            userId: userIdForRepoCall,
+          );
         }
       default:
         // This case should ideally be caught by middleware, but added for safety
@@ -293,20 +344,38 @@ Future<Response> _handleDelete(
   RequestContext context,
   String id,
   String modelName,
-  String requestId, // Receive requestId for logging
+  ModelConfig<dynamic> modelConfig, // Receive modelConfig
+  User authenticatedUser, // Receive authenticatedUser
+  String requestId,
 ) async {
+  String? userIdForRepoCall;
+  if (modelConfig.ownership == ModelOwnership.userOwned) {
+    userIdForRepoCall = authenticatedUser.id;
+  } else {
+    // For global models, delete might imply admin rights.
+    // For now, pass null.
+    userIdForRepoCall = null;
+  }
+
   // Allow repository exceptions (e.g., NotFoundException) to propagate
   // upwards to be handled by the standard error handling mechanism.
-  // (Removed the overly broad try-catch block that was previously here).
   switch (modelName) {
     case 'headline':
-      await context.read<HtDataRepository<Headline>>().delete(id);
+      await context
+          .read<HtDataRepository<Headline>>()
+          .delete(id: id, userId: userIdForRepoCall);
     case 'category':
-      await context.read<HtDataRepository<Category>>().delete(id);
+      await context
+          .read<HtDataRepository<Category>>()
+          .delete(id: id, userId: userIdForRepoCall);
     case 'source':
-      await context.read<HtDataRepository<Source>>().delete(id);
+      await context
+          .read<HtDataRepository<Source>>()
+          .delete(id: id, userId: userIdForRepoCall);
     case 'country':
-      await context.read<HtDataRepository<Country>>().delete(id);
+      await context
+          .read<HtDataRepository<Country>>()
+          .delete(id: id, userId: userIdForRepoCall);
     default:
       // This case should ideally be caught by the data/_middleware.dart,
       // but added for safety. Consider logging this unexpected state.

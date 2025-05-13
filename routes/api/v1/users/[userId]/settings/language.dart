@@ -4,24 +4,38 @@
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
+import 'package:ht_app_settings_client/ht_app_settings_client.dart'; // Added
 import 'package:ht_app_settings_repository/ht_app_settings_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 
 // Import RequestId from the root middleware file
-import '../../../../../_middleware.dart';
+// Note: RequestId is provided by routes/_middleware.dart
+// User is provided by authentication_middleware.dart via routes/api/v1/users/[userId]/settings/_middleware.dart
+import '../../../../../_middleware.dart' show RequestId;
 
-/// Handles requests for the /api/v1/users/me/settings/language endpoint.
-Future<Response> onRequest(RequestContext context) async {
+/// Handles requests for the /api/v1/users/{userId}/settings/language endpoint.
+Future<Response> onRequest(
+  RequestContext context,
+  String userIdFromPath, // userId from the path parameter
+) async {
   // Read dependencies provided by middleware
-  final settingsRepo = context.read<HtAppSettingsRepository>();
   final requestId = context.read<RequestId>().id;
+  // User is guaranteed to be non-null by requireAuthentication middleware
+  final authenticatedUser = context.read<User>();
+
+  // Authorization: Ensure the userId in path matches the authenticated user
+  if (userIdFromPath != authenticatedUser.id) {
+    throw const ForbiddenException(
+      'Access denied: You can only modify your own settings.',
+    );
+  }
 
   try {
     switch (context.request.method) {
       case HttpMethod.get:
-        return await _handleGet(context, settingsRepo, requestId);
+        return await _handleGet(context, authenticatedUser, requestId);
       case HttpMethod.put:
-        return await _handlePut(context, settingsRepo, requestId);
+        return await _handlePut(context, authenticatedUser, requestId);
       default:
         return Response(statusCode: HttpStatus.methodNotAllowed);
     }
@@ -34,7 +48,7 @@ Future<Response> onRequest(RequestContext context) async {
   } catch (e, stackTrace) {
     // Handle any other unexpected errors locally
     print(
-      '[ReqID: $requestId] Unexpected error in /settings/language.dart handler: $e\n$stackTrace',
+      '[ReqID: $requestId] Unexpected error in /users/$userIdFromPath/settings/language.dart handler: $e\n$stackTrace',
     );
     return Response(
       statusCode: HttpStatus.internalServerError,
@@ -46,11 +60,18 @@ Future<Response> onRequest(RequestContext context) async {
 // --- GET Handler ---
 Future<Response> _handleGet(
   RequestContext context,
-  HtAppSettingsRepository settingsRepo,
+  User authenticatedUser, // Receive the authenticated user
   String requestId,
 ) async {
+  // Read the HtAppSettingsClient to instantiate a user-scoped repository
+  final settingsClient = context.read<HtAppSettingsClient>();
+  final userSettingsRepo = HtAppSettingsRepository(
+    client: settingsClient,
+    userId: authenticatedUser.id,
+  );
+
   // Exceptions from repository will propagate up.
-  final language = await settingsRepo.getLanguage();
+  final language = await userSettingsRepo.getLanguage();
 
   final metadata = ResponseMetadata(
     requestId: requestId,
@@ -74,9 +95,16 @@ Future<Response> _handleGet(
 // --- PUT Handler ---
 Future<Response> _handlePut(
   RequestContext context,
-  HtAppSettingsRepository settingsRepo,
+  User authenticatedUser, // Receive the authenticated user
   String requestId,
 ) async {
+  // Read the HtAppSettingsClient to instantiate a user-scoped repository
+  final settingsClient = context.read<HtAppSettingsClient>();
+  final userSettingsRepo = HtAppSettingsRepository(
+    client: settingsClient,
+    userId: authenticatedUser.id,
+  );
+
   final requestBody = await context.request.json() as Map<String, dynamic>?;
   if (requestBody == null ||
       !requestBody.containsKey('language') ||
@@ -109,10 +137,10 @@ Future<Response> _handlePut(
   }
 
   // Save the language. Repository exceptions will propagate up.
-  await settingsRepo.setLanguage(newLanguage);
+  await userSettingsRepo.setLanguage(newLanguage);
 
   // Optionally, return the updated language.
-  final updatedLanguage = await settingsRepo.getLanguage();
+  final updatedLanguage = await userSettingsRepo.getLanguage();
 
   final metadata = ResponseMetadata(
     requestId: requestId,

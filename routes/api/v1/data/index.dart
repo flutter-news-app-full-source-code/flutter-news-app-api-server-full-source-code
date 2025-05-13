@@ -36,20 +36,29 @@ import '../../../_middleware.dart';
 Future<Response> onRequest(RequestContext context) async {
   // Read dependencies provided by middleware
   final modelName = context.read<String>();
-  // Read ModelConfig for fromJson (needed for POST)
   final modelConfig = context.read<ModelConfig<dynamic>>();
-  // Read the unique RequestId provided by the root middleware
-  // Note: This assumes RequestId is always provided by `routes/_middleware.dart`
   final requestId = context.read<RequestId>().id;
+  // Since requireAuthentication is used, User is guaranteed to be non-null.
+  final authenticatedUser = context.read<User>();
 
   try {
     switch (context.request.method) {
       case HttpMethod.get:
-        // Pass requestId down to the handler
-        return await _handleGet(context, modelName, requestId);
+        return await _handleGet(
+          context,
+          modelName,
+          modelConfig, // Pass modelConfig
+          authenticatedUser,
+          requestId,
+        );
       case HttpMethod.post:
-        // Pass requestId down to the handler
-        return await _handlePost(context, modelName, modelConfig, requestId);
+        return await _handlePost(
+          context,
+          modelName,
+          modelConfig,
+          authenticatedUser,
+          requestId,
+        );
       // Add cases for other methods if needed in the future
       default:
         // Methods not allowed on the collection endpoint
@@ -80,7 +89,9 @@ Future<Response> onRequest(RequestContext context) async {
 Future<Response> _handleGet(
   RequestContext context,
   String modelName,
-  String requestId, // Receive requestId
+  ModelConfig<dynamic> modelConfig, // Receive modelConfig
+  User authenticatedUser, // Receive authenticatedUser
+  String requestId,
 ) async {
   // Read query parameters
   final queryParams = context.request.uri.queryParameters;
@@ -94,6 +105,14 @@ Future<Response> _handleGet(
 
   // Process based on model type
   PaginatedResponse<dynamic> paginatedResponse; // Use dynamic for the list
+
+  String? userIdForRepoCall;
+  if (modelConfig.ownership == ModelOwnership.userOwned) {
+    userIdForRepoCall = authenticatedUser.id;
+  } else {
+    userIdForRepoCall = null;
+  }
+
   try {
     switch (modelName) {
       case 'headline':
@@ -101,37 +120,57 @@ Future<Response> _handleGet(
         paginatedResponse = specificQuery.isNotEmpty
             ? await repo.readAllByQuery(
                 specificQuery,
+                userId: userIdForRepoCall,
                 startAfterId: startAfterId,
                 limit: limit,
               )
-            : await repo.readAll(startAfterId: startAfterId, limit: limit);
+            : await repo.readAll(
+                userId: userIdForRepoCall,
+                startAfterId: startAfterId,
+                limit: limit,
+              );
       case 'category':
         final repo = context.read<HtDataRepository<Category>>();
         paginatedResponse = specificQuery.isNotEmpty
             ? await repo.readAllByQuery(
                 specificQuery,
+                userId: userIdForRepoCall,
                 startAfterId: startAfterId,
                 limit: limit,
               )
-            : await repo.readAll(startAfterId: startAfterId, limit: limit);
+            : await repo.readAll(
+                userId: userIdForRepoCall,
+                startAfterId: startAfterId,
+                limit: limit,
+              );
       case 'source':
         final repo = context.read<HtDataRepository<Source>>();
         paginatedResponse = specificQuery.isNotEmpty
             ? await repo.readAllByQuery(
                 specificQuery,
+                userId: userIdForRepoCall,
                 startAfterId: startAfterId,
                 limit: limit,
               )
-            : await repo.readAll(startAfterId: startAfterId, limit: limit);
+            : await repo.readAll(
+                userId: userIdForRepoCall,
+                startAfterId: startAfterId,
+                limit: limit,
+              );
       case 'country':
         final repo = context.read<HtDataRepository<Country>>();
         paginatedResponse = specificQuery.isNotEmpty
             ? await repo.readAllByQuery(
                 specificQuery,
+                userId: userIdForRepoCall,
                 startAfterId: startAfterId,
                 limit: limit,
               )
-            : await repo.readAll(startAfterId: startAfterId, limit: limit);
+            : await repo.readAll(
+                userId: userIdForRepoCall,
+                startAfterId: startAfterId,
+                limit: limit,
+              );
       default:
         // This case should be caught by middleware, but added for safety
         return Response(
@@ -183,7 +222,8 @@ Future<Response> _handlePost(
   RequestContext context,
   String modelName,
   ModelConfig<dynamic> modelConfig,
-  String requestId, // Receive requestId
+  User authenticatedUser, // Receive authenticatedUser
+  String requestId,
 ) async {
   final requestBody = await context.request.json() as Map<String, dynamic>?;
   if (requestBody == null) {
@@ -216,22 +256,45 @@ Future<Response> _handlePost(
 
   // Process based on model type
   dynamic createdItem; // Use dynamic
+
+  String? userIdForRepoCall;
+  if (modelConfig.ownership == ModelOwnership.userOwned) {
+    userIdForRepoCall = authenticatedUser.id;
+  } else {
+    // For global models, creation might imply admin rights or specific logic.
+    // For now, we pass null, assuming the repository handles global creation.
+    // Or, a check could be added here: if global and user is not admin, throw Forbidden.
+    userIdForRepoCall = null;
+  }
+
   // Repository exceptions (like BadRequestException from create) will propagate
   // up to the main onRequest try/catch and be re-thrown to the middleware.
   try {
     switch (modelName) {
       case 'headline':
         final repo = context.read<HtDataRepository<Headline>>();
-        createdItem = await repo.create(newItem as Headline);
+        createdItem = await repo.create(
+          item: newItem as Headline,
+          userId: userIdForRepoCall,
+        );
       case 'category':
         final repo = context.read<HtDataRepository<Category>>();
-        createdItem = await repo.create(newItem as Category);
+        createdItem = await repo.create(
+          item: newItem as Category,
+          userId: userIdForRepoCall,
+        );
       case 'source':
         final repo = context.read<HtDataRepository<Source>>();
-        createdItem = await repo.create(newItem as Source);
+        createdItem = await repo.create(
+          item: newItem as Source,
+          userId: userIdForRepoCall,
+        );
       case 'country':
         final repo = context.read<HtDataRepository<Country>>();
-        createdItem = await repo.create(newItem as Country);
+        createdItem = await repo.create(
+          item: newItem as Country,
+          userId: userIdForRepoCall,
+        );
       default:
         // This case should ideally be caught by middleware, but added for safety
         return Response(

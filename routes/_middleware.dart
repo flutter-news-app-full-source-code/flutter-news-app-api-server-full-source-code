@@ -14,8 +14,9 @@ import 'package:ht_api/src/services/auth_token_service.dart';
 import 'package:ht_api/src/services/jwt_auth_token_service.dart';
 import 'package:ht_api/src/services/token_blacklist_service.dart';
 import 'package:ht_api/src/services/verification_code_storage_service.dart';
+// Import HtAppSettingsClient interface
+import 'package:ht_app_settings_client/ht_app_settings_client.dart';
 import 'package:ht_app_settings_inmemory/ht_app_settings_inmemory.dart';
-import 'package:ht_app_settings_repository/ht_app_settings_repository.dart';
 import 'package:ht_data_inmemory/ht_data_inmemory.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_email_inmemory/ht_email_inmemory.dart';
@@ -167,8 +168,7 @@ Handler middleware(Handler handler) {
   final categoryRepository = _createCategoryRepository();
   final sourceRepository = _createSourceRepository();
   final countryRepository = _createCountryRepository();
-  final settingsClient = HtAppSettingsInMemory(); // Using in-memory for now
-  final settingsRepository = HtAppSettingsRepository(client: settingsClient);
+  final settingsClientImpl = HtAppSettingsInMemory(); // Using in-memory for now
   const uuid = Uuid();
 
   // --- Auth Dependencies ---
@@ -258,7 +258,8 @@ Handler middleware(Handler handler) {
           (_) => userRepository,
         ),
       ) // Used by Auth services
-      .use(provider<HtAppSettingsRepository>((_) => settingsRepository))
+      // Provide the HtAppSettingsClient interface globally
+      .use(provider<HtAppSettingsClient>((_) => settingsClientImpl))
       .use(
         provider<HtEmailRepository>(
           (_) => emailRepository,

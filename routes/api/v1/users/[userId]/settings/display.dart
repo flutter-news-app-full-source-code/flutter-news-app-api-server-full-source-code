@@ -9,20 +9,33 @@ import 'package:ht_app_settings_repository/ht_app_settings_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 
 // Import RequestId from the root middleware file
-import '../../../../../_middleware.dart';
+// Note: RequestId is provided by routes/_middleware.dart
+// User is provided by authentication_middleware.dart via routes/api/v1/users/[userId]/settings/_middleware.dart
+import '../../../../../_middleware.dart' show RequestId;
 
-/// Handles requests for the /api/v1/users/me/settings/display endpoint.
-Future<Response> onRequest(RequestContext context) async {
+/// Handles requests for the /api/v1/users/{userId}/settings/display endpoint.
+Future<Response> onRequest(
+  RequestContext context,
+  String userIdFromPath, // userId from the path parameter
+) async {
   // Read dependencies provided by middleware
-  final settingsRepo = context.read<HtAppSettingsRepository>();
   final requestId = context.read<RequestId>().id;
+  // User is guaranteed to be non-null by requireAuthentication middleware
+  final authenticatedUser = context.read<User>();
+
+  // Authorization: Ensure the userId in path matches the authenticated user
+  if (userIdFromPath != authenticatedUser.id) {
+    throw const ForbiddenException(
+      'Access denied: You can only modify your own settings.',
+    );
+  }
 
   try {
     switch (context.request.method) {
       case HttpMethod.get:
-        return await _handleGet(context, settingsRepo, requestId);
+        return await _handleGet(context, authenticatedUser, requestId);
       case HttpMethod.put:
-        return await _handlePut(context, settingsRepo, requestId);
+        return await _handlePut(context, authenticatedUser, requestId);
       default:
         return Response(statusCode: HttpStatus.methodNotAllowed);
     }
@@ -35,7 +48,7 @@ Future<Response> onRequest(RequestContext context) async {
   } catch (e, stackTrace) {
     // Handle any other unexpected errors locally
     print(
-      '[ReqID: $requestId] Unexpected error in /settings/display.dart handler: $e\n$stackTrace',
+      '[ReqID: $requestId] Unexpected error in /users/$userIdFromPath/settings/display.dart handler: $e\n$stackTrace',
     );
     return Response(
       statusCode: HttpStatus.internalServerError,
@@ -47,11 +60,18 @@ Future<Response> onRequest(RequestContext context) async {
 // --- GET Handler ---
 Future<Response> _handleGet(
   RequestContext context,
-  HtAppSettingsRepository settingsRepo,
+  User authenticatedUser, // Receive the authenticated user
   String requestId,
 ) async {
+  // Read the HtAppSettingsClient to instantiate a user-scoped repository
+  final settingsClient = context.read<HtAppSettingsClient>();
+  final userSettingsRepo = HtAppSettingsRepository(
+    client: settingsClient,
+    userId: authenticatedUser.id,
+  );
+
   // Exceptions from repository (e.g., client failure) will propagate up.
-  final displaySettings = await settingsRepo.getDisplaySettings();
+  final displaySettings = await userSettingsRepo.getDisplaySettings();
 
   final metadata = ResponseMetadata(
     requestId: requestId,
@@ -72,9 +92,16 @@ Future<Response> _handleGet(
 // --- PUT Handler ---
 Future<Response> _handlePut(
   RequestContext context,
-  HtAppSettingsRepository settingsRepo,
+  User authenticatedUser, // Receive the authenticated user
   String requestId,
 ) async {
+  // Read the HtAppSettingsClient to instantiate a user-scoped repository
+  final settingsClient = context.read<HtAppSettingsClient>();
+  final userSettingsRepo = HtAppSettingsRepository(
+    client: settingsClient,
+    userId: authenticatedUser.id,
+  );
+
   final requestBody = await context.request.json() as Map<String, dynamic>?;
   if (requestBody == null) {
     return Response(
@@ -88,11 +115,11 @@ Future<Response> _handlePut(
   final newSettings = DisplaySettings.fromJson(requestBody);
 
   // Save the settings. Repository exceptions will propagate up.
-  await settingsRepo.setDisplaySettings(newSettings);
+  await userSettingsRepo.setDisplaySettings(newSettings);
 
   // Optionally, return the updated settings.
   // Fetching again ensures we return the exact state after saving.
-  final updatedSettings = await settingsRepo.getDisplaySettings();
+  final updatedSettings = await userSettingsRepo.getDisplaySettings();
 
   final metadata = ResponseMetadata(
     requestId: requestId,

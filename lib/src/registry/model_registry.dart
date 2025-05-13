@@ -5,6 +5,15 @@ import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_data_client/ht_data_client.dart';
 import 'package:ht_shared/ht_shared.dart';
 
+/// Defines the ownership type of a data model.
+enum ModelOwnership {
+  /// Data is global and not specific to any single user.
+  global,
+
+  /// Data is owned by a specific user.
+  userOwned,
+}
+
 /// {@template model_config}
 /// Configuration holder for a specific data model type [T].
 ///
@@ -20,17 +29,18 @@ class ModelConfig<T> {
   /// {@macro model_config}
   const ModelConfig({
     required this.fromJson,
-    // toJson removed
     required this.getId,
+    required this.ownership, // New field
   });
 
   /// Function to deserialize JSON into an object of type [T].
   final FromJson<T> fromJson;
 
-  // toJson field removed
-
   /// Function to extract the unique string ID from an item of type [T].
   final String Function(T item) getId;
+
+  /// The ownership type of this model.
+  final ModelOwnership ownership;
 }
 
 // Repository providers are no longer defined here.
@@ -54,23 +64,23 @@ class ModelConfig<T> {
 final modelRegistry = <String, ModelConfig<dynamic>>{
   'headline': ModelConfig<Headline>(
     fromJson: Headline.fromJson,
-    // toJson removed
     getId: (h) => h.id,
+    ownership: ModelOwnership.global, // Added ownership
   ),
   'category': ModelConfig<Category>(
     fromJson: Category.fromJson,
-    // toJson removed
     getId: (c) => c.id,
+    ownership: ModelOwnership.global, // Added ownership
   ),
   'source': ModelConfig<Source>(
     fromJson: Source.fromJson,
-    // toJson removed
     getId: (s) => s.id,
+    ownership: ModelOwnership.global, // Added ownership
   ),
   'country': ModelConfig<Country>(
     fromJson: Country.fromJson,
-    // toJson removed
     getId: (c) => c.id, // Assuming Country has an 'id' field
+    ownership: ModelOwnership.global, // Added ownership
   ),
 };
 
