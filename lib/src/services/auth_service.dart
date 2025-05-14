@@ -192,37 +192,42 @@ class AuthService {
   /// The primary client-side action (clearing the local token) is handled
   /// separately by the client application.
   ///
-  /// Throws: This implementation currently does not throw exceptions under
-  /// normal circumstances. Future implementations involving token
-  /// invalidation might throw [OperationFailedException] if invalidation fails.
-  Future<void> performSignOut({required String userId}) async {
-    // Log the attempt.
+  /// Performs server-side sign-out actions, including token invalidation.
+  ///
+  /// Invalidates the provided authentication [token] using the
+  /// [AuthTokenService].
+  ///
+  /// The primary client-side action (clearing the local token) is handled
+  /// separately by the client application.
+  ///
+  /// Throws [OperationFailedException] if token invalidation fails.
+  Future<void> performSignOut({
+    required String userId,
+    required String token,
+  }) async {
     print(
       '[AuthService] Received request for server-side sign-out actions '
       'for user $userId.',
     );
 
-    // --- Placeholder for Future Token Invalidation ---
-    // If AuthTokenService had an invalidateToken method, it would be called here:
-    // try {
-    //   // Assuming the token itself or its JTI was passed or derivable
-    //   // String tokenToInvalidate = ...;
-    //   // await _authTokenService.invalidateToken(tokenToInvalidate);
-    //   print('[AuthService] Token invalidation logic executed (if implemented).');
-    // } catch (e) {
-    //   print('[AuthService] Error during token invalidation for user $userId: $e');
-    //   // Decide whether to rethrow or just log
-    //   // throw OperationFailedException('Failed server-side sign-out: $e');
-    // }
-    // ------------------------------------------------
-
-    // Simulate potential async work if needed in the future.
-    await Future<void>.delayed(Duration.zero);
+    try {
+      // Invalidate the token using the AuthTokenService
+      await _authTokenService.invalidateToken(token);
+      print('[AuthService] Token invalidation logic executed for user $userId.');
+    } on HtHttpException catch (_) {
+      // Propagate known exceptions from the token service
+      rethrow;
+    } catch (e) {
+      // Catch unexpected errors during token invalidation
+      print('[AuthService] Error during token invalidation for user $userId: $e');
+      throw OperationFailedException(
+        'Failed server-side sign-out: Token invalidation failed.',
+      );
+    }
 
     print(
       '[AuthService] Server-side sign-out actions complete for user $userId.',
     );
-    // No specific exceptions are thrown in this placeholder implementation.
   }
 
   /// Initiates the process of linking an [emailToLink] to an existing
