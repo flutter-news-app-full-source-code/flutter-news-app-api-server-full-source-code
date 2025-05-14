@@ -213,14 +213,16 @@ class AuthService {
     try {
       // Invalidate the token using the AuthTokenService
       await _authTokenService.invalidateToken(token);
-      print('[AuthService] Token invalidation logic executed for user $userId.');
+      print(
+          '[AuthService] Token invalidation logic executed for user $userId.');
     } on HtHttpException catch (_) {
       // Propagate known exceptions from the token service
       rethrow;
     } catch (e) {
       // Catch unexpected errors during token invalidation
-      print('[AuthService] Error during token invalidation for user $userId: $e');
-      throw OperationFailedException(
+      print(
+          '[AuthService] Error during token invalidation for user $userId: $e');
+      throw const OperationFailedException(
         'Failed server-side sign-out: Token invalidation failed.',
       );
     }
