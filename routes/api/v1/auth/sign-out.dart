@@ -24,18 +24,36 @@ Future<Response> onRequest(RequestContext context) async {
     throw const UnauthorizedException('Authentication required to sign out.');
   }
 
+  // Extract the current token from the Authorization header
+  final authHeader = context.request.headers[HttpHeaders.authorizationHeader];
+  String? token;
+  if (authHeader != null && authHeader.startsWith('Bearer ')) {
+    token = authHeader.substring(7);
+  }
+
+  // Although authentication middleware should ensure a token is present,
+  // this check acts as a safeguard.
+  if (token == null || token.isEmpty) {
+    print(
+      'Error: Could not extract Bearer token for user ${user.id} in sign-out handler.',
+    );
+    throw const OperationFailedException(
+      'Internal error: Unable to retrieve authentication token for sign-out.',
+    );
+  }
+
   // Read the AuthService provided by middleware
   final authService = context.read<AuthService>();
 
   try {
-    // Call the AuthService to handle any server-side sign-out logic
-    await authService.performSignOut(userId: user.id);
+    // Call the AuthService to handle any server-side sign-out logic,
+    // including token invalidation.
+    await authService.performSignOut(userId: user.id, token: token);
 
     // Return 204 No Content indicating successful sign-out action
     return Response(statusCode: HttpStatus.noContent);
   } on HtHttpException catch (_) {
     // Let the central errorHandler middleware handle known exceptions
-    // (though performSignOut might not throw many specific ones)
     rethrow;
   } catch (e) {
     // Catch unexpected errors from the service layer
