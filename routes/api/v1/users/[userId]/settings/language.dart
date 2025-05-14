@@ -1,6 +1,3 @@
-//
-// ignore_for_file: lines_longer_than_80_chars, avoid_catches_without_on_clauses
-
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
@@ -8,15 +5,12 @@ import 'package:ht_app_settings_client/ht_app_settings_client.dart'; // Added
 import 'package:ht_app_settings_repository/ht_app_settings_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 
-// Import RequestId from the root middleware file
-// Note: RequestId is provided by routes/_middleware.dart
-// User is provided by authentication_middleware.dart via routes/api/v1/users/[userId]/settings/_middleware.dart
 import '../../../../../_middleware.dart' show RequestId;
 
 /// Handles requests for the /api/v1/users/{userId}/settings/language endpoint.
 Future<Response> onRequest(
   RequestContext context,
-  String userIdFromPath, // userId from the path parameter
+  String userIdFromPath,
 ) async {
   // Read dependencies provided by middleware
   final requestId = context.read<RequestId>().id;
@@ -60,7 +54,7 @@ Future<Response> onRequest(
 // --- GET Handler ---
 Future<Response> _handleGet(
   RequestContext context,
-  User authenticatedUser, // Receive the authenticated user
+  User authenticatedUser,
   String requestId,
 ) async {
   // Read the HtAppSettingsClient to instantiate a user-scoped repository

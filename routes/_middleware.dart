@@ -1,7 +1,3 @@
-// routes/_middleware.dart
-//
-// ignore_for_file: avoid_slow_async_io, avoid_catches_without_on_clauses
-
 import 'dart:convert';
 import 'dart:io';
 
@@ -10,11 +6,9 @@ import 'package:ht_api/src/middlewares/error_handler.dart';
 import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_api/src/services/auth_service.dart';
 import 'package:ht_api/src/services/auth_token_service.dart';
-// Import the JWT service and blacklist service
 import 'package:ht_api/src/services/jwt_auth_token_service.dart';
 import 'package:ht_api/src/services/token_blacklist_service.dart';
 import 'package:ht_api/src/services/verification_code_storage_service.dart';
-// Import HtAppSettingsClient interface
 import 'package:ht_app_settings_client/ht_app_settings_client.dart';
 import 'package:ht_app_settings_inmemory/ht_app_settings_inmemory.dart';
 import 'package:ht_data_inmemory/ht_data_inmemory.dart';
@@ -22,7 +16,7 @@ import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_email_inmemory/ht_email_inmemory.dart';
 import 'package:ht_email_repository/ht_email_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
-import 'package:uuid/uuid.dart'; // Import the uuid package
+import 'package:uuid/uuid.dart';
 
 // --- Request ID Wrapper ---
 
@@ -68,14 +62,13 @@ class RequestId {
 
 // --- Helper Function to Load Fixtures ---
 // Note:
-// Error handling here is basic. In a real app,
-// consider more robust file checks.
+// Error handling here is basic, consider more robust file checks.
 // ignore: unused_element
 Future<List<Map<String, dynamic>>> _loadFixture(String fileName) async {
   final path = 'lib/src/fixtures/$fileName';
   try {
     final file = File(path);
-    if (!await file.exists()) {
+    if (!file.existsSync()) {
       print('Warning: Fixture file not found at $path. Returning empty list.');
       return [];
     }
@@ -168,7 +161,7 @@ Handler middleware(Handler handler) {
   final categoryRepository = _createCategoryRepository();
   final sourceRepository = _createSourceRepository();
   final countryRepository = _createCountryRepository();
-  final settingsClientImpl = HtAppSettingsInMemory(); // Using in-memory for now
+  final settingsClientImpl = HtAppSettingsInMemory();
   const uuid = Uuid();
 
   // --- Auth Dependencies ---

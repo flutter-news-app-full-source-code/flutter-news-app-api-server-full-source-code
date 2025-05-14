@@ -1,6 +1,3 @@
-//
-// ignore_for_file: lines_longer_than_80_chars
-
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/middlewares/authentication_middleware.dart';
 import 'package:ht_api/src/registry/model_registry.dart';

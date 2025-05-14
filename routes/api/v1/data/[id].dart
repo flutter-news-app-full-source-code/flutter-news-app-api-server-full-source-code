@@ -1,32 +1,8 @@
-//
-// ignore_for_file: lines_longer_than_80_chars, no_default_cases, avoid_catches_without_on_clauses, avoid_catching_errors
-
 import 'dart:io';
 
-// --- Error Handling Strategy ---
-// Route-specific handlers (_handleGet, _handlePut, _handleDelete, etc.) should
-// generally allow HtHttpExceptions (like NotFoundException, BadRequestException)
-// and FormatExceptions thrown by lower layers (Repositories, Clients, JSON parsing)
-// to propagate upwards.
-//
-// These specific exceptions are caught and re-thrown by the main `onRequest`
-// handler in this file.
-//
-// The centralized `errorHandler` middleware (defined in lib/src/middlewares/)
-// is responsible for catching these re-thrown exceptions and mapping them to
-// appropriate, standardized JSON error responses (e.g., 400, 404, 500).
-//
-// Local try-catch blocks within specific _handle* methods should be reserved
-// for handling errors that require immediate, localized responses (like the
-// TypeError during deserialization in _handlePut) or for logging specific
-// context before allowing propagation.
-
 import 'package:dart_frog/dart_frog.dart';
-// Import RequestId from the middleware file where it's defined
 import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
-// Import exceptions
-// Import models, SuccessApiResponse, ResponseMetadata
 import 'package:ht_shared/ht_shared.dart';
 
 import '../../../_middleware.dart';
@@ -48,7 +24,7 @@ Future<Response> onRequest(RequestContext context, String id) async {
           context,
           id,
           modelName,
-          modelConfig, // Pass modelConfig
+          modelConfig,
           authenticatedUser,
           requestId,
         );
@@ -66,11 +42,10 @@ Future<Response> onRequest(RequestContext context, String id) async {
           context,
           id,
           modelName,
-          modelConfig, // Pass modelConfig
+          modelConfig,
           authenticatedUser,
           requestId,
         );
-      // Add cases for other methods if needed in the future
       default:
         // Methods not allowed on the item endpoint
         return Response(statusCode: HttpStatus.methodNotAllowed);
@@ -101,11 +76,11 @@ Future<Response> _handleGet(
   RequestContext context,
   String id,
   String modelName,
-  ModelConfig<dynamic> modelConfig, // Receive modelConfig
-  User authenticatedUser, // Receive authenticatedUser
+  ModelConfig<dynamic> modelConfig,
+  User authenticatedUser,
   String requestId,
 ) async {
-  dynamic item; // Use dynamic
+  dynamic item;
 
   String? userIdForRepoCall;
   if (modelConfig.ownership == ModelOwnership.userOwned) {
@@ -179,7 +154,7 @@ Future<Response> _handlePut(
   String id,
   String modelName,
   ModelConfig<dynamic> modelConfig,
-  User authenticatedUser, // Receive authenticatedUser
+  User authenticatedUser,
   String requestId,
 ) async {
   final requestBody = await context.request.json() as Map<String, dynamic>?;
@@ -191,7 +166,7 @@ Future<Response> _handlePut(
   }
 
   // Deserialize using ModelConfig's fromJson, catching TypeErrors locally
-  dynamic itemToUpdate; // Use dynamic initially
+  dynamic itemToUpdate;
   try {
     itemToUpdate = modelConfig.fromJson(requestBody);
   } on TypeError catch (e) {
@@ -213,14 +188,14 @@ Future<Response> _handlePut(
     );
   }
 
-  dynamic updatedItem; // Use dynamic
+  dynamic updatedItem;
 
   String? userIdForRepoCall;
   if (modelConfig.ownership == ModelOwnership.userOwned) {
     userIdForRepoCall = authenticatedUser.id;
   } else {
-    // For global models, update might imply admin rights.
-    // For now, pass null, assuming repo handles global updates or has other checks.
+    // TODO(fulleni): For global models, update might imply admin rights.
+    // For now, pass null, consider adding an admin user check.
     userIdForRepoCall = null;
   }
 
@@ -326,7 +301,7 @@ Future<Response> _handlePut(
   // Wrap the updated item in SuccessApiResponse with metadata
   final successResponse = SuccessApiResponse<dynamic>(
     data: updatedItem,
-    metadata: metadata, // Include the created metadata
+    metadata: metadata,
   );
 
   // Provide the correct toJsonT for the specific model type
@@ -344,16 +319,16 @@ Future<Response> _handleDelete(
   RequestContext context,
   String id,
   String modelName,
-  ModelConfig<dynamic> modelConfig, // Receive modelConfig
-  User authenticatedUser, // Receive authenticatedUser
+  ModelConfig<dynamic> modelConfig,
+  User authenticatedUser,
   String requestId,
 ) async {
   String? userIdForRepoCall;
   if (modelConfig.ownership == ModelOwnership.userOwned) {
     userIdForRepoCall = authenticatedUser.id;
   } else {
-    // For global models, delete might imply admin rights.
-    // For now, pass null.
+    // TODO(fulleni): For global models, update might imply admin rights.
+    // For now, pass null, consider adding an admin user check.
     userIdForRepoCall = null;
   }
 

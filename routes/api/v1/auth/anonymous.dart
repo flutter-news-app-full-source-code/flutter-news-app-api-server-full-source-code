@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/services/auth_service.dart';
-// Import exceptions, User, SuccessApiResponse, AND AuthSuccessResponse
 import 'package:ht_shared/ht_shared.dart';
 
 /// Handles POST requests to `/api/v1/auth/anonymous`.

@@ -1,6 +1,3 @@
-//
-// ignore_for_file: lines_longer_than_80_chars, avoid_catches_without_on_clauses
-
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
@@ -57,14 +54,14 @@ Future<Response> onRequest(
 // --- DELETE Handler ---
 Future<Response> _handleDelete(
   RequestContext context,
-  User authenticatedUser, // Receive the authenticated user
+  User authenticatedUser,
   String requestId, // For logging
 ) async {
   // Read the HtAppSettingsClient to instantiate a user-scoped repository
   final settingsClient = context.read<HtAppSettingsClient>();
   final userSettingsRepo = HtAppSettingsRepository(
     client: settingsClient,
-    userId: authenticatedUser.id, // Use the authenticated user's ID
+    userId: authenticatedUser.id,
   );
 
   // Call the repository method to clear settings.
