@@ -80,9 +80,19 @@ Future<Response> _handleGet(
   User authenticatedUser,
   String requestId,
 ) async {
+  // Apply access control based on ownership type for GET requests
+  if (modelConfig.ownership == ModelOwnership.adminOwned &&
+      !authenticatedUser.isAdmin) {
+    throw const ForbiddenException(
+      'You do not have permission to read this resource.',
+    );
+  }
+
   dynamic item;
 
   String? userIdForRepoCall;
+  // For userOwned models, pass the authenticated user's ID to the repository
+  // for filtering. For adminOwned/adminOwnedReadAllowed, pass null.
   if (modelConfig.ownership == ModelOwnership.userOwned) {
     userIdForRepoCall = authenticatedUser.id;
   } else {
@@ -188,14 +198,29 @@ Future<Response> _handlePut(
     );
   }
 
+  // Apply access control based on ownership type for PUT requests
+  if ((modelConfig.ownership == ModelOwnership.adminOwned ||
+          modelConfig.ownership == ModelOwnership.adminOwnedReadAllowed) &&
+      !authenticatedUser.isAdmin) {
+    throw const ForbiddenException(
+      'Only administrators can update this resource.',
+    );
+  }
+  if (modelConfig.ownership == ModelOwnership.userOwned &&
+      !authenticatedUser.isAdmin) {
+    // For userOwned, non-admins must be the owner.
+    // The repository will enforce this check when userIdForRepoCall is passed.
+  }
+
   dynamic updatedItem;
 
   String? userIdForRepoCall;
+  // For userOwned models, pass the authenticated user's ID to the repository
+  // for ownership enforcement. For adminOwned/adminOwnedReadAllowed, pass null
+  // (repository handles admin updates).
   if (modelConfig.ownership == ModelOwnership.userOwned) {
     userIdForRepoCall = authenticatedUser.id;
   } else {
-    // TODO(fulleni): For global models, update might imply admin rights.
-    // For now, pass null, consider adding an admin user check.
     userIdForRepoCall = null;
   }
 
@@ -323,12 +348,27 @@ Future<Response> _handleDelete(
   User authenticatedUser,
   String requestId,
 ) async {
+  // Apply access control based on ownership type for DELETE requests
+  if ((modelConfig.ownership == ModelOwnership.adminOwned ||
+          modelConfig.ownership == ModelOwnership.adminOwnedReadAllowed) &&
+      !authenticatedUser.isAdmin) {
+    throw const ForbiddenException(
+      'Only administrators can delete this resource.',
+    );
+  }
+  if (modelConfig.ownership == ModelOwnership.userOwned &&
+      !authenticatedUser.isAdmin) {
+    // For userOwned, non-admins must be the owner.
+    // The repository will enforce this check when userIdForRepoCall is passed.
+  }
+
   String? userIdForRepoCall;
+  // For userOwned models, pass the authenticated user's ID to the repository
+  // for ownership enforcement. For adminOwned/adminOwnedReadAllowed, pass null
+  // (repository handles admin deletions).
   if (modelConfig.ownership == ModelOwnership.userOwned) {
     userIdForRepoCall = authenticatedUser.id;
   } else {
-    // TODO(fulleni): For global models, update might imply admin rights.
-    // For now, pass null, consider adding an admin user check.
     userIdForRepoCall = null;
   }
 

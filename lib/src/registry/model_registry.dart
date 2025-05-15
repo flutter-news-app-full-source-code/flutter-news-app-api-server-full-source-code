@@ -5,12 +5,19 @@ import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_data_client/ht_data_client.dart';
 import 'package:ht_shared/ht_shared.dart';
 
-/// Defines the ownership type of a data model.
+/// Defines the ownership type of a data model and associated access rules.
 enum ModelOwnership {
-  /// Data is global and not specific to any single user.
-  global,
+  /// Indicates the resource is fully managed by admins (only admins can
+  /// Create, Read, Update, Delete).
+  adminOwned,
 
-  /// Data is owned by a specific user.
+  /// Indicates the resource is managed by admins (only admins can Create,
+  /// Update, Delete), but read operations (GET) are allowed for all
+  /// authenticated users.
+  adminOwnedReadAllowed,
+
+  /// Indicates the resource is owned by a specific user (only the owning user
+  /// or an admin can Create, Read, Update, Delete).
   userOwned,
 }
 
@@ -65,22 +72,22 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
   'headline': ModelConfig<Headline>(
     fromJson: Headline.fromJson,
     getId: (h) => h.id,
-    ownership: ModelOwnership.global, // Added ownership
+    ownership: ModelOwnership.adminOwnedReadAllowed, // Updated ownership
   ),
   'category': ModelConfig<Category>(
     fromJson: Category.fromJson,
     getId: (c) => c.id,
-    ownership: ModelOwnership.global, // Added ownership
+    ownership: ModelOwnership.adminOwnedReadAllowed, // Updated ownership
   ),
   'source': ModelConfig<Source>(
     fromJson: Source.fromJson,
     getId: (s) => s.id,
-    ownership: ModelOwnership.global, // Added ownership
+    ownership: ModelOwnership.adminOwnedReadAllowed, // Updated ownership
   ),
   'country': ModelConfig<Country>(
     fromJson: Country.fromJson,
     getId: (c) => c.id, // Assuming Country has an 'id' field
-    ownership: ModelOwnership.global, // Added ownership
+    ownership: ModelOwnership.adminOwnedReadAllowed, // Updated ownership
   ),
 };
 

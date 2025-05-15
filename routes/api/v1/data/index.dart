@@ -82,7 +82,17 @@ Future<Response> _handleGet(
   // Process based on model type
   PaginatedResponse<dynamic> paginatedResponse;
 
+  // Apply access control based on ownership type for GET requests
+  if (modelConfig.ownership == ModelOwnership.adminOwned &&
+      !authenticatedUser.isAdmin) {
+    throw const ForbiddenException(
+      'You do not have permission to read this resource.',
+    );
+  }
+
   String? userIdForRepoCall;
+  // For userOwned models, pass the authenticated user's ID to the repository
+  // for filtering. For adminOwned/adminOwnedReadAllowed, pass null.
   if (modelConfig.ownership == ModelOwnership.userOwned) {
     userIdForRepoCall = authenticatedUser.id;
   } else {
@@ -230,15 +240,25 @@ Future<Response> _handlePost(
     );
   }
 
+  // Apply access control based on ownership type for POST requests
+  if ((modelConfig.ownership == ModelOwnership.adminOwned ||
+          modelConfig.ownership == ModelOwnership.adminOwnedReadAllowed) &&
+      !authenticatedUser.isAdmin) {
+    throw const ForbiddenException(
+      'Only administrators can create this resource.',
+    );
+  }
+
   // Process based on model type
   dynamic createdItem;
 
   String? userIdForRepoCall;
+  // For userOwned models, pass the authenticated user's ID to the repository
+  // for associating ownership during creation. For adminOwned/adminOwnedReadAllowed,
+  // pass null (repository handles admin creation).
   if (modelConfig.ownership == ModelOwnership.userOwned) {
     userIdForRepoCall = authenticatedUser.id;
   } else {
-    // TODO(fulleni): For global models, update might imply admin rights.
-    // For now, pass null, consider adding an admin user check.
     userIdForRepoCall = null;
   }
 
