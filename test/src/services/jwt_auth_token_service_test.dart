@@ -22,12 +22,14 @@ void main() {
       id: 'user-jwt-123',
       email: 'jwt@example.com',
       isAnonymous: false,
+      isAdmin: false,
     );
     const testUuidValue = 'test-uuid-v4';
 
     setUpAll(() {
       // Register fallback values for argument matchers
-      registerFallbackValue(const User(id: 'fallback', isAnonymous: true));
+      registerFallbackValue(
+          const User(id: 'fallback', isAnonymous: true, isAdmin: false),);
       // Register fallback for DateTime if needed for blacklist mock
       registerFallbackValue(DateTime(2024));
     });

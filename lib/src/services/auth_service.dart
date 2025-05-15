@@ -116,6 +116,7 @@ class AuthService {
           id: _uuid.v4(), // Generate new ID
           email: email,
           isAnonymous: false, // Email verified user is not anonymous
+          isAdmin: false,
         );
         user = await _userRepository.create(item: user); // Save the new user
         print('Created new user: ${user.id}');
@@ -156,6 +157,7 @@ class AuthService {
         id: _uuid.v4(), // Generate new ID
         isAnonymous: true,
         email: null, // Anonymous users don't have an email initially
+        isAdmin: false,
       );
       user = await _userRepository.create(item: user);
       print('Created anonymous user: ${user.id}');
@@ -214,14 +216,14 @@ class AuthService {
       // Invalidate the token using the AuthTokenService
       await _authTokenService.invalidateToken(token);
       print(
-          '[AuthService] Token invalidation logic executed for user $userId.');
+          '[AuthService] Token invalidation logic executed for user $userId.',);
     } on HtHttpException catch (_) {
       // Propagate known exceptions from the token service
       rethrow;
     } catch (e) {
       // Catch unexpected errors during token invalidation
       print(
-          '[AuthService] Error during token invalidation for user $userId: $e');
+          '[AuthService] Error during token invalidation for user $userId: $e',);
       throw const OperationFailedException(
         'Failed server-side sign-out: Token invalidation failed.',
       );
@@ -332,6 +334,7 @@ class AuthService {
         id: anonymousUser.id, // Preserve original ID
         email: linkedEmail,
         isAnonymous: false, // Now a permanent user
+        isAdmin: false,
       );
       final permanentUser = await _userRepository.update(
         id: updatedUser.id,
