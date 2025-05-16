@@ -1,8 +1,12 @@
+// ignore_for_file: public_member_api_docs
+
 /// Defines the roles and permissions used in the RBAC system.
 ///
 /// Permissions are defined as constants in the format `resource.action`.
 /// Roles are defined as constants.
 /// The `rolePermissions` map defines which permissions are granted to each role.
+
+library;
 
 /// {@template role}
 /// Defines the available user roles in the system.
@@ -60,7 +64,7 @@ abstract class Permission {
 /// The key is the role string, and the value is a set of permission strings.
 final Map<String, Set<String>> rolePermissions = {
   Role.admin: {
-    // Admins have all permissions. In a real system, you might have a more
+    // Admins have all permissions. You might have a more
     // sophisticated way to represent this, but listing them explicitly is clear.
     Permission.headlineRead,
     Permission.headlineCreate,
