@@ -29,7 +29,8 @@ void main() {
     setUpAll(() {
       // Register fallback values for argument matchers
       registerFallbackValue(
-          const User(id: 'fallback', isAnonymous: true, isAdmin: false),);
+        const User(id: 'fallback', isAnonymous: true, isAdmin: false),
+      );
       // Register fallback for DateTime if needed for blacklist mock
       registerFallbackValue(DateTime(2024));
     });
