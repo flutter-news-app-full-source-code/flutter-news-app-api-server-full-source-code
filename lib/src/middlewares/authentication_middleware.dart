@@ -119,7 +119,7 @@ Middleware requireAuthentication() {
       }
       // If user exists, proceed to the handler
       print('Authentication check passed for user: ${user.id}');
-      return handler(context);
+      return handler(context.provide<User>(() => user)); // Provide non-nullable User
     };
   };
 }
