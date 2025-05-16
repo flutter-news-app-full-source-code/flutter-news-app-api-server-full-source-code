@@ -12,10 +12,10 @@ class AuthorizationService {
   ///
   /// Assumes the [User] model has a `role` property (String).
   /// Returns `true` if the user has the permission, `false` otherwise.
-  bool hasPermission(User user, String permission) {
+  bool hasPermission(User user, Permission permission) {
     // Admins always have permission.
     // Assuming user.role exists and 'admin' is the admin role string.
-    if (user.role == Role.admin) {
+    if (user.role == UserRole.admin) {
       return true;
     }
 
