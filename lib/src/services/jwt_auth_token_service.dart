@@ -64,7 +64,7 @@ class JwtAuthTokenService implements AuthTokenService {
 
           // Custom claims (optional, include what's useful)
           'email': user.email,
-          'isAnonymous': user.isAnonymous,
+          'role': user.role, // Include the user's role
         },
         issuer: _issuer,
         subject: user.id,

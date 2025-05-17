@@ -82,7 +82,7 @@ Future<Response> _handleGet(
 ) async {
   // Apply access control based on ownership type for GET requests
   if (modelConfig.ownership == ModelOwnership.adminOwned &&
-      !authenticatedUser.isAdmin) {
+      authenticatedUser.role != UserRole.admin) {
     throw const ForbiddenException(
       'You do not have permission to read this resource.',
     );
@@ -201,13 +201,13 @@ Future<Response> _handlePut(
   // Apply access control based on ownership type for PUT requests
   if ((modelConfig.ownership == ModelOwnership.adminOwned ||
           modelConfig.ownership == ModelOwnership.adminOwnedReadAllowed) &&
-      !authenticatedUser.isAdmin) {
+      authenticatedUser.role != UserRole.admin) {
     throw const ForbiddenException(
       'Only administrators can update this resource.',
     );
   }
   if (modelConfig.ownership == ModelOwnership.userOwned &&
-      !authenticatedUser.isAdmin) {
+      authenticatedUser.role != UserRole.admin) {
     // For userOwned, non-admins must be the owner.
     // The repository will enforce this check when userIdForRepoCall is passed.
   }
@@ -351,13 +351,13 @@ Future<Response> _handleDelete(
   // Apply access control based on ownership type for DELETE requests
   if ((modelConfig.ownership == ModelOwnership.adminOwned ||
           modelConfig.ownership == ModelOwnership.adminOwnedReadAllowed) &&
-      !authenticatedUser.isAdmin) {
+      authenticatedUser.role != UserRole.admin) {
     throw const ForbiddenException(
       'Only administrators can delete this resource.',
     );
   }
   if (modelConfig.ownership == ModelOwnership.userOwned &&
-      !authenticatedUser.isAdmin) {
+      authenticatedUser.role != UserRole.admin) {
     // For userOwned, non-admins must be the owner.
     // The repository will enforce this check when userIdForRepoCall is passed.
   }

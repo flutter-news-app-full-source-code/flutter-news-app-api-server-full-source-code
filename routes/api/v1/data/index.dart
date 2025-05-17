@@ -84,7 +84,7 @@ Future<Response> _handleGet(
 
   // Apply access control based on ownership type for GET requests
   if (modelConfig.ownership == ModelOwnership.adminOwned &&
-      !authenticatedUser.isAdmin) {
+      authenticatedUser.role != UserRole.admin) {
     throw const ForbiddenException(
       'You do not have permission to read this resource.',
     );
@@ -243,7 +243,7 @@ Future<Response> _handlePost(
   // Apply access control based on ownership type for POST requests
   if ((modelConfig.ownership == ModelOwnership.adminOwned ||
           modelConfig.ownership == ModelOwnership.adminOwnedReadAllowed) &&
-      !authenticatedUser.isAdmin) {
+      authenticatedUser.role != UserRole.admin) {
     throw const ForbiddenException(
       'Only administrators can create this resource.',
     );
