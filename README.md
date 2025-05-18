@@ -11,8 +11,8 @@ specifically designed to power robust and feature-rich news applications.
 
 `ht_api` is a core component of the **Headlines Toolkit**, a comprehensive,
 source-available ecosystem designed for building feature-rich news
-applications, which also includes a Flutter mobile app and a web-based content
-management dashboard.
+applications, which also includes a Flutter [mobile app](https://github.com/headlines-toolkit/ht-main) and a web-based [content
+management dashboard](https://github.com/headlines-toolkit/ht-dashboard).
 
 ## ✨ Key Capabilities
 
