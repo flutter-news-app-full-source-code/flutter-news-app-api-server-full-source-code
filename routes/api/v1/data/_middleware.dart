@@ -1,6 +1,8 @@
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/middlewares/authentication_middleware.dart';
+import 'package:ht_api/src/middlewares/authorization_middleware.dart'; // Import authorization middleware
 import 'package:ht_api/src/registry/model_registry.dart';
+import 'package:ht_shared/ht_shared.dart'; // For BadRequestException
 
 /// Middleware specific to the generic `/api/v1/data` route path.
 ///
@@ -11,24 +13,27 @@ import 'package:ht_api/src/registry/model_registry.dart';
 ///     - Validates the `model` query parameter.
 ///     - Looks up the `ModelConfig` from the `ModelRegistryMap`.
 ///     - Provides the `ModelConfig` and `modelName` into the request context
-///       for downstream route handlers.
+///       for downstream middleware and route handlers.
+/// 3.  **Authorization Check (`authorizationMiddleware`):** Enforces role-based
+///     and model-specific permissions based on the `ModelConfig` metadata.
+///     If the user lacks permission, it throws a [ForbiddenException].
 ///
-/// This setup ensures that data routes are protected and have the necessary
-/// model-specific configuration available.
+/// This setup ensures that data routes are protected, have the necessary
+/// model-specific configuration available, and access is authorized before
+/// reaching the final route handler.
 
 // Helper middleware for model validation and context provision.
 Middleware _modelValidationAndProviderMiddleware() {
   return (handler) {
     // This 'handler' is the next handler in the chain,
-    // which, in this setup, is the actual route handler from
-    // index.dart or [id].dart.
+    // which, in this setup, is the authorizationMiddleware.
     return (context) async {
       // --- 1. Read and Validate `model` Parameter ---
       final modelName = context.request.uri.queryParameters['model'];
       if (modelName == null || modelName.isEmpty) {
-        return Response(
-          statusCode: 400,
-          body: 'Bad Request: Missing or empty "model" query parameter.',
+        // Throw BadRequestException to be caught by the errorHandler
+        throw const BadRequestException(
+          'Missing or empty "model" query parameter.',
         );
       }
 
@@ -39,10 +44,10 @@ Middleware _modelValidationAndProviderMiddleware() {
 
       // Further validation: Ensure model exists in the registry
       if (modelConfig == null) {
-        return Response(
-          statusCode: 400,
-          body: 'Bad Request: Invalid model type "$modelName". '
-              'Supported models are: ${registry.keys.join(', ')}.',
+        // Throw BadRequestException to be caught by the errorHandler
+        throw BadRequestException(
+          'Invalid model type "$modelName". '
+          'Supported models are: ${registry.keys.join(', ')}.',
         );
       }
 
@@ -51,7 +56,7 @@ Middleware _modelValidationAndProviderMiddleware() {
           .provide<ModelConfig<dynamic>>(() => modelConfig)
           .provide<String>(() => modelName);
 
-      // Call the next handler in the chain with the updated context
+      // Call the next handler in the chain (authorizationMiddleware)
       return handler(updatedContext);
     };
   };
@@ -78,14 +83,28 @@ Handler middleware(Handler handler) {
   //    - This runs if `requireAuthentication()` passes.
   //    - It validates the `?model=` query parameter and provides the
   //      `ModelConfig` and `modelName` into the context.
-  //    - If model validation fails, it returns a 400 Bad Request response directly.
-  //    - If successful, it calls the next handler in the chain.
+  //    - If model validation fails, it throws a BadRequestException, caught
+  //      by the global errorHandler.
+  //    - If successful, it calls the next handler in the chain (authorizationMiddleware).
   //
-  // 3. Actual Route Handler (from `index.dart` or `[id].dart`):
-  //    - This runs last, only if both preceding middlewares pass. It will have
+  // 3. `authorizationMiddleware()`:
+  //    - This runs if `_modelValidationAndProviderMiddleware()` passes.
+  //    - It reads the `User`, `modelName`, and `ModelConfig` from the context.
+  //    - It checks if the user has permission to perform the requested HTTP
+  //      method on the specified model based on the `ModelConfig` metadata.
+  //    - If authorization fails, it throws a ForbiddenException, caught by
+  //      the global errorHandler.
+  //    - If successful, it calls the next handler in the chain (the actual
+  //      route handler).
+  //
+  // 4. Actual Route Handler (from `index.dart` or `[id].dart`):
+  //    - This runs last, only if all preceding middlewares pass. It will have
   //      access to a non-null `User`, `ModelConfig`, and `modelName` from the context.
+  //    - It performs the data operation and any necessary handler-level
+  //      ownership checks (if flagged by `ModelActionPermission.requiresOwnershipCheck`).
   //
   return handler
-      .use(_modelValidationAndProviderMiddleware()) // Applied second (inner)
+      .use(authorizationMiddleware()) // Applied third (inner)
+      .use(_modelValidationAndProviderMiddleware()) // Applied second
       .use(requireAuthentication()); // Applied first (outermost)
 }

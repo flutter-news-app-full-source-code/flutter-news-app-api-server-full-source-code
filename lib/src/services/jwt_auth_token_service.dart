@@ -8,6 +8,15 @@ import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 import 'package:uuid/uuid.dart';
 
+/// Helper function to convert UserRole enum to its snake_case string.
+String _userRoleToString(UserRole role) {
+  return switch (role) {
+    UserRole.admin => 'admin',
+    UserRole.standardUser => 'standard_user',
+    UserRole.guestUser => 'guest_user',
+  };
+}
+
 /// {@template jwt_auth_token_service}
 /// An implementation of [AuthTokenService] using JSON Web Tokens (JWT).
 ///
@@ -64,7 +73,7 @@ class JwtAuthTokenService implements AuthTokenService {
 
           // Custom claims (optional, include what's useful)
           'email': user.email,
-          'role': user.role, // Include the user's role
+          'role': _userRoleToString(user.role), // Include the user's role as a string
         },
         issuer: _issuer,
         subject: user.id,

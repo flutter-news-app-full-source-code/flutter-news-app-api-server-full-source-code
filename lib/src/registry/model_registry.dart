@@ -2,31 +2,60 @@
 // ignore_for_file: strict_raw_type, lines_longer_than_80_chars
 
 import 'package:dart_frog/dart_frog.dart';
+import 'package:ht_app_settings_client/ht_app_settings_client.dart';
 import 'package:ht_data_client/ht_data_client.dart';
 import 'package:ht_shared/ht_shared.dart';
 
-/// Defines the ownership type of a data model and associated access rules.
-enum ModelOwnership {
-  /// Indicates the resource is fully managed by admins (only admins can
-  /// Create, Read, Update, Delete).
-  adminOwned,
+import 'package:ht_api/src/rbac/permissions.dart'; // Import permissions
 
-  /// Indicates the resource is managed by admins (only admins can Create,
-  /// Update, Delete), but read operations (GET) are allowed for all
-  /// authenticated users.
-  adminOwnedReadAllowed,
+/// Defines the type of permission check required for a specific action.
+enum RequiredPermissionType {
+  /// No specific permission check is required (e.g., public access).
+  /// Note: This assumes the parent route group middleware allows unauthenticated
+  /// access if needed. The /data route requires authentication by default.
+  none,
 
-  /// Indicates the resource is owned by a specific user (only the owning user
-  /// or an admin can Create, Read, Update, Delete).
-  userOwned,
+  /// Requires the user to have the [UserRole.admin] role.
+  adminOnly,
+
+  /// Requires the user to have a specific permission string.
+  specificPermission,
+}
+
+/// Configuration for the authorization requirements of a single HTTP method
+/// on a data model.
+class ModelActionPermission {
+  /// {@macro model_action_permission}
+  const ModelActionPermission({
+    required this.type,
+    this.permission,
+    this.requiresOwnershipCheck = false,
+  }) : assert(
+          type != RequiredPermissionType.specificPermission ||
+              permission != null,
+          'Permission string must be provided for specificPermission type',
+        );
+
+  /// The type of permission check required.
+  final RequiredPermissionType type;
+
+  /// The specific permission string required if [type] is
+  /// [RequiredPermissionType.specificPermission].
+  final String? permission;
+
+  /// Whether an additional check is required to verify the authenticated user
+  /// is the owner of the specific data item being accessed (for item-specific
+  /// methods like GET, PUT, DELETE on `/[id]`).
+  final bool requiresOwnershipCheck;
 }
 
 /// {@template model_config}
 /// Configuration holder for a specific data model type [T].
 ///
 /// This class encapsulates the type-specific operations (like deserialization
-/// from JSON and ID extraction) needed by the generic `/api/v1/data` endpoint
-/// handlers. It allows those handlers to work with different data models
+/// from JSON, ID extraction, and owner ID extraction) and authorization
+/// requirements needed by the generic `/api/v1/data` endpoint handlers and
+/// middleware. It allows those handlers to work with different data models
 /// without needing explicit type checks for these common operations.
 ///
 /// An instance of this config is looked up via the [modelRegistry] based on the
@@ -37,7 +66,11 @@ class ModelConfig<T> {
   const ModelConfig({
     required this.fromJson,
     required this.getId,
-    required this.ownership, // New field
+    required this.getPermission,
+    required this.postPermission,
+    required this.putPermission,
+    required this.deletePermission,
+    this.getOwnerId, // Optional: Function to get owner ID for user-owned models
   });
 
   /// Function to deserialize JSON into an object of type [T].
@@ -46,12 +79,23 @@ class ModelConfig<T> {
   /// Function to extract the unique string ID from an item of type [T].
   final String Function(T item) getId;
 
-  /// The ownership type of this model.
-  final ModelOwnership ownership;
-}
+  /// Optional function to extract the unique string ID of the owner from an
+  /// item of type [T]. Required for models where `requiresOwnershipCheck`
+  /// is true for any action.
+  final String? Function(T item)? getOwnerId;
 
-// Repository providers are no longer defined here.
-// They will be created and provided directly in the main dependency setup.
+  /// Authorization configuration for GET requests.
+  final ModelActionPermission getPermission;
+
+  /// Authorization configuration for POST requests.
+  final ModelActionPermission postPermission;
+
+  /// Authorization configuration for PUT requests.
+  final ModelActionPermission putPermission;
+
+  /// Authorization configuration for DELETE requests.
+  final ModelActionPermission deletePermission;
+}
 
 /// {@template model_registry}
 /// Central registry mapping model name strings (used in the `?model=` query parameter)
@@ -61,7 +105,8 @@ class ModelConfig<T> {
 /// The middleware (`routes/api/v1/data/_middleware.dart`) uses this map to:
 /// 1. Validate the `model` query parameter provided by the client.
 /// 2. Retrieve the correct [ModelConfig] containing type-specific functions
-///    (like `fromJson`) needed by the generic route handlers (`index.dart`, `[id].dart`).
+///    (like `fromJson`, `getOwnerId`) and authorization metadata needed by the
+///    generic route handlers (`index.dart`, `[id].dart`) and authorization middleware.
 ///
 /// While individual repositories (`HtDataRepository<Headline>`, etc.) are provided
 /// directly in the main `routes/_middleware.dart`, this registry provides the
@@ -72,23 +117,103 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
   'headline': ModelConfig<Headline>(
     fromJson: Headline.fromJson,
     getId: (h) => h.id,
-    ownership: ModelOwnership.adminOwnedReadAllowed, // Updated ownership
+    // Headlines: Admin-owned, read allowed by standard/guest users
+    getPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.headlineRead,
+    ),
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+    ),
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+    ),
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+    ),
   ),
   'category': ModelConfig<Category>(
     fromJson: Category.fromJson,
     getId: (c) => c.id,
-    ownership: ModelOwnership.adminOwnedReadAllowed, // Updated ownership
+    // Categories: Admin-owned, read allowed by standard/guest users
+    getPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.categoryRead,
+    ),
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+    ),
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+    ),
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+    ),
   ),
   'source': ModelConfig<Source>(
     fromJson: Source.fromJson,
     getId: (s) => s.id,
-    ownership: ModelOwnership.adminOwnedReadAllowed, // Updated ownership
+    // Sources: Admin-owned, read allowed by standard/guest users
+    getPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.sourceRead,
+    ),
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+    ),
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+    ),
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+    ),
   ),
   'country': ModelConfig<Country>(
     fromJson: Country.fromJson,
     getId: (c) => c.id, // Assuming Country has an 'id' field
-    ownership: ModelOwnership.adminOwnedReadAllowed, // Updated ownership
+    // Countries: Admin-owned, read allowed by standard/guest users
+    getPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.countryRead,
+    ),
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+    ),
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+    ),
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+    ),
   ),
+  // Add configurations for other models like User, AppSettings, etc.
+  // Example for a User model (user can read/update their own, admin can read any)
+  'user': ModelConfig<User>(
+    fromJson: User.fromJson,
+    getId: (u) => u.id,
+    getOwnerId: (u) => u.id, // User is the owner of their profile
+    getPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.userReadOwned, // User can read their own
+      requiresOwnershipCheck: true, // Must be the owner
+    ),
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.none, // User creation handled by auth routes
+    ),
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.userUpdateOwned, // User can update their own
+      requiresOwnershipCheck: true, // Must be the owner
+    ),
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.userDeleteOwned, // User can delete their own
+      requiresOwnershipCheck: true, // Must be the owner
+    ),
+  ),
+  // Example for AppSettings (user-owned)
+
+  // Add other models following this pattern...
 };
 
 /// Type alias for the ModelRegistry map for easier provider usage.
