@@ -1,208 +1,62 @@
 # ht_api
 
-![coverage: percentage](https://img.shields.io/badge/coverage-22-green)
+![coverage: percentage](https://img.shields.io/badge/coverage-XX-green)
 [![style: very good analysis](https://img.shields.io/badge/style-very_good_analysis-B22C89.svg)](https://pub.dev/packages/very_good_analysis)
 [![License: PolyForm Free Trial](https://img.shields.io/badge/License-PolyForm%20Free%20Trial-blue)](https://polyformproject.org/licenses/free-trial/1.0.0)
 
-## Overview
+🚀 Accelerate the development of your news application backend with **ht_api**, the
+dedicated API service for the Headlines Toolkit. Built on the high-performance
+Dart Frog framework, `ht_api` provides the essential server-side infrastructure
+specifically designed to power robust and feature-rich news applications.
 
-`ht_api` is the central backend API service for the Headlines Toolkit (HT) project. Built with Dart using the Dart Frog framework, it provides essential APIs to support HT client applications (like the mobile app and web dashboard). It aims for simplicity, maintainability, and scalability, currently offering APIs for data access and user settings management.
+`ht_api` is a core component of the **Headlines Toolkit**, a comprehensive,
+source-available ecosystem designed for building feature-rich news
+applications, which also includes a Flutter mobile app and a web-based content
+management dashboard.
 
-## API Endpoints: 
+## ✨ Key Capabilities
 
-### Authentication (`/api/v1/auth`)
+*   🔒 **Effortless User Authentication:** Provide secure and seamless user access
+    with flexible flows including passwordless sign-in, anonymous access, and
+    the ability to easily link anonymous accounts to permanent ones. Focus on
+    user experience while `ht_api` handles the security complexities.
 
-These endpoints handle user authentication flows.
+*   ⚙️ **Synchronized App Settings:** Ensure a consistent and personalized user
+    experience across devices by effortlessly syncing application preferences
+    like theme, language, font styles, and more.
 
-**Standard Response Structure:** Uses the same `SuccessApiResponse` and error structure as the Data API. Authentication success responses typically use `SuccessApiResponse<AuthSuccessResponse>` (containing User and token) or `SuccessApiResponse<User>`.
+*   👤 **Personalized User Preferences:** Enable richer user interactions by
+    managing and syncing user-specific data such as saved headlines, search
+    history, or other personalized content tailored to individual users.
 
-**Authentication Operations:**
+*   💾 **Robust Data Management:** Securely manage core news application data,
+    including headlines, categories, and sources, through a well-structured
+    and protected API.
 
-1.  **Request Sign-In Code**
-    *   **Method:** `POST`
-    *   **Path:** `/api/v1/auth/request-code`
-    *   **Request Body:** JSON object `{"email": "user@example.com"}`.
-    *   **Success Response:** `202 Accepted` (Indicates request accepted, email sending initiated).
-    *   **Example:** `POST /api/v1/auth/request-code` with body `{"email": "test@example.com"}`
+*   🔧 **Solid Technical Foundation:** Built with Dart and the high-performance
+    Dart Frog framework, offering a maintainable codebase, standardized API
+    responses, and built-in access control for developers.
 
-2.  **Verify Sign-In Code**
-    *   **Method:** `POST`
-    *   **Path:** `/api/v1/auth/verify-code`
-    *   **Request Body:** JSON object `{"email": "user@example.com", "code": "123456"}`.
-    *   **Success Response:** `200 OK` with `SuccessApiResponse<AuthSuccessResponse>` containing the `User` object and the authentication `token`.
-    *   **Error Response:** `400 Bad Request` (e.g., invalid code/email format), `400 Bad Request` via `InvalidInputException` (e.g., code incorrect/expired).
-    *   **Example:** `POST /api/v1/auth/verify-code` with body `{"email": "test@example.com", "code": "654321"}`
+## 🔌 API Endpoints
 
-3.  **Sign In Anonymously**
-    *   **Method:** `POST`
-    *   **Path:** `/api/v1/auth/anonymous`
-    *   **Request Body:** None.
-    *   **Success Response:** `200 OK` with `SuccessApiResponse<AuthSuccessResponse>` containing the anonymous `User` object and the authentication `token`.
-    *   **Example:** `POST /api/v1/auth/anonymous`
+`ht_api` provides a clear and organized API surface under the `/api/v1/` path.
+Key endpoint groups cover authentication, data access, and user settings.
 
-4.  **Initiate Account Linking (Anonymous User)**
-    *   **Method:** `POST`
-    *   **Path:** `/api/v1/auth/link-email`
-    *   **Authentication:** Required (Bearer Token of an *anonymous* user).
-    *   **Request Body:** JSON object `{"email": "user@example.com"}`.
-    *   **Success Response:** `202 Accepted` (Indicates request accepted, email sending initiated).
-    *   **Error Response:** `401 Unauthorized` (if not authenticated), `400 Bad Request` (if not anonymous or invalid email), `409 Conflict` (if email is already in use or linking is pending).
-    *   **Example:** `POST /api/v1/auth/link-email` with body `{"email": "permanent@example.com"}` and `Authorization: Bearer <anonymous_token>` header.
+For complete API specifications, detailed endpoint documentation,
+request/response schemas, and error codes, please refer to the dedicated
+documentation website [todo:Link to the docs website].
 
-5.  **Complete Account Linking (Anonymous User)**
-    *   **Method:** `POST`
-    *   **Path:** `/api/v1/auth/verify-link-email`
-    *   **Authentication:** Required (Bearer Token of the *anonymous* user who initiated the link).
-    *   **Request Body:** JSON object `{"code": "123456"}`.
-    *   **Success Response:** `200 OK` with `SuccessApiResponse<AuthSuccessResponse>` containing the updated (now permanent) `User` object and a **new** authentication `token`.
-    *   **Error Response:** `401 Unauthorized` (if not authenticated), `400 Bad Request` (if not anonymous or invalid code), `400 Bad Request` via `InvalidInputException` (if code is incorrect/expired).
-    *   **Example:** `POST /api/v1/auth/verify-link-email` with body `{"code": "654321"}` and `Authorization: Bearer <anonymous_token>` header.
+## 🔑 Access and Licensing
 
-6.  **Get Current User Details**
-    *   **Method:** `GET`
-    *   **Path:** `/api/v1/auth/me`
-    *   **Authentication:** Required (Bearer Token).
-    *   **Success Response:** `200 OK` with `SuccessApiResponse<User>` containing the details of the authenticated user.
-    *   **Error Response:** `401 Unauthorized`.
-    *   **Example:** `GET /api/v1/auth/me` with `Authorization: Bearer <token>` header.
+`ht_api` is source-available as part of the Headlines Toolkit ecosystem.
 
-7.  **Sign Out**
-    *   **Method:** `POST`
-    *   **Path:** `/api/v1/auth/sign-out`
-    *   **Authentication:** Required (Bearer Token).
-    *   **Request Body:** None.
-    *   **Success Response:** `204 No Content` (Indicates successful server-side action, if any). Client is responsible for clearing local token.
-    *   **Error Response:** `401 Unauthorized`.
-    *   **Example:** `POST /api/v1/auth/sign-out` with `Authorization: Bearer <token>` header.
+The source code for `ht_api` is available for review as part of the Headlines
+Toolkit ecosystem. To acquire a commercial license for building unlimited news
+applications with the Headlines Toolkit repositories, please visit the
+[Headlines Toolkit GitHub organization page](https://github.com/headlines-toolkit)
+for more details.
 
-8.  **Delete Account**
-    *   **Method:** `DELETE`
-    *   **Path:** `/api/v1/auth/delete-account`
-    *   **Authentication:** Required (Bearer Token).
-    *   **Request Body:** None.
-    *   **Success Response:** `204 No Content` (Indicates successful deletion).
-    *   **Error Response:** `401 Unauthorized` (if not authenticated), `404 Not Found` (if the user was already deleted), or other standard errors via the error handler middleware.
-    *   **Example:** `DELETE /api/v1/auth/delete-account` with `Authorization: Bearer <token>` header.
-
-### Data (`/api/v1/data`)
-
-**Authentication required for all operations.**
-
-This endpoint serves as the single entry point for accessing different data models. The specific model is determined by the `model` query parameter.
-
-**Supported `model` values (currently global):** `headline`, `category`, `source`, `country`
-
-**Standard Response Structure:** (Applies to both Data and Settings APIs)
-
-*   **Success:**
-    ```json
-    {
-      "data": <item_or_paginated_list_or_settings_object>,
-      "metadata": {
-        "request_id": "unique-uuid-v4-per-request",
-        "timestamp": "iso-8601-utc-timestamp"
-      }
-    }
-    ```
-*   **Error:**
-    ```json
-    {
-      "error": {
-        "code": "ERROR_CODE_STRING",
-        "message": "Descriptive error message"
-      }
-    }
-    ```
-
-**Data Operations:**
-
-1.  **Get All Items (Collection)**
-    *   **Method:** `GET`
-    *   **Path:** `/api/v1/data?model=<model_name>`
-    *   **Optional Query Parameters:** `limit=<int>`, `startAfterId=<string>`, other filtering params.
-    *   **Success Response:** `200 OK` with `SuccessApiResponse<PaginatedResponse<T>>`.
-    *   **Example:** `GET /api/v1/data?model=headline&limit=10`
-
-2.  **Create Item**
-    *   **Method:** `POST`
-    *   **Path:** `/api/v1/data?model=<model_name>`
-    *   **Request Body:** JSON object representing the item to create (using `camelCase` keys).
-    *   **Success Response:** `201 Created` with `SuccessApiResponse<T>` containing the created item.
-    *   **Example:** `POST /api/v1/data?model=category` with body `{"name": "Sports", "description": "News about sports"}` (Requires Bearer token)
-
-3.  **Get Item by ID**
-    *   **Method:** `GET`
-    *   **Path:** `/api/v1/data/<item_id>?model=<model_name>`
-    *   **Authentication:** Required (Bearer Token).
-    *   **Success Response:** `200 OK` with `SuccessApiResponse<T>`.
-    *   **Error Response:** `401 Unauthorized`, `404 Not Found`.
-    *   **Example:** `GET /api/v1/data/some-headline-id?model=headline` (Requires Bearer token)
-
-4.  **Update Item by ID**
-    *   **Method:** `PUT`
-    *   **Path:** `/api/v1/data/<item_id>?model=<model_name>`
-    *   **Authentication:** Required (Bearer Token).
-    *   **Request Body:** JSON object representing the complete updated item (must include `id`, using `camelCase` keys).
-    *   **Success Response:** `200 OK` with `SuccessApiResponse<T>`.
-    *   **Error Response:** `401 Unauthorized`, `404 Not Found`, `400 Bad Request`.
-    *   **Example:** `PUT /api/v1/data/some-category-id?model=category` with updated category JSON (Requires Bearer token).
-
-5.  **Delete Item by ID**
-    *   **Method:** `DELETE`
-    *   **Path:** `/api/v1/data/<item_id>?model=<model_name>`
-    *   **Authentication:** Required (Bearer Token).
-    *   **Success Response:** `204 No Content`.
-    *   **Error Response:** `401 Unauthorized`, `404 Not Found`.
-    *   **Example:** `DELETE /api/v1/data/some-source-id?model=source` (Requires Bearer token)
-
-### User Settings (`/api/v1/users/{userId}/settings`)
-
-These endpoints manage application settings for an authenticated user. The `{userId}` in the path must match the ID of the authenticated user.
-
-**Authentication Required for all operations.**
-
-**Standard Response Structure:** Uses the same `SuccessApiResponse` and error structure as the Data API.
-
-**Settings Operations:**
-
-1.  **Get Display Settings**
-    *   **Method:** `GET`
-    *   **Path:** `/api/v1/users/{userId}/settings/display`
-    *   **Success Response:** `200 OK` with `SuccessApiResponse<DisplaySettings>`.
-    *   **Error Response:** `401 Unauthorized`, `403 Forbidden`.
-    *   **Example:** `GET /api/v1/users/user-abc-123/settings/display` (Requires Bearer token for user-abc-123)
-
-2.  **Update Display Settings**
-    *   **Method:** `PUT`
-    *   **Path:** `/api/v1/users/{userId}/settings/display`
-    *   **Request Body:** JSON object representing the complete `DisplaySettings` (using `camelCase` keys).
-    *   **Success Response:** `200 OK` with `SuccessApiResponse<DisplaySettings>` containing the updated settings.
-    *   **Error Response:** `401 Unauthorized`, `403 Forbidden`, `400 Bad Request`.
-    *   **Example:** `PUT /api/v1/users/user-abc-123/settings/display` with body `{"baseTheme": "dark", ...}` (Requires Bearer token for user-abc-123).
-
-3.  **Get Language Setting**
-    *   **Method:** `GET`
-    *   **Path:** `/api/v1/users/{userId}/settings/language`
-    *   **Success Response:** `200 OK` with `SuccessApiResponse<Map<String, String>>` (e.g., `{"data": {"language": "en"}, ...}`).
-    *   **Error Response:** `401 Unauthorized`, `403 Forbidden`.
-    *   **Example:** `GET /api/v1/users/user-abc-123/settings/language` (Requires Bearer token for user-abc-123)
-
-4.  **Update Language Setting**
-    *   **Method:** `PUT`
-    *   **Path:** `/api/v1/users/{userId}/settings/language`
-    *   **Request Body:** JSON object `{"language": "<code>"}` (e.g., `{"language": "es"}`).
-    *   **Success Response:** `200 OK` with `SuccessApiResponse<Map<String, String>>` containing the updated language setting.
-    *   **Error Response:** `401 Unauthorized`, `403 Forbidden`, `400 Bad Request`.
-    *   **Example:** `PUT /api/v1/users/user-abc-123/settings/language` with body `{"language": "fr"}` (Requires Bearer token for user-abc-123).
-
-5.  **Clear All Settings**
-    *   **Method:** `DELETE`
-    *   **Path:** `/api/v1/users/{userId}/settings`
-    *   **Success Response:** `204 No Content`.
-    *   **Error Response:** `401 Unauthorized`, `403 Forbidden`.
-    *   **Example:** `DELETE /api/v1/users/user-abc-123/settings` (Requires Bearer token for user-abc-123)
-
-## Setup & Running
+## 💻 Setup & Running
 
 1.  **Prerequisites:**
     *   Dart SDK (`>=3.0.0`)
@@ -220,16 +74,21 @@ These endpoints manage application settings for an authenticated user. The `{use
     ```bash
     dart_frog dev
     ```
-    The API will typically be available at `http://localhost:8080`. Fixture data from `lib/src/fixtures/` will be loaded into the in-memory repositories on startup.
+    The API will typically be available at `http://localhost:8080`. Fixture data
+    from `lib/src/fixtures/` will be loaded into the in-memory repositories on
+    startup.
 
-## Testing
+## ✅ Testing
 
-*   Run tests and check coverage (aim for >= 90%):
-    ```bash
-    # Ensure very_good_cli is activated: dart pub global activate very_good_cli
-    very_good test --min-coverage 90
-    ```
-    
-## License
+Ensure the API is robust and meets quality standards by running the test suite:
+
+```bash
+# Ensure very_good_cli is activated: dart pub global activate very_good_cli
+very_good test --min-coverage 90
+```
+
+Aim for a minimum of 90% line coverage.
+
+## 📄 License
 
 This package is licensed under the [PolyForm Free Trial](LICENSE). Please review the terms before use.

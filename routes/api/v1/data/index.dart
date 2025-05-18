@@ -1,11 +1,12 @@
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
+import 'package:ht_api/src/rbac/permission_service.dart'; // Import PermissionService
 import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 
-import '../../../_middleware.dart';
+import '../../../_middleware.dart'; // Assuming RequestId is here
 
 /// Handles requests for the /api/v1/data collection endpoint.
 /// Dispatches requests to specific handlers based on the HTTP method.
@@ -14,48 +15,36 @@ Future<Response> onRequest(RequestContext context) async {
   final modelName = context.read<String>();
   final modelConfig = context.read<ModelConfig<dynamic>>();
   final requestId = context.read<RequestId>().id;
-  // Since requireAuthentication is used, User is guaranteed to be non-null.
+  // User is guaranteed non-null by requireAuthentication() middleware
   final authenticatedUser = context.read<User>();
+  final permissionService =
+      context.read<PermissionService>(); // Read PermissionService
 
-  try {
-    switch (context.request.method) {
-      case HttpMethod.get:
-        return await _handleGet(
-          context,
-          modelName,
-          modelConfig,
-          authenticatedUser,
-          requestId,
-        );
-      case HttpMethod.post:
-        return await _handlePost(
-          context,
-          modelName,
-          modelConfig,
-          authenticatedUser,
-          requestId,
-        );
-      // Add cases for other methods if needed in the future
-      default:
-        // Methods not allowed on the collection endpoint
-        return Response(statusCode: HttpStatus.methodNotAllowed);
-    }
-  } on HtHttpException catch (_) {
-    // Let the errorHandler middleware handle HtHttpExceptions
-    rethrow;
-  } on FormatException catch (_) {
-    // Let the errorHandler middleware handle FormatExceptions
-    rethrow;
-  } catch (e, stackTrace) {
-    // Handle any other unexpected errors locally (e.g., provider resolution)
-    // Include requestId in the server log for easier debugging
-    print(
-      '[ReqID: $requestId] Unexpected error in /data/index.dart handler: $e\n$stackTrace',
-    );
-    return Response(
-      statusCode: HttpStatus.internalServerError,
-      body: 'Internal Server Error.',
-    );
+  // The main try/catch block here is removed to let the errorHandler middleware
+  // handle all exceptions thrown by the handlers below.
+  switch (context.request.method) {
+    case HttpMethod.get:
+      return _handleGet(
+        context,
+        modelName,
+        modelConfig,
+        authenticatedUser,
+        permissionService, // Pass PermissionService
+        requestId,
+      );
+    case HttpMethod.post:
+      return _handlePost(
+        context,
+        modelName,
+        modelConfig,
+        authenticatedUser,
+        permissionService, // Pass PermissionService
+        requestId,
+      );
+    // Add cases for other methods if needed in the future
+    default:
+      // Methods not allowed on the collection endpoint
+      return Response(statusCode: HttpStatus.methodNotAllowed);
   }
 }
 
@@ -67,8 +56,12 @@ Future<Response> _handleGet(
   String modelName,
   ModelConfig<dynamic> modelConfig,
   User authenticatedUser,
+  PermissionService permissionService, // Receive PermissionService
   String requestId,
 ) async {
+  // Authorization check is handled by authorizationMiddleware before this.
+  // This handler only needs to perform the ownership check if required.
+
   // Read query parameters
   final queryParams = context.request.uri.queryParameters;
   final startAfterId = queryParams['startAfterId'];
@@ -82,100 +75,101 @@ Future<Response> _handleGet(
   // Process based on model type
   PaginatedResponse<dynamic> paginatedResponse;
 
-  // Apply access control based on ownership type for GET requests
-  if (modelConfig.ownership == ModelOwnership.adminOwned &&
-      !authenticatedUser.isAdmin) {
-    throw const ForbiddenException(
-      'You do not have permission to read this resource.',
-    );
-  }
-
+  // Determine userId for repository call based on ModelConfig (for data scoping)
   String? userIdForRepoCall;
-  // For userOwned models, pass the authenticated user's ID to the repository
-  // for filtering. For adminOwned/adminOwnedReadAllowed, pass null.
-  if (modelConfig.ownership == ModelOwnership.userOwned) {
+  // If the model is user-owned, pass the authenticated user's ID to the repository
+  // for filtering. Otherwise, pass null.
+  // Note: This is for data *scoping* by the repository, not the permission check.
+  // We infer user-owned based on the presence of getOwnerId function.
+  if (modelConfig.getOwnerId != null) {
     userIdForRepoCall = authenticatedUser.id;
   } else {
     userIdForRepoCall = null;
   }
 
-  try {
-    switch (modelName) {
-      case 'headline':
-        final repo = context.read<HtDataRepository<Headline>>();
-        paginatedResponse = specificQuery.isNotEmpty
-            ? await repo.readAllByQuery(
-                specificQuery,
-                userId: userIdForRepoCall,
-                startAfterId: startAfterId,
-                limit: limit,
-              )
-            : await repo.readAll(
-                userId: userIdForRepoCall,
-                startAfterId: startAfterId,
-                limit: limit,
-              );
-      case 'category':
-        final repo = context.read<HtDataRepository<Category>>();
-        paginatedResponse = specificQuery.isNotEmpty
-            ? await repo.readAllByQuery(
-                specificQuery,
-                userId: userIdForRepoCall,
-                startAfterId: startAfterId,
-                limit: limit,
-              )
-            : await repo.readAll(
-                userId: userIdForRepoCall,
-                startAfterId: startAfterId,
-                limit: limit,
-              );
-      case 'source':
-        final repo = context.read<HtDataRepository<Source>>();
-        paginatedResponse = specificQuery.isNotEmpty
-            ? await repo.readAllByQuery(
-                specificQuery,
-                userId: userIdForRepoCall,
-                startAfterId: startAfterId,
-                limit: limit,
-              )
-            : await repo.readAll(
-                userId: userIdForRepoCall,
-                startAfterId: startAfterId,
-                limit: limit,
-              );
-      case 'country':
-        final repo = context.read<HtDataRepository<Country>>();
-        paginatedResponse = specificQuery.isNotEmpty
-            ? await repo.readAllByQuery(
-                specificQuery,
-                userId: userIdForRepoCall,
-                startAfterId: startAfterId,
-                limit: limit,
-              )
-            : await repo.readAll(
-                userId: userIdForRepoCall,
-                startAfterId: startAfterId,
-                limit: limit,
-              );
-      default:
-        // This case should be caught by middleware, but added for safety
-        return Response(
-          statusCode: HttpStatus.internalServerError,
-          body:
-              'Internal Server Error: Unsupported model type "$modelName" reached handler.',
-        );
-    }
-  } catch (e) {
-    // Catch potential provider errors during context.read within this handler
-    // Include requestId in the server log
-    print(
-      '[ReqID: $requestId] Error reading repository provider for model "$modelName" in _handleGet: $e',
-    );
-    return Response(
-      statusCode: HttpStatus.internalServerError,
-      body:
-          'Internal Server Error: Could not resolve repository for model "$modelName".',
-    );
+  // Repository exceptions (like NotFoundException, BadRequestException)
+  // will propagate up to the errorHandler.
+  switch (modelName) {
+    case 'headline':
+      final repo = context.read<HtDataRepository<Headline>>();
+      paginatedResponse = specificQuery.isNotEmpty
+          ? await repo.readAllByQuery(
+              specificQuery,
+              userId: userIdForRepoCall,
+              startAfterId: startAfterId,
+              limit: limit,
+            )
+          : await repo.readAll(
+              userId: userIdForRepoCall,
+              startAfterId: startAfterId,
+              limit: limit,
+            );
+    case 'category':
+      final repo = context.read<HtDataRepository<Category>>();
+      paginatedResponse = specificQuery.isNotEmpty
+          ? await repo.readAllByQuery(
+              specificQuery,
+              userId: userIdForRepoCall,
+              startAfterId: startAfterId,
+              limit: limit,
+            )
+          : await repo.readAll(
+              userId: userIdForRepoCall,
+              startAfterId: startAfterId,
+              limit: limit,
+            );
+    case 'source':
+      final repo = context.read<HtDataRepository<Source>>();
+      paginatedResponse = specificQuery.isNotEmpty
+          ? await repo.readAllByQuery(
+              specificQuery,
+              userId: userIdForRepoCall,
+              startAfterId: startAfterId,
+              limit: limit,
+            )
+          : await repo.readAll(
+              userId: userIdForRepoCall,
+              startAfterId: startAfterId,
+              limit: limit,
+            );
+    case 'country':
+      final repo = context.read<HtDataRepository<Country>>();
+      paginatedResponse = specificQuery.isNotEmpty
+          ? await repo.readAllByQuery(
+              specificQuery,
+              userId: userIdForRepoCall,
+              startAfterId: startAfterId,
+              limit: limit,
+            )
+          : await repo.readAll(
+              userId: userIdForRepoCall,
+              startAfterId: startAfterId,
+              limit: limit,
+            );
+    case 'user': // Handle User model specifically if needed, or rely on generic
+      final repo = context.read<HtDataRepository<User>>();
+      // Note: readAll/readAllByQuery on User repo might need special handling
+      // depending on whether non-admins can list *all* users or just their own.
+      // Assuming for now readAll/readAllByQuery with userId scopes to owned.
+      paginatedResponse = specificQuery.isNotEmpty
+          ? await repo.readAllByQuery(
+              specificQuery,
+              userId: userIdForRepoCall,
+              startAfterId: startAfterId,
+              limit: limit,
+            )
+          : await repo.readAll(
+              userId: userIdForRepoCall,
+              startAfterId: startAfterId,
+              limit: limit,
+            );
+    // Add cases for other models as they are added to ModelRegistry
+    default:
+      // This case should be caught by middleware, but added for safety
+      // Throw an exception to be caught by the errorHandler
+      throw OperationFailedException(
+        'Unsupported model type "$modelName" reached handler.',
+      );
   }
 
   // Create metadata including the request ID and current timestamp
@@ -209,14 +203,15 @@ Future<Response> _handlePost(
   String modelName,
   ModelConfig<dynamic> modelConfig,
   User authenticatedUser,
+  PermissionService permissionService, // Receive PermissionService
   String requestId,
 ) async {
+  // Authorization check is handled by authorizationMiddleware before this.
+
   final requestBody = await context.request.json() as Map<String, dynamic>?;
   if (requestBody == null) {
-    return Response(
-      statusCode: HttpStatus.badRequest,
-      body: 'Missing or invalid request body.',
-    );
+    // Throw BadRequestException to be caught by the errorHandler
+    throw const BadRequestException('Missing or invalid request body.');
   }
 
   // Deserialize using ModelConfig's fromJson, catching TypeErrors
@@ -227,88 +222,66 @@ Future<Response> _handlePost(
     // Catch errors during deserialization (e.g., missing required fields)
     // Include requestId in the server log
     print('[ReqID: $requestId] Deserialization TypeError in POST /data: $e');
-    return Response.json(
-      statusCode: HttpStatus.badRequest, // 400
-      body: {
-        'error': {
-          'code': 'INVALID_REQUEST_BODY',
-          'message':
-              'Invalid request body: Missing or invalid required field(s).',
-          // 'details': e.toString(), // Optional: Include details in dev
-        },
-      },
+    // Throw BadRequestException to be caught by the errorHandler
+    throw const BadRequestException(
+      'Invalid request body: Missing or invalid required field(s).',
     );
   }
 
-  // Apply access control based on ownership type for POST requests
-  if ((modelConfig.ownership == ModelOwnership.adminOwned ||
-          modelConfig.ownership == ModelOwnership.adminOwnedReadAllowed) &&
-      !authenticatedUser.isAdmin) {
-    throw const ForbiddenException(
-      'Only administrators can create this resource.',
-    );
-  }
-
-  // Process based on model type
-  dynamic createdItem;
-
+  // Determine userId for repository call based on ModelConfig (for data scoping/ownership enforcement)
   String? userIdForRepoCall;
-  // For userOwned models, pass the authenticated user's ID to the repository
-  // for associating ownership during creation. For adminOwned/adminOwnedReadAllowed,
-  // pass null (repository handles admin creation).
-  if (modelConfig.ownership == ModelOwnership.userOwned) {
+  // If the model is user-owned, pass the authenticated user's ID to the repository
+  // for associating ownership during creation. Otherwise, pass null.
+  // We infer user-owned based on the presence of getOwnerId function.
+  if (modelConfig.getOwnerId != null) {
     userIdForRepoCall = authenticatedUser.id;
   } else {
     userIdForRepoCall = null;
   }
 
+  // Process based on model type
+  dynamic createdItem;
+
   // Repository exceptions (like BadRequestException from create) will propagate
-  // up to the main onRequest try/catch and be re-thrown to the middleware.
-  try {
-    switch (modelName) {
-      case 'headline':
-        final repo = context.read<HtDataRepository<Headline>>();
-        createdItem = await repo.create(
-          item: newItem as Headline,
-          userId: userIdForRepoCall,
-        );
-      case 'category':
-        final repo = context.read<HtDataRepository<Category>>();
-        createdItem = await repo.create(
-          item: newItem as Category,
-          userId: userIdForRepoCall,
-        );
-      case 'source':
-        final repo = context.read<HtDataRepository<Source>>();
-        createdItem = await repo.create(
-          item: newItem as Source,
-          userId: userIdForRepoCall,
-        );
-      case 'country':
-        final repo = context.read<HtDataRepository<Country>>();
-        createdItem = await repo.create(
-          item: newItem as Country,
-          userId: userIdForRepoCall,
-        );
-      default:
-        // This case should ideally be caught by middleware, but added for safety
-        return Response(
-          statusCode: HttpStatus.internalServerError,
-          body:
-              'Internal Server Error: Unsupported model type "$modelName" reached handler.',
-        );
-    }
-  } catch (e) {
-    // Catch potential provider errors during context.read within this handler
-    // Include requestId in the server log
-    print(
-      '[ReqID: $requestId] Error reading repository provider for model "$modelName" in _handlePost: $e',
-    );
-    return Response(
-      statusCode: HttpStatus.internalServerError,
-      body:
-          'Internal Server Error: Could not resolve repository for model "$modelName".',
-    );
+  // up to the errorHandler.
+  switch (modelName) {
+    case 'headline':
+      final repo = context.read<HtDataRepository<Headline>>();
+      createdItem = await repo.create(
+        item: newItem as Headline,
+        userId: userIdForRepoCall,
+      );
+    case 'category':
+      final repo = context.read<HtDataRepository<Category>>();
+      createdItem = await repo.create(
+        item: newItem as Category,
+        userId: userIdForRepoCall,
+      );
+    case 'source':
+      final repo = context.read<HtDataRepository<Source>>();
+      createdItem = await repo.create(
+        item: newItem as Source,
+        userId: userIdForRepoCall,
+      );
+    case 'country':
+      final repo = context.read<HtDataRepository<Country>>();
+      createdItem = await repo.create(
+        item: newItem as Country,
+        userId: userIdForRepoCall,
+      );
+    case 'user': // Handle User model specifically if needed, or rely on generic
+      // User creation is typically handled by auth routes, not generic data POST.
+      // Throw Forbidden or BadRequest if attempted here.
+      throw const ForbiddenException(
+        'User creation is not allowed via the generic data endpoint.',
+      );
+    // Add cases for other models as they are added to ModelRegistry
+    default:
+      // This case should ideally be caught by middleware, but added for safety
+      // Throw an exception to be caught by the errorHandler
+      throw OperationFailedException(
+        'Unsupported model type "$modelName" reached handler.',
+      );
   }
 
   // Create metadata including the request ID and current timestamp

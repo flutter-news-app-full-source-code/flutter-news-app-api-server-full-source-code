@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/middlewares/error_handler.dart';
+import 'package:ht_api/src/rbac/permission_service.dart'; // Import PermissionService
 import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_api/src/services/auth_service.dart';
 import 'package:ht_api/src/services/auth_token_service.dart';
@@ -203,6 +204,10 @@ Handler middleware(Handler handler) {
   );
   print('[MiddlewareSetup] AuthService instantiated.'); // Added log
 
+  // --- RBAC Dependencies ---
+  const permissionService =
+      PermissionService(); // Instantiate PermissionService
+
   // ==========================================================================
   //                            MIDDLEWARE CHAIN
   // ==========================================================================
@@ -290,7 +295,13 @@ Handler middleware(Handler handler) {
         ),
       ) // Reads other services/repos
 
-      // --- 5. Request Logger (Logging) ---
+      // --- 5. RBAC Service Provider ---
+      // PURPOSE: Provides the PermissionService for authorization checks.
+      // ORDER:   Must be provided before any middleware or handlers that use it
+      //          (e.g., authorizationMiddleware).
+      .use(provider<PermissionService>((_) => permissionService))
+
+      // --- 6. Request Logger (Logging) ---
       // PURPOSE: Logs details about the incoming request and outgoing response.
       // ORDER:   Often placed late in the request phase / early in the response
       //          phase. Placing it here logs the request *before* the handler

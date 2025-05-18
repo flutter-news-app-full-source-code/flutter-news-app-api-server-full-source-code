@@ -22,7 +22,7 @@ Future<Response> onRequest(RequestContext context) async {
     // This should ideally be caught by `authenticationProvider` if route is protected
     throw const UnauthorizedException('Authentication required to link email.');
   }
-  if (!authenticatedUser.isAnonymous) {
+  if (authenticatedUser.role != UserRole.guestUser) {
     throw const BadRequestException(
       'Account is already permanent. Cannot initiate email linking.',
     );

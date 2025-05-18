@@ -115,8 +115,7 @@ class AuthService {
         user = User(
           id: _uuid.v4(), // Generate new ID
           email: email,
-          isAnonymous: false, // Email verified user is not anonymous
-          isAdmin: false,
+          role: UserRole.standardUser, // Email verified user is standard user
         );
         user = await _userRepository.create(item: user); // Save the new user
         print('Created new user: ${user.id}');
@@ -155,9 +154,8 @@ class AuthService {
     try {
       user = User(
         id: _uuid.v4(), // Generate new ID
-        isAnonymous: true,
+        role: UserRole.guestUser, // Anonymous users are guest users
         email: null, // Anonymous users don't have an email initially
-        isAdmin: false,
       );
       user = await _userRepository.create(item: user);
       print('Created anonymous user: ${user.id}');
@@ -248,7 +246,7 @@ class AuthService {
     required User anonymousUser,
     required String emailToLink,
   }) async {
-    if (!anonymousUser.isAnonymous) {
+    if (anonymousUser.role != UserRole.guestUser) {
       throw const BadRequestException(
         'Account is already permanent. Cannot link email.',
       );
@@ -310,7 +308,7 @@ class AuthService {
     required String codeFromUser,
     required String oldAnonymousToken, // Needed to invalidate it
   }) async {
-    if (!anonymousUser.isAnonymous) {
+    if (anonymousUser.role != UserRole.guestUser) {
       // Should ideally not happen if flow is correct, but good safeguard.
       throw const BadRequestException(
         'Account is already permanent. Cannot complete email linking.',
@@ -335,8 +333,7 @@ class AuthService {
       final updatedUser = User(
         id: anonymousUser.id, // Preserve original ID
         email: linkedEmail,
-        isAnonymous: false, // Now a permanent user
-        isAdmin: false,
+        role: UserRole.standardUser, // Now a permanent standard user
       );
       final permanentUser = await _userRepository.update(
         id: updatedUser.id,
