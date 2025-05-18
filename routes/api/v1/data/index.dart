@@ -17,7 +17,8 @@ Future<Response> onRequest(RequestContext context) async {
   final requestId = context.read<RequestId>().id;
   // User is guaranteed non-null by requireAuthentication() middleware
   final authenticatedUser = context.read<User>();
-  final permissionService = context.read<PermissionService>(); // Read PermissionService
+  final permissionService =
+      context.read<PermissionService>(); // Read PermissionService
 
   // The main try/catch block here is removed to let the errorHandler middleware
   // handle all exceptions thrown by the handlers below.
@@ -81,9 +82,9 @@ Future<Response> _handleGet(
   // Note: This is for data *scoping* by the repository, not the permission check.
   // We infer user-owned based on the presence of getOwnerId function.
   if (modelConfig.getOwnerId != null) {
-     userIdForRepoCall = authenticatedUser.id;
+    userIdForRepoCall = authenticatedUser.id;
   } else {
-     userIdForRepoCall = null;
+    userIdForRepoCall = null;
   }
 
   // Repository exceptions (like NotFoundException, BadRequestException)
@@ -146,11 +147,11 @@ Future<Response> _handleGet(
               limit: limit,
             );
     case 'user': // Handle User model specifically if needed, or rely on generic
-       final repo = context.read<HtDataRepository<User>>();
-       // Note: readAll/readAllByQuery on User repo might need special handling
-       // depending on whether non-admins can list *all* users or just their own.
-       // Assuming for now readAll/readAllByQuery with userId scopes to owned.
-       paginatedResponse = specificQuery.isNotEmpty
+      final repo = context.read<HtDataRepository<User>>();
+      // Note: readAll/readAllByQuery on User repo might need special handling
+      // depending on whether non-admins can list *all* users or just their own.
+      // Assuming for now readAll/readAllByQuery with userId scopes to owned.
+      paginatedResponse = specificQuery.isNotEmpty
           ? await repo.readAllByQuery(
               specificQuery,
               userId: userIdForRepoCall,
@@ -238,7 +239,6 @@ Future<Response> _handlePost(
     userIdForRepoCall = null;
   }
 
-
   // Process based on model type
   dynamic createdItem;
 
@@ -270,12 +270,11 @@ Future<Response> _handlePost(
         userId: userIdForRepoCall,
       );
     case 'user': // Handle User model specifically if needed, or rely on generic
-       final repo = context.read<HtDataRepository<User>>();
-       // User creation is typically handled by auth routes, not generic data POST.
-       // Throw Forbidden or BadRequest if attempted here.
-       throw const ForbiddenException(
+      // User creation is typically handled by auth routes, not generic data POST.
+      // Throw Forbidden or BadRequest if attempted here.
+      throw const ForbiddenException(
         'User creation is not allowed via the generic data endpoint.',
-       );
+      );
     // Add cases for other models as they are added to ModelRegistry
     default:
       // This case should ideally be caught by middleware, but added for safety

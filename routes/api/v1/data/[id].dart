@@ -17,7 +17,8 @@ Future<Response> onRequest(RequestContext context, String id) async {
   final requestId = context.read<RequestId>().id;
   // User is guaranteed non-null by requireAuthentication() middleware
   final authenticatedUser = context.read<User>();
-  final permissionService = context.read<PermissionService>(); // Read PermissionService
+  final permissionService =
+      context.read<PermissionService>(); // Read PermissionService
 
   // The main try/catch block here is removed to let the errorHandler middleware
   // handle all exceptions thrown by the handlers below.
@@ -82,11 +83,10 @@ Future<Response> _handleGet(
   // Note: This is for data *scoping* by the repository, not the permission check.
   // We infer user-owned based on the presence of getOwnerId function.
   if (modelConfig.getOwnerId != null) {
-     userIdForRepoCall = authenticatedUser.id;
+    userIdForRepoCall = authenticatedUser.id;
   } else {
-     userIdForRepoCall = null;
+    userIdForRepoCall = null;
   }
-
 
   // Repository exceptions (like NotFoundException) will propagate up to the
   // main onRequest try/catch (which is now removed, so they go to errorHandler).
@@ -104,8 +104,8 @@ Future<Response> _handleGet(
       final repo = context.read<HtDataRepository<Country>>();
       item = await repo.read(id: id, userId: userIdForRepoCall);
     case 'user': // Handle User model specifically if needed, or rely on generic
-       final repo = context.read<HtDataRepository<User>>();
-       item = await repo.read(id: id, userId: userIdForRepoCall);
+      final repo = context.read<HtDataRepository<User>>();
+      item = await repo.read(id: id, userId: userIdForRepoCall);
     // Add cases for other models as they are added to ModelRegistry
     default:
       // This case should ideally be caught by middleware, but added for safety
@@ -122,7 +122,7 @@ Future<Response> _handleGet(
       !permissionService.isAdmin(authenticatedUser)) {
     // Ensure getOwnerId is provided for models requiring ownership check
     if (modelConfig.getOwnerId == null) {
-       print(
+      print(
         '[ReqID: $requestId] Configuration Error: Model "$modelName" requires '
         'ownership check for GET but getOwnerId is not provided.',
       );
@@ -141,7 +141,6 @@ Future<Response> _handleGet(
       );
     }
   }
-
 
   // Create metadata including the request ID and current timestamp
   final metadata = ResponseMetadata(
@@ -204,31 +203,29 @@ Future<Response> _handlePut(
   // Ensure the ID in the path matches the ID in the request body (if present)
   // This is a data integrity check, not an authorization check.
   try {
-     final bodyItemId = modelConfig.getId(itemToUpdate);
-     if (bodyItemId != id) {
-        // Throw BadRequestException to be caught by the errorHandler
-        throw BadRequestException(
-          'Bad Request: ID in request body ("$bodyItemId") does not match ID in path ("$id").',
-        );
-     }
+    final bodyItemId = modelConfig.getId(itemToUpdate);
+    if (bodyItemId != id) {
+      // Throw BadRequestException to be caught by the errorHandler
+      throw BadRequestException(
+        'Bad Request: ID in request body ("$bodyItemId") does not match ID in path ("$id").',
+      );
+    }
   } catch (e) {
-     // Ignore if getId throws, means ID might not be in the body,
-     // which is acceptable depending on the model/client.
-     // Log for debugging if needed.
-     print('[ReqID: $requestId] Warning: Could not get ID from PUT body: $e');
+    // Ignore if getId throws, means ID might not be in the body,
+    // which is acceptable depending on the model/client.
+    // Log for debugging if needed.
+    print('[ReqID: $requestId] Warning: Could not get ID from PUT body: $e');
   }
-
 
   // Determine userId for repository call based on ModelConfig (for data scoping/ownership enforcement)
   String? userIdForRepoCall;
   // If the model is user-owned, pass the authenticated user's ID to the repository
   // for ownership enforcement. Otherwise, pass null.
-   if (modelConfig.getOwnerId != null) {
-     userIdForRepoCall = authenticatedUser.id;
+  if (modelConfig.getOwnerId != null) {
+    userIdForRepoCall = authenticatedUser.id;
   } else {
-     userIdForRepoCall = null;
+    userIdForRepoCall = null;
   }
-
 
   dynamic updatedItem;
 
@@ -247,7 +244,7 @@ Future<Response> _handlePut(
     case 'category':
       {
         final repo = context.read<HtDataRepository<Category>>();
-         updatedItem = await repo.update(
+        updatedItem = await repo.update(
           id: id,
           item: itemToUpdate as Category,
           userId: userIdForRepoCall,
@@ -256,7 +253,7 @@ Future<Response> _handlePut(
     case 'source':
       {
         final repo = context.read<HtDataRepository<Source>>();
-         updatedItem = await repo.update(
+        updatedItem = await repo.update(
           id: id,
           item: itemToUpdate as Source,
           userId: userIdForRepoCall,
@@ -265,16 +262,16 @@ Future<Response> _handlePut(
     case 'country':
       {
         final repo = context.read<HtDataRepository<Country>>();
-         updatedItem = await repo.update(
+        updatedItem = await repo.update(
           id: id,
           item: itemToUpdate as Country,
           userId: userIdForRepoCall,
         );
       }
-     case 'user':
+    case 'user':
       {
         final repo = context.read<HtDataRepository<User>>();
-         updatedItem = await repo.update(
+        updatedItem = await repo.update(
           id: id,
           item: itemToUpdate as User,
           userId: userIdForRepoCall,
@@ -289,7 +286,7 @@ Future<Response> _handlePut(
       );
   }
 
-   // --- Handler-Level Ownership Check (for PUT) ---
+  // --- Handler-Level Ownership Check (for PUT) ---
   // This check is needed if the ModelConfig for PUT requires ownership
   // AND the user is NOT an admin (admins can bypass ownership checks).
   // Note: The repository *might* have already enforced ownership if userId was passed.
@@ -298,9 +295,9 @@ Future<Response> _handlePut(
   // (e.g., if the repo update method allows admins to update any item even if userId is passed).
   if (modelConfig.putPermission.requiresOwnershipCheck &&
       !permissionService.isAdmin(authenticatedUser)) {
-     // Ensure getOwnerId is provided for models requiring ownership check
+    // Ensure getOwnerId is provided for models requiring ownership check
     if (modelConfig.getOwnerId == null) {
-       print(
+      print(
         '[ReqID: $requestId] Configuration Error: Model "$modelName" requires '
         'ownership check for PUT but getOwnerId is not provided.',
       );
@@ -313,7 +310,7 @@ Future<Response> _handlePut(
     // after the update, or ideally, the update method returns the item with owner ID.
     // Assuming the updatedItem returned by the repo has the owner ID:
     final itemOwnerId = modelConfig.getOwnerId!(updatedItem);
-     if (itemOwnerId != authenticatedUser.id) {
+    if (itemOwnerId != authenticatedUser.id) {
       // This scenario should ideally not happen if the repository correctly
       // enforced ownership during the update call when userId was passed.
       // But as a defense-in-depth, we check here.
@@ -327,7 +324,6 @@ Future<Response> _handlePut(
       );
     }
   }
-
 
   // Create metadata including the request ID and current timestamp
   final metadata = ResponseMetadata(
@@ -368,21 +364,21 @@ Future<Response> _handleDelete(
   String? userIdForRepoCall;
   // If the model is user-owned, pass the authenticated user's ID to the repository
   // for ownership enforcement. Otherwise, pass null.
-   if (modelConfig.getOwnerId != null) {
-     userIdForRepoCall = authenticatedUser.id;
+  if (modelConfig.getOwnerId != null) {
+    userIdForRepoCall = authenticatedUser.id;
   } else {
-     userIdForRepoCall = null;
+    userIdForRepoCall = null;
   }
 
   // --- Handler-Level Ownership Check (for DELETE) ---
   // For DELETE, we need to fetch the item *before* attempting deletion
   // to perform the ownership check if required.
   dynamic itemToDelete;
-   if (modelConfig.deletePermission.requiresOwnershipCheck &&
+  if (modelConfig.deletePermission.requiresOwnershipCheck &&
       !permissionService.isAdmin(authenticatedUser)) {
-     // Ensure getOwnerId is provided for models requiring ownership check
+    // Ensure getOwnerId is provided for models requiring ownership check
     if (modelConfig.getOwnerId == null) {
-       print(
+      print(
         '[ReqID: $requestId] Configuration Error: Model "$modelName" requires '
         'ownership check for DELETE but getOwnerId is not provided.',
       );
@@ -406,12 +402,12 @@ Future<Response> _handleDelete(
       case 'country':
         final repo = context.read<HtDataRepository<Country>>();
         itemToDelete = await repo.read(id: id, userId: userIdForRepoCall);
-       case 'user':
+      case 'user':
         final repo = context.read<HtDataRepository<User>>();
         itemToDelete = await repo.read(id: id, userId: userIdForRepoCall);
       // Add cases for other models
       default:
-         print(
+        print(
           '[ReqID: $requestId] Error: Unsupported model type "$modelName" reached _handleDelete ownership check.',
         );
         // Throw an exception to be caught by the errorHandler
@@ -431,10 +427,9 @@ Future<Response> _handleDelete(
         );
       }
     }
-     // If itemToDelete is null here, it means the item wasn't found during the read.
-     // The subsequent delete call will likely throw NotFoundException, which is correct.
+    // If itemToDelete is null here, it means the item wasn't found during the read.
+    // The subsequent delete call will likely throw NotFoundException, which is correct.
   }
-
 
   // Allow repository exceptions (e.g., NotFoundException) to propagate
   // upwards to be handled by the standard error handling mechanism.
@@ -455,7 +450,7 @@ Future<Response> _handleDelete(
       await context
           .read<HtDataRepository<Country>>()
           .delete(id: id, userId: userIdForRepoCall);
-     case 'user':
+    case 'user':
       await context
           .read<HtDataRepository<User>>()
           .delete(id: id, userId: userIdForRepoCall);
@@ -471,7 +466,6 @@ Future<Response> _handleDelete(
         'Unsupported model type "$modelName" reached handler.',
       );
   }
-
 
   // Return 204 No Content for successful deletion (no body, no metadata)
   return Response(statusCode: HttpStatus.noContent);

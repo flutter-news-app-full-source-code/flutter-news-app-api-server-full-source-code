@@ -2,11 +2,9 @@
 // ignore_for_file: strict_raw_type, lines_longer_than_80_chars
 
 import 'package:dart_frog/dart_frog.dart';
-import 'package:ht_app_settings_client/ht_app_settings_client.dart';
+import 'package:ht_api/src/rbac/permissions.dart'; // Import permissions
 import 'package:ht_data_client/ht_data_client.dart';
 import 'package:ht_shared/ht_shared.dart';
-
-import 'package:ht_api/src/rbac/permissions.dart'; // Import permissions
 
 /// Defines the type of permission check required for a specific action.
 enum RequiredPermissionType {

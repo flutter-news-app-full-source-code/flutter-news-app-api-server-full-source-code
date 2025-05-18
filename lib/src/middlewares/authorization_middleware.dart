@@ -13,7 +13,7 @@ import 'package:ht_shared/ht_shared.dart'; // For User, ForbiddenException
 /// permission using the [PermissionService].
 ///
 /// If the user does not have the required permission, it throws a
-/// [ForbiddenException], which should be caught by the [errorHandler] middleware.
+/// [ForbiddenException], which should be caught by the 'errorHandler' middleware.
 ///
 /// This middleware runs *after* authentication and model validation.
 /// It does NOT perform instance-level ownership checks; those are handled
@@ -28,7 +28,8 @@ Middleware authorizationMiddleware() {
       final user = context.read<User>();
       final permissionService = context.read<PermissionService>();
       final modelName = context.read<String>(); // Provided by data/_middleware
-      final modelConfig = context.read<ModelConfig<dynamic>>(); // Provided by data/_middleware
+      final modelConfig =
+          context.read<ModelConfig<dynamic>>(); // Provided by data/_middleware
       final method = context.request.method;
 
       // Determine the required permission configuration based on the HTTP method
@@ -45,7 +46,9 @@ Middleware authorizationMiddleware() {
         default:
           // Should ideally be caught earlier by Dart Frog's routing,
           // but as a safeguard, deny unsupported methods.
-          throw const ForbiddenException('Method not supported for this resource.');
+          throw const ForbiddenException(
+            'Method not supported for this resource.',
+          );
       }
 
       // Perform the permission check based on the configuration type
@@ -67,8 +70,8 @@ Middleware authorizationMiddleware() {
           // Requires a specific permission string
           final permission = requiredPermissionConfig.permission;
           if (permission == null) {
-             // This indicates a configuration error in ModelRegistry
-             print(
+            // This indicates a configuration error in ModelRegistry
+            print(
               '[AuthorizationMiddleware] Configuration Error: specificPermission '
               'type requires a permission string for model "$modelName", method "$method".',
             );

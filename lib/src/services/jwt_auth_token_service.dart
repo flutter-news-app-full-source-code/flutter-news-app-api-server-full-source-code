@@ -73,7 +73,9 @@ class JwtAuthTokenService implements AuthTokenService {
 
           // Custom claims (optional, include what's useful)
           'email': user.email,
-          'role': _userRoleToString(user.role), // Include the user's role as a string
+          'role': _userRoleToString(
+            user.role,
+          ), // Include the user's role as a string
         },
         issuer: _issuer,
         subject: user.id,

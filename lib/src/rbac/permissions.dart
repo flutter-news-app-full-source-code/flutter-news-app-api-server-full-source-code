@@ -44,7 +44,8 @@ abstract class Permissions {
 
   // User Preferences Permissions (User-owned)
   static const String userPreferencesReadOwned = 'user_preferences.read_owned';
-  static const String userPreferencesUpdateOwned = 'user_preferences.update_owned';
+  static const String userPreferencesUpdateOwned =
+      'user_preferences.update_owned';
 
   // Remote Config Permissions (Admin-owned/managed)
   static const String remoteConfigReadAdmin = 'remote_config.read_admin';
