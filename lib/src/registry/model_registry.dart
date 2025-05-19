@@ -209,9 +209,58 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresOwnershipCheck: true, // Must be the owner
     ),
   ),
-  // Example for AppSettings (user-owned)
-
-  // Add other models following this pattern...
+  // Configuration for UserAppSettings (user-owned)
+  'user_app_settings': ModelConfig<UserAppSettings>(
+    fromJson: UserAppSettings.fromJson,
+    getId: (s) => s.id,
+    getOwnerId: (s) => s.id, // User ID is the owner ID
+    getPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.appSettingsReadOwned,
+      requiresOwnershipCheck: true,
+    ),
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.none,
+      // Creation of UserAppSettings is handled by the authentication service
+      // during user creation, not via a direct POST to /api/v1/data.
+    ),
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.appSettingsUpdateOwned,
+      requiresOwnershipCheck: true,
+    ),
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.none,
+      // Deletion of UserAppSettings is handled by the authentication service
+      // during account deletion, not via a direct DELETE to /api/v1/data.
+    ),
+  ),
+  // Configuration for UserContentPreferences (user-owned)
+  'user_content_preferences': ModelConfig<UserContentPreferences>(
+    fromJson: UserContentPreferences.fromJson,
+    getId: (p) => p.id,
+    getOwnerId: (p) => p.id, // User ID is the owner ID
+    getPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.userPreferencesReadOwned,
+      requiresOwnershipCheck: true,
+    ),
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.none,
+      // Creation of UserContentPreferences is handled by the authentication
+      // service during user creation, not via a direct POST to /api/v1/data.
+    ),
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.userPreferencesUpdateOwned,
+      requiresOwnershipCheck: true,
+    ),
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.none,
+      // Deletion of UserContentPreferences is handled by the authentication
+      // service during account deletion, not via a direct DELETE to /api/v1/data.
+    ),
+  ),
 };
 
 /// Type alias for the ModelRegistry map for easier provider usage.

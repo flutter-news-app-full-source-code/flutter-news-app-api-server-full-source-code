@@ -7,8 +7,10 @@ import 'package:ht_api/src/rbac/permission_service.dart'; // Import PermissionSe
 import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_api/src/services/auth_service.dart';
 import 'package:ht_api/src/services/auth_token_service.dart';
+import 'package:ht_api/src/services/default_user_preference_limit_service.dart'; // Import DefaultUserPreferenceLimitService
 import 'package:ht_api/src/services/jwt_auth_token_service.dart';
 import 'package:ht_api/src/services/token_blacklist_service.dart';
+import 'package:ht_api/src/services/user_preference_limit_service.dart'; // Import UserPreferenceLimitService interface
 import 'package:ht_api/src/services/verification_code_storage_service.dart';
 import 'package:ht_app_settings_client/ht_app_settings_client.dart';
 import 'package:ht_app_settings_inmemory/ht_app_settings_inmemory.dart';
@@ -18,6 +20,7 @@ import 'package:ht_email_inmemory/ht_email_inmemory.dart';
 import 'package:ht_email_repository/ht_email_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 import 'package:uuid/uuid.dart';
+
 
 // --- Request ID Wrapper ---
 
@@ -154,6 +157,47 @@ HtDataRepository<Country> _createCountryRepository() {
   return HtDataRepository<Country>(dataClient: client);
 }
 
+// New repositories for user settings and preferences
+HtDataRepository<UserAppSettings> _createUserAppSettingsRepository() {
+  print('Initializing UserAppSettings Repository...');
+  final client = HtDataInMemoryClient<UserAppSettings>(
+    toJson: (i) => i.toJson(),
+    getId: (i) => i.id,
+    // User settings are created on demand, no initial fixture needed
+  );
+  print('UserAppSettings Repository Initialized.');
+  return HtDataRepository<UserAppSettings>(dataClient: client);
+}
+
+HtDataRepository<UserContentPreferences>
+    _createUserContentPreferencesRepository() {
+  print('Initializing UserContentPreferences Repository...');
+  final client = HtDataInMemoryClient<UserContentPreferences>(
+    toJson: (i) => i.toJson(),
+    getId: (i) => i.id,
+    // User preferences are created on demand, no initial fixture needed
+  );
+  print('UserContentPreferences Repository Initialized.');
+  return HtDataRepository<UserContentPreferences>(dataClient: client);
+}
+
+HtDataRepository<AppConfig> _createAppConfigRepository() {
+  print('Initializing AppConfig Repository...');
+  // AppConfig should have a single instance, potentially loaded from a file
+  // or created with defaults if not found. For in-memory, we can create a
+  // default instance.
+  final initialData = [
+    const AppConfig(id: 'app_config'), // Default config
+  ];
+  final client = HtDataInMemoryClient<AppConfig>(
+    toJson: (i) => i.toJson(),
+    getId: (i) => i.id,
+    initialData: initialData,
+  );
+  print('AppConfig Repository Initialized.');
+  return HtDataRepository<AppConfig>(dataClient: client);
+}
+
 // --- Middleware Definition ---
 Handler middleware(Handler handler) {
   // Initialize repositories when middleware is first created
@@ -162,6 +206,11 @@ Handler middleware(Handler handler) {
   final categoryRepository = _createCategoryRepository();
   final sourceRepository = _createSourceRepository();
   final countryRepository = _createCountryRepository();
+  final userSettingsRepository = _createUserAppSettingsRepository(); // New
+  final userContentPreferencesRepository =
+      _createUserContentPreferencesRepository(); // New
+  final appConfigRepository = _createAppConfigRepository(); // New
+
   final settingsClientImpl = HtAppSettingsInMemory();
   const uuid = Uuid();
 
@@ -207,6 +256,13 @@ Handler middleware(Handler handler) {
   // --- RBAC Dependencies ---
   const permissionService =
       PermissionService(); // Instantiate PermissionService
+
+  // --- User Preference Limit Service --- // New
+  final userPreferenceLimitService = DefaultUserPreferenceLimitService(
+    appConfigRepository: appConfigRepository,
+    userContentPreferencesRepository: userContentPreferencesRepository,
+  );
+  print('[MiddlewareSetup] DefaultUserPreferenceLimitService instantiated.');
 
   // ==========================================================================
   //                            MIDDLEWARE CHAIN
@@ -263,6 +319,22 @@ Handler middleware(Handler handler) {
           (_) => emailRepository,
         ),
       ) // Used by AuthService
+      // New Repositories for User Settings and Preferences
+      .use(
+        provider<HtDataRepository<UserAppSettings>>(
+          (_) => userSettingsRepository,
+        ),
+      )
+      .use(
+        provider<HtDataRepository<UserContentPreferences>>(
+          (_) => userContentPreferencesRepository,
+        ),
+      )
+      .use(
+        provider<HtDataRepository<AppConfig>>(
+          (_) => appConfigRepository,
+        ),
+      )
 
       // --- 4. Authentication Service Providers (Auth Logic Dependencies) ---
       // PURPOSE: Provide the core services needed for authentication logic.
@@ -301,7 +373,17 @@ Handler middleware(Handler handler) {
       //          (e.g., authorizationMiddleware).
       .use(provider<PermissionService>((_) => permissionService))
 
-      // --- 6. Request Logger (Logging) ---
+      // --- 6. User Preference Limit Service Provider --- // New
+      // PURPOSE: Provides the service for enforcing user preference limits.
+      // ORDER:   Must be provided before any handlers that use it (specifically
+      //          the generic data route handlers for UserContentPreferences).
+      .use(
+        provider<UserPreferenceLimitService>(
+          (_) => userPreferenceLimitService,
+        ),
+      )
+
+      // --- 7. Request Logger (Logging) ---
       // PURPOSE: Logs details about the incoming request and outgoing response.
       // ORDER:   Often placed late in the request phase / early in the response
       //          phase. Placing it here logs the request *before* the handler
@@ -309,7 +391,7 @@ Handler middleware(Handler handler) {
       //          completes. Can access `RequestId` and potentially `User?`.
       .use(requestLogger())
 
-      // --- 7. Error Handler (Catch-All) ---
+      // --- 8. Error Handler (Catch-All) ---
       // PURPOSE: Catches exceptions thrown by upstream middleware or route
       //          handlers and converts them into standardized JSON error responses.
       // ORDER:   MUST be placed *late* in the chain (typically last before the

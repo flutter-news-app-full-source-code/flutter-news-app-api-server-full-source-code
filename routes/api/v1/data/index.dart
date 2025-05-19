@@ -163,7 +163,48 @@ Future<Response> _handleGet(
               startAfterId: startAfterId,
               limit: limit,
             );
-    // Add cases for other models as they are added to ModelRegistry
+    case 'user_app_settings': // New case for UserAppSettings
+      final repo = context.read<HtDataRepository<UserAppSettings>>();
+      paginatedResponse = specificQuery.isNotEmpty
+          ? await repo.readAllByQuery(
+              specificQuery,
+              userId: userIdForRepoCall,
+              startAfterId: startAfterId,
+              limit: limit,
+            )
+          : await repo.readAll(
+              userId: userIdForRepoCall,
+              startAfterId: startAfterId,
+              limit: limit,
+            );
+    case 'user_content_preferences': // New case for UserContentPreferences
+      final repo = context.read<HtDataRepository<UserContentPreferences>>();
+      paginatedResponse = specificQuery.isNotEmpty
+          ? await repo.readAllByQuery(
+              specificQuery,
+              userId: userIdForRepoCall,
+              startAfterId: startAfterId,
+              limit: limit,
+            )
+          : await repo.readAll(
+              userId: userIdForRepoCall,
+              startAfterId: startAfterId,
+              limit: limit,
+            );
+    case 'app_config': // New case for AppConfig (read by admin)
+      final repo = context.read<HtDataRepository<AppConfig>>();
+      paginatedResponse = specificQuery.isNotEmpty
+          ? await repo.readAllByQuery(
+              specificQuery,
+              userId: userIdForRepoCall, // userId should be null for AppConfig
+              startAfterId: startAfterId,
+              limit: limit,
+            )
+          : await repo.readAll(
+              userId: userIdForRepoCall, // userId should be null for AppConfig
+              startAfterId: startAfterId,
+              limit: limit,
+            );
     default:
       // This case should be caught by middleware, but added for safety
       // Throw an exception to be caught by the errorHandler
@@ -275,7 +316,22 @@ Future<Response> _handlePost(
       throw const ForbiddenException(
         'User creation is not allowed via the generic data endpoint.',
       );
-    // Add cases for other models as they are added to ModelRegistry
+    case 'user_app_settings': // New case for UserAppSettings
+      // Creation of UserAppSettings is handled by auth service, not generic data POST.
+      throw const ForbiddenException(
+        'UserAppSettings creation is not allowed via the generic data endpoint.',
+      );
+    case 'user_content_preferences': // New case for UserContentPreferences
+      // Creation of UserContentPreferences is handled by auth service, not generic data POST.
+      throw const ForbiddenException(
+        'UserContentPreferences creation is not allowed via the generic data endpoint.',
+      );
+    case 'app_config': // New case for AppConfig (create by admin)
+      final repo = context.read<HtDataRepository<AppConfig>>();
+      createdItem = await repo.create(
+        item: newItem as AppConfig,
+        userId: userIdForRepoCall, // userId should be null for AppConfig
+      );
     default:
       // This case should ideally be caught by middleware, but added for safety
       // Throw an exception to be caught by the errorHandler
