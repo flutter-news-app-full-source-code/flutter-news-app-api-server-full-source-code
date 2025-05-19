@@ -10,15 +10,10 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
   /// {@macro default_user_preference_limit_service}
   const DefaultUserPreferenceLimitService({
     required HtDataRepository<AppConfig> appConfigRepository,
-    required HtDataRepository<UserContentPreferences>
-        userContentPreferencesRepository,
-  })  : _appConfigRepository = appConfigRepository,
-        _userContentPreferencesRepository = userContentPreferencesRepository;
+    // Removed unused UserContentPreferencesRepository
+  }) : _appConfigRepository = appConfigRepository;
 
   final HtDataRepository<AppConfig> _appConfigRepository;
-  final HtDataRepository<UserContentPreferences>
-      // ignore: unused_field
-      _userContentPreferencesRepository;
 
   // Assuming a fixed ID for the AppConfig document
   static const String _appConfigId = 'app_config';

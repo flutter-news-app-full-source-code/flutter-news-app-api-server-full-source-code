@@ -259,7 +259,7 @@ Handler middleware(Handler handler) {
   // --- User Preference Limit Service --- // New
   final userPreferenceLimitService = DefaultUserPreferenceLimitService(
     appConfigRepository: appConfigRepository,
-    userContentPreferencesRepository: userContentPreferencesRepository,
+    // Removed unused userContentPreferencesRepository parameter
   );
   print('[MiddlewareSetup] DefaultUserPreferenceLimitService instantiated.');
 
