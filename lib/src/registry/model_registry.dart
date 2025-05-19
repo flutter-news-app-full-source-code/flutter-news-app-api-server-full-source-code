@@ -200,7 +200,8 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresOwnershipCheck: true, // Must be the owner
     ),
     postPermission: const ModelActionPermission(
-      type: RequiredPermissionType.unsupported, // User creation handled by auth routes
+      type: RequiredPermissionType
+          .unsupported, // User creation handled by auth routes
     ),
     putPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,

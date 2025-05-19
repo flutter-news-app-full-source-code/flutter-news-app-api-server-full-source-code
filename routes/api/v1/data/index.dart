@@ -146,11 +146,13 @@ Future<Response> _handleGet(
               startAfterId: startAfterId,
               limit: limit,
             );
-    case 'user': // Handle User model specifically if needed, or rely on generic
+    case 'user':
       final repo = context.read<HtDataRepository<User>>();
-      // Note: readAll/readAllByQuery on User repo might need special handling
-      // depending on whether non-admins can list *all* users or just their own.
-      // Assuming for now readAll/readAllByQuery with userId scopes to owned.
+      // Note: While readAll/readAllByQuery is used here for consistency
+      // with the generic endpoint, fetching a specific user by ID via
+      // the /data/[id] route is the semantically preferred method.
+      // The userIdForRepoCall ensures scoping to the authenticated user
+      // if the repository supports it.
       paginatedResponse = specificQuery.isNotEmpty
           ? await repo.readAllByQuery(
               specificQuery,
@@ -163,8 +165,12 @@ Future<Response> _handleGet(
               startAfterId: startAfterId,
               limit: limit,
             );
-    case 'user_app_settings': // New case for UserAppSettings
+    case 'user_app_settings':
       final repo = context.read<HtDataRepository<UserAppSettings>>();
+      // Note: While readAll/readAllByQuery is used here for consistency
+      // with the generic endpoint, fetching the user's settings by ID
+      // via the /data/[id] route is the semantically preferred method
+      // for this single-instance, user-owned model.
       paginatedResponse = specificQuery.isNotEmpty
           ? await repo.readAllByQuery(
               specificQuery,
@@ -177,8 +183,12 @@ Future<Response> _handleGet(
               startAfterId: startAfterId,
               limit: limit,
             );
-    case 'user_content_preferences': // New case for UserContentPreferences
+    case 'user_content_preferences':
       final repo = context.read<HtDataRepository<UserContentPreferences>>();
+      // Note: While readAll/readAllByQuery is used here for consistency
+      // with the generic endpoint, fetching the user's preferences by ID
+      // via the /data/[id] route is the semantically preferred method
+      // for this single-instance, user-owned model.
       paginatedResponse = specificQuery.isNotEmpty
           ? await repo.readAllByQuery(
               specificQuery,
@@ -191,8 +201,12 @@ Future<Response> _handleGet(
               startAfterId: startAfterId,
               limit: limit,
             );
-    case 'app_config': // New case for AppConfig (read by admin)
+    case 'app_config':
       final repo = context.read<HtDataRepository<AppConfig>>();
+      // Note: While readAll/readAllByQuery is used here for consistency
+      // with the generic endpoint, fetching the single AppConfig instance
+      // by its fixed ID ('app_config') via the /data/[id] route is the
+      // semantically preferred method for this global singleton model.
       paginatedResponse = specificQuery.isNotEmpty
           ? await repo.readAllByQuery(
               specificQuery,
