@@ -17,6 +17,7 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
 
   final HtDataRepository<AppConfig> _appConfigRepository;
   final HtDataRepository<UserContentPreferences>
+      // ignore: unused_field
       _userContentPreferencesRepository;
 
   // Assuming a fixed ID for the AppConfig document
@@ -77,7 +78,7 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
       print(
         'Error checking limit for user ${user.id}, itemType $itemType: $e',
       );
-      throw OperationFailedException(
+      throw const OperationFailedException(
         'Failed to check user preference limits.',
       );
     }
@@ -146,7 +147,7 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
       print(
         'Error checking update limits for user ${user.id}: $e',
       );
-      throw OperationFailedException(
+      throw const OperationFailedException(
         'Failed to check user preference update limits.',
       );
     }

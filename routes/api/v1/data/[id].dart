@@ -21,8 +21,7 @@ Future<Response> onRequest(RequestContext context, String id) async {
   final permissionService =
       context.read<PermissionService>(); // Read PermissionService
   // Read the UserPreferenceLimitService (only needed for UserContentPreferences PUT)
-  final userPreferenceLimitService =
-      context.read<UserPreferenceLimitService>();
+  final userPreferenceLimitService = context.read<UserPreferenceLimitService>();
 
   // The main try/catch block here is removed to let the errorHandler middleware
   // handle all exceptions thrown by the handlers below.
@@ -119,7 +118,10 @@ Future<Response> _handleGet(
       item = await repo.read(id: id, userId: userIdForRepoCall);
     case 'app_config': // New case for AppConfig (read by admin)
       final repo = context.read<HtDataRepository<AppConfig>>();
-      item = await repo.read(id: id, userId: userIdForRepoCall); // userId should be null for AppConfig
+      item = await repo.read(
+        id: id,
+        userId: userIdForRepoCall,
+      ); // userId should be null for AppConfig
     default:
       // This case should ideally be caught by middleware, but added for safety
       // Throw an exception to be caught by the errorHandler
@@ -186,7 +188,8 @@ Future<Response> _handlePut(
   ModelConfig<dynamic> modelConfig,
   User authenticatedUser,
   PermissionService permissionService, // Receive PermissionService
-  UserPreferenceLimitService userPreferenceLimitService, // Receive Limit Service
+  UserPreferenceLimitService
+      userPreferenceLimitService, // Receive Limit Service
   String requestId,
 ) async {
   // Authorization check is handled by authorizationMiddleware before this.
@@ -238,11 +241,11 @@ Future<Response> _handlePut(
     try {
       // Ensure the itemToUpdate is the correct type for the limit service
       if (itemToUpdate is! UserContentPreferences) {
-         print(
+        print(
           '[ReqID: $requestId] Type Error: Expected UserContentPreferences '
           'for limit check, but got ${itemToUpdate.runtimeType}.',
         );
-         throw const OperationFailedException(
+        throw const OperationFailedException(
           'Internal Server Error: Model type mismatch for limit check.',
         );
       }
@@ -259,7 +262,7 @@ Future<Response> _handlePut(
         '[ReqID: $requestId] Unexpected error during limit check for '
         'UserContentPreferences PUT: $e',
       );
-      throw OperationFailedException(
+      throw const OperationFailedException(
         'An unexpected error occurred during limit check.',
       );
     }
@@ -487,7 +490,10 @@ Future<Response> _handleDelete(
         itemToDelete = await repo.read(id: id, userId: userIdForRepoCall);
       case 'app_config': // New case for AppConfig (delete by admin)
         final repo = context.read<HtDataRepository<AppConfig>>();
-        itemToDelete = await repo.read(id: id, userId: userIdForRepoCall); // userId should be null for AppConfig
+        itemToDelete = await repo.read(
+          id: id,
+          userId: userIdForRepoCall,
+        ); // userId should be null for AppConfig
       default:
         print(
           '[ReqID: $requestId] Error: Unsupported model type "$modelName" reached _handleDelete ownership check.',
@@ -545,9 +551,10 @@ Future<Response> _handleDelete(
           .read<HtDataRepository<UserContentPreferences>>()
           .delete(id: id, userId: userIdForRepoCall);
     case 'app_config': // New case for AppConfig (delete by admin)
-      await context
-          .read<HtDataRepository<AppConfig>>()
-          .delete(id: id, userId: userIdForRepoCall); // userId should be null for AppConfig
+      await context.read<HtDataRepository<AppConfig>>().delete(
+            id: id,
+            userId: userIdForRepoCall,
+          ); // userId should be null for AppConfig
     default:
       // This case should ideally be caught by the data/_middleware.dart,
       // but added for safety. Consider logging this unexpected state.
