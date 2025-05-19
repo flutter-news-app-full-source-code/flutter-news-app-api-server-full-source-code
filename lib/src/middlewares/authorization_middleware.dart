@@ -84,6 +84,18 @@ Middleware authorizationMiddleware() {
               'You do not have permission to perform this action.',
             );
           }
+        case RequiredPermissionType.unsupported:
+          // This action is explicitly marked as not supported via this generic route.
+          // Return Method Not Allowed.
+          print(
+            '[AuthorizationMiddleware] Action for model "$modelName", method "$method" '
+            'is marked as unsupported via generic route.',
+          );
+          // Throw ForbiddenException to be caught by the errorHandler
+          throw ForbiddenException(
+            'Method "$method" is not supported for model "$modelName" '
+            'via this generic data endpoint.',
+          );
       }
 
       // If all checks pass, proceed to the next handler in the chain.

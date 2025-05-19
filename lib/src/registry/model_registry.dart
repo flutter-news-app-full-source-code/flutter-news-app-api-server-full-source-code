@@ -18,6 +18,10 @@ enum RequiredPermissionType {
 
   /// Requires the user to have a specific permission string.
   specificPermission,
+
+  /// This action is not supported via this generic route.
+  /// It is typically handled by a dedicated service or route.
+  unsupported,
 }
 
 /// Configuration for the authorization requirements of a single HTTP method
@@ -196,7 +200,7 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresOwnershipCheck: true, // Must be the owner
     ),
     postPermission: const ModelActionPermission(
-      type: RequiredPermissionType.none, // User creation handled by auth routes
+      type: RequiredPermissionType.unsupported, // User creation handled by auth routes
     ),
     putPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
@@ -204,9 +208,7 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresOwnershipCheck: true, // Must be the owner
     ),
     deletePermission: const ModelActionPermission(
-      type: RequiredPermissionType.specificPermission,
-      permission: Permissions.userDeleteOwned, // User can delete their own
-      requiresOwnershipCheck: true, // Must be the owner
+      type: RequiredPermissionType.unsupported, // User can delete their own
     ),
   ),
   // Configuration for UserAppSettings (user-owned)
@@ -220,7 +222,7 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresOwnershipCheck: true,
     ),
     postPermission: const ModelActionPermission(
-      type: RequiredPermissionType.none,
+      type: RequiredPermissionType.unsupported,
       // Creation of UserAppSettings is handled by the authentication service
       // during user creation, not via a direct POST to /api/v1/data.
     ),
@@ -230,7 +232,7 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresOwnershipCheck: true,
     ),
     deletePermission: const ModelActionPermission(
-      type: RequiredPermissionType.none,
+      type: RequiredPermissionType.unsupported,
       // Deletion of UserAppSettings is handled by the authentication service
       // during account deletion, not via a direct DELETE to /api/v1/data.
     ),
@@ -246,7 +248,7 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresOwnershipCheck: true,
     ),
     postPermission: const ModelActionPermission(
-      type: RequiredPermissionType.none,
+      type: RequiredPermissionType.unsupported,
       // Creation of UserContentPreferences is handled by the authentication
       // service during user creation, not via a direct POST to /api/v1/data.
     ),
@@ -256,7 +258,7 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresOwnershipCheck: true,
     ),
     deletePermission: const ModelActionPermission(
-      type: RequiredPermissionType.none,
+      type: RequiredPermissionType.unsupported,
       // Deletion of UserContentPreferences is handled by the authentication
       // service during account deletion, not via a direct DELETE to /api/v1/data.
     ),
