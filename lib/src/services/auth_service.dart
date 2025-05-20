@@ -130,12 +130,18 @@ class AuthService {
 
         // Create default UserAppSettings for the new user
         final defaultAppSettings = UserAppSettings(id: user.id);
-        await _userAppSettingsRepository.create(item: defaultAppSettings);
+        await _userAppSettingsRepository.create(
+          item: defaultAppSettings,
+          userId: user.id, // Pass user ID for scoping
+        );
         print('Created default UserAppSettings for user: ${user.id}');
 
         // Create default UserContentPreferences for the new user
         final defaultUserPreferences = UserContentPreferences(id: user.id);
-        await _userContentPreferencesRepository.create(item: defaultUserPreferences);
+        await _userContentPreferencesRepository.create(
+          item: defaultUserPreferences,
+          userId: user.id, // Pass user ID for scoping
+        );
         print('Created default UserContentPreferences for user: ${user.id}');
       }
     } on HtHttpException catch (e) {
@@ -189,12 +195,18 @@ class AuthService {
 
     // Create default UserAppSettings for the new anonymous user
     final defaultAppSettings = UserAppSettings(id: user.id);
-    await _userAppSettingsRepository.create(item: defaultAppSettings);
+    await _userAppSettingsRepository.create(
+      item: defaultAppSettings,
+      userId: user.id, // Pass user ID for scoping
+    );
     print('Created default UserAppSettings for anonymous user: ${user.id}');
 
     // Create default UserContentPreferences for the new anonymous user
     final defaultUserPreferences = UserContentPreferences(id: user.id);
-    await _userContentPreferencesRepository.create(item: defaultUserPreferences);
+    await _userContentPreferencesRepository.create(
+      item: defaultUserPreferences,
+      userId: user.id, // Pass user ID for scoping
+    );
     print('Created default UserContentPreferences for anonymous user: ${user.id}');
 
     // 2. Generate token

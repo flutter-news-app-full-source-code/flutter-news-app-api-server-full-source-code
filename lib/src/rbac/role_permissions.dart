@@ -67,6 +67,10 @@ final Map<UserRole, Set<String>> rolePermissions = {
     Permissions.categoryRead,
     Permissions.sourceRead,
     Permissions.countryRead,
-    // Add other permissions for guest users as needed
+    // Standard users can manage their own anonymous-owned data
+    Permissions.appSettingsReadOwned,
+    Permissions.appSettingsUpdateOwned,
+    Permissions.userPreferencesReadOwned,
+    Permissions.userPreferencesUpdateOwned,
   },
 };
