@@ -210,7 +210,9 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresOwnershipCheck: true, // Must be the owner
     ),
     deletePermission: const ModelActionPermission(
-      type: RequiredPermissionType.unsupported, // User can delete their own
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.userReadOwned, // User can delete their own
+      requiresOwnershipCheck: true, // Must be the owner
     ),
   ),
   // Configuration for UserAppSettings (user-owned)
