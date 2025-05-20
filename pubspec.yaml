@@ -9,15 +9,6 @@ environment:
 dependencies:
   dart_frog: ^1.1.0
   dart_jsonwebtoken: ^3.2.0
-  ht_app_settings_client:
-    git:
-      url: https://github.com/headlines-toolkit/ht-app-settings-client.git
-  ht_app_settings_inmemory:
-    git:
-      url: https://github.com/headlines-toolkit/ht-app-settings-inmemory.git
-  ht_app_settings_repository:
-    git:
-      url: https://github.com/headlines-toolkit/ht-app-settings-repository.git
   ht_data_client:
     git:
       url: https://github.com/headlines-toolkit/ht-data-client.git
