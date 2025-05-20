@@ -18,17 +18,25 @@ class AuthService {
     required AuthTokenService authTokenService,
     required VerificationCodeStorageService verificationCodeStorageService,
     required HtEmailRepository emailRepository,
+    required HtDataRepository<UserAppSettings> userAppSettingsRepository,
+    required HtDataRepository<UserContentPreferences>
+        userContentPreferencesRepository,
     required Uuid uuidGenerator,
   })  : _userRepository = userRepository,
         _authTokenService = authTokenService,
         _verificationCodeStorageService = verificationCodeStorageService,
         _emailRepository = emailRepository,
+        _userAppSettingsRepository = userAppSettingsRepository,
+        _userContentPreferencesRepository = userContentPreferencesRepository,
         _uuid = uuidGenerator;
 
   final HtDataRepository<User> _userRepository;
   final AuthTokenService _authTokenService;
   final VerificationCodeStorageService _verificationCodeStorageService;
   final HtEmailRepository _emailRepository;
+  final HtDataRepository<UserAppSettings> _userAppSettingsRepository;
+  final HtDataRepository<UserContentPreferences>
+      _userContentPreferencesRepository;
   final Uuid _uuid;
 
   /// Initiates the email sign-in process.
@@ -119,6 +127,16 @@ class AuthService {
         );
         user = await _userRepository.create(item: user); // Save the new user
         print('Created new user: ${user.id}');
+
+        // Create default UserAppSettings for the new user
+        final defaultAppSettings = UserAppSettings(id: user.id);
+        await _userAppSettingsRepository.create(item: defaultAppSettings);
+        print('Created default UserAppSettings for user: ${user.id}');
+
+        // Create default UserContentPreferences for the new user
+        final defaultUserPreferences = UserContentPreferences(id: user.id);
+        await _userContentPreferencesRepository.create(item: defaultUserPreferences);
+        print('Created default UserContentPreferences for user: ${user.id}');
       }
     } on HtHttpException catch (e) {
       print('Error finding/creating user for $email: $e');
@@ -168,6 +186,16 @@ class AuthService {
         'Failed to process anonymous sign-in.',
       );
     }
+
+    // Create default UserAppSettings for the new anonymous user
+    final defaultAppSettings = UserAppSettings(id: user.id);
+    await _userAppSettingsRepository.create(item: defaultAppSettings);
+    print('Created default UserAppSettings for anonymous user: ${user.id}');
+
+    // Create default UserContentPreferences for the new anonymous user
+    final defaultUserPreferences = UserContentPreferences(id: user.id);
+    await _userContentPreferencesRepository.create(item: defaultUserPreferences);
+    print('Created default UserContentPreferences for anonymous user: ${user.id}');
 
     // 2. Generate token
     try {

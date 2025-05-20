@@ -245,6 +245,8 @@ Handler middleware(Handler handler) {
     authTokenService: authTokenService,
     verificationCodeStorageService: verificationCodeStorageService,
     emailRepository: emailRepository,
+    userAppSettingsRepository: userSettingsRepository,
+    userContentPreferencesRepository: userContentPreferencesRepository,
     uuidGenerator: uuid,
   );
   print('[MiddlewareSetup] AuthService instantiated.'); // Added log
