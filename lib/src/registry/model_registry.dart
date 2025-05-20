@@ -193,7 +193,8 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
   'user': ModelConfig<User>(
     fromJson: User.fromJson,
     getId: (u) => u.id,
-    getOwnerId: (dynamic item) => (item as User).id as String?, // User is the owner of their profile
+    getOwnerId: (dynamic item) =>
+        (item as User).id as String?, // User is the owner of their profile
     getPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.userReadOwned, // User can read their own
@@ -216,7 +217,8 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
   'user_app_settings': ModelConfig<UserAppSettings>(
     fromJson: UserAppSettings.fromJson,
     getId: (s) => s.id,
-    getOwnerId: (dynamic item) => (item as UserAppSettings).id as String?, // User ID is the owner ID
+    getOwnerId: (dynamic item) =>
+        (item as UserAppSettings).id as String?, // User ID is the owner ID
     getPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.appSettingsReadOwned,
@@ -242,7 +244,8 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
   'user_content_preferences': ModelConfig<UserContentPreferences>(
     fromJson: UserContentPreferences.fromJson,
     getId: (p) => p.id,
-    getOwnerId: (dynamic item) => (item as UserContentPreferences).id as String?, // User ID is the owner ID
+    getOwnerId: (dynamic item) => (item as UserContentPreferences).id
+        as String?, // User ID is the owner ID
     getPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.userPreferencesReadOwned,

@@ -207,7 +207,9 @@ class AuthService {
       item: defaultUserPreferences,
       userId: user.id, // Pass user ID for scoping
     );
-    print('Created default UserContentPreferences for anonymous user: ${user.id}');
+    print(
+      'Created default UserContentPreferences for anonymous user: ${user.id}',
+    );
 
     // 2. Generate token
     try {
