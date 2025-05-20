@@ -269,6 +269,25 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       // service during account deletion, not via a direct DELETE to /api/v1/data.
     ),
   ),
+  // Configuration for AppConfig (global, managed by admins, readable by all authenticated)
+  'app_config': ModelConfig<AppConfig>(
+    fromJson: AppConfig.fromJson,
+    getId: (config) => config.id,
+    getOwnerId: null, // AppConfig is a global resource, not user-owned
+    getPermission: const ModelActionPermission(
+      type: RequiredPermissionType
+          .none, // Readable by any authenticated user via /api/v1/data
+    ),
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly, // Only administrators can create
+    ),
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly, // Only administrators can update
+    ),
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly, // Only administrators can delete
+    ),
+  ),
 };
 
 /// Type alias for the ModelRegistry map for easier provider usage.

@@ -1,6 +1,45 @@
 import 'package:ht_api/src/rbac/permission_service.dart' show PermissionService;
 import 'package:ht_api/src/rbac/permissions.dart';
-import 'package:ht_shared/ht_shared.dart'; // Assuming UserRole is defined here
+import 'package:ht_shared/ht_shared.dart';
+
+final Set<String> _guestUserPermissions = {
+  Permissions.headlineRead,
+  Permissions.categoryRead,
+  Permissions.sourceRead,
+  Permissions.countryRead,
+  Permissions.appSettingsReadOwned,
+  Permissions.appSettingsUpdateOwned,
+  Permissions.userPreferencesReadOwned,
+  Permissions.userPreferencesUpdateOwned,
+  Permissions.appConfigRead,
+};
+
+final Set<String> _standardUserPermissions = {
+  ..._guestUserPermissions,
+  Permissions.userReadOwned,
+  Permissions.userUpdateOwned,
+  Permissions.userDeleteOwned,
+};
+
+final Set<String> _adminPermissions = {
+  ..._standardUserPermissions,
+  Permissions.headlineCreate,
+  Permissions.headlineUpdate,
+  Permissions.headlineDelete,
+  Permissions.categoryCreate,
+  Permissions.categoryUpdate,
+  Permissions.categoryDelete,
+  Permissions.sourceCreate,
+  Permissions.sourceUpdate,
+  Permissions.sourceDelete,
+  Permissions.countryCreate,
+  Permissions.countryUpdate,
+  Permissions.countryDelete,
+  Permissions.userRead,
+  Permissions.appConfigCreate,
+  Permissions.appConfigUpdate,
+  Permissions.appConfigDelete,
+};
 
 /// Defines the mapping between user roles and the permissions they possess.
 ///
@@ -13,64 +52,7 @@ import 'package:ht_shared/ht_shared.dart'; // Assuming UserRole is defined here
 /// documentation and clarity. The [PermissionService] should handle the
 /// explicit admin bypass if desired.
 final Map<UserRole, Set<String>> rolePermissions = {
-  UserRole.admin: {
-    // Admins typically have all permissions. Listing them explicitly
-    // or handling the admin bypass in PermissionService are options.
-    // For clarity, listing some key admin permissions here:
-    Permissions.headlineCreate,
-    Permissions.headlineRead,
-    Permissions.headlineUpdate,
-    Permissions.headlineDelete,
-    Permissions.categoryCreate,
-    Permissions.categoryRead,
-    Permissions.categoryUpdate,
-    Permissions.categoryDelete,
-    Permissions.sourceCreate,
-    Permissions.sourceRead,
-    Permissions.sourceUpdate,
-    Permissions.sourceDelete,
-    Permissions.countryCreate,
-    Permissions.countryRead,
-    Permissions.countryUpdate,
-    Permissions.countryDelete,
-    Permissions.userRead, // Admins can read any user profile
-    Permissions.userReadOwned,
-    Permissions.userUpdateOwned,
-    Permissions.userDeleteOwned,
-    Permissions.appSettingsReadOwned,
-    Permissions.appSettingsUpdateOwned,
-    Permissions.userPreferencesReadOwned,
-    Permissions.userPreferencesUpdateOwned,
-    Permissions.remoteConfigReadAdmin,
-    Permissions.remoteConfigUpdateAdmin,
-    // Add all other permissions here for completeness if not using admin bypass
-  },
-  UserRole.standardUser: {
-    // Standard users can read public/shared data
-    Permissions.headlineRead,
-    Permissions.categoryRead,
-    Permissions.sourceRead,
-    Permissions.countryRead,
-    // Standard users can manage their own user-owned data
-    Permissions.userReadOwned,
-    Permissions.userUpdateOwned,
-    Permissions.userDeleteOwned,
-    Permissions.appSettingsReadOwned,
-    Permissions.appSettingsUpdateOwned,
-    Permissions.userPreferencesReadOwned,
-    Permissions.userPreferencesUpdateOwned,
-    // Add other permissions for standard users as needed
-  },
-  UserRole.guestUser: {
-    // Guest users have very limited permissions, primarily reading public data
-    Permissions.headlineRead,
-    Permissions.categoryRead,
-    Permissions.sourceRead,
-    Permissions.countryRead,
-    // Standard users can manage their own anonymous-owned data
-    Permissions.appSettingsReadOwned,
-    Permissions.appSettingsUpdateOwned,
-    Permissions.userPreferencesReadOwned,
-    Permissions.userPreferencesUpdateOwned,
-  },
+  UserRole.guestUser: _guestUserPermissions,
+  UserRole.standardUser: _standardUserPermissions,
+  UserRole.admin: _adminPermissions,
 };

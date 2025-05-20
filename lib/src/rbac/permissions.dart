@@ -47,9 +47,11 @@ abstract class Permissions {
   static const String userPreferencesUpdateOwned =
       'user_preferences.update_owned';
 
-  // Remote Config Permissions (Admin-owned/managed)
-  static const String remoteConfigReadAdmin = 'remote_config.read_admin';
-  static const String remoteConfigUpdateAdmin = 'remote_config.update_admin';
+  // App Config Permissions (Global/Managed)
+  static const String appConfigCreate = 'app_config.create';
+  static const String appConfigRead = 'app_config.read';
+  static const String appConfigUpdate = 'app_config.update';
+  static const String appConfigDelete = 'app_config.delete';
 
   // Add other permissions as needed for future models/features
 }
