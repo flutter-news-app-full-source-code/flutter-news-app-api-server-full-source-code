@@ -131,15 +131,15 @@ Future<Response> _handleGet(
   }
 
   // --- Handler-Level Ownership Check (for GET item) ---
-  // This check is needed if the ModelConfig for GET requires ownership
+  // This check is needed if the ModelConfig for GET item requires ownership
   // AND the user is NOT an admin (admins can bypass ownership checks).
-  if (modelConfig.getPermission.requiresOwnershipCheck &&
+  if (modelConfig.getItemPermission.requiresOwnershipCheck &&
       !permissionService.isAdmin(authenticatedUser)) {
     // Ensure getOwnerId is provided for models requiring ownership check
     if (modelConfig.getOwnerId == null) {
       print(
         '[ReqID: $requestId] Configuration Error: Model "$modelName" requires '
-        'ownership check for GET but getOwnerId is not provided.',
+        'ownership check for GET item but getOwnerId is not provided.',
       );
       // Throw an exception to be caught by the errorHandler
       throw const OperationFailedException(

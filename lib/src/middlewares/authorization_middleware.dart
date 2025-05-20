@@ -32,11 +32,21 @@ Middleware authorizationMiddleware() {
           context.read<ModelConfig<dynamic>>(); // Provided by data/_middleware
       final method = context.request.method;
 
+      // Determine if the request is for the collection or an item
+      // The collection path is /api/v1/data
+      // Item paths are /api/v1/data/[id]
+      final isCollectionRequest = context.request.uri.path == '/api/v1/data';
+
       // Determine the required permission configuration based on the HTTP method
       ModelActionPermission requiredPermissionConfig;
       switch (method) {
         case HttpMethod.get:
-          requiredPermissionConfig = modelConfig.getPermission;
+          // Differentiate GET based on whether it's a collection or item request
+          if (isCollectionRequest) {
+            requiredPermissionConfig = modelConfig.getCollectionPermission;
+          } else {
+            requiredPermissionConfig = modelConfig.getItemPermission;
+          }
         case HttpMethod.post:
           requiredPermissionConfig = modelConfig.postPermission;
         case HttpMethod.put:

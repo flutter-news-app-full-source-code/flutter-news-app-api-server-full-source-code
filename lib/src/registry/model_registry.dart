@@ -68,7 +68,8 @@ class ModelConfig<T> {
   const ModelConfig({
     required this.fromJson,
     required this.getId,
-    required this.getPermission,
+    required this.getCollectionPermission, // New field for GET collection
+    required this.getItemPermission, // New field for GET item
     required this.postPermission,
     required this.putPermission,
     required this.deletePermission,
@@ -86,8 +87,11 @@ class ModelConfig<T> {
   /// is true for any action.
   final String? Function(T item)? getOwnerId;
 
-  /// Authorization configuration for GET requests.
-  final ModelActionPermission getPermission;
+  /// Authorization configuration for GET requests to the collection endpoint.
+  final ModelActionPermission getCollectionPermission;
+
+  /// Authorization configuration for GET requests to a specific item endpoint.
+  final ModelActionPermission getItemPermission;
 
   /// Authorization configuration for POST requests.
   final ModelActionPermission postPermission;
@@ -120,7 +124,11 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     fromJson: Headline.fromJson,
     getId: (h) => h.id,
     // Headlines: Admin-owned, read allowed by standard/guest users
-    getPermission: const ModelActionPermission(
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.headlineRead,
+    ),
+    getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.headlineRead,
     ),
@@ -138,7 +146,11 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     fromJson: Category.fromJson,
     getId: (c) => c.id,
     // Categories: Admin-owned, read allowed by standard/guest users
-    getPermission: const ModelActionPermission(
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.categoryRead,
+    ),
+    getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.categoryRead,
     ),
@@ -156,7 +168,11 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     fromJson: Source.fromJson,
     getId: (s) => s.id,
     // Sources: Admin-owned, read allowed by standard/guest users
-    getPermission: const ModelActionPermission(
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.sourceRead,
+    ),
+    getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.sourceRead,
     ),
@@ -174,7 +190,11 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     fromJson: Country.fromJson,
     getId: (c) => c.id, // Assuming Country has an 'id' field
     // Countries: Admin-owned, read allowed by standard/guest users
-    getPermission: const ModelActionPermission(
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.countryRead,
+    ),
+    getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.countryRead,
     ),
@@ -193,7 +213,10 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     getId: (u) => u.id,
     getOwnerId: (dynamic item) =>
         (item as User).id as String?, // User is the owner of their profile
-    getPermission: const ModelActionPermission(
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly, // Only admin can list all users
+    ),
+    getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.userReadOwned, // User can read their own
       requiresOwnershipCheck: true, // Must be the owner
@@ -218,7 +241,10 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     getId: (s) => s.id,
     getOwnerId: (dynamic item) =>
         (item as UserAppSettings).id as String?, // User ID is the owner ID
-    getPermission: const ModelActionPermission(
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported, // Not accessible via collection
+    ),
+    getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.appSettingsReadOwned,
       requiresOwnershipCheck: true,
@@ -244,7 +270,10 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     getId: (p) => p.id,
     getOwnerId: (dynamic item) => (item as UserContentPreferences).id
         as String?, // User ID is the owner ID
-    getPermission: const ModelActionPermission(
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported, // Not accessible via collection
+    ),
+    getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.userPreferencesReadOwned,
       requiresOwnershipCheck: true,
@@ -269,9 +298,12 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     fromJson: AppConfig.fromJson,
     getId: (config) => config.id,
     getOwnerId: null, // AppConfig is a global resource, not user-owned
-    getPermission: const ModelActionPermission(
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported, // Not accessible via collection
+    ),
+    getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType
-          .none, // Readable by any authenticated user via /api/v1/data
+          .none, // Readable by any authenticated user via /api/v1/data/[id]
     ),
     postPermission: const ModelActionPermission(
       type: RequiredPermissionType.adminOnly, // Only administrators can create
