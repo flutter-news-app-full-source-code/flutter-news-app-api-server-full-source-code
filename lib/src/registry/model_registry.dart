@@ -188,8 +188,6 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       type: RequiredPermissionType.adminOnly,
     ),
   ),
-  // Add configurations for other models like User, AppSettings, etc.
-  // Example for a User model (user can read/update their own, admin can read any)
   'user': ModelConfig<User>(
     fromJson: User.fromJson,
     getId: (u) => u.id,
@@ -215,7 +213,6 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresOwnershipCheck: true, // Must be the owner
     ),
   ),
-  // Configuration for UserAppSettings (user-owned)
   'user_app_settings': ModelConfig<UserAppSettings>(
     fromJson: UserAppSettings.fromJson,
     getId: (s) => s.id,
@@ -242,7 +239,6 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       // during account deletion, not via a direct DELETE to /api/v1/data.
     ),
   ),
-  // Configuration for UserContentPreferences (user-owned)
   'user_content_preferences': ModelConfig<UserContentPreferences>(
     fromJson: UserContentPreferences.fromJson,
     getId: (p) => p.id,
@@ -269,7 +265,6 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       // service during account deletion, not via a direct DELETE to /api/v1/data.
     ),
   ),
-  // Configuration for AppConfig (global, managed by admins, readable by all authenticated)
   'app_config': ModelConfig<AppConfig>(
     fromJson: AppConfig.fromJson,
     getId: (config) => config.id,
