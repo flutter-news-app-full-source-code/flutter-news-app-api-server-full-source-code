@@ -88,7 +88,3 @@ very_good test --min-coverage 90
 ```
 
 Aim for a minimum of 90% line coverage.
-
-## 📄 License
-
-This package is licensed under the [PolyForm Free Trial](LICENSE). Please review the terms before use.
