@@ -50,10 +50,8 @@ documentation website [todo:Link to the docs website].
 
 `ht_api` is source-available as part of the Headlines Toolkit ecosystem.
 
-The source code for `ht_api` is available for review as part of the Headlines
-Toolkit ecosystem. To acquire a commercial license for building unlimited news
-applications with the Headlines Toolkit repositories, please visit the
-[Headlines Toolkit GitHub organization page](https://github.com/headlines-toolkit)
+To acquire a commercial license for building unlimited news applications, please visit 
+the [Headlines Toolkit GitHub organization page](https://github.com/headlines-toolkit)
 for more details.
 
 ## 💻 Setup & Running
