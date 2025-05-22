@@ -1,8 +1,10 @@
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
+import 'package:ht_api/src/feed_enhancement/feed_enhancement_context.dart'; // New
 import 'package:ht_api/src/rbac/permission_service.dart'; // Import PermissionService
 import 'package:ht_api/src/registry/model_registry.dart';
+import 'package:ht_api/src/services/feed_enhancement_service.dart'; // New
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 
@@ -19,6 +21,8 @@ Future<Response> onRequest(RequestContext context) async {
   final authenticatedUser = context.read<User>();
   final permissionService =
       context.read<PermissionService>(); // Read PermissionService
+  final feedEnhancementService =
+      context.read<FeedEnhancementService>(); // New
 
   // The main try/catch block here is removed to let the errorHandler middleware
   // handle all exceptions thrown by the handlers below.
@@ -30,6 +34,7 @@ Future<Response> onRequest(RequestContext context) async {
         modelConfig,
         authenticatedUser,
         permissionService, // Pass PermissionService
+        feedEnhancementService, // Pass FeedEnhancementService
         requestId,
       );
     case HttpMethod.post:
@@ -57,6 +62,7 @@ Future<Response> _handleGet(
   ModelConfig<dynamic> modelConfig,
   User authenticatedUser,
   PermissionService permissionService, // Receive PermissionService
+  FeedEnhancementService feedEnhancementService, // Receive FeedEnhancementService
   String requestId,
 ) async {
   // Authorization check is handled by authorizationMiddleware before this.
@@ -227,6 +233,40 @@ Future<Response> _handleGet(
       );
   }
 
+  // --- Feed Enhancement ---
+  // Only enhance if the primary model is a type that can be part of a mixed feed.
+  // For example, 'headline', 'category', 'source', 'country'.
+  // 'user', 'user_app_settings', 'user_content_preferences', 'app_config' are
+  // typically not enhanced with ads/suggestions.
+  final modelsToEnhance = {
+    'headline',
+    'category',
+    'source',
+    'country',
+  };
+
+  List<FeedItem> finalFeedItems;
+  if (modelsToEnhance.contains(modelName)) {
+    final enhancementContext = FeedEnhancementContext(
+      authenticatedUser: authenticatedUser,
+      appConfig: context.read<AppConfig>(),
+      primaryModelName: modelName,
+      userAppSettingsRepository: context.read<HtDataRepository<UserAppSettings>>(),
+      engagementContentTemplateRepository: context.read<HtDataRepository<EngagementContentTemplate>>(),
+      suggestedContentTemplateRepository: context.read<HtDataRepository<SuggestedContentTemplate>>(),
+      categoryRepository: context.read<HtDataRepository<Category>>(),
+      sourceRepository: context.read<HtDataRepository<Source>>(),
+      countryRepository: context.read<HtDataRepository<Country>>(),
+    );
+    finalFeedItems = await feedEnhancementService.enhanceFeed(
+      paginatedResponse.items.cast<FeedItem>(),
+      enhancementContext,
+    );
+  } else {
+    // If not a model to enhance, just cast the original items to FeedItem
+    finalFeedItems = paginatedResponse.items.cast<FeedItem>();
+  }
+
   // Create metadata including the request ID and current timestamp
   final metadata = ResponseMetadata(
     requestId: requestId,
@@ -234,8 +274,12 @@ Future<Response> _handleGet(
   );
 
   // Wrap the PaginatedResponse in SuccessApiResponse with metadata
-  final successResponse = SuccessApiResponse<PaginatedResponse<dynamic>>(
-    data: paginatedResponse,
+  final successResponse = SuccessApiResponse<PaginatedResponse<FeedItem>>(
+    data: PaginatedResponse<FeedItem>(
+      items: finalFeedItems,
+      cursor: paginatedResponse.cursor,
+      hasMore: paginatedResponse.hasMore,
+    ),
     metadata: metadata, // Include the created metadata
   );
 

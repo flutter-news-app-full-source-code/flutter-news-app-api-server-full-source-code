@@ -12,6 +12,11 @@ import 'package:ht_api/src/services/jwt_auth_token_service.dart';
 import 'package:ht_api/src/services/token_blacklist_service.dart';
 import 'package:ht_api/src/services/user_preference_limit_service.dart'; // Import UserPreferenceLimitService interface
 import 'package:ht_api/src/services/verification_code_storage_service.dart';
+import 'package:ht_api/src/services/feed_enhancement_service.dart'; // New
+import 'package:ht_api/src/feed_enhancement/feed_decorator.dart'; // New
+import 'package:ht_api/src/feed_enhancement/decorators/ad_decorator.dart'; // New
+import 'package:ht_api/src/feed_enhancement/decorators/engagement_decorator.dart'; // New
+import 'package:ht_api/src/feed_enhancement/decorators/suggested_content_decorator.dart'; // New
 import 'package:ht_data_inmemory/ht_data_inmemory.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_email_inmemory/ht_email_inmemory.dart';
@@ -195,6 +200,43 @@ HtDataRepository<AppConfig> _createAppConfigRepository() {
   return HtDataRepository<AppConfig>(dataClient: client);
 }
 
+// New repositories for feed enhancement templates
+HtDataRepository<EngagementContentTemplate>
+    _createEngagementContentTemplateRepository() {
+  print('Initializing EngagementContentTemplate Repository...');
+  final initialData = _loadFixtureSync('engagement_content_templates.json')
+      .map(EngagementContentTemplate.fromJson)
+      .toList();
+  final client = HtDataInMemoryClient<EngagementContentTemplate>(
+    toJson: (i) => i.toJson(),
+    getId: (i) => i.type.name, // Use enum name as ID
+    initialData: initialData,
+  );
+  print(
+    'EngagementContentTemplate Repository Initialized with '
+    '${initialData.length} items.',
+  );
+  return HtDataRepository<EngagementContentTemplate>(dataClient: client);
+}
+
+HtDataRepository<SuggestedContentTemplate>
+    _createSuggestedContentTemplateRepository() {
+  print('Initializing SuggestedContentTemplate Repository...');
+  final initialData = _loadFixtureSync('suggested_content_templates.json')
+      .map(SuggestedContentTemplate.fromJson)
+      .toList();
+  final client = HtDataInMemoryClient<SuggestedContentTemplate>(
+    toJson: (i) => i.toJson(),
+    getId: (i) => i.type.name, // Use enum name as ID
+    initialData: initialData,
+  );
+  print(
+    'SuggestedContentTemplate Repository Initialized with '
+    '${initialData.length} items.',
+  );
+  return HtDataRepository<SuggestedContentTemplate>(dataClient: client);
+}
+
 // --- Middleware Definition ---
 Handler middleware(Handler handler) {
   // Initialize repositories when middleware is first created
@@ -207,6 +249,10 @@ Handler middleware(Handler handler) {
   final userContentPreferencesRepository =
       _createUserContentPreferencesRepository(); // New
   final appConfigRepository = _createAppConfigRepository(); // New
+  final engagementContentTemplateRepository =
+      _createEngagementContentTemplateRepository(); // New
+  final suggestedContentTemplateRepository =
+      _createSuggestedContentTemplateRepository(); // New
 
   const uuid = Uuid();
 
@@ -258,9 +304,22 @@ Handler middleware(Handler handler) {
   // --- User Preference Limit Service --- // New
   final userPreferenceLimitService = DefaultUserPreferenceLimitService(
     appConfigRepository: appConfigRepository,
-    // Removed unused userContentPreferencesRepository parameter
   );
   print('[MiddlewareSetup] DefaultUserPreferenceLimitService instantiated.');
+
+  // --- Feed Enhancement Dependencies ---
+  final adDecorator = AdDecorator(uuidGenerator: uuid);
+  final engagementDecorator = EngagementDecorator(uuidGenerator: uuid);
+  final suggestedContentDecorator = SuggestedContentDecorator(uuidGenerator: uuid);
+
+  final feedEnhancementService = FeedEnhancementService(
+    decorators: [
+      adDecorator,
+      engagementDecorator,
+      suggestedContentDecorator,
+    ],
+  );
+  print('[MiddlewareSetup] FeedEnhancementService instantiated.');
 
   // ==========================================================================
   //                            MIDDLEWARE CHAIN
@@ -331,6 +390,16 @@ Handler middleware(Handler handler) {
           (_) => appConfigRepository,
         ),
       )
+      .use(
+        provider<HtDataRepository<EngagementContentTemplate>>(
+          (_) => engagementContentTemplateRepository,
+        ),
+      )
+      .use(
+        provider<HtDataRepository<SuggestedContentTemplate>>(
+          (_) => suggestedContentTemplateRepository,
+        ),
+      )
 
       // --- 4. Authentication Service Providers (Auth Logic Dependencies) ---
       // PURPOSE: Provide the core services needed for authentication logic.
@@ -362,6 +431,11 @@ Handler middleware(Handler handler) {
           (_) => authService,
         ),
       ) // Reads other services/repos
+      .use(
+        provider<FeedEnhancementService>(
+          (_) => feedEnhancementService,
+        ),
+      ) // New: Provides the feed enhancement service
 
       // --- 5. RBAC Service Provider ---
       // PURPOSE: Provides the PermissionService for authorization checks.
