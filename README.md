@@ -35,8 +35,7 @@ management dashboard](https://github.com/headlines-toolkit/ht-dashboard).
     like theme, language, font styles, and more.
 
 *   👤 **Personalized User Preferences:** Enable richer user interactions by
-    managing and syncing user-specific data such as saved headlines, search
-    history, or other personalized content tailored to individual users.
+    managing and syncing user-specific data such as saved headlines, followed sources, or other personalized content tailored to individual users.
 
 *   💾 **Robust Data Management:** Securely manage core news application data,
     including headlines, categories, and sources, through a well-structured
