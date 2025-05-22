@@ -184,12 +184,13 @@ HtDataRepository<UserContentPreferences>
 
 HtDataRepository<AppConfig> _createAppConfigRepository() {
   print('Initializing AppConfig Repository...');
-  // AppConfig should have a single instance, potentially loaded from a file
-  // or created with defaults if not found. For in-memory, we can create a
-  // default instance.
+  final fixtureData = _loadFixtureSync('app_config.json');
+  if (fixtureData.isEmpty) {
+    throw Exception('Failed to load app_config.json fixture or it is empty.');
+  }
   final initialData = [
-    const AppConfig(id: 'app_config'), // Default config
-  ];
+    AppConfig.fromJson(fixtureData.first),
+  ]; // Assuming one config
   final client = HtDataInMemoryClient<AppConfig>(
     toJson: (i) => i.toJson(),
     getId: (i) => i.id,

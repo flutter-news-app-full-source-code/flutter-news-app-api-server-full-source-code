@@ -1,0 +1,72 @@
+{
+  "id": "app_config",
+  "user_preference_limits": {
+    "guest_followed_items_limit": 5,
+    "guest_saved_headlines_limit": 10,
+    "authenticated_followed_items_limit": 15,
+    "authenticated_saved_headlines_limit": 30,
+    "premium_followed_items_limit": 30,
+    "premium_saved_headlines_limit": 100
+  },
+  "ad_config": {
+    "guest_ad_frequency": 5,
+    "guest_ad_placement_interval": 3,
+    "authenticated_ad_frequency": 10,
+    "authenticated_ad_placement_interval": 5,
+    "premium_ad_frequency": 0,
+    "premium_ad_placement_interval": 0
+  },
+  "engagement_rules": [
+    {
+      "template_type": "rate-app",
+      "user_roles": ["standard_user"],
+      "min_days_since_account_creation": 7,
+      "max_times_to_show": 1,
+      "min_days_since_last_shown": 30,
+      "placement": {
+        "after_primary_item_index": 5,
+        "min_primary_items_required": 10
+      }
+    },
+    {
+      "template_type": "link-account",
+      "user_roles": ["guest_user"],
+      "min_days_since_account_creation": 3,
+      "max_times_to_show": 3,
+      "min_days_since_last_shown": 7,
+      "placement": {
+        "after_primary_item_index": 3,
+        "min_primary_items_required": 5
+      }
+    },
+    {
+      "template_type": "upgrade-to-premium",
+      "user_roles": ["standard_user"],
+      "min_days_since_account_creation": 14,
+      "max_times_to_show": 2,
+      "min_days_since_last_shown": 15,
+      "placement": {
+        "relative_position": "middle",
+        "min_primary_items_required": 10
+      }
+    }
+  ],
+  "suggestion_rules": [
+    {
+      "template_type": "categories-to-follow",
+      "user_roles": ["guest_user", "standard_user"],
+      "placement": {
+        "after_primary_item_index": 7,
+        "min_primary_items_required": 10
+      }
+    },
+    {
+      "template_type": "sources-to-follow",
+      "user_roles": ["standard_user"],
+      "placement": {
+        "relative_position": "end_quarter",
+        "min_primary_items_required": 15
+      }
+    }
+  ]
+}
