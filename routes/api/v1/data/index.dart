@@ -21,8 +21,7 @@ Future<Response> onRequest(RequestContext context) async {
   final authenticatedUser = context.read<User>();
   final permissionService =
       context.read<PermissionService>(); // Read PermissionService
-  final feedEnhancementService =
-      context.read<FeedEnhancementService>(); // New
+  final feedEnhancementService = context.read<FeedEnhancementService>(); // New
 
   // The main try/catch block here is removed to let the errorHandler middleware
   // handle all exceptions thrown by the handlers below.
@@ -62,7 +61,8 @@ Future<Response> _handleGet(
   ModelConfig<dynamic> modelConfig,
   User authenticatedUser,
   PermissionService permissionService, // Receive PermissionService
-  FeedEnhancementService feedEnhancementService, // Receive FeedEnhancementService
+  FeedEnhancementService
+      feedEnhancementService, // Receive FeedEnhancementService
   String requestId,
 ) async {
   // Authorization check is handled by authorizationMiddleware before this.
@@ -251,9 +251,12 @@ Future<Response> _handleGet(
       authenticatedUser: authenticatedUser,
       appConfig: context.read<AppConfig>(),
       primaryModelName: modelName,
-      userAppSettingsRepository: context.read<HtDataRepository<UserAppSettings>>(),
-      engagementContentTemplateRepository: context.read<HtDataRepository<EngagementContentTemplate>>(),
-      suggestedContentTemplateRepository: context.read<HtDataRepository<SuggestedContentTemplate>>(),
+      userAppSettingsRepository:
+          context.read<HtDataRepository<UserAppSettings>>(),
+      engagementContentTemplateRepository:
+          context.read<HtDataRepository<EngagementContentTemplate>>(),
+      suggestedContentTemplateRepository:
+          context.read<HtDataRepository<SuggestedContentTemplate>>(),
       categoryRepository: context.read<HtDataRepository<Category>>(),
       sourceRepository: context.read<HtDataRepository<Source>>(),
       countryRepository: context.read<HtDataRepository<Country>>(),

@@ -9,6 +9,7 @@ analyzer:
     avoid_dynamic_calls: ignore
     avoid_catching_errors: ignore
     document_ignores: ignore
+    one_member_abstracts: ignore
   exclude:
     - build/**
 linter:

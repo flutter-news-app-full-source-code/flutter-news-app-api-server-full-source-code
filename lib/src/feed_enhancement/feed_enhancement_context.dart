@@ -1,3 +1,5 @@
+import 'package:ht_api/src/feed_enhancement/feed_decorator.dart'
+    show FeedDecorator;
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 

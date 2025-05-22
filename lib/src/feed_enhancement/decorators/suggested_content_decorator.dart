@@ -1,6 +1,5 @@
 import 'package:ht_api/src/feed_enhancement/feed_decorator.dart';
 import 'package:ht_api/src/feed_enhancement/feed_enhancement_context.dart';
-import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 import 'package:uuid/uuid.dart';
 
@@ -38,7 +37,7 @@ class SuggestedContentDecorator implements FeedDecorator {
     // Find a suitable suggestion to inject
     SuggestionRule? ruleToInject;
     SuggestedContentTemplate? templateToInject;
-    List<FeedItem> dynamicItems = [];
+    var dynamicItems = <FeedItem>[];
 
     for (final rule in rules) {
       // 1. Check user role
@@ -139,7 +138,10 @@ class SuggestedContentDecorator implements FeedDecorator {
           // Not enough primary items for this placement, do not insert
         } else if (placement.afterPrimaryItemIndex != null &&
             placement.afterPrimaryItemIndex! < decoratedFeed.length) {
-          decoratedFeed.insert(placement.afterPrimaryItemIndex! + 1, suggestedItem);
+          decoratedFeed.insert(
+            placement.afterPrimaryItemIndex! + 1,
+            suggestedItem,
+          );
           inserted = true;
         } else if (placement.relativePosition == 'middle' &&
             decoratedFeed.isNotEmpty) {

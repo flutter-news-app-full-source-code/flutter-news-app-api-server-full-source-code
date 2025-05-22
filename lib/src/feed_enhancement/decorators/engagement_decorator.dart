@@ -1,6 +1,5 @@
 import 'package:ht_api/src/feed_enhancement/feed_decorator.dart';
 import 'package:ht_api/src/feed_enhancement/feed_enhancement_context.dart';
-import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 import 'package:uuid/uuid.dart';
 
@@ -55,7 +54,7 @@ class EngagementDecorator implements FeedDecorator {
     // Variables to hold the selected rule and template
     EngagementRule? ruleToInject;
     EngagementContentTemplate? templateToInject;
-    int selectedRuleShownCount = 0; // Initialize to 0
+    var selectedRuleShownCount = 0; // Initialize to 0
 
     for (final rule in rules) {
       // 1. Check user role
@@ -80,8 +79,8 @@ class EngagementDecorator implements FeedDecorator {
       }
 
       // 4. Check minDaysSinceLastShown
-      final lastShownTimestamp =
-          updatedAppSettings.engagementLastShownTimestamps[rule.templateType.name];
+      final lastShownTimestamp = updatedAppSettings
+          .engagementLastShownTimestamps[rule.templateType.name];
       if (rule.minDaysSinceLastShown != null && lastShownTimestamp != null) {
         final daysSinceLastShown = now.difference(lastShownTimestamp).inDays;
         if (daysSinceLastShown < rule.minDaysSinceLastShown!) {
@@ -109,7 +108,8 @@ class EngagementDecorator implements FeedDecorator {
       // If we reach here, this rule is a candidate.
       // For simplicity, we'll inject the first valid one found.
       ruleToInject = rule;
-      selectedRuleShownCount = currentShownCount; // Capture for the selected rule
+      selectedRuleShownCount =
+          currentShownCount; // Capture for the selected rule
       break; // Exit loop after finding the first suitable rule
     }
 
@@ -123,7 +123,8 @@ class EngagementDecorator implements FeedDecorator {
             EngagementContentType.values.byName(ruleToInject.templateType.name),
         // Action for the client to perform when this is tapped.
         // This could be more dynamic based on templateType or rule.
-        action: const OpenExternalUrl(url: 'https://example.com/engagement_action'),
+        action:
+            const OpenExternalUrl(url: 'https://example.com/engagement_action'),
       );
 
       // Determine placement (simple for now, can be enhanced)
@@ -136,7 +137,10 @@ class EngagementDecorator implements FeedDecorator {
           // Not enough primary items for this placement, do not insert
         } else if (placement.afterPrimaryItemIndex != null &&
             placement.afterPrimaryItemIndex! < decoratedFeed.length) {
-          decoratedFeed.insert(placement.afterPrimaryItemIndex! + 1, engagementItem);
+          decoratedFeed.insert(
+            placement.afterPrimaryItemIndex! + 1,
+            engagementItem,
+          );
           inserted = true;
         } else if (placement.relativePosition == 'middle' &&
             decoratedFeed.isNotEmpty) {

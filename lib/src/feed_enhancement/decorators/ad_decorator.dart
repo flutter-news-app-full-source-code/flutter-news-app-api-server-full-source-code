@@ -12,7 +12,8 @@ import 'package:uuid/uuid.dart';
 /// {@endtemplate}
 class AdDecorator implements FeedDecorator {
   /// {@macro ad_decorator}
-  const AdDecorator({Uuid? uuidGenerator}) : _uuid = uuidGenerator ?? const Uuid();
+  const AdDecorator({Uuid? uuidGenerator})
+      : _uuid = uuidGenerator ?? const Uuid();
 
   final Uuid _uuid;
 
@@ -49,8 +50,7 @@ class AdDecorator implements FeedDecorator {
     }
 
     final decoratedFeed = <FeedItem>[];
-    int primaryItemCount = 0;
-    int adsInjected = 0;
+    var primaryItemCount = 0;
 
     for (var i = 0; i < currentFeedItems.length; i++) {
       decoratedFeed.add(currentFeedItems[i]);
@@ -66,10 +66,10 @@ class AdDecorator implements FeedDecorator {
           targetUrl: 'https://example.com/ad_click_target',
           adType: AdType.banner, // Example ad type
           placement: AdPlacement.feedInlineStandardBanner, // Example placement
-          action: const OpenExternalUrl(url: 'https://example.com/ad_click_target'),
+          action:
+              const OpenExternalUrl(url: 'https://example.com/ad_click_target'),
         );
         decoratedFeed.add(adItem);
-        adsInjected++;
         // Reset primaryItemCount to ensure interval is respected after injection
         primaryItemCount = 0;
       }

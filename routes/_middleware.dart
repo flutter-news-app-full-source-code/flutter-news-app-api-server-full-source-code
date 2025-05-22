@@ -2,21 +2,20 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
+import 'package:ht_api/src/feed_enhancement/decorators/ad_decorator.dart'; // New
+import 'package:ht_api/src/feed_enhancement/decorators/engagement_decorator.dart'; // New
+import 'package:ht_api/src/feed_enhancement/decorators/suggested_content_decorator.dart'; // New
 import 'package:ht_api/src/middlewares/error_handler.dart';
 import 'package:ht_api/src/rbac/permission_service.dart'; // Import PermissionService
 import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_api/src/services/auth_service.dart';
 import 'package:ht_api/src/services/auth_token_service.dart';
 import 'package:ht_api/src/services/default_user_preference_limit_service.dart'; // Import DefaultUserPreferenceLimitService
+import 'package:ht_api/src/services/feed_enhancement_service.dart'; // New
 import 'package:ht_api/src/services/jwt_auth_token_service.dart';
 import 'package:ht_api/src/services/token_blacklist_service.dart';
 import 'package:ht_api/src/services/user_preference_limit_service.dart'; // Import UserPreferenceLimitService interface
 import 'package:ht_api/src/services/verification_code_storage_service.dart';
-import 'package:ht_api/src/services/feed_enhancement_service.dart'; // New
-import 'package:ht_api/src/feed_enhancement/feed_decorator.dart'; // New
-import 'package:ht_api/src/feed_enhancement/decorators/ad_decorator.dart'; // New
-import 'package:ht_api/src/feed_enhancement/decorators/engagement_decorator.dart'; // New
-import 'package:ht_api/src/feed_enhancement/decorators/suggested_content_decorator.dart'; // New
 import 'package:ht_data_inmemory/ht_data_inmemory.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_email_inmemory/ht_email_inmemory.dart';
@@ -308,11 +307,12 @@ Handler middleware(Handler handler) {
   print('[MiddlewareSetup] DefaultUserPreferenceLimitService instantiated.');
 
   // --- Feed Enhancement Dependencies ---
-  final adDecorator = AdDecorator(uuidGenerator: uuid);
-  final engagementDecorator = EngagementDecorator(uuidGenerator: uuid);
-  final suggestedContentDecorator = SuggestedContentDecorator(uuidGenerator: uuid);
+  const adDecorator = AdDecorator(uuidGenerator: uuid);
+  const engagementDecorator = EngagementDecorator(uuidGenerator: uuid);
+  const suggestedContentDecorator =
+      SuggestedContentDecorator(uuidGenerator: uuid);
 
-  final feedEnhancementService = FeedEnhancementService(
+  const feedEnhancementService = FeedEnhancementService(
     decorators: [
       adDecorator,
       engagementDecorator,
