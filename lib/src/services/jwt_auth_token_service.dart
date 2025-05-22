@@ -14,6 +14,7 @@ String _userRoleToString(UserRole role) {
     UserRole.admin => 'admin',
     UserRole.standardUser => 'standard_user',
     UserRole.guestUser => 'guest_user',
+    UserRole.premiumUser => 'premium_user', // Added premium user
   };
 }
 

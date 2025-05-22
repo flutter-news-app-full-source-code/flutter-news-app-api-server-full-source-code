@@ -21,6 +21,12 @@ final Set<String> _standardUserPermissions = {
   Permissions.userDeleteOwned,
 };
 
+// For now, premium users have the same permissions as standard users,
+// but this set can be expanded later for premium-specific features.
+final Set<String> _premiumUserPermissions = {
+  ..._standardUserPermissions,
+};
+
 final Set<String> _adminPermissions = {
   ..._standardUserPermissions,
   Permissions.headlineCreate,
@@ -54,5 +60,6 @@ final Set<String> _adminPermissions = {
 final Map<UserRole, Set<String>> rolePermissions = {
   UserRole.guestUser: _guestUserPermissions,
   UserRole.standardUser: _standardUserPermissions,
+  UserRole.premiumUser: _premiumUserPermissions, // Added premium user
   UserRole.admin: _adminPermissions,
 };

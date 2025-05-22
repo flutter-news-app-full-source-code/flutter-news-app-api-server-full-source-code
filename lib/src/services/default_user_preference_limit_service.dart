@@ -46,16 +46,15 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
             // Applies to countries, sources, categories
             limit = limits.authenticatedFollowedItemsLimit;
           }
+        case UserRole.premiumUser:
+          if (itemType == 'headline') {
+            limit = limits.premiumSavedHeadlinesLimit;
+          } else {
+            limit = limits.premiumFollowedItemsLimit;
+          }
         case UserRole.admin:
           // Admins have no limits
           return;
-        // Add premium user case when implemented
-        // case UserRole.premiumUser:
-        //   if (itemType == 'headline') {
-        //     limit = limits.premiumSavedHeadlinesLimit;
-        //   } else {
-        //     limit = limits.premiumFollowedItemsLimit;
-        //   }
       }
 
       // 3. Check if adding the item would exceed the limit
@@ -100,13 +99,12 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
         case UserRole.standardUser:
           followedItemsLimit = limits.authenticatedFollowedItemsLimit;
           savedHeadlinesLimit = limits.authenticatedSavedHeadlinesLimit;
+        case UserRole.premiumUser:
+          followedItemsLimit = limits.premiumFollowedItemsLimit;
+          savedHeadlinesLimit = limits.premiumSavedHeadlinesLimit;
         case UserRole.admin:
           // Admins have no limits
           return;
-        // Add premium user case when implemented
-        // case UserRole.premiumUser:
-        //   followedItemsLimit = limits.premiumFollowedItemsLimit;
-        //   savedHeadlinesLimit = limits.premiumSavedHeadlinesLimit;
       }
 
       // 3. Check if proposed preferences exceed limits
