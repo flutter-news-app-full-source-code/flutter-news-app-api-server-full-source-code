@@ -309,15 +309,14 @@ Handler middleware(Handler handler) {
 
   // --- Feed Enhancement Dependencies ---
   const adDecorator = AdDecorator(uuidGenerator: uuid);
-  const engagementDecorator = EngagementDecorator(uuidGenerator: uuid);
-  const suggestedContentDecorator =
-      SuggestedContentDecorator(uuidGenerator: uuid);
+  // const engagementDecorator = EngagementDecorator(uuidGenerator: uuid);
+  // const suggestedContentDecorator = SuggestedContentDecorator(uuidGenerator: uuid);
 
   const feedEnhancementService = FeedEnhancementService(
     decorators: [
       adDecorator,
-      engagementDecorator,
-      suggestedContentDecorator,
+      // engagementDecorator,
+      // suggestedContentDecorator,
     ],
   );
   print('[MiddlewareSetup] FeedEnhancementService instantiated.');

@@ -4,8 +4,8 @@
     "title": "Dart Frog 1.0 Released!",
     "description": "The minimalist backend framework for Dart reaches a major milestone.",
     "url": "https://dartfrog.vgv.dev/docs/overview",
-    "imageUrl": null,
-    "publishedAt": "2025-04-20T10:00:00Z",
+    "image_url": null,
+    "published_at": "2025-04-20T10:00:00Z",
     "source": {
       "id": "s1a2b3c4-d5e6-f789-0123-456789abcdef",
       "name": "Very Good Ventures Blog",
@@ -23,8 +23,8 @@
     "title": "Flutter Adaptive UI Best Practices",
     "description": "Building responsive and adaptive user interfaces in Flutter.",
     "url": "https://docs.flutter.dev/ui/layout/adaptive",
-    "imageUrl": null,
-    "publishedAt": "2025-04-22T14:30:00Z",
+    "image_url": null,
+    "published_at": "2025-04-22T14:30:00Z",
     "source": {
       "id": "s2b3c4d5-e6f7-a890-1234-567890abcdef",
       "name": "Flutter Dev",

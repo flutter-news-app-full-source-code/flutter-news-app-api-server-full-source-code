@@ -1,10 +1,9 @@
-//
 // ignore_for_file: library_private_types_in_public_api
 
 import 'dart:async';
 import 'dart:math';
 
-import 'package:ht_shared/ht_shared.dart'; // For HtHttpException, ConflictException
+import 'package:ht_shared/ht_shared.dart'; 
 import 'package:meta/meta.dart';
 
 // Default duration for code expiry (e.g., 15 minutes)

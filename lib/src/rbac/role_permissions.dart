@@ -60,6 +60,6 @@ final Set<String> _adminPermissions = {
 final Map<UserRole, Set<String>> rolePermissions = {
   UserRole.guestUser: _guestUserPermissions,
   UserRole.standardUser: _standardUserPermissions,
-  UserRole.premiumUser: _premiumUserPermissions, // Added premium user
+  UserRole.premiumUser: _premiumUserPermissions,
   UserRole.admin: _adminPermissions,
 };

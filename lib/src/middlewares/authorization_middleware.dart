@@ -1,7 +1,7 @@
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/rbac/permission_service.dart';
 import 'package:ht_api/src/registry/model_registry.dart';
-import 'package:ht_shared/ht_shared.dart'; // For User, ForbiddenException
+import 'package:ht_shared/ht_shared.dart';
 
 /// {@template authorization_middleware}
 /// Middleware to enforce role-based permissions and model-specific access rules.

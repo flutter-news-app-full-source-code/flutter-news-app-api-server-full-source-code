@@ -60,9 +60,8 @@ Future<Response> _handleGet(
   String modelName,
   ModelConfig<dynamic> modelConfig,
   User authenticatedUser,
-  PermissionService permissionService, // Receive PermissionService
-  FeedEnhancementService
-      feedEnhancementService, // Receive FeedEnhancementService
+  PermissionService permissionService,
+  FeedEnhancementService feedEnhancementService,
   String requestId,
 ) async {
   // Authorization check is handled by authorizationMiddleware before this.
@@ -236,6 +235,7 @@ Future<Response> _handleGet(
   // --- Feed Enhancement ---
   // Only enhance if the primary model is a type that can be part of a mixed feed.
   // For example, 'headline', 'category', 'source', 'country'.
+  //
   // 'user', 'user_app_settings', 'user_content_preferences', 'app_config' are
   // typically not enhanced with ads/suggestions.
   final modelsToEnhance = {
@@ -283,7 +283,7 @@ Future<Response> _handleGet(
       cursor: paginatedResponse.cursor,
       hasMore: paginatedResponse.hasMore,
     ),
-    metadata: metadata, // Include the created metadata
+    metadata: metadata,
   );
 
   // Need to provide the correct toJsonT for PaginatedResponse

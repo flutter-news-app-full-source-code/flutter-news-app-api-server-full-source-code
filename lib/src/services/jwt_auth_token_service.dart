@@ -1,8 +1,5 @@
-// For potential base64 decoding if needed
-
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:ht_api/src/services/auth_token_service.dart';
-// Import the blacklist service
 import 'package:ht_api/src/services/token_blacklist_service.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
@@ -14,7 +11,7 @@ String _userRoleToString(UserRole role) {
     UserRole.admin => 'admin',
     UserRole.standardUser => 'standard_user',
     UserRole.guestUser => 'guest_user',
-    UserRole.premiumUser => 'premium_user', // Added premium user
+    UserRole.premiumUser => 'premium_user', 
   };
 }
 

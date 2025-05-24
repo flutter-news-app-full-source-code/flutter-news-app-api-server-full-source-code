@@ -90,7 +90,7 @@ String _mapExceptionToCodeString(HtHttpException exception) {
     ServerException() => 'SERVER_ERROR',
     OperationFailedException() => 'OPERATION_FAILED',
     NetworkException() => 'NETWORK_ERROR',
-    ConflictException() => 'CONFLICT', // Added for 409
+    ConflictException() => 'CONFLICT',
     UnknownException() => 'UNKNOWN_ERROR',
     _ => 'UNKNOWN_ERROR', // Default
   };

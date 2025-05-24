@@ -1,8 +1,5 @@
-//
-// ignore_for_file: strict_raw_type, lines_longer_than_80_chars
-
 import 'package:dart_frog/dart_frog.dart';
-import 'package:ht_api/src/rbac/permissions.dart'; // Import permissions
+import 'package:ht_api/src/rbac/permissions.dart'; 
 import 'package:ht_data_client/ht_data_client.dart';
 import 'package:ht_shared/ht_shared.dart';
 
@@ -68,8 +65,8 @@ class ModelConfig<T> {
   const ModelConfig({
     required this.fromJson,
     required this.getId,
-    required this.getCollectionPermission, // New field for GET collection
-    required this.getItemPermission, // New field for GET item
+    required this.getCollectionPermission, 
+    required this.getItemPermission, 
     required this.postPermission,
     required this.putPermission,
     required this.deletePermission,
@@ -188,7 +185,7 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
   ),
   'country': ModelConfig<Country>(
     fromJson: Country.fromJson,
-    getId: (c) => c.id, // Assuming Country has an 'id' field
+    getId: (c) => c.id,
     // Countries: Admin-owned, read allowed by standard/guest users
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
@@ -327,4 +324,4 @@ typedef ModelRegistryMap = Map<String, ModelConfig<dynamic>>;
 /// used by the middleware in `routes/api/v1/data/_middleware.dart`.
 final modelRegistryProvider = provider<ModelRegistryMap>(
   (_) => modelRegistry,
-); // Use lowercase provider function for setup
+); 
