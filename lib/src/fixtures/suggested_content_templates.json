@@ -1,24 +1,24 @@
 [
   {
-    "type": "categories-to-follow",
+    "type": "categories_to_follow",
     "title": "Discover New Topics",
     "description": "Follow your favorite categories to personalize your news feed.",
-    "display_type": "horizontal-card-list",
+    "display_type": "horizontal_card_list",
     "suggested_content_type": "category",
     "max_items_to_display": 3,
     "fetch_criteria": "popular"
   },
   {
-    "type": "sources-to-follow",
+    "type": "sources_to_follow",
     "title": "Explore Trusted Sources",
     "description": "Follow news sources that matter to you.",
-    "display_type": "vertical-card-list",
+    "display_type": "vertical_card_list",
     "suggested_content_type": "source",
     "max_items_to_display": 5,
     "fetch_criteria": "recommended"
   },
   {
-    "type": "countries-to-follow",
+    "type": "countries_to_follow",
     "title": "Global News at Your Fingertips",
     "description": "Select countries to get news from around the world.",
     "display_type": "grid",
