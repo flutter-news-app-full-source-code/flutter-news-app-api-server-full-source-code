@@ -2,7 +2,7 @@ import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/middlewares/authentication_middleware.dart';
 import 'package:ht_api/src/middlewares/authorization_middleware.dart'; // Import authorization middleware
 import 'package:ht_api/src/registry/model_registry.dart';
-import 'package:ht_shared/ht_shared.dart'; // For BadRequestException
+import 'package:ht_shared/ht_shared.dart';
 
 /// Middleware specific to the generic `/api/v1/data` route path.
 ///

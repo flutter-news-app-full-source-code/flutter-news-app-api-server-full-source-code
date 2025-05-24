@@ -3,8 +3,8 @@ import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/feed_enhancement/decorators/ad_decorator.dart'; // New
-import 'package:ht_api/src/feed_enhancement/decorators/engagement_decorator.dart'; // New
-import 'package:ht_api/src/feed_enhancement/decorators/suggested_content_decorator.dart'; // New
+// import 'package:ht_api/src/feed_enhancement/decorators/engagement_decorator.dart'; // New
+// import 'package:ht_api/src/feed_enhancement/decorators/suggested_content_decorator.dart'; // New
 import 'package:ht_api/src/middlewares/error_handler.dart';
 import 'package:ht_api/src/rbac/permission_service.dart'; // Import PermissionService
 import 'package:ht_api/src/registry/model_registry.dart';
@@ -247,12 +247,12 @@ Handler middleware(Handler handler) {
   final countryRepository = _createCountryRepository();
   final userSettingsRepository = _createUserAppSettingsRepository(); // New
   final userContentPreferencesRepository =
-      _createUserContentPreferencesRepository(); // New
-  final appConfigRepository = _createAppConfigRepository(); // New
+      _createUserContentPreferencesRepository();
+  final appConfigRepository = _createAppConfigRepository();
   final engagementContentTemplateRepository =
-      _createEngagementContentTemplateRepository(); // New
+      _createEngagementContentTemplateRepository();
   final suggestedContentTemplateRepository =
-      _createSuggestedContentTemplateRepository(); // New
+      _createSuggestedContentTemplateRepository();
 
   const uuid = Uuid();
 
@@ -265,19 +265,19 @@ Handler middleware(Handler handler) {
       // No initial user data fixture needed for auth flow typically
     ),
   );
-  print('[MiddlewareSetup] HtDataRepository<User> instantiated.'); // Added log
+  print('[MiddlewareSetup] HtDataRepository<User> instantiated.');
   // Email Repo (using InMemory)
   const emailRepository = HtEmailRepository(
     emailClient: HtEmailInMemoryClient(),
   );
-  print('[MiddlewareSetup] HtEmailRepository instantiated.'); // Added log
+  print('[MiddlewareSetup] HtEmailRepository instantiated.');
   // Auth Services (using JWT and in-memory implementations)
   final tokenBlacklistService = InMemoryTokenBlacklistService();
   print('[MiddlewareSetup] InMemoryTokenBlacklistService instantiated.');
   // Instantiate the JWT service, passing its dependencies
   final authTokenService = JwtAuthTokenService(
     userRepository: userRepository,
-    blacklistService: tokenBlacklistService, // Pass the blacklist service
+    blacklistService: tokenBlacklistService,
     uuidGenerator: uuid,
   );
   print('[MiddlewareSetup] JwtAuthTokenService instantiated.');
@@ -295,13 +295,12 @@ Handler middleware(Handler handler) {
     userContentPreferencesRepository: userContentPreferencesRepository,
     uuidGenerator: uuid,
   );
-  print('[MiddlewareSetup] AuthService instantiated.'); // Added log
+  print('[MiddlewareSetup] AuthService instantiated.');
 
   // --- RBAC Dependencies ---
-  const permissionService =
-      PermissionService(); // Instantiate PermissionService
+  const permissionService = PermissionService();
 
-  // --- User Preference Limit Service --- // New
+  // --- User Preference Limit Service ---
   final userPreferenceLimitService = DefaultUserPreferenceLimitService(
     appConfigRepository: appConfigRepository,
   );

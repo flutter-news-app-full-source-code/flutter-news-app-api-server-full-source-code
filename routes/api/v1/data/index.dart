@@ -305,7 +305,7 @@ Future<Response> _handlePost(
   String modelName,
   ModelConfig<dynamic> modelConfig,
   User authenticatedUser,
-  PermissionService permissionService, // Receive PermissionService
+  PermissionService permissionService,
   String requestId,
 ) async {
   // Authorization check is handled by authorizationMiddleware before this.

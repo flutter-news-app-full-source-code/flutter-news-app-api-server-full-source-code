@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
-import 'package:ht_api/src/rbac/permission_service.dart'; // Import PermissionService
+import 'package:ht_api/src/rbac/permission_service.dart';
 import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_api/src/services/user_preference_limit_service.dart'; // Import UserPreferenceLimitService
 import 'package:ht_data_repository/ht_data_repository.dart';
@@ -72,7 +72,7 @@ Future<Response> _handleGet(
   String modelName,
   ModelConfig<dynamic> modelConfig,
   User authenticatedUser,
-  PermissionService permissionService, // Receive PermissionService
+  PermissionService permissionService,
   String requestId,
 ) async {
   // Authorization check is handled by authorizationMiddleware before this.
@@ -431,7 +431,7 @@ Future<Response> _handleDelete(
   String modelName,
   ModelConfig<dynamic> modelConfig,
   User authenticatedUser,
-  PermissionService permissionService, // Receive PermissionService
+  PermissionService permissionService,
   String requestId,
 ) async {
   // Authorization check is handled by authorizationMiddleware before this.

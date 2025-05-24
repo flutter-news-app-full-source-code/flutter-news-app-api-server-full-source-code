@@ -1,5 +1,5 @@
 import 'package:dart_frog/dart_frog.dart';
-import 'package:ht_api/src/rbac/permissions.dart'; 
+import 'package:ht_api/src/rbac/permissions.dart';
 import 'package:ht_data_client/ht_data_client.dart';
 import 'package:ht_shared/ht_shared.dart';
 
@@ -65,8 +65,8 @@ class ModelConfig<T> {
   const ModelConfig({
     required this.fromJson,
     required this.getId,
-    required this.getCollectionPermission, 
-    required this.getItemPermission, 
+    required this.getCollectionPermission,
+    required this.getItemPermission,
     required this.postPermission,
     required this.putPermission,
     required this.deletePermission,
@@ -324,4 +324,4 @@ typedef ModelRegistryMap = Map<String, ModelConfig<dynamic>>;
 /// used by the middleware in `routes/api/v1/data/_middleware.dart`.
 final modelRegistryProvider = provider<ModelRegistryMap>(
   (_) => modelRegistry,
-); 
+);
