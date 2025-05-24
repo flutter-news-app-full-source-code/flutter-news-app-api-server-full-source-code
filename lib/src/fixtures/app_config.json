@@ -18,7 +18,7 @@
   },
   "engagement_rules": [
     {
-      "template_type": "rate-app",
+      "template_type": "rate_app",
       "user_roles": ["standard_user"],
       "min_days_since_account_creation": 7,
       "max_times_to_show": 1,
@@ -29,7 +29,7 @@
       }
     },
     {
-      "template_type": "link-account",
+      "template_type": "link_account",
       "user_roles": ["guest_user"],
       "min_days_since_account_creation": 3,
       "max_times_to_show": 3,
@@ -40,7 +40,7 @@
       }
     },
     {
-      "template_type": "upgrade-to-premium",
+      "template_type": "upgrade_to_premium",
       "user_roles": ["standard_user"],
       "min_days_since_account_creation": 14,
       "max_times_to_show": 2,
@@ -53,7 +53,7 @@
   ],
   "suggestion_rules": [
     {
-      "template_type": "categories-to-follow",
+      "template_type": "categories_to_follow",
       "user_roles": ["guest_user", "standard_user"],
       "placement": {
         "after_primary_item_index": 7,
@@ -61,7 +61,7 @@
       }
     },
     {
-      "template_type": "sources-to-follow",
+      "template_type": "sources_to_follow",
       "user_roles": ["standard_user"],
       "placement": {
         "relative_position": "end_quarter",
