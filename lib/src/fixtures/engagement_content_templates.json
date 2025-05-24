@@ -1,30 +1,30 @@
 [
   {
-    "type": "rate-app",
+    "type": "rate_app",
     "title": "Enjoying the App?",
     "description": "Let us know what you think! Your feedback helps us improve.",
     "call_to_action_text": "Rate Us"
   },
   {
-    "type": "link-account",
+    "type": "link_account",
     "title": "Save Your Preferences!",
     "description": "Create a free account to save your followed topics and sources, and enjoy a personalized experience across devices.",
     "call_to_action_text": "Create Account"
   },
   {
-    "type": "upgrade-to-premium",
+    "type": "upgrade_to_premium",
     "title": "Unlock Premium Access!",
     "description": "Go ad-free, get exclusive content, and more. Upgrade to Premium today.",
     "call_to_action_text": "Learn More"
   },
   {
-    "type": "complete-profile",
+    "type": "complete_profile",
     "title": "Personalize Your Feed",
     "description": "Follow your favorite categories and sources to get news tailored to you.",
     "call_to_action_text": "Choose Topics"
   },
   {
-    "type": "explore-new-feature",
+    "type": "explore_new_feature",
     "title": "New: Offline Reading!",
     "description": "Download articles and read them anywhere, anytime. (Premium Feature)",
     "call_to_action_text": "Try Offline Mode"
