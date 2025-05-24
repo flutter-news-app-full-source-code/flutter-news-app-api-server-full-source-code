@@ -98,8 +98,18 @@ List<Map<String, dynamic>> _loadFixtureSync(String fileName) {
       return [];
     }
     final content = file.readAsStringSync();
-    final decoded = jsonDecode(content) as List<dynamic>?;
-    return decoded?.whereType<Map<String, dynamic>>().toList() ?? [];
+    final decoded = jsonDecode(content);
+
+    if (decoded is Map<String, dynamic>) {
+      // If it's a single object, wrap it in a list
+      return [decoded];
+    } else if (decoded is List<dynamic>) {
+      // If it's a list, filter for maps and return
+      return decoded.whereType<Map<String, dynamic>>().toList();
+    } else {
+      print('Error: Fixture file $path contains unexpected JSON type.');
+      return [];
+    }
   } catch (e) {
     print('Error loading or parsing fixture file $path: $e');
     return [];
