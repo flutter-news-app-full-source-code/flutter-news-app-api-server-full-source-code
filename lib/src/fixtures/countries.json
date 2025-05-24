@@ -3,24 +3,44 @@
     "id": "country-us",
     "iso_code": "US",
     "name": "United States",
-    "flag_url": "https://example.com/flags/us.png"
+    "flag_url": "https://example.com/flags/us.png",
+    "action": {
+      "type": "open_internal_content",
+      "content_id": "country-us",
+      "content_type": "country"
+    }
   },
   {
     "id": "country-gb",
     "iso_code": "GB",
     "name": "United Kingdom",
-    "flag_url": "https://example.com/flags/gb.png"
+    "flag_url": "https://example.com/flags/gb.png",
+    "action": {
+      "type": "open_internal_content",
+      "content_id": "country-gb",
+      "content_type": "country"
+    }
   },
   {
     "id": "country-ca",
     "iso_code": "CA",
     "name": "Canada",
-    "flag_url": "https://example.com/flags/ca.png"
+    "flag_url": "https://example.com/flags/ca.png",
+    "action": {
+      "type": "open_internal_content",
+      "content_id": "country-ca",
+      "content_type": "country"
+    }
   },
    {
     "id": "country-de",
     "iso_code": "DE",
     "name": "Germany",
-    "flag_url": "https://example.com/flags/de.png"
+    "flag_url": "https://example.com/flags/de.png",
+    "action": {
+      "type": "open_internal_content",
+      "content_id": "country-de",
+      "content_type": "country"
+    }
   }
 ]

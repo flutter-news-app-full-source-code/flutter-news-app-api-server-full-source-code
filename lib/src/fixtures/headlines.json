@@ -16,6 +16,11 @@
       "id": "c1a2b3c4-d5e6-f789-0123-456789abcdef",
       "name": "Technology",
       "description": "News about software development and frameworks."
+    },
+    "action": {
+      "type": "open_internal_content",
+      "content_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+      "content_type": "headline"
     }
   },
   {
@@ -35,6 +40,11 @@
       "id": "c2b3c4d5-e6f7-a890-1234-567890abcdef",
       "name": "Mobile Development",
       "description": "Articles related to mobile app development."
+    },
+    "action": {
+      "type": "open_internal_content",
+      "content_id": "b2c3d4e5-f6a7-8901-2345-67890abcdef0",
+      "content_type": "headline"
     }
   }
 ]

@@ -6,7 +6,12 @@
     "url": "https://vgv.dev/blog",
     "type": "blog",
     "language": "en",
-    "headquarters": null
+    "headquarters": null,
+    "action": {
+      "type": "open_internal_content",
+      "content_id": "s1a2b3c4-d5e6-f789-0123-456789abcdef",
+      "content_type": "source"
+    }
   },
   {
     "id": "s2b3c4d5-e6f7-a890-1234-567890abcdef",
@@ -15,7 +20,12 @@
     "url": "https://flutter.dev",
     "type": "specializedPublisher",
     "language": "en",
-    "headquarters": null
+    "headquarters": null,
+    "action": {
+      "type": "open_internal_content",
+      "content_id": "s2b3c4d5-e6f7-a890-1234-567890abcdef",
+      "content_type": "source"
+    }
   },
   {
     "id": "s3c4d5e6-f7a8-b901-c234-d56789abcdef",
@@ -24,7 +34,12 @@
     "url": "https://techcrunch.com/",
     "type": "specializedPublisher",
     "language": "en",
-    "headquarters": null
+    "headquarters": null,
+    "action": {
+      "type": "open_internal_content",
+      "content_id": "s3c4d5e6-f7a8-b901-c234-d56789abcdef",
+      "content_type": "source"
+    }
   },
   {
     "id": "s4d5e6f7-a8b9-c012-d345-e67890abcdef",
@@ -38,6 +53,11 @@
       "iso_code": "GB",
       "name": "United Kingdom",
       "flag_url": "https://example.com/flags/gb.png"
+    },
+    "action": {
+      "type": "open_internal_content",
+      "content_id": "s4d5e6f7-a8b9-c012-d345-e67890abcdef",
+      "content_type": "source"
     }
   }
 ]
