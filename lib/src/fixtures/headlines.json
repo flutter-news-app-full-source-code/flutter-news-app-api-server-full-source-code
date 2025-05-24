@@ -10,12 +10,22 @@
       "id": "s1a2b3c4-d5e6-f789-0123-456789abcdef",
       "name": "Very Good Ventures Blog",
       "url": "https://vgv.dev/blog",
-      "type": "blog"
+      "type": "blog",
+      "action": {
+        "type": "open_internal_content",
+        "content_id": "s1a2b3c4-d5e6-f789-0123-456789abcdef",
+        "content_type": "source"
+      }
     },
     "category": {
       "id": "c1a2b3c4-d5e6-f789-0123-456789abcdef",
       "name": "Technology",
-      "description": "News about software development and frameworks."
+      "description": "News about software development and frameworks.",
+      "action": {
+        "type": "open_internal_content",
+        "content_id": "c1a2b3c4-d5e6-f789-0123-456789abcdef",
+        "content_type": "category"
+      }
     },
     "action": {
       "type": "open_internal_content",
@@ -34,12 +44,22 @@
       "id": "s2b3c4d5-e6f7-a890-1234-567890abcdef",
       "name": "Flutter Dev",
       "url": "https://flutter.dev",
-      "type": "specializedPublisher"
+      "type": "specializedPublisher",
+      "action": {
+        "type": "open_internal_content",
+        "content_id": "s2b3c4d5-e6f7-a890-1234-567890abcdef",
+        "content_type": "source"
+      }
     },
     "category": {
       "id": "c2b3c4d5-e6f7-a890-1234-567890abcdef",
       "name": "Mobile Development",
-      "description": "Articles related to mobile app development."
+      "description": "Articles related to mobile app development.",
+      "action": {
+        "type": "open_internal_content",
+        "content_id": "c2b3c4d5-e6f7-a890-1234-567890abcdef",
+        "content_type": "category"
+      }
     },
     "action": {
       "type": "open_internal_content",

@@ -52,7 +52,12 @@
       "id": "country-gb",
       "iso_code": "GB",
       "name": "United Kingdom",
-      "flag_url": "https://example.com/flags/gb.png"
+      "flag_url": "https://example.com/flags/gb.png",
+      "action": {
+        "type": "open_internal_content",
+        "content_id": "country-gb",
+        "content_type": "country"
+      }
     },
     "action": {
       "type": "open_internal_content",
