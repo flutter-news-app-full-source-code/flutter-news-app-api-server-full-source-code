@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
@@ -22,6 +23,9 @@ import 'package:ht_email_inmemory/ht_email_inmemory.dart';
 import 'package:ht_email_repository/ht_email_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 import 'package:uuid/uuid.dart';
+
+// Assuming a fixed ID for the AppConfig document
+const String _appConfigId = 'app_config';
 
 // --- Request ID Wrapper ---
 
@@ -247,6 +251,20 @@ HtDataRepository<SuggestedContentTemplate>
   return HtDataRepository<SuggestedContentTemplate>(dataClient: client);
 }
 
+/// Middleware to asynchronously load and provide the AppConfig.
+Middleware _appConfigProviderMiddleware() {
+  return (handler) {
+    return (context) async {
+      // Read the AppConfigRepository from the context
+      final appConfigRepository = context.read<HtDataRepository<AppConfig>>();
+      // Read the AppConfig instance
+      final appConfig = await appConfigRepository.read(id: _appConfigId);
+      // Provide the AppConfig instance to downstream handlers/middleware
+      return handler(context.provide<AppConfig>(() => appConfig));
+    };
+  };
+}
+
 // --- Middleware Definition ---
 Handler middleware(Handler handler) {
   // Initialize repositories when middleware is first created
@@ -341,6 +359,8 @@ Handler middleware(Handler handler) {
   // (or early in the "response" phase) to catch errors from upstream.
   // ==========================================================================
   return handler
+      // Add the asynchronous AppConfig provider middleware here
+      .use(_appConfigProviderMiddleware())
       // --- 1. Request ID Provider (Early Setup) ---
       // PURPOSE: Generates a unique ID (UUID v4) for each incoming request.
       //          Provides `RequestId` instance via context.
@@ -409,6 +429,7 @@ Handler middleware(Handler handler) {
           (_) => suggestedContentTemplateRepository,
         ),
       )
+
 
       // --- 4. Authentication Service Providers (Auth Logic Dependencies) ---
       // PURPOSE: Provide the core services needed for authentication logic.
