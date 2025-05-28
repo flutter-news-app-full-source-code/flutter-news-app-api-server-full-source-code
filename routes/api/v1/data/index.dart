@@ -1,7 +1,5 @@
 import 'dart:io';
 
-import 'dart:io';
-
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/rbac/permission_service.dart'; // Import PermissionService
 import 'package:ht_api/src/registry/model_registry.dart';
@@ -235,7 +233,6 @@ Future<Response> _handleGet(
   // finalFeedItems = paginatedResponse.items.cast<FeedItem>();
   // The items are already dynamic, so direct assignment is fine.
   final finalFeedItems = paginatedResponse.items;
-
 
   // Create metadata including the request ID and current timestamp
   final metadata = ResponseMetadata(
