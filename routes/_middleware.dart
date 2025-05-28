@@ -3,16 +3,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
-import 'package:ht_api/src/feed_enhancement/decorators/ad_decorator.dart'; // New
-// import 'package:ht_api/src/feed_enhancement/decorators/engagement_decorator.dart'; // New
-// import 'package:ht_api/src/feed_enhancement/decorators/suggested_content_decorator.dart'; // New
 import 'package:ht_api/src/middlewares/error_handler.dart';
 import 'package:ht_api/src/rbac/permission_service.dart'; // Import PermissionService
 import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_api/src/services/auth_service.dart';
 import 'package:ht_api/src/services/auth_token_service.dart';
 import 'package:ht_api/src/services/default_user_preference_limit_service.dart'; // Import DefaultUserPreferenceLimitService
-import 'package:ht_api/src/services/feed_enhancement_service.dart'; // New
 import 'package:ht_api/src/services/jwt_auth_token_service.dart';
 import 'package:ht_api/src/services/token_blacklist_service.dart';
 import 'package:ht_api/src/services/user_preference_limit_service.dart'; // Import UserPreferenceLimitService interface
@@ -277,10 +273,6 @@ Handler middleware(Handler handler) {
   final userContentPreferencesRepository =
       _createUserContentPreferencesRepository();
   final appConfigRepository = _createAppConfigRepository();
-  final engagementContentTemplateRepository =
-      _createEngagementContentTemplateRepository();
-  final suggestedContentTemplateRepository =
-      _createSuggestedContentTemplateRepository();
 
   const uuid = Uuid();
 
@@ -334,22 +326,6 @@ Handler middleware(Handler handler) {
   );
   print('[MiddlewareSetup] DefaultUserPreferenceLimitService instantiated.');
 
-  // --- Feed Enhancement Dependencies ---
-  const adDecorator = AdDecorator(uuidGenerator: uuid);
-  // const engagementDecorator = EngagementDecorator(uuidGenerator: uuid);
-  // const suggestedContentDecorator = SuggestedContentDecorator(uuidGenerator: uuid);
-
-  const feedEnhancementService = FeedEnhancementService(
-    decorators: [
-      adDecorator,
-      // engagementDecorator,
-      // suggestedContentDecorator,
-    ],
-  );
-  print('[MiddlewareSetup] FeedEnhancementService instantiated.');
-
-  // ==========================================================================
-  //                            MIDDLEWARE CHAIN
   // ==========================================================================
   // IMPORTANT: The order of middleware matters significantly!
   // Middleware is applied in layers (like an onion). A request flows "in"
@@ -419,19 +395,6 @@ Handler middleware(Handler handler) {
           (_) => appConfigRepository,
         ),
       )
-      .use(
-        provider<HtDataRepository<EngagementContentTemplate>>(
-          (_) => engagementContentTemplateRepository,
-        ),
-      )
-      .use(
-        provider<HtDataRepository<SuggestedContentTemplate>>(
-          (_) => suggestedContentTemplateRepository,
-        ),
-      )
-
-      // --- 4. Authentication Service Providers (Auth Logic Dependencies) ---
-      // PURPOSE: Provide the core services needed for authentication logic.
       // ORDER:   These MUST be provided BEFORE `authenticationProvider` and
       //          any route handlers that perform authentication/authorization.
       //          - `Uuid` is used by `AuthService` and `JwtAuthTokenService`.
@@ -460,11 +423,6 @@ Handler middleware(Handler handler) {
           (_) => authService,
         ),
       ) // Reads other services/repos
-      .use(
-        provider<FeedEnhancementService>(
-          (_) => feedEnhancementService,
-        ),
-      ) // New: Provides the feed enhancement service
 
       // --- 5. RBAC Service Provider ---
       // PURPOSE: Provides the PermissionService for authorization checks.
