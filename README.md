@@ -16,14 +16,7 @@ management dashboard](https://github.com/headlines-toolkit/ht-dashboard).
 
 ## ✨ Key Capabilities
 
-*   💡 **Intelligent & Dynamic Content Feeds:** Deliver a uniquely tailored content
-    experience. `ht_api` now intelligently injects relevant content—such as
-    targeted advertisements, timely engagement prompts (like "Rate our App" or
-    "Upgrade to Premium"), and smart content suggestions (like "Trending
-    Categories" or "Sources to Follow")—directly into your users' primary news
-    feeds. This dynamic system enhances user engagement, promotes content
-    discovery, and opens new avenues for monetization, all configurable to
-    match your application's strategy and user segments.
+*   💡 **Flexible Core Content Access:** Provides unified access to essential news content types like headlines, categories, sources, and country-specific information. This versatile endpoint allows client applications to efficiently retrieve the data needed to construct diverse and engaging news feeds.
 
 *   🔒 **Effortless User Authentication:** Provide secure and seamless user access
     with flexible flows including passwordless sign-in, anonymous access, and
