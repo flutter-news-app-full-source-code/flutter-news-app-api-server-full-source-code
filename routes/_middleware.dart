@@ -210,43 +210,6 @@ HtDataRepository<AppConfig> _createAppConfigRepository() {
   return HtDataRepository<AppConfig>(dataClient: client);
 }
 
-// New repositories for feed enhancement templates
-HtDataRepository<EngagementContentTemplate>
-    _createEngagementContentTemplateRepository() {
-  print('Initializing EngagementContentTemplate Repository...');
-  final initialData = _loadFixtureSync('engagement_content_templates.json')
-      .map(EngagementContentTemplate.fromJson)
-      .toList();
-  final client = HtDataInMemoryClient<EngagementContentTemplate>(
-    toJson: (i) => i.toJson(),
-    getId: (i) => i.type.name, // Use enum name as ID
-    initialData: initialData,
-  );
-  print(
-    'EngagementContentTemplate Repository Initialized with '
-    '${initialData.length} items.',
-  );
-  return HtDataRepository<EngagementContentTemplate>(dataClient: client);
-}
-
-HtDataRepository<SuggestedContentTemplate>
-    _createSuggestedContentTemplateRepository() {
-  print('Initializing SuggestedContentTemplate Repository...');
-  final initialData = _loadFixtureSync('suggested_content_templates.json')
-      .map(SuggestedContentTemplate.fromJson)
-      .toList();
-  final client = HtDataInMemoryClient<SuggestedContentTemplate>(
-    toJson: (i) => i.toJson(),
-    getId: (i) => i.type.name, // Use enum name as ID
-    initialData: initialData,
-  );
-  print(
-    'SuggestedContentTemplate Repository Initialized with '
-    '${initialData.length} items.',
-  );
-  return HtDataRepository<SuggestedContentTemplate>(dataClient: client);
-}
-
 /// Middleware to asynchronously load and provide the AppConfig.
 Middleware _appConfigProviderMiddleware() {
   return (handler) {
