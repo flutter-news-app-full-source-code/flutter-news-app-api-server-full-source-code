@@ -16,8 +16,6 @@ management dashboard](https://github.com/headlines-toolkit/ht-dashboard).
 
 ## ✨ Key Capabilities
 
-*   💡 **Flexible Core Content Access:** Provides unified access to essential news content types like headlines, categories, sources, and country-specific information. This versatile endpoint allows client applications to efficiently retrieve the data needed to construct diverse and engaging news feeds.
-
 *   🔒 **Effortless User Authentication:** Provide secure and seamless user access
     with flexible flows including passwordless sign-in, anonymous access, and
     the ability to easily link anonymous accounts to permanent ones. Focus on
