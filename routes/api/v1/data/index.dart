@@ -113,8 +113,9 @@ Future<Response> _handleGet(
 
   final specificQueryForClient = <String, String>{};
   final Set<String> allowedKeys;
-  final receivedKeys =
-      queryParams.keys.where((k) => k != 'model' && k != 'startAfterId' && k != 'limit').toSet();
+  final receivedKeys = queryParams.keys
+      .where((k) => k != 'model' && k != 'startAfterId' && k != 'limit')
+      .toSet();
 
   switch (modelName) {
     case 'headline':
@@ -131,7 +132,6 @@ Future<Response> _handleGet(
           specificQueryForClient['source.id_in'] = queryParams['sources']!;
         }
       }
-      break;
     case 'source':
       allowedKeys = {'countries', 'sourceTypes', 'languages', 'q'};
       final qValue = queryParams['q'];
@@ -140,16 +140,17 @@ Future<Response> _handleGet(
         specificQueryForClient['description_contains'] = qValue;
       } else {
         if (queryParams.containsKey('countries')) {
-          specificQueryForClient['headquarters.iso_code_in'] = queryParams['countries']!;
+          specificQueryForClient['headquarters.iso_code_in'] =
+              queryParams['countries']!;
         }
         if (queryParams.containsKey('sourceTypes')) {
-          specificQueryForClient['source_type_in'] = queryParams['sourceTypes']!;
+          specificQueryForClient['source_type_in'] =
+              queryParams['sourceTypes']!;
         }
         if (queryParams.containsKey('languages')) {
           specificQueryForClient['language_in'] = queryParams['languages']!;
         }
       }
-      break;
     case 'category':
       allowedKeys = {'q'};
       final qValue = queryParams['q'];
@@ -157,15 +158,14 @@ Future<Response> _handleGet(
         specificQueryForClient['name_contains'] = qValue;
         specificQueryForClient['description_contains'] = qValue;
       }
-      break;
     case 'country':
       allowedKeys = {'q'};
       final qValue = queryParams['q'];
       if (qValue != null && qValue.isNotEmpty) {
         specificQueryForClient['name_contains'] = qValue;
-        specificQueryForClient['iso_code_contains'] = qValue; // Also search iso_code
+        specificQueryForClient['iso_code_contains'] =
+            qValue; // Also search iso_code
       }
-      break;
     default:
       // For other models, pass through all non-standard query params directly.
       // No specific validation of allowed keys for these other models here.
@@ -176,7 +176,6 @@ Future<Response> _handleGet(
           specificQueryForClient[key] = value;
         }
       });
-      break;
   }
 
   // Validate received keys against allowed keys for the specific models
@@ -195,7 +194,9 @@ Future<Response> _handleGet(
   }
 
   PaginatedResponse<dynamic> paginatedResponse;
-  String? userIdForRepoCall = modelConfig.getOwnerId != null ? authenticatedUser.id : null;
+  // ignore: prefer_final_locals
+  var userIdForRepoCall =
+      modelConfig.getOwnerId != null ? authenticatedUser.id : null;
 
   // Repository calls using specificQueryForClient
   switch (modelName) {
@@ -207,7 +208,6 @@ Future<Response> _handleGet(
         startAfterId: startAfterId,
         limit: limit,
       );
-      break;
     case 'category':
       final repo = context.read<HtDataRepository<Category>>();
       paginatedResponse = await repo.readAllByQuery(
@@ -216,7 +216,6 @@ Future<Response> _handleGet(
         startAfterId: startAfterId,
         limit: limit,
       );
-      break;
     case 'source':
       final repo = context.read<HtDataRepository<Source>>();
       paginatedResponse = await repo.readAllByQuery(
@@ -225,7 +224,6 @@ Future<Response> _handleGet(
         startAfterId: startAfterId,
         limit: limit,
       );
-      break;
     case 'country':
       final repo = context.read<HtDataRepository<Country>>();
       paginatedResponse = await repo.readAllByQuery(
@@ -234,7 +232,6 @@ Future<Response> _handleGet(
         startAfterId: startAfterId,
         limit: limit,
       );
-      break;
     case 'user':
       final repo = context.read<HtDataRepository<User>>();
       paginatedResponse = await repo.readAllByQuery(
@@ -243,7 +240,6 @@ Future<Response> _handleGet(
         startAfterId: startAfterId,
         limit: limit,
       );
-      break;
     case 'user_app_settings':
       final repo = context.read<HtDataRepository<UserAppSettings>>();
       paginatedResponse = await repo.readAllByQuery(
@@ -252,7 +248,6 @@ Future<Response> _handleGet(
         startAfterId: startAfterId,
         limit: limit,
       );
-      break;
     case 'user_content_preferences':
       final repo = context.read<HtDataRepository<UserContentPreferences>>();
       paginatedResponse = await repo.readAllByQuery(
@@ -261,7 +256,6 @@ Future<Response> _handleGet(
         startAfterId: startAfterId,
         limit: limit,
       );
-      break;
     case 'app_config':
       final repo = context.read<HtDataRepository<AppConfig>>();
       paginatedResponse = await repo.readAllByQuery(
@@ -270,7 +264,6 @@ Future<Response> _handleGet(
         startAfterId: startAfterId,
         limit: limit,
       );
-      break;
     default:
       throw OperationFailedException(
         'Unsupported model type "$modelName" reached data retrieval switch.',
