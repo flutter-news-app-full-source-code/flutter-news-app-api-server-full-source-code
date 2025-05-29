@@ -35,6 +35,7 @@ dependencies:
       url: https://github.com/headlines-toolkit/ht-shared.git
 
   meta: ^1.16.0
+  shelf_cors_headers: ^0.1.5
   uuid: ^4.5.1
 
 dev_dependencies:
