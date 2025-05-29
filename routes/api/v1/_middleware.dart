@@ -24,7 +24,7 @@ Handler middleware(Handler handler) {
     // This default allows credentials, so it cannot be '*'.
     // Adjust 'http://localhost:3000' if your local Flutter web dev server
     // typically runs on a different port.
-    effectiveOrigin = 'http://localhost:3000';
+    effectiveOrigin = 'http://localhost:45535';
     print('------------------------------------------------------------------');
     print('WARNING: CORS_ALLOWED_ORIGIN environment variable is NOT SET.');
     print(
