@@ -49,8 +49,55 @@ Future<Response> onRequest(RequestContext context) async {
 }
 
 // --- GET Handler ---
-/// Handles GET requests: Retrieves all items for the specified model
-/// (with optional query/pagination). Includes request metadata in response.
+/// Handles GET requests: Retrieves all items for the specified model.
+///
+/// This handler implements model-specific filtering rules:
+/// - **Headlines (`model=headline`):**
+///   - Filterable by `q` (text query on title & description).
+///     If `q` is present, `categories` and `sources` are ignored.
+///     Example: `/api/v1/data?model=headline&q=Dart+Frog`
+///   - OR by a combination of:
+///     - `categories` (comma-separated category IDs).
+///       Example: `/api/v1/data?model=headline&categories=catId1,catId2`
+///     - `sources` (comma-separated source IDs).
+///       Example: `/api/v1/data?model=headline&sources=sourceId1`
+///     - Both `categories` and `sources` can be used together (AND logic).
+///       Example: `/api/v1/data?model=headline&categories=catId1&sources=sourceId1`
+///   - Other parameters for headlines (e.g., `countries`) will result in a 400 Bad Request.
+///
+/// - **Sources (`model=source`):**
+///   - Filterable by `q` (text query on name & description).
+///     If `q` is present, `countries`, `sourceTypes`, `languages` are ignored.
+///     Example: `/api/v1/data?model=source&q=Tech+News`
+///   - OR by a combination of:
+///     - `countries` (comma-separated country ISO codes for `source.headquarters.iso_code`).
+///       Example: `/api/v1/data?model=source&countries=US,GB`
+///     - `sourceTypes` (comma-separated `SourceType` enum string values for `source.sourceType`).
+///       Example: `/api/v1/data?model=source&sourceTypes=blog,news_agency`
+///     - `languages` (comma-separated language codes for `source.language`).
+///       Example: `/api/v1/data?model=source&languages=en,fr`
+///   - These specific filters are ANDed if multiple are provided.
+///   - Other parameters for sources will result in a 400 Bad Request.
+///
+/// - **Categories (`model=category`):**
+///   - Filterable ONLY by `q` (text query on name & description).
+///     Example: `/api/v1/data?model=category&q=Technology`
+///   - Other parameters for categories will result in a 400 Bad Request.
+///
+/// - **Countries (`model=country`):**
+///   - Filterable ONLY by `q` (text query on name & isoCode).
+///     Example: `/api/v1/data?model=country&q=United`
+///     Example: `/api/v1/data?model=country&q=US`
+///   - Other parameters for countries will result in a 400 Bad Request.
+///
+/// - **Other Models (User, UserAppSettings, UserContentPreferences, AppConfig):**
+///   - Currently support exact match for top-level query parameters passed directly.
+///   - No specific complex filtering logic (like `_in` or `_contains`) is applied
+///     by this handler for these models yet. The `HtDataInMemoryClient` can
+///     process such queries if the `specificQueryForClient` map is constructed
+///     with the appropriate keys by this handler in the future.
+///
+/// Includes request metadata in the response.
 Future<Response> _handleGet(
   RequestContext context,
   String modelName,
@@ -59,182 +106,178 @@ Future<Response> _handleGet(
   PermissionService permissionService,
   String requestId,
 ) async {
-  // Authorization check is handled by authorizationMiddleware before this.
-  // This handler only needs to perform the ownership check if required.
-
-  // Read query parameters
   final queryParams = context.request.uri.queryParameters;
   final startAfterId = queryParams['startAfterId'];
   final limitParam = queryParams['limit'];
   final limit = limitParam != null ? int.tryParse(limitParam) : null;
-  final specificQuery = Map<String, dynamic>.from(queryParams)
-    ..remove('model')
-    ..remove('startAfterId')
-    ..remove('limit');
 
-  // Process based on model type
-  PaginatedResponse<dynamic> paginatedResponse;
+  final specificQueryForClient = <String, String>{};
+  final Set<String> allowedKeys;
+  final receivedKeys =
+      queryParams.keys.where((k) => k != 'model' && k != 'startAfterId' && k != 'limit').toSet();
 
-  // Determine userId for repository call based on ModelConfig (for data scoping)
-  String? userIdForRepoCall;
-  // If the model is user-owned, pass the authenticated user's ID to the repository
-  // for filtering. Otherwise, pass null.
-  // Note: This is for data *scoping* by the repository, not the permission check.
-  // We infer user-owned based on the presence of getOwnerId function.
-  if (modelConfig.getOwnerId != null) {
-    userIdForRepoCall = authenticatedUser.id;
-  } else {
-    userIdForRepoCall = null;
+  switch (modelName) {
+    case 'headline':
+      allowedKeys = {'categories', 'sources', 'q'};
+      final qValue = queryParams['q'];
+      if (qValue != null && qValue.isNotEmpty) {
+        specificQueryForClient['title_contains'] = qValue;
+        specificQueryForClient['description_contains'] = qValue;
+      } else {
+        if (queryParams.containsKey('categories')) {
+          specificQueryForClient['category.id_in'] = queryParams['categories']!;
+        }
+        if (queryParams.containsKey('sources')) {
+          specificQueryForClient['source.id_in'] = queryParams['sources']!;
+        }
+      }
+      break;
+    case 'source':
+      allowedKeys = {'countries', 'sourceTypes', 'languages', 'q'};
+      final qValue = queryParams['q'];
+      if (qValue != null && qValue.isNotEmpty) {
+        specificQueryForClient['name_contains'] = qValue;
+        specificQueryForClient['description_contains'] = qValue;
+      } else {
+        if (queryParams.containsKey('countries')) {
+          specificQueryForClient['headquarters.iso_code_in'] = queryParams['countries']!;
+        }
+        if (queryParams.containsKey('sourceTypes')) {
+          specificQueryForClient['source_type_in'] = queryParams['sourceTypes']!;
+        }
+        if (queryParams.containsKey('languages')) {
+          specificQueryForClient['language_in'] = queryParams['languages']!;
+        }
+      }
+      break;
+    case 'category':
+      allowedKeys = {'q'};
+      final qValue = queryParams['q'];
+      if (qValue != null && qValue.isNotEmpty) {
+        specificQueryForClient['name_contains'] = qValue;
+        specificQueryForClient['description_contains'] = qValue;
+      }
+      break;
+    case 'country':
+      allowedKeys = {'q'};
+      final qValue = queryParams['q'];
+      if (qValue != null && qValue.isNotEmpty) {
+        specificQueryForClient['name_contains'] = qValue;
+        specificQueryForClient['iso_code_contains'] = qValue; // Also search iso_code
+      }
+      break;
+    default:
+      // For other models, pass through all non-standard query params directly.
+      // No specific validation of allowed keys for these other models here.
+      // The client will attempt exact matches.
+      allowedKeys = receivedKeys; // Effectively allows all received keys
+      queryParams.forEach((key, value) {
+        if (key != 'model' && key != 'startAfterId' && key != 'limit') {
+          specificQueryForClient[key] = value;
+        }
+      });
+      break;
   }
 
-  // Repository exceptions (like NotFoundException, BadRequestException)
-  // will propagate up to the errorHandler.
+  // Validate received keys against allowed keys for the specific models
+  if (modelName == 'headline' ||
+      modelName == 'source' ||
+      modelName == 'category' ||
+      modelName == 'country') {
+    for (final key in receivedKeys) {
+      if (!allowedKeys.contains(key)) {
+        throw BadRequestException(
+          'Invalid query parameter "$key" for model "$modelName". '
+          'Allowed parameters are: ${allowedKeys.join(', ')}.',
+        );
+      }
+    }
+  }
+
+  PaginatedResponse<dynamic> paginatedResponse;
+  String? userIdForRepoCall = modelConfig.getOwnerId != null ? authenticatedUser.id : null;
+
+  // Repository calls using specificQueryForClient
   switch (modelName) {
     case 'headline':
       final repo = context.read<HtDataRepository<Headline>>();
-      paginatedResponse = specificQuery.isNotEmpty
-          ? await repo.readAllByQuery(
-              specificQuery,
-              userId: userIdForRepoCall,
-              startAfterId: startAfterId,
-              limit: limit,
-            )
-          : await repo.readAll(
-              userId: userIdForRepoCall,
-              startAfterId: startAfterId,
-              limit: limit,
-            );
+      paginatedResponse = await repo.readAllByQuery(
+        specificQueryForClient,
+        userId: userIdForRepoCall,
+        startAfterId: startAfterId,
+        limit: limit,
+      );
+      break;
     case 'category':
       final repo = context.read<HtDataRepository<Category>>();
-      paginatedResponse = specificQuery.isNotEmpty
-          ? await repo.readAllByQuery(
-              specificQuery,
-              userId: userIdForRepoCall,
-              startAfterId: startAfterId,
-              limit: limit,
-            )
-          : await repo.readAll(
-              userId: userIdForRepoCall,
-              startAfterId: startAfterId,
-              limit: limit,
-            );
+      paginatedResponse = await repo.readAllByQuery(
+        specificQueryForClient,
+        userId: userIdForRepoCall,
+        startAfterId: startAfterId,
+        limit: limit,
+      );
+      break;
     case 'source':
       final repo = context.read<HtDataRepository<Source>>();
-      paginatedResponse = specificQuery.isNotEmpty
-          ? await repo.readAllByQuery(
-              specificQuery,
-              userId: userIdForRepoCall,
-              startAfterId: startAfterId,
-              limit: limit,
-            )
-          : await repo.readAll(
-              userId: userIdForRepoCall,
-              startAfterId: startAfterId,
-              limit: limit,
-            );
+      paginatedResponse = await repo.readAllByQuery(
+        specificQueryForClient,
+        userId: userIdForRepoCall,
+        startAfterId: startAfterId,
+        limit: limit,
+      );
+      break;
     case 'country':
       final repo = context.read<HtDataRepository<Country>>();
-      paginatedResponse = specificQuery.isNotEmpty
-          ? await repo.readAllByQuery(
-              specificQuery,
-              userId: userIdForRepoCall,
-              startAfterId: startAfterId,
-              limit: limit,
-            )
-          : await repo.readAll(
-              userId: userIdForRepoCall,
-              startAfterId: startAfterId,
-              limit: limit,
-            );
+      paginatedResponse = await repo.readAllByQuery(
+        specificQueryForClient,
+        userId: userIdForRepoCall,
+        startAfterId: startAfterId,
+        limit: limit,
+      );
+      break;
     case 'user':
       final repo = context.read<HtDataRepository<User>>();
-      // Note: While readAll/readAllByQuery is used here for consistency
-      // with the generic endpoint, fetching a specific user by ID via
-      // the /data/[id] route is the semantically preferred method.
-      // The userIdForRepoCall ensures scoping to the authenticated user
-      // if the repository supports it.
-      paginatedResponse = specificQuery.isNotEmpty
-          ? await repo.readAllByQuery(
-              specificQuery,
-              userId: userIdForRepoCall,
-              startAfterId: startAfterId,
-              limit: limit,
-            )
-          : await repo.readAll(
-              userId: userIdForRepoCall,
-              startAfterId: startAfterId,
-              limit: limit,
-            );
+      paginatedResponse = await repo.readAllByQuery(
+        specificQueryForClient, // Pass the potentially empty map
+        userId: userIdForRepoCall,
+        startAfterId: startAfterId,
+        limit: limit,
+      );
+      break;
     case 'user_app_settings':
       final repo = context.read<HtDataRepository<UserAppSettings>>();
-      // Note: While readAll/readAllByQuery is used here for consistency
-      // with the generic endpoint, fetching the user's settings by ID
-      // via the /data/[id] route is the semantically preferred method
-      // for this single-instance, user-owned model.
-      paginatedResponse = specificQuery.isNotEmpty
-          ? await repo.readAllByQuery(
-              specificQuery,
-              userId: userIdForRepoCall,
-              startAfterId: startAfterId,
-              limit: limit,
-            )
-          : await repo.readAll(
-              userId: userIdForRepoCall,
-              startAfterId: startAfterId,
-              limit: limit,
-            );
+      paginatedResponse = await repo.readAllByQuery(
+        specificQueryForClient,
+        userId: userIdForRepoCall,
+        startAfterId: startAfterId,
+        limit: limit,
+      );
+      break;
     case 'user_content_preferences':
       final repo = context.read<HtDataRepository<UserContentPreferences>>();
-      // Note: While readAll/readAllByQuery is used here for consistency
-      // with the generic endpoint, fetching the user's preferences by ID
-      // via the /data/[id] route is the semantically preferred method
-      // for this single-instance, user-owned model.
-      paginatedResponse = specificQuery.isNotEmpty
-          ? await repo.readAllByQuery(
-              specificQuery,
-              userId: userIdForRepoCall,
-              startAfterId: startAfterId,
-              limit: limit,
-            )
-          : await repo.readAll(
-              userId: userIdForRepoCall,
-              startAfterId: startAfterId,
-              limit: limit,
-            );
+      paginatedResponse = await repo.readAllByQuery(
+        specificQueryForClient,
+        userId: userIdForRepoCall,
+        startAfterId: startAfterId,
+        limit: limit,
+      );
+      break;
     case 'app_config':
       final repo = context.read<HtDataRepository<AppConfig>>();
-      // Note: While readAll/readAllByQuery is used here for consistency
-      // with the generic endpoint, fetching the single AppConfig instance
-      // by its fixed ID ('app_config') via the /data/[id] route is the
-      // semantically preferred method for this global singleton model.
-      paginatedResponse = specificQuery.isNotEmpty
-          ? await repo.readAllByQuery(
-              specificQuery,
-              userId: userIdForRepoCall, // userId should be null for AppConfig
-              startAfterId: startAfterId,
-              limit: limit,
-            )
-          : await repo.readAll(
-              userId: userIdForRepoCall, // userId should be null for AppConfig
-              startAfterId: startAfterId,
-              limit: limit,
-            );
+      paginatedResponse = await repo.readAllByQuery(
+        specificQueryForClient,
+        userId: userIdForRepoCall,
+        startAfterId: startAfterId,
+        limit: limit,
+      );
+      break;
     default:
-      // This case should be caught by middleware, but added for safety
-      // Throw an exception to be caught by the errorHandler
       throw OperationFailedException(
-        'Unsupported model type "$modelName" reached handler.',
+        'Unsupported model type "$modelName" reached data retrieval switch.',
       );
   }
 
-  // --- Feed Enhancement ---
-  // Only enhance if the primary model is a type that can be part of a mixed feed.
-  // If not a model to enhance, just cast the original items to FeedItem
-  // finalFeedItems = paginatedResponse.items.cast<FeedItem>();
-  // The items are already dynamic, so direct assignment is fine.
   final finalFeedItems = paginatedResponse.items;
-
-  // Create metadata including the request ID and current timestamp
   final metadata = ResponseMetadata(
     requestId: requestId,
     timestamp: DateTime.now().toUtc(), // Use UTC for consistency
