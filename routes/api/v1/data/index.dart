@@ -85,8 +85,9 @@ Future<Response> onRequest(RequestContext context) async {
 ///   - Other parameters for categories will result in a 400 Bad Request.
 ///
 /// - **Countries (`model=country`):**
-///   - Filterable ONLY by `q` (text query on name only).
-///     Example: `/api/v1/data?model=country&q=United`
+///   - Filterable ONLY by `q` (text query on name and isoCode).
+///     Example: `/api/v1/data?model=country&q=United` (searches name and isoCode)
+///     Example: `/api/v1/data?model=country&q=US` (searches name and isoCode)
 ///   - Other parameters for countries will result in a 400 Bad Request.
 ///
 /// - **Other Models (User, UserAppSettings, UserContentPreferences, AppConfig):**
@@ -162,7 +163,7 @@ Future<Response> _handleGet(
       final qValue = queryParams['q'];
       if (qValue != null && qValue.isNotEmpty) {
         specificQueryForClient['name_contains'] = qValue;
-        // specificQueryForClient['iso_code_contains'] = qValue; // Removed
+        specificQueryForClient['iso_code_contains'] = qValue; // Added back
       }
     default:
       // For other models, pass through all non-standard query params directly.
@@ -541,11 +542,11 @@ Model: `category`
 
 Model: `country`
 
-20. Filter by text query `q` for countries (name only):
+20. Filter by text query `q` for countries (name and iso_code):
     - URL: `/api/v1/data?model=country&q=United`
     - Expected: Countries where "United" appears in the name.
 
-21. Filter by text query `q` for countries (name only, to match "US" if a country name contains "US"):
+21. Filter by text query `q` for countries (name and iso_code):
     - URL: `/api/v1/data?model=country&q=US`
     - Expected: Country with name containing "US". (Note: This test's expectation might need adjustment if no country name contains "US" but its isoCode is "US". The current `q` logic for country only searches name).
 
