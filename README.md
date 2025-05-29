@@ -75,6 +75,14 @@ for more details.
     from `lib/src/fixtures/` will be loaded into the in-memory repositories on
     startup.
 
+    **Note on Web Client Integration (CORS):**
+    To allow web applications (like the HT Dashboard) to connect to this API,
+    the `CORS_ALLOWED_ORIGIN` environment variable must be set to the
+    specific origin of your web application (e.g., `https://your-dashboard.com`).
+    For local development, if this variable is not set, the API defaults to
+    allowing `http://localhost:3000` and issues a console warning. See the
+    `routes/api/v1/_middleware.dart` file for the exact implementation details.
+
 ## ✅ Testing
 
 Ensure the API is robust and meets quality standards by running the test suite:
