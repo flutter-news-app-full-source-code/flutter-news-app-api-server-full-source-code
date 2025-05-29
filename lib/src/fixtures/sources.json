@@ -19,7 +19,7 @@
     "description": "Official documentation and news for the Flutter framework.",
     "url": "https://flutter.dev",
     "type": "specializedPublisher",
-    "language": "en",
+    "language": "fr",
     "headquarters": null,
     "action": {
       "type": "open_internal_content",
@@ -34,7 +34,17 @@
     "url": "https://techcrunch.com/",
     "type": "specializedPublisher",
     "language": "en",
-    "headquarters": null,
+    "headquarters": {
+      "id": "country-us",
+      "iso_code": "US",
+      "name": "United States",
+      "flag_url": "https://example.com/flags/us.png",
+      "action": {
+        "type": "open_internal_content",
+        "content_id": "country-us",
+        "content_type": "country"
+      }
+    },
     "action": {
       "type": "open_internal_content",
       "content_id": "s3c4d5e6-f7a8-b901-c234-d56789abcdef",
