@@ -10,7 +10,7 @@
       "id": "s1a2b3c4-d5e6-f789-0123-456789abcdef",
       "name": "Very Good Ventures Blog",
       "url": "https://vgv.dev/blog",
-      "type": "blog",
+      "source_type": "blog",
       "action": {
         "type": "open_internal_content",
         "content_id": "s1a2b3c4-d5e6-f789-0123-456789abcdef",
@@ -44,7 +44,7 @@
       "id": "s2b3c4d5-e6f7-a890-1234-567890abcdef",
       "name": "Flutter Dev",
       "url": "https://flutter.dev",
-      "type": "specializedPublisher",
+      "source_type": "specialized_publisher",
       "action": {
         "type": "open_internal_content",
         "content_id": "s2b3c4d5-e6f7-a890-1234-567890abcdef",
@@ -78,7 +78,7 @@
       "id": "s3c4d5e6-f7a8-b901-c234-d56789abcdef",
       "name": "TechCrunch",
       "url": "https://techcrunch.com/",
-      "type": "specializedPublisher",
+      "source_type": "specialized_publisher",
       "action": {
         "type": "open_internal_content",
         "content_id": "s3c4d5e6-f7a8-b901-c234-d56789abcdef",
@@ -112,7 +112,7 @@
       "id": "s2b3c4d5-e6f7-a890-1234-567890abcdef",
       "name": "Flutter Dev",
       "url": "https://flutter.dev",
-      "type": "specializedPublisher",
+      "source_type": "specialized_publisher",
       "action": {
         "type": "open_internal_content",
         "content_id": "s2b3c4d5-e6f7-a890-1234-567890abcdef",
@@ -146,7 +146,7 @@
       "id": "s4d5e6f7-a8b9-c012-d345-e67890abcdef",
       "name": "BBC News",
       "url": "https://www.bbc.com/news",
-      "type": "nationalNewsOutlet",
+      "source_type": "national_news_outlet",
       "language": "en",
       "headquarters": {
         "id": "country-gb",
@@ -192,7 +192,7 @@
       "id": "s4d5e6f7-a8b9-c012-d345-e67890abcdef",
       "name": "BBC News",
       "url": "https://www.bbc.com/news",
-      "type": "nationalNewsOutlet",
+      "source_type": "national_news_outlet",
       "language": "en",
       "headquarters": {
         "id": "country-gb",
@@ -238,7 +238,7 @@
       "id": "s3c4d5e6-f7a8-b901-c234-d56789abcdef",
       "name": "TechCrunch",
       "url": "https://techcrunch.com/",
-      "type": "specializedPublisher",
+      "source_type": "specialized_publisher",
       "action": {
         "type": "open_internal_content",
         "content_id": "s3c4d5e6-f7a8-b901-c234-d56789abcdef",
@@ -272,7 +272,7 @@
       "id": "s2b3c4d5-e6f7-a890-1234-567890abcdef",
       "name": "Flutter Dev",
       "url": "https://flutter.dev",
-      "type": "specializedPublisher",
+      "source_type": "specialized_publisher",
       "action": {
         "type": "open_internal_content",
         "content_id": "s2b3c4d5-e6f7-a890-1234-567890abcdef",
@@ -306,7 +306,7 @@
       "id": "s3c4d5e6-f7a8-b901-c234-d56789abcdef",
       "name": "TechCrunch",
       "url": "https://techcrunch.com/",
-      "type": "specializedPublisher",
+      "source_type": "specialized_publisher",
       "action": {
         "type": "open_internal_content",
         "content_id": "s3c4d5e6-f7a8-b901-c234-d56789abcdef",
@@ -340,7 +340,7 @@
       "id": "s4d5e6f7-a8b9-c012-d345-e67890abcdef",
       "name": "BBC News",
       "url": "https://www.bbc.com/news",
-      "type": "nationalNewsOutlet",
+      "source_type": "national_news_outlet",
       "language": "en",
       "headquarters": {
         "id": "country-gb",
@@ -386,7 +386,7 @@
       "id": "s1a2b3c4-d5e6-f789-0123-456789abcdef",
       "name": "Very Good Ventures Blog",
       "url": "https://vgv.dev/blog",
-      "type": "blog",
+      "source_type": "blog",
       "action": {
         "type": "open_internal_content",
         "content_id": "s1a2b3c4-d5e6-f789-0123-456789abcdef",
@@ -420,7 +420,7 @@
       "id": "s2b3c4d5-e6f7-a890-1234-567890abcdef",
       "name": "Flutter Dev",
       "url": "https://flutter.dev",
-      "type": "specializedPublisher",
+      "source_type": "specialized_publisher",
       "action": {
         "type": "open_internal_content",
         "content_id": "s2b3c4d5-e6f7-a890-1234-567890abcdef",
@@ -454,7 +454,7 @@
       "id": "s3c4d5e6-f7a8-b901-c234-d56789abcdef",
       "name": "TechCrunch",
       "url": "https://techcrunch.com/",
-      "type": "specializedPublisher",
+      "source_type": "specialized_publisher",
       "action": {
         "type": "open_internal_content",
         "content_id": "s3c4d5e6-f7a8-b901-c234-d56789abcdef",
@@ -488,7 +488,7 @@
       "id": "s4d5e6f7-a8b9-c012-d345-e67890abcdef",
       "name": "BBC News",
       "url": "https://www.bbc.com/news",
-      "type": "nationalNewsOutlet",
+      "source_type": "national_news_outlet",
       "language": "en",
       "headquarters": {
         "id": "country-gb",
@@ -534,7 +534,7 @@
       "id": "s1a2b3c4-d5e6-f789-0123-456789abcdef",
       "name": "Very Good Ventures Blog",
       "url": "https://vgv.dev/blog",
-      "type": "blog",
+      "source_type": "blog",
       "action": {
         "type": "open_internal_content",
         "content_id": "s1a2b3c4-d5e6-f789-0123-456789abcdef",
@@ -568,7 +568,7 @@
       "id": "s2b3c4d5-e6f7-a890-1234-567890abcdef",
       "name": "Flutter Dev",
       "url": "https://flutter.dev",
-      "type": "specializedPublisher",
+      "source_type": "specialized_publisher",
       "action": {
         "type": "open_internal_content",
         "content_id": "s2b3c4d5-e6f7-a890-1234-567890abcdef",
@@ -762,7 +762,7 @@
       "id": "s3c4d5e6-f7a8-b901-c234-d56789abcdef",
       "name": "TechCrunch",
       "url": "https://techcrunch.com/",
-      "type": "specializedPublisher",
+      "source_type": "specialized_publisher",
       "action": {
         "type": "open_internal_content",
         "content_id": "s3c4d5e6-f7a8-b901-c234-d56789abcdef",
@@ -796,7 +796,7 @@
       "id": "s4d5e6f7-a8b9-c012-d345-e67890abcdef",
       "name": "BBC News",
       "url": "https://www.bbc.com/news",
-      "type": "nationalNewsOutlet",
+      "source_type": "national_news_outlet",
       "language": "en",
       "headquarters": {
         "id": "country-gb",
@@ -1833,7 +1833,7 @@
       "name": "Very Good Ventures Blog",
       "description": "Insights from the Very Good Ventures team.",
       "url": "https://vgv.dev/blog",
-      "type": "blog",
+      "source_type": "blog",
       "language": "en",
       "headquarters": null,
       "action": {
@@ -1871,7 +1871,7 @@
       "name": "Very Good Ventures Blog",
       "description": "Insights from the Very Good Ventures team.",
       "url": "https://vgv.dev/blog",
-      "type": "blog",
+      "source_type": "blog",
       "language": "en",
       "headquarters": null,
       "action": {
@@ -1909,7 +1909,7 @@
       "name": "Very Good Ventures Blog",
       "description": "Insights from the Very Good Ventures team.",
       "url": "https://vgv.dev/blog",
-      "type": "blog",
+      "source_type": "blog",
       "language": "en",
       "headquarters": null,
       "action": {
@@ -1947,7 +1947,7 @@
       "name": "Flutter Dev",
       "description": "Official documentation and news for the Flutter framework.",
       "url": "https://flutter.dev",
-      "type": "specializedPublisher",
+      "source_type": "specialized_publisher",
       "language": "fr",
       "headquarters": null,
       "action": {
@@ -1985,7 +1985,7 @@
       "name": "Flutter Dev",
       "description": "Official documentation and news for the Flutter framework.",
       "url": "https://flutter.dev",
-      "type": "specializedPublisher",
+      "source_type": "specialized_publisher",
       "language": "fr",
       "headquarters": null,
       "action": {
@@ -2023,7 +2023,7 @@
       "name": "Flutter Dev",
       "description": "Official documentation and news for the Flutter framework.",
       "url": "https://flutter.dev",
-      "type": "specializedPublisher",
+      "source_type": "specialized_publisher",
       "language": "fr",
       "headquarters": null,
       "action": {
@@ -2061,7 +2061,7 @@
       "name": "TechCrunch",
       "description": "Startup and technology news.",
       "url": "https://techcrunch.com/",
-      "type": "specializedPublisher",
+      "source_type": "specialized_publisher",
       "language": "en",
       "headquarters": {
         "id": "country-us",
@@ -2109,7 +2109,7 @@
       "name": "TechCrunch",
       "description": "Startup and technology news.",
       "url": "https://techcrunch.com/",
-      "type": "specializedPublisher",
+      "source_type": "specialized_publisher",
       "language": "en",
       "headquarters": {
         "id": "country-us",
@@ -2157,7 +2157,7 @@
       "name": "BBC News",
       "description": "British public service broadcaster.",
       "url": "https://www.bbc.com/news",
-      "type": "nationalNewsOutlet",
+      "source_type": "national_news_outlet",
       "language": "en",
       "headquarters": {
         "id": "country-gb",
@@ -2205,7 +2205,7 @@
       "name": "BBC News",
       "description": "British public service broadcaster.",
       "url": "https://www.bbc.com/news",
-      "type": "nationalNewsOutlet",
+      "source_type": "national_news_outlet",
       "language": "en",
       "headquarters": {
         "id": "country-gb",
