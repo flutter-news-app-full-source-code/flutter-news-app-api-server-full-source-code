@@ -419,3 +419,137 @@ Future<Response> _handlePost(
   // Return 201 Created with the wrapped and serialized response
   return Response.json(statusCode: HttpStatus.created, body: responseJson);
 }
+
+/*
+Simplified Strict Filtering Rules (ALL FILTERS ARE ANDed if present):
+
+1. Headlines (`model=headline`):
+   - Filterable by any combination (ANDed) of:
+     - `categories` (plural, comma-separated IDs, matching `headline.category.id`)
+     - `sources` (plural, comma-separated IDs, matching `headline.source.id`)
+     - `q` (free-text query, searching `headline.title` only)
+   - *No other filters (like `countries`) are allowed for headlines.*
+
+2. Sources (`model=source`):
+   - Filterable by any combination (ANDed) of:
+     - `countries` (plural, comma-separated ISO codes, matching `source.headquarters.iso_code`)
+     - `sourceTypes` (plural, comma-separated enum strings, matching `source.sourceType`)
+     - `languages` (plural, comma-separated language codes, matching `source.language`)
+     - `q` (free-text query, searching `source.name` only)
+
+3. Categories (`model=category`):
+   - Filterable __only__ by:
+     - `q` (free-text query, searching `category.name` only)
+
+4. Countries (`model=country`):
+   - Filterable __only__ by:
+     - `q` (free-text query, searching `country.name` only)
+
+------
+
+Explicitly Define Allowed Parameters per Model: When processing the request for a given `modelName`, the handler should have a predefined set of *allowed* query parameter keys for that specific model.
+
+- Example for `modelName == 'headline'`:
+  - Allowed keys: `categories`, `sources`, `q` (plus standard ones like `limit`, `startAfterId`).
+- Example for `modelName == 'source'`:
+  - Allowed keys: `countries`, `sourceTypes`, `languages`, `q` (plus standard ones).
+- And so on for `category` and `country`.
+
+----------------- TESTED FILTERS ---------------
+
+Model: `headline`
+
+1. Filter by single category:
+   - URL: `/api/v1/data?model=headline&categories=c1a2b3c4-d5e6-f789-0123-456789abcdef`
+   - Expected: Headlines with category ID `c1a2b3c4-d5e6-f789-0123-456789abcdef`.
+
+2. Filter by multiple comma-separated categories (client-side `_in` implies OR for values):
+   - URL: `/api/v1/data?model=headline&categories=c1a2b3c4-d5e6-f789-0123-456789abcdef,c2b3c4d5-e6f7-a890-1234-567890abcdef`
+   - Expected: Headlines whose category ID is *either* of the two provided.
+
+3. Filter by single source:
+   - URL: `/api/v1/data?model=headline&sources=s1a2b3c4-d5e6-f789-0123-456789abcdef`
+   - Expected: Headlines with source ID `s1a2b3c4-d5e6-f789-0123-456789abcdef`.
+
+4. Filter by multiple comma-separated sources (client-side `_in` implies OR for values):
+   - URL: `/api/v1/data?model=headline&sources=s1a2b3c4-d5e6-f789-0123-456789abcdef,s2b3c4d5-e6f7-a890-1234-567890abcdef`
+   - Expected: Headlines whose source ID is *either* of the two provided.
+
+5. Filter by a category AND a source:
+   - URL: `/api/v1/data?model=headline&categories=c1a2b3c4-d5e6-f789-0123-456789abcdef&sources=s1a2b3c4-d5e6-f789-0123-456789abcdef`
+   - Expected: Headlines matching *both* the category ID AND the source ID.
+
+6. Filter by text query `q` (title only):
+   - URL: `/api/v1/data?model=headline&q=Dart`
+   - Expected: Headlines where "Dart" (case-insensitive) appears in the title.
+
+7. Filter by `q` AND `categories` (q should take precedence, categories ignored):
+   - URL: `/api/v1/data?model=headline&q=Flutter&categories=c1a2b3c4-d5e6-f789-0123-456789abcdef`
+   - Expected: Headlines matching `q=Flutter` (in title), ignoring the category filter.
+
+8. Invalid parameter for headlines (e.g., `countries`):
+   - URL: `/api/v1/data?model=headline&countries=US`
+   - Expected: `400 Bad Request` with an error message about an invalid query parameter.
+
+Model: `source`
+
+9. Filter by single country (ISO code):
+   - URL: `/api/v1/data?model=source&countries=GB`
+   - Expected: Sources headquartered in 'GB'.
+
+10. Filter by multiple comma-separated countries (client-side `_in` implies OR for values):
+    - URL: `/api/v1/data?model=source&countries=US,GB`
+    - Expected: Sources headquartered in 'US' OR 'GB'.
+
+11. Filter by single `sourceType`:
+    - URL: `/api/v1/data?model=source&sourceTypes=blog`
+    - Expected: Sources of type 'blog'.
+
+12. Filter by multiple comma-separated `sourceTypes` (client-side `_in` implies OR for values):
+    - URL: `/api/v1/data?model=source&sourceTypes=blog,specializedPublisher`
+    - Expected: Sources of type 'blog' OR 'specializedPublisher'.
+
+13. Filter by single `language`:
+    - URL: `/api/v1/data?model=source&languages=en`
+    - Expected: Sources in 'en' language.
+
+14. Filter by combination (countries AND sourceTypes AND languages):
+    - URL: `/api/v1/data?model=source&countries=GB&sourceTypes=nationalNewsOutlet&languages=en`
+    - Expected: Sources matching all three criteria.
+
+15. Filter by text query `q` for sources (name only):
+    - URL: `/api/v1/data?model=source&q=Ventures`
+    - Expected: Sources where "Ventures" appears in the name.
+
+16. Filter by `q` AND `countries` for sources (`q` takes precedence):
+    - URL: `/api/v1/data?model=source&q=Official&countries=US`
+    - Expected: Sources matching `q=Official` (in name), ignoring the country filter.
+
+17. Invalid parameter for sources (e.g., `categories`):
+    - URL: `/api/v1/data?model=source&categories=catId1`
+    - Expected: `400 Bad Request`.
+
+Model: `category`
+
+18. Filter by text query `q` for categories (name only):
+    - URL: `/api/v1/data?model=category&q=Mobile`
+    - Expected: Categories where "Mobile" appears in name.
+
+19. Invalid parameter for categories (e.g., `sources`):
+    - URL: `/api/v1/data?model=category&sources=sourceId1`
+    - Expected: `400 Bad Request`.
+
+Model: `country`
+
+20. Filter by text query `q` for countries (name only):
+    - URL: `/api/v1/data?model=country&q=United`
+    - Expected: Countries where "United" appears in the name.
+
+21. Filter by text query `q` for countries (name only, to match "US" if a country name contains "US"):
+    - URL: `/api/v1/data?model=country&q=US`
+    - Expected: Country with name containing "US". (Note: This test's expectation might need adjustment if no country name contains "US" but its isoCode is "US". The current `q` logic for country only searches name).
+
+22. Invalid parameter for countries (e.g., `categories`):
+    - URL: `/api/v1/data?model=country&categories=catId1`
+    - Expected: `400 Bad Request`.
+*/
