@@ -53,7 +53,7 @@ Future<Response> onRequest(RequestContext context) async {
 ///
 /// This handler implements model-specific filtering rules:
 /// - **Headlines (`model=headline`):**
-///   - Filterable by `q` (text query on title & description).
+///   - Filterable by `q` (text query on title only).
 ///     If `q` is present, `categories` and `sources` are ignored.
 ///     Example: `/api/v1/data?model=headline&q=Dart+Frog`
 ///   - OR by a combination of:
@@ -66,7 +66,7 @@ Future<Response> onRequest(RequestContext context) async {
 ///   - Other parameters for headlines (e.g., `countries`) will result in a 400 Bad Request.
 ///
 /// - **Sources (`model=source`):**
-///   - Filterable by `q` (text query on name & description).
+///   - Filterable by `q` (text query on name only).
 ///     If `q` is present, `countries`, `sourceTypes`, `languages` are ignored.
 ///     Example: `/api/v1/data?model=source&q=Tech+News`
 ///   - OR by a combination of:
@@ -80,14 +80,13 @@ Future<Response> onRequest(RequestContext context) async {
 ///   - Other parameters for sources will result in a 400 Bad Request.
 ///
 /// - **Categories (`model=category`):**
-///   - Filterable ONLY by `q` (text query on name & description).
+///   - Filterable ONLY by `q` (text query on name only).
 ///     Example: `/api/v1/data?model=category&q=Technology`
 ///   - Other parameters for categories will result in a 400 Bad Request.
 ///
 /// - **Countries (`model=country`):**
-///   - Filterable ONLY by `q` (text query on name & isoCode).
+///   - Filterable ONLY by `q` (text query on name only).
 ///     Example: `/api/v1/data?model=country&q=United`
-///     Example: `/api/v1/data?model=country&q=US`
 ///   - Other parameters for countries will result in a 400 Bad Request.
 ///
 /// - **Other Models (User, UserAppSettings, UserContentPreferences, AppConfig):**
@@ -123,7 +122,7 @@ Future<Response> _handleGet(
       final qValue = queryParams['q'];
       if (qValue != null && qValue.isNotEmpty) {
         specificQueryForClient['title_contains'] = qValue;
-        specificQueryForClient['description_contains'] = qValue;
+        // specificQueryForClient['description_contains'] = qValue; // Removed
       } else {
         if (queryParams.containsKey('categories')) {
           specificQueryForClient['category.id_in'] = queryParams['categories']!;
@@ -137,7 +136,7 @@ Future<Response> _handleGet(
       final qValue = queryParams['q'];
       if (qValue != null && qValue.isNotEmpty) {
         specificQueryForClient['name_contains'] = qValue;
-        specificQueryForClient['description_contains'] = qValue;
+        // specificQueryForClient['description_contains'] = qValue; // Removed
       } else {
         if (queryParams.containsKey('countries')) {
           specificQueryForClient['headquarters.iso_code_in'] =
@@ -156,15 +155,14 @@ Future<Response> _handleGet(
       final qValue = queryParams['q'];
       if (qValue != null && qValue.isNotEmpty) {
         specificQueryForClient['name_contains'] = qValue;
-        specificQueryForClient['description_contains'] = qValue;
+        // specificQueryForClient['description_contains'] = qValue; // Removed
       }
     case 'country':
       allowedKeys = {'q'};
       final qValue = queryParams['q'];
       if (qValue != null && qValue.isNotEmpty) {
         specificQueryForClient['name_contains'] = qValue;
-        specificQueryForClient['iso_code_contains'] =
-            qValue; // Also search iso_code
+        // specificQueryForClient['iso_code_contains'] = qValue; // Removed
       }
     default:
       // For other models, pass through all non-standard query params directly.
