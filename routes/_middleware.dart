@@ -1,17 +1,13 @@
-import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/middlewares/error_handler.dart';
-import 'package:ht_api/src/rbac/permission_service.dart'; // Import PermissionService
+import 'package:ht_api/src/rbac/permission_service.dart';
 import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_api/src/services/auth_service.dart';
 import 'package:ht_api/src/services/auth_token_service.dart';
-import 'package:ht_api/src/services/default_user_preference_limit_service.dart'; // Import DefaultUserPreferenceLimitService
+import 'package:ht_api/src/services/default_user_preference_limit_service.dart';
 import 'package:ht_api/src/services/jwt_auth_token_service.dart';
 import 'package:ht_api/src/services/token_blacklist_service.dart';
-import 'package:ht_api/src/services/user_preference_limit_service.dart'; // Import UserPreferenceLimitService interface
+import 'package:ht_api/src/services/user_preference_limit_service.dart';
 import 'package:ht_api/src/services/verification_code_storage_service.dart';
 import 'package:ht_data_inmemory/ht_data_inmemory.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
@@ -65,61 +61,11 @@ class RequestId {
   final String id;
 }
 
-// --- Helper Function to Load Fixtures ---
-// Note:
-// Error handling here is basic, consider more robust file checks.
-// ignore: unused_element
-Future<List<Map<String, dynamic>>> _loadFixture(String fileName) async {
-  final path = 'lib/src/fixtures/$fileName';
-  try {
-    final file = File(path);
-    if (!file.existsSync()) {
-      print('Warning: Fixture file not found at $path. Returning empty list.');
-      return [];
-    }
-    final content = await file.readAsString();
-    final decoded = jsonDecode(content) as List<dynamic>?; // Allow null
-    // Ensure items are maps
-    return decoded?.whereType<Map<String, dynamic>>().toList() ?? [];
-  } catch (e) {
-    print('Error loading or parsing fixture file $path: $e');
-    return []; // Return empty on error to avoid crashing startup
-  }
-}
-
 // --- Repository Creation Logic ---
-// Synchronous fixture loader (use with caution)
-List<Map<String, dynamic>> _loadFixtureSync(String fileName) {
-  final path = 'lib/src/fixtures/$fileName';
-  try {
-    final file = File(path);
-    if (!file.existsSync()) {
-      print('Warning: Fixture file not found at $path. Returning empty list.');
-      return [];
-    }
-    final content = file.readAsStringSync();
-    final decoded = jsonDecode(content);
-
-    if (decoded is Map<String, dynamic>) {
-      // If it's a single object, wrap it in a list
-      return [decoded];
-    } else if (decoded is List<dynamic>) {
-      // If it's a list, filter for maps and return
-      return decoded.whereType<Map<String, dynamic>>().toList();
-    } else {
-      print('Error: Fixture file $path contains unexpected JSON type.');
-      return [];
-    }
-  } catch (e) {
-    print('Error loading or parsing fixture file $path: $e');
-    return [];
-  }
-}
-
 HtDataRepository<Headline> _createHeadlineRepository() {
   print('Initializing Headline Repository...');
   final initialData =
-      _loadFixtureSync('headlines.json').map(Headline.fromJson).toList();
+      headlinesFixturesData.map(Headline.fromJson).toList();
   final client = HtDataInMemoryClient<Headline>(
     toJson: (i) => i.toJson(),
     getId: (i) => i.id,
@@ -132,7 +78,7 @@ HtDataRepository<Headline> _createHeadlineRepository() {
 HtDataRepository<Category> _createCategoryRepository() {
   print('Initializing Category Repository...');
   final initialData =
-      _loadFixtureSync('categories.json').map(Category.fromJson).toList();
+      categoriesFixturesData.map(Category.fromJson).toList();
   final client = HtDataInMemoryClient<Category>(
     toJson: (i) => i.toJson(),
     getId: (i) => i.id,
@@ -145,7 +91,7 @@ HtDataRepository<Category> _createCategoryRepository() {
 HtDataRepository<Source> _createSourceRepository() {
   print('Initializing Source Repository...');
   final initialData =
-      _loadFixtureSync('sources.json').map(Source.fromJson).toList();
+      sourcesFixturesData.map(Source.fromJson).toList();
   final client = HtDataInMemoryClient<Source>(
     toJson: (i) => i.toJson(),
     getId: (i) => i.id,
@@ -158,7 +104,7 @@ HtDataRepository<Source> _createSourceRepository() {
 HtDataRepository<Country> _createCountryRepository() {
   print('Initializing Country Repository...');
   final initialData =
-      _loadFixtureSync('countries.json').map(Country.fromJson).toList();
+      countriesFixturesData.map(Country.fromJson).toList();
   final client = HtDataInMemoryClient<Country>(
     toJson: (i) => i.toJson(),
     getId: (i) => i.id,
@@ -194,12 +140,8 @@ HtDataRepository<UserContentPreferences>
 
 HtDataRepository<AppConfig> _createAppConfigRepository() {
   print('Initializing AppConfig Repository...');
-  final fixtureData = _loadFixtureSync('app_config.json');
-  if (fixtureData.isEmpty) {
-    throw Exception('Failed to load app_config.json fixture or it is empty.');
-  }
   final initialData = [
-    AppConfig.fromJson(fixtureData.first),
+    AppConfig.fromJson(appConfigFixtureData),
   ]; // Assuming one config
   final client = HtDataInMemoryClient<AppConfig>(
     toJson: (i) => i.toJson(),
