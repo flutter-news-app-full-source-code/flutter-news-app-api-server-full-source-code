@@ -18,8 +18,8 @@ Future<Response> onRequest(RequestContext context, String id) async {
   final requestId = context.read<RequestId>().id;
   // User is guaranteed non-null by requireAuthentication() middleware
   final authenticatedUser = context.read<User>();
-  final permissionService =
-      context.read<PermissionService>(); // Read PermissionService
+  final permissionService = context
+      .read<PermissionService>(); // Read PermissionService
   // Read the UserPreferenceLimitService (only needed for UserContentPreferences PUT)
   final userPreferenceLimitService = context.read<UserPreferenceLimitService>();
 
@@ -189,7 +189,7 @@ Future<Response> _handlePut(
   User authenticatedUser,
   PermissionService permissionService, // Receive PermissionService
   UserPreferenceLimitService
-      userPreferenceLimitService, // Receive Limit Service
+  userPreferenceLimitService, // Receive Limit Service
   String requestId,
 ) async {
   // Authorization check is handled by authorizationMiddleware before this.
@@ -523,38 +523,45 @@ Future<Response> _handleDelete(
   // upwards to be handled by the standard error handling mechanism.
   switch (modelName) {
     case 'headline':
-      await context
-          .read<HtDataRepository<Headline>>()
-          .delete(id: id, userId: userIdForRepoCall);
+      await context.read<HtDataRepository<Headline>>().delete(
+        id: id,
+        userId: userIdForRepoCall,
+      );
     case 'category':
-      await context
-          .read<HtDataRepository<Category>>()
-          .delete(id: id, userId: userIdForRepoCall);
+      await context.read<HtDataRepository<Category>>().delete(
+        id: id,
+        userId: userIdForRepoCall,
+      );
     case 'source':
-      await context
-          .read<HtDataRepository<Source>>()
-          .delete(id: id, userId: userIdForRepoCall);
+      await context.read<HtDataRepository<Source>>().delete(
+        id: id,
+        userId: userIdForRepoCall,
+      );
     case 'country':
-      await context
-          .read<HtDataRepository<Country>>()
-          .delete(id: id, userId: userIdForRepoCall);
+      await context.read<HtDataRepository<Country>>().delete(
+        id: id,
+        userId: userIdForRepoCall,
+      );
     case 'user':
-      await context
-          .read<HtDataRepository<User>>()
-          .delete(id: id, userId: userIdForRepoCall);
+      await context.read<HtDataRepository<User>>().delete(
+        id: id,
+        userId: userIdForRepoCall,
+      );
     case 'user_app_settings': // New case for UserAppSettings
-      await context
-          .read<HtDataRepository<UserAppSettings>>()
-          .delete(id: id, userId: userIdForRepoCall);
+      await context.read<HtDataRepository<UserAppSettings>>().delete(
+        id: id,
+        userId: userIdForRepoCall,
+      );
     case 'user_content_preferences': // New case for UserContentPreferences
-      await context
-          .read<HtDataRepository<UserContentPreferences>>()
-          .delete(id: id, userId: userIdForRepoCall);
+      await context.read<HtDataRepository<UserContentPreferences>>().delete(
+        id: id,
+        userId: userIdForRepoCall,
+      );
     case 'app_config': // New case for AppConfig (delete by admin)
       await context.read<HtDataRepository<AppConfig>>().delete(
-            id: id,
-            userId: userIdForRepoCall,
-          ); // userId should be null for AppConfig
+        id: id,
+        userId: userIdForRepoCall,
+      ); // userId should be null for AppConfig
     default:
       // This case should ideally be caught by the data/_middleware.dart,
       // but added for safety. Consider logging this unexpected state.

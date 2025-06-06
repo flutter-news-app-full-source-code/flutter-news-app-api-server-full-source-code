@@ -64,8 +64,7 @@ class RequestId {
 // --- Repository Creation Logic ---
 HtDataRepository<Headline> _createHeadlineRepository() {
   print('Initializing Headline Repository...');
-  final initialData =
-      headlinesFixturesData.map(Headline.fromJson).toList();
+  final initialData = headlinesFixturesData.map(Headline.fromJson).toList();
   final client = HtDataInMemoryClient<Headline>(
     toJson: (i) => i.toJson(),
     getId: (i) => i.id,
@@ -77,8 +76,7 @@ HtDataRepository<Headline> _createHeadlineRepository() {
 
 HtDataRepository<Category> _createCategoryRepository() {
   print('Initializing Category Repository...');
-  final initialData =
-      categoriesFixturesData.map(Category.fromJson).toList();
+  final initialData = categoriesFixturesData.map(Category.fromJson).toList();
   final client = HtDataInMemoryClient<Category>(
     toJson: (i) => i.toJson(),
     getId: (i) => i.id,
@@ -90,8 +88,7 @@ HtDataRepository<Category> _createCategoryRepository() {
 
 HtDataRepository<Source> _createSourceRepository() {
   print('Initializing Source Repository...');
-  final initialData =
-      sourcesFixturesData.map(Source.fromJson).toList();
+  final initialData = sourcesFixturesData.map(Source.fromJson).toList();
   final client = HtDataInMemoryClient<Source>(
     toJson: (i) => i.toJson(),
     getId: (i) => i.id,
@@ -103,8 +100,7 @@ HtDataRepository<Source> _createSourceRepository() {
 
 HtDataRepository<Country> _createCountryRepository() {
   print('Initializing Country Repository...');
-  final initialData =
-      countriesFixturesData.map(Country.fromJson).toList();
+  final initialData = countriesFixturesData.map(Country.fromJson).toList();
   final client = HtDataInMemoryClient<Country>(
     toJson: (i) => i.toJson(),
     getId: (i) => i.id,
@@ -127,7 +123,7 @@ HtDataRepository<UserAppSettings> _createUserAppSettingsRepository() {
 }
 
 HtDataRepository<UserContentPreferences>
-    _createUserContentPreferencesRepository() {
+_createUserContentPreferencesRepository() {
   print('Initializing UserContentPreferences Repository...');
   final client = HtDataInMemoryClient<UserContentPreferences>(
     toJson: (i) => i.toJson(),
@@ -256,14 +252,12 @@ Handler middleware(Handler handler) {
           return innerHandler(context.provide<RequestId>(() => requestId));
         };
       })
-
       // --- 2. Model Registry Provider (Early Setup) ---
       // PURPOSE: Provides the `ModelRegistry` map for dynamic JSON
       //          serialization/deserialization lookups.
       // ORDER:   Needed by some repository clients or handlers dealing with
       //          generic data types. Placed early, after RequestId.
       .use(modelRegistryProvider)
-
       // --- 3. Repository Providers (Core Data Access) ---
       // PURPOSE: Provide singleton instances of all data repositories.
       // ORDER:   These MUST be provided BEFORE any middleware or route handlers
@@ -275,14 +269,10 @@ Handler middleware(Handler handler) {
       .use(provider<HtDataRepository<Source>>((_) => sourceRepository))
       .use(provider<HtDataRepository<Country>>((_) => countryRepository))
       .use(
-        provider<HtDataRepository<User>>(
-          (_) => userRepository,
-        ),
+        provider<HtDataRepository<User>>((_) => userRepository),
       ) // Used by Auth services
       .use(
-        provider<HtEmailRepository>(
-          (_) => emailRepository,
-        ),
+        provider<HtEmailRepository>((_) => emailRepository),
       ) // Used by AuthService
       // New Repositories for User Settings and Preferences
       .use(
@@ -295,11 +285,7 @@ Handler middleware(Handler handler) {
           (_) => userContentPreferencesRepository,
         ),
       )
-      .use(
-        provider<HtDataRepository<AppConfig>>(
-          (_) => appConfigRepository,
-        ),
-      )
+      .use(provider<HtDataRepository<AppConfig>>((_) => appConfigRepository))
       // ORDER:   These MUST be provided BEFORE `authenticationProvider` and
       //          any route handlers that perform authentication/authorization.
       //          - `Uuid` is used by `AuthService` and `JwtAuthTokenService`.
@@ -309,14 +295,10 @@ Handler middleware(Handler handler) {
       //          - `TokenBlacklistService` is used by `JwtAuthTokenService`.
       .use(provider<Uuid>((_) => uuid)) // Read by AuthService & TokenService
       .use(
-        provider<TokenBlacklistService>(
-          (_) => tokenBlacklistService,
-        ),
+        provider<TokenBlacklistService>((_) => tokenBlacklistService),
       ) // Read by AuthTokenService
       .use(
-        provider<AuthTokenService>(
-          (_) => authTokenService,
-        ),
+        provider<AuthTokenService>((_) => authTokenService),
       ) // Read by AuthService
       .use(
         provider<VerificationCodeStorageService>(
@@ -324,27 +306,20 @@ Handler middleware(Handler handler) {
         ),
       ) // Read by AuthService
       .use(
-        provider<AuthService>(
-          (_) => authService,
-        ),
+        provider<AuthService>((_) => authService),
       ) // Reads other services/repos
-
       // --- 5. RBAC Service Provider ---
       // PURPOSE: Provides the PermissionService for authorization checks.
       // ORDER:   Must be provided before any middleware or handlers that use it
       //          (e.g., authorizationMiddleware).
       .use(provider<PermissionService>((_) => permissionService))
-
       // --- 6. User Preference Limit Service Provider --- // New
       // PURPOSE: Provides the service for enforcing user preference limits.
       // ORDER:   Must be provided before any handlers that use it (specifically
       //          the generic data route handlers for UserContentPreferences).
       .use(
-        provider<UserPreferenceLimitService>(
-          (_) => userPreferenceLimitService,
-        ),
+        provider<UserPreferenceLimitService>((_) => userPreferenceLimitService),
       )
-
       // --- 7. Request Logger (Logging) ---
       // PURPOSE: Logs details about the incoming request and outgoing response.
       // ORDER:   Often placed late in the request phase / early in the response
@@ -352,7 +327,6 @@ Handler middleware(Handler handler) {
       //          runs and the response *after* the handler (and error handler)
       //          completes. Can access `RequestId` and potentially `User?`.
       .use(requestLogger())
-
       // --- 8. Error Handler (Catch-All) ---
       // PURPOSE: Catches exceptions thrown by upstream middleware or route
       //          handlers and converts them into standardized JSON error responses.

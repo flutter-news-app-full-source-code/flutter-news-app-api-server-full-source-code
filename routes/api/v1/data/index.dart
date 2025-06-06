@@ -17,8 +17,8 @@ Future<Response> onRequest(RequestContext context) async {
   final requestId = context.read<RequestId>().id;
   // User is guaranteed non-null by requireAuthentication() middleware
   final authenticatedUser = context.read<User>();
-  final permissionService =
-      context.read<PermissionService>(); // Read PermissionService
+  final permissionService = context
+      .read<PermissionService>(); // Read PermissionService
 
   // The main try/catch block here is removed to let the errorHandler middleware
   // handle all exceptions thrown by the handlers below.
@@ -194,8 +194,9 @@ Future<Response> _handleGet(
 
   PaginatedResponse<dynamic> paginatedResponse;
   // ignore: prefer_final_locals
-  var userIdForRepoCall =
-      modelConfig.getOwnerId != null ? authenticatedUser.id : null;
+  var userIdForRepoCall = modelConfig.getOwnerId != null
+      ? authenticatedUser.id
+      : null;
 
   // Repository calls using specificQueryForClient
   switch (modelName) {

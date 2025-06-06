@@ -23,9 +23,7 @@ final Set<String> _standardUserPermissions = {
 
 // For now, premium users have the same permissions as standard users,
 // but this set can be expanded later for premium-specific features.
-final Set<String> _premiumUserPermissions = {
-  ..._standardUserPermissions,
-};
+final Set<String> _premiumUserPermissions = {..._standardUserPermissions};
 
 final Set<String> _adminPermissions = {
   ..._standardUserPermissions,

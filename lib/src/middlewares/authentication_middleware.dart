@@ -21,41 +21,27 @@ Middleware authenticationProvider() {
       // Read the interface type
       AuthTokenService tokenService;
       try {
-        print(
-          '[AuthMiddleware] Attempting to read AuthTokenService...',
-        );
+        print('[AuthMiddleware] Attempting to read AuthTokenService...');
         tokenService = context.read<AuthTokenService>();
-        print(
-          '[AuthMiddleware] Successfully read AuthTokenService.',
-        );
+        print('[AuthMiddleware] Successfully read AuthTokenService.');
       } catch (e, s) {
-        print(
-          '[AuthMiddleware] FAILED to read AuthTokenService: $e\n$s',
-        );
+        print('[AuthMiddleware] FAILED to read AuthTokenService: $e\n$s');
         // Re-throw the error to be caught by the main error handler
         rethrow;
       }
       User? user;
 
       // Extract the Authorization header
-      print(
-        '[AuthMiddleware] Attempting to read Authorization header...',
-      );
+      print('[AuthMiddleware] Attempting to read Authorization header...');
       final authHeader = context.request.headers['Authorization'];
-      print(
-        '[AuthMiddleware] Authorization header value: $authHeader',
-      );
+      print('[AuthMiddleware] Authorization header value: $authHeader');
 
       if (authHeader != null && authHeader.startsWith('Bearer ')) {
         // Extract the token string
         final token = authHeader.substring(7); // Length of 'Bearer '
-        print(
-          '[AuthMiddleware] Extracted Bearer token.',
-        );
+        print('[AuthMiddleware] Extracted Bearer token.');
         try {
-          print(
-            '[AuthMiddleware] Attempting to validate token...',
-          );
+          print('[AuthMiddleware] Attempting to validate token...');
           // Validate the token using the service
           user = await tokenService.validateToken(token);
           print(
@@ -118,9 +104,7 @@ Middleware requireAuthentication() {
       }
       // If user exists, proceed to the handler
       print('Authentication check passed for user: ${user.id}');
-      return handler(
-        context.provide<User>(() => user),
-      );
+      return handler(context.provide<User>(() => user));
     };
   };
 }

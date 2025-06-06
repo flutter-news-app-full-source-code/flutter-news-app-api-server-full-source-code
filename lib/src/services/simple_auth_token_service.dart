@@ -10,9 +10,8 @@ import 'package:ht_shared/ht_shared.dart';
 /// {@endtemplate}
 class SimpleAuthTokenService implements AuthTokenService {
   /// {@macro simple_auth_token_service}
-  const SimpleAuthTokenService({
-    required HtDataRepository<User> userRepository,
-  }) : _userRepository = userRepository;
+  const SimpleAuthTokenService({required HtDataRepository<User> userRepository})
+    : _userRepository = userRepository;
 
   final HtDataRepository<User> _userRepository;
   static const String _tokenPrefix = 'valid-token-for-user-id:';

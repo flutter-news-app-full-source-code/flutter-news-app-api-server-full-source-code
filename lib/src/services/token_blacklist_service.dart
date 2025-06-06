@@ -94,9 +94,7 @@ class InMemoryTokenBlacklistService implements TokenBlacklistService {
       print(
         '[InMemoryTokenBlacklistService] Error adding jti $jti to store: $e',
       );
-      throw OperationFailedException(
-        'Failed to add token to blacklist: $e',
-      );
+      throw OperationFailedException('Failed to add token to blacklist: $e');
     }
   }
 
@@ -127,9 +125,7 @@ class InMemoryTokenBlacklistService implements TokenBlacklistService {
       print(
         '[InMemoryTokenBlacklistService] Error checking blacklist for jti $jti: $e',
       );
-      throw OperationFailedException(
-        'Failed to check token blacklist: $e',
-      );
+      throw OperationFailedException('Failed to check token blacklist: $e');
     }
   }
 

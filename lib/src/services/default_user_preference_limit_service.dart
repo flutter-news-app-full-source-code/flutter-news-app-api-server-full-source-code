@@ -69,9 +69,7 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
       rethrow;
     } catch (e) {
       // Catch unexpected errors
-      print(
-        'Error checking limit for user ${user.id}, itemType $itemType: $e',
-      );
+      print('Error checking limit for user ${user.id}, itemType $itemType: $e');
       throw const OperationFailedException(
         'Failed to check user preference limits.',
       );
@@ -137,9 +135,7 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
       rethrow;
     } catch (e) {
       // Catch unexpected errors
-      print(
-        'Error checking update limits for user ${user.id}: $e',
-      );
+      print('Error checking update limits for user ${user.id}: $e');
       throw const OperationFailedException(
         'Failed to check user preference update limits.',
       );

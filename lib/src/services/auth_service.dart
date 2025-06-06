@@ -20,15 +20,15 @@ class AuthService {
     required HtEmailRepository emailRepository,
     required HtDataRepository<UserAppSettings> userAppSettingsRepository,
     required HtDataRepository<UserContentPreferences>
-        userContentPreferencesRepository,
+    userContentPreferencesRepository,
     required Uuid uuidGenerator,
-  })  : _userRepository = userRepository,
-        _authTokenService = authTokenService,
-        _verificationCodeStorageService = verificationCodeStorageService,
-        _emailRepository = emailRepository,
-        _userAppSettingsRepository = userAppSettingsRepository,
-        _userContentPreferencesRepository = userContentPreferencesRepository,
-        _uuid = uuidGenerator;
+  }) : _userRepository = userRepository,
+       _authTokenService = authTokenService,
+       _verificationCodeStorageService = verificationCodeStorageService,
+       _emailRepository = emailRepository,
+       _userAppSettingsRepository = userAppSettingsRepository,
+       _userContentPreferencesRepository = userContentPreferencesRepository,
+       _uuid = uuidGenerator;
 
   final HtDataRepository<User> _userRepository;
   final AuthTokenService _authTokenService;
@@ -36,7 +36,7 @@ class AuthService {
   final HtEmailRepository _emailRepository;
   final HtDataRepository<UserAppSettings> _userAppSettingsRepository;
   final HtDataRepository<UserContentPreferences>
-      _userContentPreferencesRepository;
+  _userContentPreferencesRepository;
   final Uuid _uuid;
 
   /// Initiates the email sign-in process.
@@ -47,16 +47,11 @@ class AuthService {
   Future<void> initiateEmailSignIn(String email) async {
     try {
       // Generate and store the code for standard sign-in
-      final code =
-          await _verificationCodeStorageService.generateAndStoreSignInCode(
-        email,
-      );
+      final code = await _verificationCodeStorageService
+          .generateAndStoreSignInCode(email);
 
       // Send the code via email
-      await _emailRepository.sendOtpEmail(
-        recipientEmail: email,
-        otpCode: code,
-      );
+      await _emailRepository.sendOtpEmail(recipientEmail: email, otpCode: code);
       print('Initiated email sign-in for $email, code sent.');
     } on HtHttpException {
       // Propagate known exceptions from dependencies
@@ -83,11 +78,8 @@ class AuthService {
     // User? currentAuthUser, // Parameter for potential future linking logic
   ) async {
     // 1. Validate the code for standard sign-in
-    final isValidCode =
-        await _verificationCodeStorageService.validateSignInCode(
-      email,
-      code,
-    );
+    final isValidCode = await _verificationCodeStorageService
+        .validateSignInCode(email, code);
     if (!isValidCode) {
       throw const InvalidInputException(
         'Invalid or expired verification code.',
@@ -312,11 +304,11 @@ class AuthService {
       // 2. Generate and store the link code.
       // The storage service itself might throw ConflictException if emailToLink
       // is pending for another user or if this user has a pending code.
-      final code =
-          await _verificationCodeStorageService.generateAndStoreLinkCode(
-        userId: anonymousUser.id,
-        emailToLink: emailToLink,
-      );
+      final code = await _verificationCodeStorageService
+          .generateAndStoreLinkCode(
+            userId: anonymousUser.id,
+            emailToLink: emailToLink,
+          );
 
       // 3. Send the code via email
       await _emailRepository.sendOtpEmail(
@@ -359,11 +351,11 @@ class AuthService {
 
     try {
       // 1. Validate the link code and retrieve the email that was being linked.
-      final linkedEmail =
-          await _verificationCodeStorageService.validateAndRetrieveLinkedEmail(
-        userId: anonymousUser.id,
-        linkCode: codeFromUser,
-      );
+      final linkedEmail = await _verificationCodeStorageService
+          .validateAndRetrieveLinkedEmail(
+            userId: anonymousUser.id,
+            linkCode: codeFromUser,
+          );
 
       if (linkedEmail == null) {
         throw const InvalidInputException(
@@ -446,9 +438,7 @@ class AuthService {
       // 2. Clear any pending verification codes for this user ID (linking).
       try {
         await _verificationCodeStorageService.clearLinkCode(userId);
-        print(
-          '[AuthService] Cleared link code for user ${userToDelete.id}.',
-        );
+        print('[AuthService] Cleared link code for user ${userToDelete.id}.');
       } catch (e) {
         // Log but don't fail deletion if clearing codes fails
         print(
@@ -459,8 +449,9 @@ class AuthService {
       // 3. Clear any pending sign-in codes for the user's email (if they had one).
       if (userToDelete.email != null) {
         try {
-          await _verificationCodeStorageService
-              .clearSignInCode(userToDelete.email!);
+          await _verificationCodeStorageService.clearSignInCode(
+            userToDelete.email!,
+          );
           print(
             '[AuthService] Cleared sign-in code for email ${userToDelete.email}.',
           );
@@ -488,9 +479,7 @@ class AuthService {
     } catch (e) {
       // Catch unexpected errors during orchestration
       print('Error during deleteAccount for user $userId: $e');
-      throw OperationFailedException(
-        'Failed to delete user account: $e',
-      );
+      throw OperationFailedException('Failed to delete user account: $e');
     }
   }
 }

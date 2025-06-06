@@ -33,9 +33,9 @@ class JwtAuthTokenService implements AuthTokenService {
     required HtDataRepository<User> userRepository,
     required TokenBlacklistService blacklistService,
     required Uuid uuidGenerator,
-  })  : _userRepository = userRepository,
-        _blacklistService = blacklistService,
-        _uuid = uuidGenerator;
+  }) : _userRepository = userRepository,
+       _blacklistService = blacklistService,
+       _uuid = uuidGenerator;
 
   final HtDataRepository<User> _userRepository;
   final TokenBlacklistService _blacklistService;
@@ -68,7 +68,6 @@ class JwtAuthTokenService implements AuthTokenService {
           'iat': now.millisecondsSinceEpoch ~/ 1000, // Issued At
           'iss': _issuer, // Issuer
           'jti': _uuid.v4(), // JWT ID (for potential blacklisting)
-
           // Custom claims (optional, include what's useful)
           'email': user.email,
           'role': _userRoleToString(
@@ -246,8 +245,10 @@ class JwtAuthTokenService implements AuthTokenService {
           'Cannot invalidate token: Missing or invalid expiry (exp) claim.',
         );
       }
-      final expiryDateTime =
-          DateTime.fromMillisecondsSinceEpoch(expClaim * 1000, isUtc: true);
+      final expiryDateTime = DateTime.fromMillisecondsSinceEpoch(
+        expClaim * 1000,
+        isUtc: true,
+      );
       print('[invalidateToken] Extracted expiry: $expiryDateTime');
 
       // 4. Add JTI to the blacklist

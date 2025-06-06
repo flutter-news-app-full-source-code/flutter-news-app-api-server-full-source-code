@@ -30,10 +30,10 @@ class ModelActionPermission {
     this.permission,
     this.requiresOwnershipCheck = false,
   }) : assert(
-          type != RequiredPermissionType.specificPermission ||
-              permission != null,
-          'Permission string must be provided for specificPermission type',
-        );
+         type != RequiredPermissionType.specificPermission ||
+             permission != null,
+         'Permission string must be provided for specificPermission type',
+       );
 
   /// The type of permission check required.
   final RequiredPermissionType type;
@@ -265,8 +265,9 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
   'user_content_preferences': ModelConfig<UserContentPreferences>(
     fromJson: UserContentPreferences.fromJson,
     getId: (p) => p.id,
-    getOwnerId: (dynamic item) => (item as UserContentPreferences).id
-        as String?, // User ID is the owner ID
+    getOwnerId: (dynamic item) =>
+        (item as UserContentPreferences).id
+            as String?, // User ID is the owner ID
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported, // Not accessible via collection
     ),
@@ -322,6 +323,4 @@ typedef ModelRegistryMap = Map<String, ModelConfig<dynamic>>;
 /// This makes the `modelRegistry` map available for injection into the
 /// request context via `context.read<ModelRegistryMap>()`. It's primarily
 /// used by the middleware in `routes/api/v1/data/_middleware.dart`.
-final modelRegistryProvider = provider<ModelRegistryMap>(
-  (_) => modelRegistry,
-);
+final modelRegistryProvider = provider<ModelRegistryMap>((_) => modelRegistry);

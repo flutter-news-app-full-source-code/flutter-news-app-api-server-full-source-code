@@ -23,10 +23,7 @@ Middleware errorHandler() {
         return Response.json(
           statusCode: statusCode,
           body: {
-            'error': {
-              'code': errorCode,
-              'message': e.message,
-            },
+            'error': {'code': errorCode, 'message': e.message},
           },
         );
       } on FormatException catch (e, stackTrace) {

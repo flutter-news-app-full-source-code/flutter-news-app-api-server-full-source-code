@@ -53,7 +53,5 @@ Future<Response> onRequest(RequestContext context) async {
   );
 
   // Return 200 OK with the wrapped and serialized response
-  return Response.json(
-    body: responsePayload.toJson((user) => user.toJson()),
-  );
+  return Response.json(body: responsePayload.toJson((user) => user.toJson()));
 }
