@@ -74,9 +74,9 @@ class AuthService {
   /// Throws [OperationFailedException] for user lookup/creation or token errors.
   Future<({User user, String token})> completeEmailSignIn(
     String email,
-    String code,
-    // User? currentAuthUser, // Parameter for potential future linking logic
-  ) async {
+    String code, {
+    User? currentAuthUser, // Parameter for potential future linking logic
+  }) async {
     // 1. Validate the code for standard sign-in
     final isValidCode = await _verificationCodeStorageService
         .validateSignInCode(email, code);
@@ -96,53 +96,139 @@ class AuthService {
       );
     }
 
-    // 2. Find or create the user
+    // 2. Find or create the user, and migrate data if anonymous
     User user;
     try {
-      // Attempt to find user by email (assuming a query method exists)
-      // NOTE: HtDataRepository<User> currently lacks findByEmail.
-      // We'll simulate this by querying all and filtering for now.
-      // Replace with a proper query when available.
-      final query = {'email': email}; // Hypothetical query
-      final paginatedResponse = await _userRepository.readAllByQuery(query);
+      if (currentAuthUser != null &&
+          currentAuthUser.role == UserRole.guestUser) {
+        // This is an anonymous user linking their account.
+        // Migrate their existing data to the new permanent user.
+        print(
+          'Anonymous user ${currentAuthUser.id} is linking email $email. '
+          'Migrating data...',
+        );
 
-      if (paginatedResponse.items.isNotEmpty) {
-        user = paginatedResponse.items.first;
-        print('Found existing user: ${user.id} for email $email');
-      } else {
-        // User not found, create a new one
-        print('User not found for $email, creating new user.');
-        user = User(
-          id: _uuid.v4(), // Generate new ID
+        // Fetch existing settings and preferences for the anonymous user
+        UserAppSettings? existingAppSettings;
+        UserContentPreferences? existingUserPreferences;
+        try {
+          existingAppSettings = await _userAppSettingsRepository.read(
+            id: currentAuthUser.id,
+            userId: currentAuthUser.id,
+          );
+          existingUserPreferences = await _userContentPreferencesRepository.read(
+            id: currentAuthUser.id,
+            userId: currentAuthUser.id,
+          );
+          print(
+            'Fetched existing settings and preferences for anonymous user '
+            '${currentAuthUser.id}.',
+          );
+        } on NotFoundException {
+          print(
+            'No existing settings/preferences found for anonymous user '
+            '${currentAuthUser.id}. Creating new ones.',
+          );
+          // If not found, proceed to create new ones later.
+        } catch (e) {
+          print(
+            'Error fetching existing settings/preferences for anonymous user '
+            '${currentAuthUser.id}: $e',
+          );
+          // Log and continue, new defaults will be created.
+        }
+
+        // Update the existing anonymous user to be permanent
+        user = currentAuthUser.copyWith(
           email: email,
-          role: UserRole.standardUser, // Email verified user is standard user
+          role: UserRole.standardUser,
         );
-        user = await _userRepository.create(item: user); // Save the new user
-        print('Created new user: ${user.id}');
+        user = await _userRepository.update(id: user.id, item: user);
+        print('Updated anonymous user ${user.id} to permanent with email $email.');
 
-        // Create default UserAppSettings for the new user
-        final defaultAppSettings = UserAppSettings(id: user.id);
-        await _userAppSettingsRepository.create(
-          item: defaultAppSettings,
-          userId: user.id, // Pass user ID for scoping
-        );
-        print('Created default UserAppSettings for user: ${user.id}');
+        // Update or create UserAppSettings for the now-permanent user
+        if (existingAppSettings != null) {
+          // Update existing settings with the new user ID (though it's the same)
+          // and persist.
+          await _userAppSettingsRepository.update(
+            id: existingAppSettings.id,
+            item: existingAppSettings.copyWith(id: user.id),
+            userId: user.id,
+          );
+          print('Migrated UserAppSettings for user: ${user.id}');
+        } else {
+          // Create default settings if none existed for the anonymous user
+          final defaultAppSettings = UserAppSettings(id: user.id);
+          await _userAppSettingsRepository.create(
+            item: defaultAppSettings,
+            userId: user.id,
+          );
+          print('Created default UserAppSettings for user: ${user.id}');
+        }
 
-        // Create default UserContentPreferences for the new user
-        final defaultUserPreferences = UserContentPreferences(id: user.id);
-        await _userContentPreferencesRepository.create(
-          item: defaultUserPreferences,
-          userId: user.id, // Pass user ID for scoping
-        );
-        print('Created default UserContentPreferences for user: ${user.id}');
+        // Update or create UserContentPreferences for the now-permanent user
+        if (existingUserPreferences != null) {
+          // Update existing preferences with the new user ID (though it's the same)
+          // and persist.
+          await _userContentPreferencesRepository.update(
+            id: existingUserPreferences.id,
+            item: existingUserPreferences.copyWith(id: user.id),
+            userId: user.id,
+          );
+          print('Migrated UserContentPreferences for user: ${user.id}');
+        } else {
+          // Create default preferences if none existed for the anonymous user
+          final defaultUserPreferences = UserContentPreferences(id: user.id);
+          await _userContentPreferencesRepository.create(
+            item: defaultUserPreferences,
+            userId: user.id,
+          );
+          print('Created default UserContentPreferences for user: ${user.id}');
+        }
+      } else {
+        // Standard sign-in/sign-up flow (not anonymous linking)
+        // Attempt to find user by email
+        final query = {'email': email};
+        final paginatedResponse = await _userRepository.readAllByQuery(query);
+
+        if (paginatedResponse.items.isNotEmpty) {
+          user = paginatedResponse.items.first;
+          print('Found existing user: ${user.id} for email $email');
+        } else {
+          // User not found, create a new one
+          print('User not found for $email, creating new user.');
+          user = User(
+            id: _uuid.v4(), // Generate new ID
+            email: email,
+            role: UserRole.standardUser, // Email verified user is standard user
+          );
+          user = await _userRepository.create(item: user); // Save the new user
+          print('Created new user: ${user.id}');
+
+          // Create default UserAppSettings for the new user
+          final defaultAppSettings = UserAppSettings(id: user.id);
+          await _userAppSettingsRepository.create(
+            item: defaultAppSettings,
+            userId: user.id, // Pass user ID for scoping
+          );
+          print('Created default UserAppSettings for user: ${user.id}');
+
+          // Create default UserContentPreferences for the new user
+          final defaultUserPreferences = UserContentPreferences(id: user.id);
+          await _userContentPreferencesRepository.create(
+            item: defaultUserPreferences,
+            userId: user.id, // Pass user ID for scoping
+          );
+          print('Created default UserContentPreferences for user: ${user.id}');
+        }
       }
     } on HtHttpException catch (e) {
-      print('Error finding/creating user for $email: $e');
+      print('Error finding/creating/migrating user for $email: $e');
       throw const OperationFailedException(
-        'Failed to find or create user account.',
+        'Failed to find, create, or migrate user account.',
       );
     } catch (e) {
-      print('Unexpected error during user lookup/creation for $email: $e');
+      print('Unexpected error during user lookup/creation/migration for $email: $e');
       throw const OperationFailedException('Failed to process user account.');
     }
 
