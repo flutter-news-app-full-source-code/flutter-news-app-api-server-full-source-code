@@ -18,6 +18,10 @@ Future<Response> onRequest(RequestContext context) async {
   // Read the AuthService provided by middleware
   final authService = context.read<AuthService>();
 
+  // Read the authenticated User from context (provided by authentication middleware)
+  // This user might be null (if not authenticated) or an anonymous user.
+  final authenticatedUser = context.read<User?>();
+
   // Parse the request body
   final dynamic body;
   try {
@@ -63,7 +67,12 @@ Future<Response> onRequest(RequestContext context) async {
 
   try {
     // Call the AuthService to handle the verification and sign-in logic
-    final result = await authService.completeEmailSignIn(email, code);
+    // Pass the current authenticated user for potential data migration.
+    final result = await authService.completeEmailSignIn(
+      email,
+      code,
+      currentAuthUser: authenticatedUser,
+    );
 
     // Create the specific payload containing user and token
     final authPayload = AuthSuccessResponse(
