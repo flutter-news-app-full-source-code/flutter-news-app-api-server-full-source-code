@@ -116,10 +116,8 @@ class AuthService {
             id: currentAuthUser.id,
             userId: currentAuthUser.id,
           );
-          existingUserPreferences = await _userContentPreferencesRepository.read(
-            id: currentAuthUser.id,
-            userId: currentAuthUser.id,
-          );
+          existingUserPreferences = await _userContentPreferencesRepository
+              .read(id: currentAuthUser.id, userId: currentAuthUser.id);
           print(
             'Fetched existing settings and preferences for anonymous user '
             '${currentAuthUser.id}.',
@@ -144,7 +142,9 @@ class AuthService {
           role: UserRole.standardUser,
         );
         user = await _userRepository.update(id: user.id, item: user);
-        print('Updated anonymous user ${user.id} to permanent with email $email.');
+        print(
+          'Updated anonymous user ${user.id} to permanent with email $email.',
+        );
 
         // Update or create UserAppSettings for the now-permanent user
         if (existingAppSettings != null) {
@@ -228,7 +228,9 @@ class AuthService {
         'Failed to find, create, or migrate user account.',
       );
     } catch (e) {
-      print('Unexpected error during user lookup/creation/migration for $email: $e');
+      print(
+        'Unexpected error during user lookup/creation/migration for $email: $e',
+      );
       throw const OperationFailedException('Failed to process user account.');
     }
 
