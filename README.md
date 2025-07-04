@@ -32,6 +32,10 @@ management dashboard](https://github.com/headlines-toolkit/ht-dashboard).
     including headlines, categories, and sources, through a well-structured
     and protected API.
 
+*   📊 **Dynamic Dashboard Summary:** Access real-time, aggregated metrics on
+    key data points like total headlines, categories, and sources, providing
+    an at-a-glance overview for administrative dashboards.
+
 *   🔧 **Solid Technical Foundation:** Built with Dart and the high-performance
     Dart Frog framework, offering a maintainable codebase, standardized API
     responses, and built-in access control for developers.
