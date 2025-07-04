@@ -109,12 +109,34 @@ Future<Response> _handleGet(
   final queryParams = context.request.uri.queryParameters;
   final startAfterId = queryParams['startAfterId'];
   final limitParam = queryParams['limit'];
+  final sortBy = queryParams['sortBy'];
+  final sortOrderRaw = queryParams['sortOrder']?.toLowerCase();
   final limit = limitParam != null ? int.tryParse(limitParam) : null;
+
+  SortOrder? sortOrder;
+  if (sortOrderRaw != null) {
+    if (sortOrderRaw == 'asc') {
+      sortOrder = SortOrder.asc;
+    } else if (sortOrderRaw == 'desc') {
+      sortOrder = SortOrder.desc;
+    } else {
+      throw const BadRequestException(
+        'Invalid "sortOrder" parameter. Must be "asc" or "desc".',
+      );
+    }
+  }
 
   final specificQueryForClient = <String, String>{};
   final Set<String> allowedKeys;
   final receivedKeys = queryParams.keys
-      .where((k) => k != 'model' && k != 'startAfterId' && k != 'limit')
+      .where(
+        (k) =>
+            k != 'model' &&
+            k != 'startAfterId' &&
+            k != 'limit' &&
+            k != 'sortBy' &&
+            k != 'sortOrder',
+      )
       .toSet();
 
   switch (modelName) {
@@ -207,6 +229,8 @@ Future<Response> _handleGet(
         userId: userIdForRepoCall,
         startAfterId: startAfterId,
         limit: limit,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
       );
     case 'category':
       final repo = context.read<HtDataRepository<Category>>();
@@ -215,6 +239,8 @@ Future<Response> _handleGet(
         userId: userIdForRepoCall,
         startAfterId: startAfterId,
         limit: limit,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
       );
     case 'source':
       final repo = context.read<HtDataRepository<Source>>();
@@ -223,6 +249,8 @@ Future<Response> _handleGet(
         userId: userIdForRepoCall,
         startAfterId: startAfterId,
         limit: limit,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
       );
     case 'country':
       final repo = context.read<HtDataRepository<Country>>();
@@ -231,6 +259,8 @@ Future<Response> _handleGet(
         userId: userIdForRepoCall,
         startAfterId: startAfterId,
         limit: limit,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
       );
     case 'user':
       final repo = context.read<HtDataRepository<User>>();
@@ -239,6 +269,8 @@ Future<Response> _handleGet(
         userId: userIdForRepoCall,
         startAfterId: startAfterId,
         limit: limit,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
       );
     case 'user_app_settings':
       final repo = context.read<HtDataRepository<UserAppSettings>>();
@@ -247,6 +279,8 @@ Future<Response> _handleGet(
         userId: userIdForRepoCall,
         startAfterId: startAfterId,
         limit: limit,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
       );
     case 'user_content_preferences':
       final repo = context.read<HtDataRepository<UserContentPreferences>>();
@@ -255,6 +289,8 @@ Future<Response> _handleGet(
         userId: userIdForRepoCall,
         startAfterId: startAfterId,
         limit: limit,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
       );
     case 'app_config':
       final repo = context.read<HtDataRepository<AppConfig>>();
@@ -263,6 +299,8 @@ Future<Response> _handleGet(
         userId: userIdForRepoCall,
         startAfterId: startAfterId,
         limit: limit,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
       );
     default:
       throw OperationFailedException(

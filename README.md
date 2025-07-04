@@ -1,6 +1,6 @@
 # ht_api
 
-![coverage: percentage](https://img.shields.io/badge/coverage-XX-green)
+![coverage: percentage](https://img.shields.io/badge/coverage-xx-green)
 [![style: very good analysis](https://img.shields.io/badge/style-very_good_analysis-B22C89.svg)](https://pub.dev/packages/very_good_analysis)
 [![License: PolyForm Free Trial](https://img.shields.io/badge/License-PolyForm%20Free%20Trial-blue)](https://polyformproject.org/licenses/free-trial/1.0.0)
 
@@ -31,6 +31,10 @@ management dashboard](https://github.com/headlines-toolkit/ht-dashboard).
 *   💾 **Robust Data Management:** Securely manage core news application data,
     including headlines, categories, and sources, through a well-structured
     and protected API.
+
+*   🔀 **Flexible Data Sorting:** Order lists of headlines, sources, and other
+    data by various fields in ascending or descending order, allowing for
+    dynamic and user-driven content presentation.
 
 *   📊 **Dynamic Dashboard Summary:** Access real-time, aggregated metrics on
     key data points like total headlines, categories, and sources, providing
