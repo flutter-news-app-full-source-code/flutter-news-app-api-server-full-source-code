@@ -65,7 +65,7 @@ class RequestId {
 HtDataRepository<Headline> _createHeadlineRepository() {
   print('Initializing Headline Repository...');
   final initialData = headlinesFixturesData.map(Headline.fromJson).toList();
-  final client = HtDataInMemoryClient<Headline>(
+  final client = HtDataInMemory<Headline>(
     toJson: (i) => i.toJson(),
     getId: (i) => i.id,
     initialData: initialData,
@@ -77,7 +77,7 @@ HtDataRepository<Headline> _createHeadlineRepository() {
 HtDataRepository<Category> _createCategoryRepository() {
   print('Initializing Category Repository...');
   final initialData = categoriesFixturesData.map(Category.fromJson).toList();
-  final client = HtDataInMemoryClient<Category>(
+  final client = HtDataInMemory<Category>(
     toJson: (i) => i.toJson(),
     getId: (i) => i.id,
     initialData: initialData,
@@ -89,7 +89,7 @@ HtDataRepository<Category> _createCategoryRepository() {
 HtDataRepository<Source> _createSourceRepository() {
   print('Initializing Source Repository...');
   final initialData = sourcesFixturesData.map(Source.fromJson).toList();
-  final client = HtDataInMemoryClient<Source>(
+  final client = HtDataInMemory<Source>(
     toJson: (i) => i.toJson(),
     getId: (i) => i.id,
     initialData: initialData,
@@ -101,7 +101,7 @@ HtDataRepository<Source> _createSourceRepository() {
 HtDataRepository<Country> _createCountryRepository() {
   print('Initializing Country Repository...');
   final initialData = countriesFixturesData.map(Country.fromJson).toList();
-  final client = HtDataInMemoryClient<Country>(
+  final client = HtDataInMemory<Country>(
     toJson: (i) => i.toJson(),
     getId: (i) => i.id,
     initialData: initialData,
@@ -113,7 +113,7 @@ HtDataRepository<Country> _createCountryRepository() {
 // New repositories for user settings and preferences
 HtDataRepository<UserAppSettings> _createUserAppSettingsRepository() {
   print('Initializing UserAppSettings Repository...');
-  final client = HtDataInMemoryClient<UserAppSettings>(
+  final client = HtDataInMemory<UserAppSettings>(
     toJson: (i) => i.toJson(),
     getId: (i) => i.id,
     // User settings are created on demand, no initial fixture needed
@@ -125,7 +125,7 @@ HtDataRepository<UserAppSettings> _createUserAppSettingsRepository() {
 HtDataRepository<UserContentPreferences>
 _createUserContentPreferencesRepository() {
   print('Initializing UserContentPreferences Repository...');
-  final client = HtDataInMemoryClient<UserContentPreferences>(
+  final client = HtDataInMemory<UserContentPreferences>(
     toJson: (i) => i.toJson(),
     getId: (i) => i.id,
     // User preferences are created on demand, no initial fixture needed
@@ -139,7 +139,7 @@ HtDataRepository<AppConfig> _createAppConfigRepository() {
   final initialData = [
     AppConfig.fromJson(appConfigFixtureData),
   ]; // Assuming one config
-  final client = HtDataInMemoryClient<AppConfig>(
+  final client = HtDataInMemory<AppConfig>(
     toJson: (i) => i.toJson(),
     getId: (i) => i.id,
     initialData: initialData,
@@ -180,7 +180,7 @@ Handler middleware(Handler handler) {
   // --- Auth Dependencies ---
   // User Repo (using InMemory for now)
   final userRepository = HtDataRepository<User>(
-    dataClient: HtDataInMemoryClient<User>(
+    dataClient: HtDataInMemory<User>(
       toJson: (u) => u.toJson(),
       getId: (u) => u.id,
       // No initial user data fixture needed for auth flow typically
