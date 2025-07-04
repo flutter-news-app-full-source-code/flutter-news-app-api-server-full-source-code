@@ -122,6 +122,12 @@ Future<Response> _handleGet(
         id: id,
         userId: userIdForRepoCall,
       ); // userId should be null for AppConfig
+    case 'dashboard_summary':
+      final repo = context.read<HtDataRepository<DashboardSummary>>();
+      item = await repo.read(
+        id: id,
+        userId: userIdForRepoCall,
+      );
     default:
       // This case should ideally be caught by middleware, but added for safety
       // Throw an exception to be caught by the errorHandler
