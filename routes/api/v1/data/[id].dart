@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/rbac/permission_service.dart';
 import 'package:ht_api/src/registry/model_registry.dart';
+import 'package:ht_api/src/services/dashboard_summary_service.dart';
 import 'package:ht_api/src/services/user_preference_limit_service.dart'; // Import UserPreferenceLimitService
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
@@ -123,11 +124,8 @@ Future<Response> _handleGet(
         userId: userIdForRepoCall,
       ); // userId should be null for AppConfig
     case 'dashboard_summary':
-      final repo = context.read<HtDataRepository<DashboardSummary>>();
-      item = await repo.read(
-        id: id,
-        userId: userIdForRepoCall,
-      );
+      final service = context.read<DashboardSummaryService>();
+      item = await service.getSummary();
     default:
       // This case should ideally be caught by middleware, but added for safety
       // Throw an exception to be caught by the errorHandler
