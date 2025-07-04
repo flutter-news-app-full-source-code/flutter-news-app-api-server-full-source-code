@@ -148,6 +148,20 @@ HtDataRepository<AppConfig> _createAppConfigRepository() {
   return HtDataRepository<AppConfig>(dataClient: client);
 }
 
+HtDataRepository<DashboardSummary> _createDashboardSummaryRepository() {
+  print('Initializing DashboardSummary Repository...');
+  final initialData = [
+    DashboardSummary.fromJson(dashboardSummaryFixtureData),
+  ];
+  final client = HtDataInMemory<DashboardSummary>(
+    toJson: (i) => i.toJson(),
+    getId: (i) => i.id,
+    initialData: initialData,
+  );
+  print('DashboardSummary Repository Initialized.');
+  return HtDataRepository<DashboardSummary>(dataClient: client);
+}
+
 /// Middleware to asynchronously load and provide the AppConfig.
 Middleware _appConfigProviderMiddleware() {
   return (handler) {
@@ -174,6 +188,7 @@ Handler middleware(Handler handler) {
   final userContentPreferencesRepository =
       _createUserContentPreferencesRepository();
   final appConfigRepository = _createAppConfigRepository();
+  final dashboardSummaryRepository = _createDashboardSummaryRepository();
 
   const uuid = Uuid();
 
@@ -286,6 +301,11 @@ Handler middleware(Handler handler) {
         ),
       )
       .use(provider<HtDataRepository<AppConfig>>((_) => appConfigRepository))
+      .use(
+        provider<HtDataRepository<DashboardSummary>>(
+          (_) => dashboardSummaryRepository,
+        ),
+      )
       // ORDER:   These MUST be provided BEFORE `authenticationProvider` and
       //          any route handlers that perform authentication/authorization.
       //          - `Uuid` is used by `AuthService` and `JwtAuthTokenService`.
