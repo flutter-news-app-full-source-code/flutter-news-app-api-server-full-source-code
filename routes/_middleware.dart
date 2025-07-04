@@ -5,6 +5,7 @@ import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_api/src/services/auth_service.dart';
 import 'package:ht_api/src/services/auth_token_service.dart';
 import 'package:ht_api/src/services/default_user_preference_limit_service.dart';
+import 'package:ht_api/src/services/dashboard_summary_service.dart';
 import 'package:ht_api/src/services/jwt_auth_token_service.dart';
 import 'package:ht_api/src/services/token_blacklist_service.dart';
 import 'package:ht_api/src/services/user_preference_limit_service.dart';
@@ -148,20 +149,6 @@ HtDataRepository<AppConfig> _createAppConfigRepository() {
   return HtDataRepository<AppConfig>(dataClient: client);
 }
 
-HtDataRepository<DashboardSummary> _createDashboardSummaryRepository() {
-  print('Initializing DashboardSummary Repository...');
-  final initialData = [
-    DashboardSummary.fromJson(dashboardSummaryFixtureData),
-  ];
-  final client = HtDataInMemory<DashboardSummary>(
-    toJson: (i) => i.toJson(),
-    getId: (i) => i.id,
-    initialData: initialData,
-  );
-  print('DashboardSummary Repository Initialized.');
-  return HtDataRepository<DashboardSummary>(dataClient: client);
-}
-
 /// Middleware to asynchronously load and provide the AppConfig.
 Middleware _appConfigProviderMiddleware() {
   return (handler) {
@@ -188,7 +175,14 @@ Handler middleware(Handler handler) {
   final userContentPreferencesRepository =
       _createUserContentPreferencesRepository();
   final appConfigRepository = _createAppConfigRepository();
-  final dashboardSummaryRepository = _createDashboardSummaryRepository();
+
+  // Instantiate the new DashboardSummaryService with its dependencies
+  final dashboardSummaryService = DashboardSummaryService(
+    headlineRepository: headlineRepository,
+    categoryRepository: categoryRepository,
+    sourceRepository: sourceRepository,
+  );
+  print('[MiddlewareSetup] DashboardSummaryService instantiated.');
 
   const uuid = Uuid();
 
@@ -301,11 +295,6 @@ Handler middleware(Handler handler) {
         ),
       )
       .use(provider<HtDataRepository<AppConfig>>((_) => appConfigRepository))
-      .use(
-        provider<HtDataRepository<DashboardSummary>>(
-          (_) => dashboardSummaryRepository,
-        ),
-      )
       // ORDER:   These MUST be provided BEFORE `authenticationProvider` and
       //          any route handlers that perform authentication/authorization.
       //          - `Uuid` is used by `AuthService` and `JwtAuthTokenService`.
@@ -328,6 +317,7 @@ Handler middleware(Handler handler) {
       .use(
         provider<AuthService>((_) => authService),
       ) // Reads other services/repos
+      .use(provider<DashboardSummaryService>((_) => dashboardSummaryService))
       // --- 5. RBAC Service Provider ---
       // PURPOSE: Provides the PermissionService for authorization checks.
       // ORDER:   Must be provided before any middleware or handlers that use it
