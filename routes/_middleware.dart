@@ -5,6 +5,7 @@ import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_api/src/services/auth_service.dart';
 import 'package:ht_api/src/services/auth_token_service.dart';
 import 'package:ht_api/src/services/default_user_preference_limit_service.dart';
+import 'package:ht_api/src/services/dashboard_summary_service.dart';
 import 'package:ht_api/src/services/jwt_auth_token_service.dart';
 import 'package:ht_api/src/services/token_blacklist_service.dart';
 import 'package:ht_api/src/services/user_preference_limit_service.dart';
@@ -175,6 +176,14 @@ Handler middleware(Handler handler) {
       _createUserContentPreferencesRepository();
   final appConfigRepository = _createAppConfigRepository();
 
+  // Instantiate the new DashboardSummaryService with its dependencies
+  final dashboardSummaryService = DashboardSummaryService(
+    headlineRepository: headlineRepository,
+    categoryRepository: categoryRepository,
+    sourceRepository: sourceRepository,
+  );
+  print('[MiddlewareSetup] DashboardSummaryService instantiated.');
+
   const uuid = Uuid();
 
   // --- Auth Dependencies ---
@@ -308,6 +317,7 @@ Handler middleware(Handler handler) {
       .use(
         provider<AuthService>((_) => authService),
       ) // Reads other services/repos
+      .use(provider<DashboardSummaryService>((_) => dashboardSummaryService))
       // --- 5. RBAC Service Provider ---
       // PURPOSE: Provides the PermissionService for authorization checks.
       // ORDER:   Must be provided before any middleware or handlers that use it

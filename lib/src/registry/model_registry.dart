@@ -313,6 +313,27 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       type: RequiredPermissionType.adminOnly, // Only administrators can delete
     ),
   ),
+  'dashboard_summary': ModelConfig<DashboardSummary>(
+    fromJson: DashboardSummary.fromJson,
+    getId: (summary) => summary.id,
+    getOwnerId: null, // Not a user-owned resource
+    // Permissions: Read-only for admins, all other actions unsupported.
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    getItemPermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+    ),
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+  ),
 };
 
 /// Type alias for the ModelRegistry map for easier provider usage.
