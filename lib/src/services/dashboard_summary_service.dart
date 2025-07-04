@@ -13,9 +13,9 @@ class DashboardSummaryService {
     required HtDataRepository<Headline> headlineRepository,
     required HtDataRepository<Category> categoryRepository,
     required HtDataRepository<Source> sourceRepository,
-  })  : _headlineRepository = headlineRepository,
-        _categoryRepository = categoryRepository,
-        _sourceRepository = sourceRepository;
+  }) : _headlineRepository = headlineRepository,
+       _categoryRepository = categoryRepository,
+       _sourceRepository = sourceRepository;
 
   final HtDataRepository<Headline> _headlineRepository;
   final HtDataRepository<Category> _categoryRepository;
