@@ -10,16 +10,13 @@ import 'package:ht_shared/ht_shared.dart';
 class DashboardSummaryService {
   /// {@macro dashboard_summary_service}
   const DashboardSummaryService({
-    required HtDataRepository<User> userRepository,
     required HtDataRepository<Headline> headlineRepository,
     required HtDataRepository<Category> categoryRepository,
     required HtDataRepository<Source> sourceRepository,
-  })  : _userRepository = userRepository,
-        _headlineRepository = headlineRepository,
+  })  : _headlineRepository = headlineRepository,
         _categoryRepository = categoryRepository,
         _sourceRepository = sourceRepository;
 
-  final HtDataRepository<User> _userRepository;
   final HtDataRepository<Headline> _headlineRepository;
   final HtDataRepository<Category> _categoryRepository;
   final HtDataRepository<Source> _sourceRepository;
@@ -29,13 +26,23 @@ class DashboardSummaryService {
   /// This method fetches all items from the required repositories to count them
   /// and constructs a [DashboardSummary] object.
   Future<DashboardSummary> getSummary() async {
-    // The actual calculation logic will be implemented in a subsequent step.
-    // For now, this serves as a placeholder structure.
+    // Use Future.wait to fetch all counts in parallel for efficiency.
+    final results = await Future.wait([
+      _headlineRepository.readAll(),
+      _categoryRepository.readAll(),
+      _sourceRepository.readAll(),
+    ]);
+
+    // The results are PaginatedResponse objects.
+    final headlineResponse = results[0] as PaginatedResponse<Headline>;
+    final categoryResponse = results[1] as PaginatedResponse<Category>;
+    final sourceResponse = results[2] as PaginatedResponse<Source>;
+
     return DashboardSummary(
-      id: 'dashboard_summary',
-      headlineCount: 0,
-      categoryCount: 0,
-      sourceCount: 0,
+      id: 'dashboard_summary', // Fixed ID for the singleton summary
+      headlineCount: headlineResponse.items.length,
+      categoryCount: categoryResponse.items.length,
+      sourceCount: sourceResponse.items.length,
     );
   }
 }
