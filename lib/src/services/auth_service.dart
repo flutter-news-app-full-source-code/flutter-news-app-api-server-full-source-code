@@ -128,9 +128,7 @@ class AuthService {
   /// - If `isDashboardLogin` is `false` (default), it validates the code and
   ///   either logs in the existing user or creates a new one if they don't
   ///   exist.
-  ///
-  /// As a special case for in-memory setup, if a new user signs up with the
-  /// email 'admin@example.com', they will be granted the 'admin' role.
+  ///   New users are created with the 'standardUser' role.
   ///
   /// Returns the authenticated [User] and a new authentication token.
   ///
@@ -188,11 +186,9 @@ class AuthService {
         // Create a new user for the standard app flow.
         print('User not found for $email, creating new user.');
 
-        // Hardcoded admin email check for in-memory setup.
-        const adminEmail = 'admin@example.com';
-        final roles = (email == adminEmail)
-            ? [UserRoles.standardUser, UserRoles.admin]
-            : [UserRoles.standardUser];
+        // All new users created via the public API get the standard role.
+        // Admin users must be provisioned out-of-band (e.g., via databse seed).
+        final roles = [UserRoles.standardUser];
 
         user = User(
           id: _uuid.v4(),
