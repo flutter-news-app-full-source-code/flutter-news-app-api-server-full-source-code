@@ -8,19 +8,20 @@ import 'package:ht_shared/ht_shared.dart';
 /// Handles POST requests to `/api/v1/auth/verify-code`.
 ///
 /// Verifies the provided email and code, completes the sign-in/sign-up,
-/// and returns the authenticated User object along with an auth token.
+/// and returns the authenticated User object along with an auth token. It
+/// supports a context-aware flow by checking for an `is_dashboard_login`
+/// flag in the request body, which dictates whether to perform a strict
+/// login-only check or a standard sign-in/sign-up.
 Future<Response> onRequest(RequestContext context) async {
   // Ensure this is a POST request
   if (context.request.method != HttpMethod.post) {
     return Response(statusCode: HttpStatus.methodNotAllowed);
   }
 
-  // Read the AuthService provided by middleware
+  // Read the AuthService provided by middleware.
+  // The `authenticatedUser` is no longer needed here as the service handles
+  // all context internally.
   final authService = context.read<AuthService>();
-
-  // Read the authenticated User from context (provided by authentication middleware)
-  // This user might be null (if not authenticated) or an anonymous user.
-  final authenticatedUser = context.read<User?>();
 
   // Parse the request body
   final dynamic body;
@@ -65,13 +66,16 @@ Future<Response> onRequest(RequestContext context) async {
     );
   }
 
+  // Check for the optional dashboard login flag. Default to false.
+  final isDashboardLogin = (body['is_dashboard_login'] as bool?) ?? false;
+
   try {
     // Call the AuthService to handle the verification and sign-in logic
-    // Pass the current authenticated user for potential data migration.
+    // Pass the context flag to determine the correct flow.
     final result = await authService.completeEmailSignIn(
       email,
       code,
-      currentAuthUser: authenticatedUser,
+      isDashboardLogin: isDashboardLogin,
     );
 
     // Create the specific payload containing user and token

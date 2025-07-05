@@ -16,10 +16,10 @@ management dashboard](https://github.com/headlines-toolkit/ht-dashboard).
 
 ## ✨ Key Capabilities
 
-*   🔒 **Effortless User Authentication:** Provide secure and seamless user access
-    with flexible flows including passwordless sign-in, anonymous access, and
-    the ability to easily link anonymous accounts to permanent ones. Focus on
-    user experience while `ht_api` handles the security complexities.
+*   🔒 **Flexible & Secure Authentication:** Provide seamless user access with
+    a unified system supporting passwordless sign-in, anonymous guest
+    accounts, and a secure, context-aware login flow for privileged dashboard
+    users (e.g., 'admin', 'publisher').
 
 *   ⚡️ **Flexible Role-Based Access Control (RBAC):** Implement granular
     permissions with a flexible, multi-role system. Assign multiple roles to
@@ -33,13 +33,9 @@ management dashboard](https://github.com/headlines-toolkit/ht-dashboard).
 *   👤 **Personalized User Preferences:** Enable richer user interactions by
     managing and syncing user-specific data such as saved headlines, followed sources, or other personalized content tailored to individual users.
 
-*   💾 **Robust Data Management:** Securely manage core news application data,
-    including headlines, categories, and sources, through a well-structured
-    and protected API.
-
-*   🔀 **Flexible Data Sorting:** Order lists of headlines, sources, and other
-    data by various fields in ascending or descending order, allowing for
-    dynamic and user-driven content presentation.
+*   💾 **Robust Data Management:** Securely manage core news data (headlines,
+    categories, sources) through a well-structured API that supports flexible
+    querying and sorting for dynamic content presentation.
 
 *   📊 **Dynamic Dashboard Summary:** Access real-time, aggregated metrics on
     key data points like total headlines, categories, and sources, providing

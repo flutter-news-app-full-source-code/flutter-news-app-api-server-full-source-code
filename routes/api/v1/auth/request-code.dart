@@ -6,8 +6,14 @@ import 'package:ht_shared/ht_shared.dart'; // For exceptions
 
 /// Handles POST requests to `/api/v1/auth/request-code`.
 ///
-/// Initiates the email sign-in process by requesting a verification code
-/// be sent to the provided email address.
+/// Initiates an email-based sign-in process. This endpoint is context-aware.
+///
+/// - For the user-facing app, it sends a verification code to the provided
+///   email, supporting both sign-in and sign-up.
+/// - For the dashboard, the request body must include `"is_dashboard_login": true`.
+///   In this mode, it first verifies the user exists and has 'admin' or
+///   'publisher' roles before sending a code, effectively acting as a
+///   login-only gate.
 Future<Response> onRequest(RequestContext context) async {
   // Ensure this is a POST request
   if (context.request.method != HttpMethod.post) {
@@ -37,6 +43,9 @@ Future<Response> onRequest(RequestContext context) async {
     );
   }
 
+  // Check for the optional dashboard login flag. Default to false if not present.
+  final isDashboardLogin = (body['is_dashboard_login'] as bool?) ?? false;
+
   // Basic email format check (more robust validation can be added)
   // Using a slightly more common regex pattern
   final emailRegex = RegExp(
@@ -48,8 +57,11 @@ Future<Response> onRequest(RequestContext context) async {
   }
 
   try {
-    // Call the AuthService to handle the logic
-    await authService.initiateEmailSignIn(email);
+    // Call the AuthService to handle the logic, passing the context flag.
+    await authService.initiateEmailSignIn(
+      email,
+      isDashboardLogin: isDashboardLogin,
+    );
 
     // Return 202 Accepted: The request is accepted for processing,
     // but the processing (email sending) hasn't necessarily completed.
