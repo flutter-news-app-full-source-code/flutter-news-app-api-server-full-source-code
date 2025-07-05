@@ -23,7 +23,7 @@ Future<Response> onRequest(RequestContext context) async {
       'Authentication required to verify email link.',
     );
   }
-  if (authenticatedUser.role != UserRole.guestUser) {
+  if (!authenticatedUser.roles.contains(UserRoles.guestUser)) {
     throw const BadRequestException(
       'Account is already permanent. Cannot complete email linking.',
     );

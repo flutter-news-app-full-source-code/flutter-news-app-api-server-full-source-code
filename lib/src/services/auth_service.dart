@@ -76,6 +76,7 @@ class AuthService {
     String email,
     String code, {
     User? currentAuthUser, // Parameter for potential future linking logic
+    String? clientType, // e.g., 'dashboard', 'mobile_app'
   }) async {
     // 1. Validate the code for standard sign-in
     final isValidCode = await _verificationCodeStorageService
@@ -100,7 +101,7 @@ class AuthService {
     User user;
     try {
       if (currentAuthUser != null &&
-          currentAuthUser.role == UserRole.guestUser) {
+          currentAuthUser.roles.contains(UserRoles.guestUser)) {
         // This is an anonymous user linking their account.
         // Migrate their existing data to the new permanent user.
         print(
@@ -139,7 +140,7 @@ class AuthService {
         // Update the existing anonymous user to be permanent
         user = currentAuthUser.copyWith(
           email: email,
-          role: UserRole.standardUser,
+          roles: [UserRoles.standardUser],
         );
         user = await _userRepository.update(id: user.id, item: user);
         print(
@@ -197,10 +198,15 @@ class AuthService {
         } else {
           // User not found, create a new one
           print('User not found for $email, creating new user.');
+          // Assign roles based on client type. New users from the dashboard
+          // could be granted publisher rights, for example.
+          final roles = (clientType == 'dashboard')
+              ? [UserRoles.standardUser, UserRoles.publisher]
+              : [UserRoles.standardUser];
           user = User(
             id: _uuid.v4(), // Generate new ID
             email: email,
-            role: UserRole.standardUser, // Email verified user is standard user
+            roles: roles,
           );
           user = await _userRepository.create(item: user); // Save the new user
           print('Created new user: ${user.id}');
@@ -258,7 +264,7 @@ class AuthService {
     try {
       user = User(
         id: _uuid.v4(), // Generate new ID
-        role: UserRole.guestUser, // Anonymous users are guest users
+        roles: [UserRoles.guestUser], // Anonymous users are guest users
         email: null, // Anonymous users don't have an email initially
       );
       user = await _userRepository.create(item: user);
@@ -368,25 +374,27 @@ class AuthService {
     required User anonymousUser,
     required String emailToLink,
   }) async {
-    if (anonymousUser.role != UserRole.guestUser) {
+    if (!anonymousUser.roles.contains(UserRoles.guestUser)) {
       throw const BadRequestException(
         'Account is already permanent. Cannot link email.',
       );
     }
 
     try {
-      // 1. Check if emailToLink is already used by another *permanent* user.
-      final query = {'email': emailToLink, 'isAnonymous': false};
-      final existingUsers = await _userRepository.readAllByQuery(query);
-      if (existingUsers.items.isNotEmpty) {
-        // Ensure it's not the same user if somehow an anonymous user had an email
-        // (though current logic prevents this for new anonymous users).
-        // This check is more for emails used by *other* permanent accounts.
-        if (existingUsers.items.any((u) => u.id != anonymousUser.id)) {
-          throw ConflictException(
-            'Email address "$emailToLink" is already in use by another account.',
-          );
-        }
+      // 1. Check if emailToLink is already used by another permanent user.
+      final query = {'email': emailToLink};
+      final existingUsersResponse = await _userRepository.readAllByQuery(query);
+
+      // Filter for permanent users (not guests) that are not the current user.
+      final conflictingPermanentUsers = existingUsersResponse.items.where(
+        (u) =>
+            !u.roles.contains(UserRoles.guestUser) && u.id != anonymousUser.id,
+      );
+
+      if (conflictingPermanentUsers.isNotEmpty) {
+        throw ConflictException(
+          'Email address "$emailToLink" is already in use by another account.',
+        );
       }
 
       // 2. Generate and store the link code.
@@ -430,7 +438,7 @@ class AuthService {
     required String codeFromUser,
     required String oldAnonymousToken, // Needed to invalidate it
   }) async {
-    if (anonymousUser.role != UserRole.guestUser) {
+    if (!anonymousUser.roles.contains(UserRoles.guestUser)) {
       // Should ideally not happen if flow is correct, but good safeguard.
       throw const BadRequestException(
         'Account is already permanent. Cannot complete email linking.',
@@ -455,7 +463,7 @@ class AuthService {
       final updatedUser = User(
         id: anonymousUser.id, // Preserve original ID
         email: linkedEmail,
-        role: UserRole.standardUser, // Now a permanent standard user
+        roles: [UserRoles.standardUser], // Now a permanent standard user
       );
       final permanentUser = await _userRepository.update(
         id: updatedUser.id,

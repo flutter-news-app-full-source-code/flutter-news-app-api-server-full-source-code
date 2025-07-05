@@ -5,8 +5,8 @@ import 'package:ht_shared/ht_shared.dart';
 /// Service responsible for checking if a user has a specific permission.
 ///
 /// This service uses the predefined [rolePermissions] map to determine
-/// a user's access rights based on their [UserRole]. It also includes
-/// an explicit check for the [UserRole.admin], granting them all permissions.
+/// a user's access rights based on their roles. It also includes
+/// an explicit check for the 'admin' role, granting them all permissions.
 /// {@endtemplate}
 class PermissionService {
   /// {@macro permission_service}
@@ -20,22 +20,24 @@ class PermissionService {
   /// - [user]: The authenticated user.
   /// - [permission]: The permission string to check (e.g., `headline.read`).
   bool hasPermission(User user, String permission) {
-    // Administrators have all permissions
-    if (user.role == UserRole.admin) {
+    // Administrators implicitly have all permissions.
+    if (user.roles.contains(UserRoles.admin)) {
       return true;
     }
 
-    // Check if the user's role is in the map and has the permission
-    return rolePermissions[user.role]?.contains(permission) ?? false;
+    // Check if any of the user's roles grant the required permission.
+    return user.roles.any(
+      (role) => rolePermissions[role]?.contains(permission) ?? false,
+    );
   }
 
-  /// Checks if the given [user] has the [UserRole.admin] role.
+  /// Checks if the given [user] has the 'admin' role.
   ///
   /// This is a convenience method for checks that are strictly limited
   /// to administrators, bypassing the permission map.
   ///
   /// - [user]: The authenticated user.
   bool isAdmin(User user) {
-    return user.role == UserRole.admin;
+    return user.roles.contains(UserRoles.admin);
   }
 }

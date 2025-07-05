@@ -21,6 +21,11 @@ management dashboard](https://github.com/headlines-toolkit/ht-dashboard).
     the ability to easily link anonymous accounts to permanent ones. Focus on
     user experience while `ht_api` handles the security complexities.
 
+*   ⚡️ **Flexible Role-Based Access Control (RBAC):** Implement granular
+    permissions with a flexible, multi-role system. Assign multiple roles to
+    users (e.g., 'admin', 'publisher', 'premium_user') to precisely control
+    access to different API features and data management capabilities.
+
 *   ⚙️ **Synchronized App Settings:** Ensure a consistent and personalized user
     experience across devices by effortlessly syncing application preferences
     like theme, language, font styles, and more.

@@ -29,39 +29,42 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
       final appConfig = await _appConfigRepository.read(id: _appConfigId);
       final limits = appConfig.userPreferenceLimits;
 
-      // 2. Determine the limit based on user role and item type
+      // Admins have no limits.
+      if (user.roles.contains(UserRoles.admin)) {
+        return;
+      }
+
+      // 2. Determine the limit based on the user's highest role.
       int limit;
-      switch (user.role) {
-        case UserRole.guestUser:
-          if (itemType == 'headline') {
-            limit = limits.guestSavedHeadlinesLimit;
-          } else {
-            // Applies to countries, sources, categories
-            limit = limits.guestFollowedItemsLimit;
-          }
-        case UserRole.standardUser:
-          if (itemType == 'headline') {
-            limit = limits.authenticatedSavedHeadlinesLimit;
-          } else {
-            // Applies to countries, sources, categories
-            limit = limits.authenticatedFollowedItemsLimit;
-          }
-        case UserRole.premiumUser:
-          if (itemType == 'headline') {
-            limit = limits.premiumSavedHeadlinesLimit;
-          } else {
-            limit = limits.premiumFollowedItemsLimit;
-          }
-        case UserRole.admin:
-          // Admins have no limits
-          return;
+      String accountType;
+
+      if (user.roles.contains(UserRoles.premiumUser)) {
+        accountType = 'premium';
+        limit = (itemType == 'headline')
+            ? limits.premiumSavedHeadlinesLimit
+            : limits.premiumFollowedItemsLimit;
+      } else if (user.roles.contains(UserRoles.standardUser)) {
+        accountType = 'standard';
+        limit = (itemType == 'headline')
+            ? limits.authenticatedSavedHeadlinesLimit
+            : limits.authenticatedFollowedItemsLimit;
+      } else if (user.roles.contains(UserRoles.guestUser)) {
+        accountType = 'guest';
+        limit = (itemType == 'headline')
+            ? limits.guestSavedHeadlinesLimit
+            : limits.guestFollowedItemsLimit;
+      } else {
+        // Fallback for users with unknown or no roles.
+        throw const ForbiddenException(
+          'Cannot determine preference limits for this user account.',
+        );
       }
 
       // 3. Check if adding the item would exceed the limit
       if (currentCount >= limit) {
         throw ForbiddenException(
           'You have reached the maximum number of $itemType items allowed '
-          'for your account type (${user.role.name}).',
+          'for your account type ($accountType).',
         );
       }
     } on HtHttpException {
@@ -86,48 +89,58 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
       final appConfig = await _appConfigRepository.read(id: _appConfigId);
       final limits = appConfig.userPreferenceLimits;
 
-      // 2. Determine limits based on user role
+      // Admins have no limits.
+      if (user.roles.contains(UserRoles.admin)) {
+        return;
+      }
+
+      // 2. Determine limits based on the user's highest role.
       int followedItemsLimit;
       int savedHeadlinesLimit;
+      String accountType;
 
-      switch (user.role) {
-        case UserRole.guestUser:
-          followedItemsLimit = limits.guestFollowedItemsLimit;
-          savedHeadlinesLimit = limits.guestSavedHeadlinesLimit;
-        case UserRole.standardUser:
-          followedItemsLimit = limits.authenticatedFollowedItemsLimit;
-          savedHeadlinesLimit = limits.authenticatedSavedHeadlinesLimit;
-        case UserRole.premiumUser:
-          followedItemsLimit = limits.premiumFollowedItemsLimit;
-          savedHeadlinesLimit = limits.premiumSavedHeadlinesLimit;
-        case UserRole.admin:
-          // Admins have no limits
-          return;
+      if (user.roles.contains(UserRoles.premiumUser)) {
+        accountType = 'premium';
+        followedItemsLimit = limits.premiumFollowedItemsLimit;
+        savedHeadlinesLimit = limits.premiumSavedHeadlinesLimit;
+      } else if (user.roles.contains(UserRoles.standardUser)) {
+        accountType = 'standard';
+        followedItemsLimit = limits.authenticatedFollowedItemsLimit;
+        savedHeadlinesLimit = limits.authenticatedSavedHeadlinesLimit;
+      } else if (user.roles.contains(UserRoles.guestUser)) {
+        accountType = 'guest';
+        followedItemsLimit = limits.guestFollowedItemsLimit;
+        savedHeadlinesLimit = limits.guestSavedHeadlinesLimit;
+      } else {
+        // Fallback for users with unknown or no roles.
+        throw const ForbiddenException(
+          'Cannot determine preference limits for this user account.',
+        );
       }
 
       // 3. Check if proposed preferences exceed limits
       if (updatedPreferences.followedCountries.length > followedItemsLimit) {
         throw ForbiddenException(
           'You have reached the maximum number of followed countries allowed '
-          'for your account type (${user.role.name}).',
+          'for your account type ($accountType).',
         );
       }
       if (updatedPreferences.followedSources.length > followedItemsLimit) {
         throw ForbiddenException(
           'You have reached the maximum number of followed sources allowed '
-          'for your account type (${user.role.name}).',
+          'for your account type ($accountType).',
         );
       }
       if (updatedPreferences.followedCategories.length > followedItemsLimit) {
         throw ForbiddenException(
           'You have reached the maximum number of followed categories allowed '
-          'for your account type (${user.role.name}).',
+          'for your account type ($accountType).',
         );
       }
       if (updatedPreferences.savedHeadlines.length > savedHeadlinesLimit) {
         throw ForbiddenException(
           'You have reached the maximum number of saved headlines allowed '
-          'for your account type (${user.role.name}).',
+          'for your account type ($accountType).',
         );
       }
     } on HtHttpException {
