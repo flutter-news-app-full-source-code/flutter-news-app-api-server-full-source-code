@@ -41,11 +41,65 @@ class AuthService {
 
   /// Initiates the email sign-in process.
   ///
-  /// Generates a verification code, stores it, and sends it via email.
+  /// For standard sign-in (user-facing app), it generates a verification code,
+  /// stores it, and sends it via email without checking for user existence.
+  ///
+  /// For dashboard login (`isDashboardLogin: true`), it first verifies that a
+  /// user with the given [email] exists and has either the 'admin' or
+  /// 'publisher' role before sending the code.
+  ///
+  /// - [email]: The email address to send the code to.
+  /// - [isDashboardLogin]: A flag to indicate if this is a login attempt from
+  ///   the dashboard, which enforces stricter checks.
+  ///
   /// Throws [InvalidInputException] for invalid email format (via email client).
+  /// Throws [UnauthorizedException] if `isDashboardLogin` is true and the user
+  /// does not exist.
+  /// Throws [ForbiddenException] if `isDashboardLogin` is true and the user
+  /// exists but lacks the required roles.
   /// Throws [OperationFailedException] if code generation/storage/email fails.
-  Future<void> initiateEmailSignIn(String email) async {
+  Future<void> initiateEmailSignIn(
+    String email, {
+    bool isDashboardLogin = false,
+  }) async {
     try {
+      // For dashboard login, first validate the user exists and has permissions.
+      if (isDashboardLogin) {
+        print('Dashboard login initiated for $email. Verifying user...');
+        User? user;
+        try {
+          final query = {'email': email};
+          final response = await _userRepository.readAllByQuery(query);
+          if (response.items.isNotEmpty) {
+            user = response.items.first;
+          }
+        } on HtHttpException catch (e) {
+          print('Repository error while verifying dashboard user $email: $e');
+          rethrow;
+        }
+
+        if (user == null) {
+          print('Dashboard login failed: User $email not found.');
+          throw const UnauthorizedException(
+            'This email address is not registered for dashboard access.',
+          );
+        }
+
+        final hasRequiredRole =
+            user.roles.contains(UserRoles.admin) ||
+            user.roles.contains(UserRoles.publisher);
+
+        if (!hasRequiredRole) {
+          print(
+            'Dashboard login failed: User ${user.id} lacks required roles.',
+          );
+          throw const ForbiddenException(
+            'Your account does not have the required permissions to sign in.',
+          );
+        }
+        print('Dashboard user ${user.id} verified successfully.');
+      }
+
       // Generate and store the code for standard sign-in
       final code = await _verificationCodeStorageService
           .generateAndStoreSignInCode(email);
