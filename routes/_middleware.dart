@@ -111,6 +111,19 @@ HtDataRepository<Country> _createCountryRepository() {
   return HtDataRepository<Country>(dataClient: client);
 }
 
+HtDataRepository<User> _createAdminUserRepository() {
+  print('Initializing User Repository with Admin...');
+  // This assumes `adminUserFixtureData` is available from `ht_shared`.
+  final initialData = usersFixturesData;
+  final client = HtDataInMemory<User>(
+    toJson: (u) => u.toJson(),
+    getId: (u) => u.id,
+    initialData: initialData,
+  );
+  print('User Repository Initialized with admin user.');
+  return HtDataRepository<User>(dataClient: client);
+}
+
 // New repositories for user settings and preferences
 HtDataRepository<UserAppSettings> _createUserAppSettingsRepository() {
   print('Initializing UserAppSettings Repository...');
@@ -187,15 +200,9 @@ Handler middleware(Handler handler) {
   const uuid = Uuid();
 
   // --- Auth Dependencies ---
-  // User Repo (using InMemory for now)
-  final userRepository = HtDataRepository<User>(
-    dataClient: HtDataInMemory<User>(
-      toJson: (u) => u.toJson(),
-      getId: (u) => u.id,
-      // No initial user data fixture needed for auth flow typically
-    ),
-  );
-  print('[MiddlewareSetup] HtDataRepository<User> instantiated.');
+  // User Repo with pre-loaded admin user
+  final userRepository = _createAdminUserRepository();
+  print('[MiddlewareSetup] HtDataRepository<User> with admin user instantiated.');
   // Email Repo (using InMemory)
   const emailRepository = HtEmailRepository(
     emailClient: HtEmailInMemoryClient(),
