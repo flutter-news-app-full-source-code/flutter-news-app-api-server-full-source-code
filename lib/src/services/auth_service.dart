@@ -65,19 +65,7 @@ class AuthService {
     try {
       // For dashboard login, first validate the user exists and has permissions.
       if (isDashboardLogin) {
-        print('Dashboard login initiated for $email. Verifying user...');
-        User? user;
-        try {
-          final query = {'email': email};
-          final response = await _userRepository.readAllByQuery(query);
-          if (response.items.isNotEmpty) {
-            user = response.items.first;
-          }
-        } on HtHttpException catch (e) {
-          print('Repository error while verifying dashboard user $email: $e');
-          rethrow;
-        }
-
+        final user = await _findUserByEmail(email);
         if (user == null) {
           print('Dashboard login failed: User $email not found.');
           throw const UnauthorizedException(
@@ -162,12 +150,9 @@ class AuthService {
     User user;
     try {
       // Attempt to find user by email
-      final query = {'email': email};
-      final paginatedResponse = await _userRepository.readAllByQuery(query);
-
-      if (paginatedResponse.items.isNotEmpty) {
-        user = paginatedResponse.items.first;
-        print('Found existing user: ${user.id} for email $email');
+      final existingUser = await _findUserByEmail(email);
+      if (existingUser != null) {
+        user = existingUser;
       } else {
         // User not found.
         if (isDashboardLogin) {
@@ -554,6 +539,23 @@ class AuthService {
       // Catch unexpected errors during orchestration
       print('Error during deleteAccount for user $userId: $e');
       throw OperationFailedException('Failed to delete user account: $e');
+    }
+  }
+
+  /// Finds a user by their email address.
+  ///
+  /// Returns the [User] if found, otherwise `null`.
+  /// Re-throws any [HtHttpException] from the repository.
+  Future<User?> _findUserByEmail(String email) async {
+    try {
+      final query = {'email': email};
+      final response = await _userRepository.readAllByQuery(query);
+      if (response.items.isNotEmpty) {
+        return response.items.first;
+      }
+      return null;
+    } on HtHttpException {
+      rethrow;
     }
   }
 }
