@@ -41,23 +41,23 @@ class AuthService {
 
   /// Initiates the email sign-in process.
   ///
-  /// For standard sign-in (user-facing app), it generates a verification code,
-  /// stores it, and sends it via email without checking for user existence.
+  /// This method is context-aware based on the [isDashboardLogin] flag.
   ///
-  /// For dashboard login (`isDashboardLogin: true`), it first verifies that a
-  /// user with the given [email] exists and has either the 'admin' or
-  /// 'publisher' role before sending the code.
+  /// - For the user-facing app (`isDashboardLogin: false`), it generates and
+  ///   sends a verification code to the given [email] without pre-validation,
+  ///   supporting a unified sign-in/sign-up flow.
+  /// - For the dashboard (`isDashboardLogin: true`), it performs a strict
+  ///   login-only check. It verifies that a user with the given [email] exists
+  ///   and has either the 'admin' or 'publisher' role *before* sending a code.
   ///
   /// - [email]: The email address to send the code to.
   /// - [isDashboardLogin]: A flag to indicate if this is a login attempt from
   ///   the dashboard, which enforces stricter checks.
   ///
-  /// Throws [InvalidInputException] for invalid email format (via email client).
   /// Throws [UnauthorizedException] if `isDashboardLogin` is true and the user
   /// does not exist.
   /// Throws [ForbiddenException] if `isDashboardLogin` is true and the user
   /// exists but lacks the required roles.
-  /// Throws [OperationFailedException] if code generation/storage/email fails.
   Future<void> initiateEmailSignIn(
     String email, {
     bool isDashboardLogin = false,
@@ -123,19 +123,15 @@ class AuthService {
   ///
   /// This method is context-aware based on the [isDashboardLogin] flag.
   ///
-  /// - If `isDashboardLogin` is `true`, it validates the code and logs in the
-  ///   existing user. It will not create a new user.
-  /// - If `isDashboardLogin` is `false` (default), it validates the code and
-  ///   either logs in the existing user or creates a new one if they don't
-  ///   exist.
-  ///   New users are created with the 'standardUser' role.
+  /// - For the dashboard (`isDashboardLogin: true`), it validates the code and
+  ///   logs in the existing user. It will not create a new user in this flow.
+  /// - For the user-facing app (`isDashboardLogin: false`), it validates the
+  ///   code and either logs in the existing user or creates a new one with a
+  ///   'standardUser' role if they don't exist.
   ///
   /// Returns the authenticated [User] and a new authentication token.
   ///
   /// Throws [InvalidInputException] if the code is invalid or expired.
-  /// Throws [UnauthorizedException] if `isDashboardLogin` is true and the user
-  /// is not found (as a safeguard).
-  /// Throws [OperationFailedException] for user lookup/creation or token errors.
   Future<({User user, String token})> completeEmailSignIn(
     String email,
     String code, {
@@ -187,7 +183,7 @@ class AuthService {
         print('User not found for $email, creating new user.');
 
         // All new users created via the public API get the standard role.
-        // Admin users must be provisioned out-of-band (e.g., via databse seed).
+        // Admin users must be provisioned out-of-band (e.g., via fixtures).
         final roles = [UserRoles.standardUser];
 
         user = User(
