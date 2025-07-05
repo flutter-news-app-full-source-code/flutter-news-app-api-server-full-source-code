@@ -1,4 +1,3 @@
-import 'package:ht_api/src/rbac/permission_service.dart' show PermissionService;
 import 'package:ht_api/src/rbac/permissions.dart';
 import 'package:ht_shared/ht_shared.dart';
 
@@ -25,6 +24,13 @@ final Set<String> _standardUserPermissions = {
 // but this set can be expanded later for premium-specific features.
 final Set<String> _premiumUserPermissions = {..._standardUserPermissions};
 
+final Set<String> _publisherPermissions = {
+  ..._standardUserPermissions,
+  Permissions.headlineCreate,
+  Permissions.headlineUpdate,
+  Permissions.headlineDelete,
+};
+
 final Set<String> _adminPermissions = {
   ..._standardUserPermissions,
   Permissions.headlineCreate,
@@ -48,16 +54,17 @@ final Set<String> _adminPermissions = {
 /// Defines the mapping between user roles and the permissions they possess.
 ///
 /// This map is the core of the Role-Based Access Control (RBAC) system.
-/// Each key is a [UserRole], and the associated value is a [Set] of
+/// Each key is a role string, and the associated value is a [Set] of
 /// [Permissions] strings that users with that role are granted.
 ///
 /// Note: Administrators typically have implicit access to all resources
 /// regardless of this map, but including their permissions here can aid
-/// documentation and clarity. The [PermissionService] should handle the
+/// documentation and clarity. The `PermissionService` should handle the
 /// explicit admin bypass if desired.
-final Map<UserRole, Set<String>> rolePermissions = {
-  UserRole.guestUser: _guestUserPermissions,
-  UserRole.standardUser: _standardUserPermissions,
-  UserRole.premiumUser: _premiumUserPermissions,
-  UserRole.admin: _adminPermissions,
+final Map<String, Set<String>> rolePermissions = {
+  UserRoles.guestUser: _guestUserPermissions,
+  UserRoles.standardUser: _standardUserPermissions,
+  UserRoles.premiumUser: _premiumUserPermissions,
+  UserRoles.publisher: _publisherPermissions,
+  UserRoles.admin: _adminPermissions,
 };
