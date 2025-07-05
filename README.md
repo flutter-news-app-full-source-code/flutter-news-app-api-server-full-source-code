@@ -33,13 +33,9 @@ management dashboard](https://github.com/headlines-toolkit/ht-dashboard).
 *   👤 **Personalized User Preferences:** Enable richer user interactions by
     managing and syncing user-specific data such as saved headlines, followed sources, or other personalized content tailored to individual users.
 
-*   💾 **Robust Data Management:** Securely manage core news application data,
-    including headlines, categories, and sources, through a well-structured
-    and protected API.
-
-*   🔀 **Flexible Data Sorting:** Order lists of headlines, sources, and other
-    data by various fields in ascending or descending order, allowing for
-    dynamic and user-driven content presentation.
+*   💾 **Robust Data Management:** Securely manage core news data (headlines,
+    categories, sources) through a well-structured API that supports flexible
+    querying and sorting for dynamic content presentation.
 
 *   📊 **Dynamic Dashboard Summary:** Access real-time, aggregated metrics on
     key data points like total headlines, categories, and sources, providing
