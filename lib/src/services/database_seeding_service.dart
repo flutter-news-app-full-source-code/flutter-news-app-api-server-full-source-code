@@ -165,8 +165,8 @@ class DatabaseSeedingService {
           await _connection.execute(
             Sql.named(
               'INSERT INTO categories (id, name, description, icon_url, '
-              'status, type, created_at, updated_at) VALUES (@id, @name, '
-              '@description, @iconUrl, @status, @type, @created_at, @updated_at) '
+              'status, type, created_at, updated_at) VALUES (@id, @name, @description, '
+              '@icon_url, @status, @type, @created_at, @updated_at) '
               'ON CONFLICT (id) DO NOTHING',
             ),
             parameters: category.toJson(),
@@ -207,8 +207,8 @@ class DatabaseSeedingService {
             Sql.named(
               'INSERT INTO headlines (id, title, source_id, category_id, '
               'image_url, url, published_at, description, content) '
-              'VALUES (@id, @title, @sourceId, @categoryId, @imageUrl, @url, '
-              '@publishedAt, @description, @content) '
+              'VALUES (@id, @title, @source_id, @category_id, @image_url, @url, '
+              '@published_at, @description, @content) '
               'ON CONFLICT (id) DO NOTHING',
             ),
             parameters: headline.toJson(),
