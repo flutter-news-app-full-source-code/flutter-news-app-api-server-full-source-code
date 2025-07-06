@@ -61,6 +61,7 @@ class DatabaseSeedingService {
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
             description TEXT,
+            icon_url TEXT,
             status TEXT,
             type TEXT,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -163,9 +164,9 @@ class DatabaseSeedingService {
           final category = Category.fromJson(data);
           await _connection.execute(
             Sql.named(
-              'INSERT INTO categories (id, name, description, status, '
-              'type, created_at, updated_at) VALUES (@id, @name, '
-              '@description, @status, @type, @created_at, @updated_at) '
+              'INSERT INTO categories (id, name, description, icon_url, '
+              'status, type, created_at, updated_at) VALUES (@id, @name, '
+              '@description, @iconUrl, @status, @type, @created_at, @updated_at) '
               'ON CONFLICT (id) DO NOTHING',
             ),
             parameters: category.toJson(),
