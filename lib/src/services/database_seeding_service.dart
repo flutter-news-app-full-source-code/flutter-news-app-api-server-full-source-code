@@ -119,8 +119,8 @@ class DatabaseSeedingService {
           CREATE TABLE IF NOT EXISTS user_app_settings (
             id TEXT PRIMARY KEY,
             user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-            display_settings JSONB NOT NULL,
-            language JSONB NOT NULL,
+            display_settings JSONB NOT NULL, -- Nested object, stored as JSON
+            language TEXT NOT NULL, -- Simple string, stored as TEXT
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ
           );
@@ -337,8 +337,10 @@ class DatabaseSeedingService {
           parameters: {
             'id': adminSettings.id,
             'user_id': adminUser.id,
-            'display_settings': adminSettings.displaySettings.toJson(),
-            'language': adminSettings.language.toJson(),
+            'display_settings':
+                adminSettings.displaySettings.toJson(), // This is a complex object
+            'language':
+                adminSettings.language, // This is a simple String
           },
         );
 
