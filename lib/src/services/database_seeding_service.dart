@@ -79,7 +79,7 @@ class DatabaseSeedingService {
             language TEXT,
             status TEXT,
             type TEXT,
-            source_type JSONB,
+            source_type TEXT,
             headquarters_country_id TEXT REFERENCES countries(id),
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ
