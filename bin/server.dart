@@ -23,16 +23,17 @@ import 'package:logging/logging.dart';
 import 'package:postgres/postgres.dart';
 import 'package:uuid/uuid.dart';
 
-/// Global logger instance.
+// This is the generated file from Dart Frog.
+// We need to import it to get the `buildRootHandler` function.
+import '../.dart_frog/server.dart';
+
+// Global logger instance.
 final _log = Logger('ht_api');
 
-/// Global PostgreSQL connection instance.
+// Global PostgreSQL connection instance.
 late final Connection _connection;
 
-/// Creates a data repository for a given type [T].
-///
-/// This helper function centralizes the creation of repositories,
-/// ensuring they all use the same database connection and logger.
+// Creates a data repository for a given type [T].
 HtDataRepository<T> _createRepository<T>({
   required String tableName,
   required FromJson<T> fromJson,
@@ -49,14 +50,7 @@ HtDataRepository<T> _createRepository<T>({
   );
 }
 
-/// The main entry point for the server.
-///
-/// This function is responsible for:
-/// 1. Setting up the global logger.
-/// 2. Establishing the PostgreSQL database connection.
-/// 3. Providing these dependencies to the Dart Frog handler.
-/// 4. Gracefully closing the database connection on server shutdown.
-Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
+Future<void> main() async {
   // 1. Setup Logger
   Logger.root.level = Level.ALL;
   Logger.root.onRecord.listen((record) {
@@ -88,17 +82,11 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
       username: username,
       password: password,
     ),
-    // Using `require` is a more secure default. For local development against
-    // a non-SSL database, this may need to be changed to `SslMode.disable`.
     settings: const ConnectionSettings(sslMode: SslMode.require),
   );
   _log.info('PostgreSQL database connection established.');
 
   // 3. Initialize and run database seeding
-  // This runs on every startup. The operations are idempotent (`IF NOT EXISTS`,
-  // `ON CONFLICT DO NOTHING`), so it's safe to run every time. This ensures
-  // the database is always in a valid state, especially for first-time setup
-  // in any environment.
   final seedingService = DatabaseSeedingService(
     connection: _connection,
     log: _log,
@@ -181,11 +169,8 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
     appConfigRepository: appConfigRepository,
   );
 
-  // 6. Populate the DependencyContainer with all initialized instances.
-  // This must be done before the server starts handling requests, as the
-  // root middleware will read from this container to provide dependencies.
+  // 6. Populate the DependencyContainer
   DependencyContainer.instance.init(
-    // Repositories
     headlineRepository: headlineRepository,
     categoryRepository: categoryRepository,
     sourceRepository: sourceRepository,
@@ -195,7 +180,6 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
     userContentPreferencesRepository: userContentPreferencesRepository,
     appConfigRepository: appConfigRepository,
     emailRepository: emailRepository,
-    // Services
     tokenBlacklistService: tokenBlacklistService,
     authTokenService: authTokenService,
     verificationCodeStorageService: verificationCodeStorageService,
@@ -205,10 +189,10 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
     userPreferenceLimitService: userPreferenceLimitService,
   );
 
-  // 7. Start the server.
-  // The original `handler` from Dart Frog is used. The root middleware in
-  // `routes/_middleware.dart` will now be responsible for injecting all the
-  // dependencies from the `DependencyContainer` into the request context.
+  // 7. Build the handler and start the server
+  final ip = InternetAddress.anyIPv4;
+  final port = int.parse(Platform.environment['PORT'] ?? '8080');
+  final handler = buildRootHandler();
   final server = await serve(handler, ip, port);
   _log.info('Server listening on port ${server.port}');
 
@@ -221,6 +205,4 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
     _log.info('Server shut down.');
     exit(0);
   });
-
-  return server;
 }
