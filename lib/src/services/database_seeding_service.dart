@@ -255,11 +255,10 @@ class DatabaseSeedingService {
         // Seed Admin User
         _log.fine('Seeding admin user...');
         // Find the admin user in the fixture data.
-        final adminUserData = usersFixturesData.firstWhere(
-          (user) => (user['roles'] as List).contains(UserRoles.admin),
+        final adminUser = usersFixturesData.firstWhere(
+          (user) => user.roles.contains(UserRoles.admin),
           orElse: () => throw StateError('Admin user not found in fixtures.'),
         );
-        final adminUser = User.fromJson(adminUserData);
         await _connection.execute(
           Sql.named(
             'INSERT INTO users (id, email, roles) '
