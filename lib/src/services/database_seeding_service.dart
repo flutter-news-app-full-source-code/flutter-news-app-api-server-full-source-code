@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:ht_shared/ht_shared.dart';
 import 'package:logging/logging.dart';
 import 'package:postgres/postgres.dart';
@@ -59,7 +60,11 @@ class DatabaseSeedingService {
         await _connection.execute('''
           CREATE TABLE IF NOT EXISTS categories (
             id TEXT PRIMARY KEY,
-            name TEXT NOT NULL UNIQUE,
+            name TEXT NOT NULL,
+            description TEXT,
+            icon_url TEXT,
+            status TEXT,
+            type TEXT,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ
           );
@@ -69,7 +74,14 @@ class DatabaseSeedingService {
         await _connection.execute('''
           CREATE TABLE IF NOT EXISTS sources (
             id TEXT PRIMARY KEY,
-            name TEXT NOT NULL UNIQUE,
+            name TEXT NOT NULL,
+            description TEXT,
+            url TEXT,
+            language TEXT,
+            status TEXT,
+            type TEXT,
+            source_type TEXT,
+            headquarters_country_id TEXT REFERENCES countries(id),
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ
           );
@@ -79,8 +91,11 @@ class DatabaseSeedingService {
         await _connection.execute('''
           CREATE TABLE IF NOT EXISTS countries (
             id TEXT PRIMARY KEY,
-            name TEXT NOT NULL UNIQUE,
-            code TEXT NOT NULL UNIQUE,
+            name TEXT NOT NULL,
+            iso_code TEXT NOT NULL UNIQUE,
+            flag_url TEXT NOT NULL,
+            status TEXT,
+            type TEXT,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ
           );
@@ -93,13 +108,14 @@ class DatabaseSeedingService {
             title TEXT NOT NULL,
             source_id TEXT NOT NULL,
             category_id TEXT NOT NULL,
-            image_url TEXT NOT NULL,
-            url TEXT NOT NULL,
-            published_at TIMESTAMPTZ NOT NULL,
+            image_url TEXT,
+            url TEXT,
+            published_at TIMESTAMPTZ,
             description TEXT,
-            content TEXT,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-            updated_at TIMESTAMPTZ
+            updated_at TIMESTAMPTZ,
+            status TEXT,
+            type TEXT
           );
         ''');
 
@@ -108,8 +124,11 @@ class DatabaseSeedingService {
           CREATE TABLE IF NOT EXISTS user_app_settings (
             id TEXT PRIMARY KEY,
             user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-            display_settings JSONB NOT NULL,
-            language JSONB NOT NULL,
+            display_settings JSONB NOT NULL, -- Nested object, stored as JSON
+            language TEXT NOT NULL, -- Simple string, stored as TEXT
+            feed_preferences JSONB NOT NULL,
+            engagement_shown_counts JSONB NOT NULL,
+            engagement_last_shown_timestamps JSONB NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ
           );
@@ -158,12 +177,44 @@ class DatabaseSeedingService {
         _log.fine('Seeding categories...');
         for (final data in categoriesFixturesData) {
           final category = Category.fromJson(data);
+          final params = category.toJson();
+
+          // Ensure optional fields exist for the postgres driver.
+          // The driver requires all named parameters to be present in the map,
+          // even if the value is null. The model's `toJson` with
+          // `includeIfNull: false` will omit keys for null fields.
+          params.putIfAbsent('description', () => null);
+          params.putIfAbsent('icon_url', () => null);
+          params.putIfAbsent('updated_at', () => null);
+
           await _connection.execute(
             Sql.named(
-              'INSERT INTO categories (id, name) VALUES (@id, @name) '
+              'INSERT INTO categories (id, name, description, icon_url, '
+              'status, type, created_at, updated_at) VALUES (@id, @name, @description, '
+              '@icon_url, @status, @type, @created_at, @updated_at) '
               'ON CONFLICT (id) DO NOTHING',
             ),
-            parameters: category.toJson(),
+            parameters: params,
+          );
+        }
+
+        // Seed Countries (must be done before sources and headlines)
+        _log.fine('Seeding countries...');
+        for (final data in countriesFixturesData) {
+          final country = Country.fromJson(data);
+          final params = country.toJson();
+
+          // Ensure optional fields exist for the postgres driver.
+          params.putIfAbsent('updated_at', () => null);
+
+          await _connection.execute(
+            Sql.named(
+              'INSERT INTO countries (id, name, iso_code, flag_url, status, '
+              'type, created_at, updated_at) VALUES (@id, @name, @iso_code, '
+              '@flag_url, @status, @type, @created_at, @updated_at) '
+              'ON CONFLICT (id) DO NOTHING',
+            ),
+            parameters: params,
           );
         }
 
@@ -171,25 +222,35 @@ class DatabaseSeedingService {
         _log.fine('Seeding sources...');
         for (final data in sourcesFixturesData) {
           final source = Source.fromJson(data);
+          final params = source.toJson();
+
+          // The `headquarters` field in the model is a nested `Country`
+          // object. We extract its ID to store in the
+          // `headquarters_country_id` column and then remove the original
+          // nested object from the parameters to avoid a "superfluous
+          // variable" error.
+          params['headquarters_country_id'] = source.headquarters?.id;
+          params.remove('headquarters');
+
+          // Ensure optional fields exist for the postgres driver.
+          params.putIfAbsent('description', () => null);
+          params.putIfAbsent('url', () => null);
+          params.putIfAbsent('language', () => null);
+          params.putIfAbsent('source_type', () => null);
+          params.putIfAbsent('status', () => null);
+          params.putIfAbsent('type', () => null);
+          params.putIfAbsent('updated_at', () => null);
+
           await _connection.execute(
             Sql.named(
-              'INSERT INTO sources (id, name) VALUES (@id, @name) '
+              'INSERT INTO sources (id, name, description, url, language, '
+              'status, type, source_type, headquarters_country_id, '
+              'created_at, updated_at) VALUES (@id, @name, @description, '
+              '@url, @language, @status, @type, @source_type, '
+              '@headquarters_country_id, @created_at, @updated_at) '
               'ON CONFLICT (id) DO NOTHING',
             ),
-            parameters: source.toJson(),
-          );
-        }
-
-        // Seed Countries
-        _log.fine('Seeding countries...');
-        for (final data in countriesFixturesData) {
-          final country = Country.fromJson(data);
-          await _connection.execute(
-            Sql.named(
-              'INSERT INTO countries (id, name, code) '
-              'VALUES (@id, @name, @code) ON CONFLICT (id) DO NOTHING',
-            ),
-            parameters: country.toJson(),
+            parameters: params,
           );
         }
 
@@ -197,15 +258,41 @@ class DatabaseSeedingService {
         _log.fine('Seeding headlines...');
         for (final data in headlinesFixturesData) {
           final headline = Headline.fromJson(data);
+          final params = headline.toJson();
+ 
+          // The `source_id` and `category_id` columns are NOT NULL. If a fixture
+          // is missing the nested source or category object, we cannot proceed.
+          if (headline.source == null || headline.category == null) {
+            _log.warning(
+              'Skipping headline fixture with missing source or category ID: '
+              '${headline.title}',
+            );
+            continue;
+          }
+ 
+          // Extract IDs from nested objects and remove the objects to match schema.
+          params['source_id'] = headline.source!.id;
+          params['category_id'] = headline.category!.id;
+          params.remove('source');
+          params.remove('category');
+ 
+          // Ensure optional fields exist for the postgres driver.
+          params.putIfAbsent('description', () => null);
+          params.putIfAbsent('updated_at', () => null);
+          params.putIfAbsent('image_url', () => null);
+          params.putIfAbsent('url', () => null);
+          params.putIfAbsent('published_at', () => null);
+ 
           await _connection.execute(
             Sql.named(
               'INSERT INTO headlines (id, title, source_id, category_id, '
-              'image_url, url, published_at, description, content) '
-              'VALUES (@id, @title, @sourceId, @categoryId, @imageUrl, @url, '
-              '@publishedAt, @description, @content) '
+              'image_url, url, published_at, description, status, '
+              'type, created_at, updated_at) VALUES (@id, @title, @source_id, '
+              '@category_id, @image_url, @url, @published_at, @description, '
+              '@status, @type, @created_at, @updated_at) '
               'ON CONFLICT (id) DO NOTHING',
             ),
-            parameters: headline.toJson(),
+            parameters: params,
           );
         }
 
@@ -236,14 +323,20 @@ class DatabaseSeedingService {
       try {
         // Seed AppConfig
         _log.fine('Seeding AppConfig...');
-        final appConfig = AppConfig.fromJson(appConfigFixtureData);
+        final appConfig = AppConfig.fromJson(appConfigFixtureData);  
+        // The `app_config` table only has `id` and `user_preference_limits`.
+        // We must provide an explicit map to avoid a "superfluous variables"
+        // error from the postgres driver.
         await _connection.execute(
           Sql.named(
             'INSERT INTO app_config (id, user_preference_limits) '
             'VALUES (@id, @user_preference_limits) '
             'ON CONFLICT (id) DO NOTHING',
           ),
-          parameters: appConfig.toJson(),
+          parameters: {
+            'id': appConfig.id,
+            'user_preference_limits': appConfig.userPreferenceLimits.toJson(),
+          },
         );
 
         // Seed Admin User
@@ -253,13 +346,19 @@ class DatabaseSeedingService {
           (user) => user.roles.contains(UserRoles.admin),
           orElse: () => throw StateError('Admin user not found in fixtures.'),
         );
+        // The `users` table only has `id`, `email`, and `roles`. We must
+        // provide an explicit map to avoid a "superfluous variables" error.
         await _connection.execute(
           Sql.named(
             'INSERT INTO users (id, email, roles) '
             'VALUES (@id, @email, @roles) '
             'ON CONFLICT (id) DO NOTHING',
           ),
-          parameters: adminUser.toJson(),
+          parameters: {
+            'id': adminUser.id,
+            'email': adminUser.email,
+            'roles': jsonEncode(adminUser.roles),
+          },
         );
 
         // Seed default settings and preferences for the admin user.
@@ -268,12 +367,15 @@ class DatabaseSeedingService {
 
         await _connection.execute(
           Sql.named(
-            'INSERT INTO user_app_settings (id, user_id, '
-            'display_settings, language) '
-            'VALUES (@id, @user_id, @display_settings, @language) '
+            'INSERT INTO user_app_settings (id, user_id, display_settings, '
+            'language, feed_preferences, engagement_shown_counts, '
+            'engagement_last_shown_timestamps) VALUES (@id, @user_id, '
+            '@display_settings, @language, @feed_preferences, '
+            '@engagement_shown_counts, @engagement_last_shown_timestamps) '
             'ON CONFLICT (id) DO NOTHING',
           ),
-          parameters: {...adminSettings.toJson(), 'user_id': adminUser.id},
+          parameters: adminSettings.toJson()
+            ..['user_id'] = adminUser.id,
         );
 
         await _connection.execute(
@@ -284,7 +386,10 @@ class DatabaseSeedingService {
             '@followed_sources, @followed_countries, @saved_headlines) '
             'ON CONFLICT (id) DO NOTHING',
           ),
-          parameters: {...adminPreferences.toJson(), 'user_id': adminUser.id},
+          // Use toJson() to correctly serialize the lists of complex objects
+          // into a format the database driver can handle for JSONB columns.
+          parameters: adminPreferences.toJson()
+            ..['user_id'] = adminUser.id,
         );
 
         await _connection.execute('COMMIT');

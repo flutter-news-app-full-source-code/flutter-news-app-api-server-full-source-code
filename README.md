@@ -99,13 +99,14 @@ for more details.
     CONFLICT DO NOTHING` to avoid overwriting existing tables or data.
 
 
-    **Note on Web Client Integration (CORS):**
-    To allow web applications (like the HT Dashboard) to connect to this API,
-    the `CORS_ALLOWED_ORIGIN` environment variable must be set to the
-    specific origin of your web application (e.g., `https://your-dashboard.com`).
-    For local development, if this variable is not set, the API defaults to
-    allowing `http://localhost:3000` and issues a console warning. See the
-    `routes/api/v1/_middleware.dart` file for the exact implementation details.
+    **Note on Web Client Integration (CORS):** To allow web applications (like
+    the HT Dashboard) to connect to this API in production, the
+    `CORS_ALLOWED_ORIGIN` environment variable must be set to the specific
+    origin of your web application (e.g., `https://your-dashboard.com`).
+
+    For local development, the API automatically allows any request
+    originating from `localhost` on any port, so you do not need to set this
+    variable.
 
 ## ✅ Testing
 
