@@ -255,6 +255,17 @@ class DatabaseSeedingService {
           final headline = Headline.fromJson(data);
           final params = headline.toJson();
 
+          // The `source_id` and `category_id` columns are NOT NULL. If a
+          // fixture is missing these, the `toJson()` map will lack the key
+          // and cause a crash. We log a warning and skip the invalid entry.
+          if (params['source_id'] == null || params['category_id'] == null) {
+            _log.warning(
+              'Skipping headline fixture with missing source or category ID: '
+              '${headline.title}',
+            );
+            continue;
+          }
+
           // Ensure optional fields exist for the postgres driver.
           params.putIfAbsent('description', () => null);
           params.putIfAbsent('content', () => null);
@@ -262,10 +273,10 @@ class DatabaseSeedingService {
 
           await _connection.execute(
             Sql.named(
-              'INSERT INTO headlines (id, title, source_id, category_id, '
-              'image_url, url, published_at, description, content) '
+              'INSERT INTO headlines (id, title, source_id, category_id, image_url, '
+              'url, published_at, description, content, created_at, updated_at) '
               'VALUES (@id, @title, @source_id, @category_id, @image_url, @url, '
-              '@published_at, @description, @content) '
+              '@published_at, @description, @content, @created_at, @updated_at) '
               'ON CONFLICT (id) DO NOTHING',
             ),
             parameters: params,
