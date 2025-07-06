@@ -1,5 +1,16 @@
 import 'package:dart_frog/dart_frog.dart';
+import 'package:ht_api/src/config/dependency_container.dart';
 import 'package:ht_api/src/middlewares/error_handler.dart';
+import 'package:ht_api/src/rbac/permission_service.dart';
+import 'package:ht_api/src/services/auth_service.dart';
+import 'package:ht_api/src/services/auth_token_service.dart';
+import 'package:ht_api/src/services/dashboard_summary_service.dart';
+import 'package:ht_api/src/services/token_blacklist_service.dart';
+import 'package:ht_api/src/services/user_preference_limit_service.dart';
+import 'package:ht_api/src/services/verification_code_storage_service.dart';
+import 'package:ht_data_repository/ht_data_repository.dart';
+import 'package:ht_email_repository/ht_email_repository.dart';
+import 'package:ht_shared/ht_shared.dart';
 import 'package:uuid/uuid.dart';
 
 // --- Request ID Wrapper ---
@@ -46,27 +57,104 @@ class RequestId {
 
 // --- Middleware Definition ---
 Handler middleware(Handler handler) {
-  // This is the root middleware chain for the entire API.
-  // The order is important:
-  // 1. Request ID: Assigns a unique ID to each request for tracing.
-  // 2. Request Logger: Logs request and response details.
-  // 3. Error Handler: Catches all errors and formats them into a standard
-  //    JSON response.
+  // This is the root middleware for the entire API. It's responsible for
+  // providing all shared dependencies to the request context.
+  // The order of `.use()` calls is important: the last one in the chain
+  // runs first.
   return handler
+      // --- Core Middleware ---
+      // These run after all dependencies have been provided.
       .use(errorHandler())
       .use(requestLogger())
+      // --- Request ID Provider ---
+      // This middleware provides a unique ID for each request for tracing.
+      // It depends on the Uuid provider, so it must come after it.
       .use((innerHandler) {
-        // This middleware reads the Uuid and provides the RequestId.
-        // It must come after the Uuid provider in the chain.
         return (context) {
-          // Read the Uuid instance provided from the previous middleware.
           final uuid = context.read<Uuid>();
           final requestId = RequestId(uuid.v4());
           return innerHandler(context.provide<RequestId>(() => requestId));
         };
       })
+      // --- Dependency Providers ---
+      // These providers inject all repositories and services into the context.
+      // They read from the `DependencyContainer` which was populated at startup.
+      // This is the first set of middleware to run for any request.
+      .use(provider<Uuid>((_) => const Uuid()))
       .use(
-        // This provider is last in the chain, so it runs first.
-        provider<Uuid>((_) => const Uuid()),
+        provider<HtDataRepository<Headline>>(
+          (_) => DependencyContainer.instance.headlineRepository,
+        ),
+      )
+      .use(
+        provider<HtDataRepository<Category>>(
+          (_) => DependencyContainer.instance.categoryRepository,
+        ),
+      )
+      .use(
+        provider<HtDataRepository<Source>>(
+          (_) => DependencyContainer.instance.sourceRepository,
+        ),
+      )
+      .use(
+        provider<HtDataRepository<Country>>(
+          (_) => DependencyContainer.instance.countryRepository,
+        ),
+      )
+      .use(
+        provider<HtDataRepository<User>>(
+          (_) => DependencyContainer.instance.userRepository,
+        ),
+      )
+      .use(
+        provider<HtDataRepository<UserAppSettings>>(
+          (_) => DependencyContainer.instance.userAppSettingsRepository,
+        ),
+      )
+      .use(
+        provider<HtDataRepository<UserContentPreferences>>(
+          (_) => DependencyContainer.instance.userContentPreferencesRepository,
+        ),
+      )
+      .use(
+        provider<HtDataRepository<AppConfig>>(
+          (_) => DependencyContainer.instance.appConfigRepository,
+        ),
+      )
+      .use(
+        provider<HtEmailRepository>(
+          (_) => DependencyContainer.instance.emailRepository,
+        ),
+      )
+      .use(
+        provider<TokenBlacklistService>(
+          (_) => DependencyContainer.instance.tokenBlacklistService,
+        ),
+      )
+      .use(
+        provider<AuthTokenService>(
+          (_) => DependencyContainer.instance.authTokenService,
+        ),
+      )
+      .use(
+        provider<VerificationCodeStorageService>(
+          (_) => DependencyContainer.instance.verificationCodeStorageService,
+        ),
+      )
+      .use(provider<AuthService>((_) => DependencyContainer.instance.authService))
+      .use(
+        provider<DashboardSummaryService>(
+          (_) => DependencyContainer.instance.dashboardSummaryService,
+        ),
+      )
+      .use(
+        provider<PermissionService>(
+          (_) => DependencyContainer.instance.permissionService,
+        ),
+      )
+      .use(
+        provider<UserPreferenceLimitService>(
+          (_) => DependencyContainer.instance.userPreferenceLimitService,
+        ),
       );
 }
