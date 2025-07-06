@@ -107,13 +107,13 @@ class DatabaseSeedingService {
             title TEXT NOT NULL,
             source_id TEXT NOT NULL,
             category_id TEXT NOT NULL,
-            image_url TEXT NOT NULL,
-            url TEXT NOT NULL,
-            published_at TIMESTAMPTZ NOT NULL,
+            image_url TEXT,
+            url TEXT,
+            published_at TIMESTAMPTZ,
             description TEXT,
             content TEXT,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-            updated_at TIMESTAMPTZ
+            updated_at TIMESTAMPTZ,
             status TEXT,
             type TEXT
           );
