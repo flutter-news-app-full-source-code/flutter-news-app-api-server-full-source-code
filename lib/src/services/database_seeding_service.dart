@@ -230,4 +230,62 @@ class DatabaseSeedingService {
       );
     }
   }
+
+  /// Seeds the database with the initial AppConfig and the default admin user.
+  ///
+  /// This method is idempotent, using `ON CONFLICT DO NOTHING` to prevent
+  /// errors if the data already exists. It runs within a single transaction.
+  Future<void> seedInitialAdminAndConfig() async {
+    _log.info('Seeding initial AppConfig and admin user...');
+    try {
+      await _connection.execute('BEGIN');
+      try {
+        // Seed AppConfig
+        _log.fine('Seeding AppConfig...');
+        final appConfig = AppConfig.fromJson(appConfigFixtureData);
+        await _connection.execute(
+          Sql.named(
+            'INSERT INTO app_config (id, user_preference_limits) '
+            'VALUES (@id, @user_preference_limits) '
+            'ON CONFLICT (id) DO NOTHING',
+          ),
+          parameters: appConfig.toJson(),
+        );
+
+        // Seed Admin User
+        _log.fine('Seeding admin user...');
+        // Find the admin user in the fixture data.
+        final adminUserData = usersFixturesData.firstWhere(
+          (user) => (user['roles'] as List).contains(UserRoles.admin),
+          orElse: () => throw StateError('Admin user not found in fixtures.'),
+        );
+        final adminUser = User.fromJson(adminUserData);
+        await _connection.execute(
+          Sql.named(
+            'INSERT INTO users (id, email, roles) '
+            'VALUES (@id, @email, @roles) '
+            'ON CONFLICT (id) DO NOTHING',
+          ),
+          parameters: adminUser.toJson(),
+        );
+
+        await _connection.execute('COMMIT');
+        _log.info(
+          'Initial AppConfig and admin user seeding completed successfully.',
+        );
+      } catch (e) {
+        await _connection.execute('ROLLBACK');
+        rethrow;
+      }
+    } on Object catch (e, st) {
+      _log.severe(
+        'An error occurred during initial admin/config seeding.',
+        e,
+        st,
+      );
+      throw OperationFailedException(
+        'Failed to seed initial admin/config data: $e',
+      );
+    }
+  }
 }
