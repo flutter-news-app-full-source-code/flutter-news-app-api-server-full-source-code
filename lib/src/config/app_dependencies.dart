@@ -124,7 +124,18 @@ class AppDependencies {
     userRepository = _createRepository(
       connection,
       'users',
-      User.fromJson,
+      (json) {
+        // The postgres driver returns DateTime objects, but the model's
+        // fromJson expects ISO 8601 strings. We must convert them first.
+        if (json['created_at'] is DateTime) {
+          json['created_at'] = (json['created_at'] as DateTime).toIso8601String();
+        }
+        if (json['last_engagement_shown_at'] is DateTime) {
+          json['last_engagement_shown_at'] =
+              (json['last_engagement_shown_at'] as DateTime).toIso8601String();
+        }
+        return User.fromJson(json);
+      },
       (user) {
         // The `roles` field is a List<String>, but the database expects a
         // JSONB array. We must explicitly encode it.
