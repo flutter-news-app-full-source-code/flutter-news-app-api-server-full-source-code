@@ -66,14 +66,12 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
 
   // This middleware wraps the main handler. It awaits the completer's future,
   // effectively pausing the request until `initCompleter.complete()` is called.
-  final gatedHandler = handler.use(
-    (innerHandler) {
-      return (context) async {
-        await initCompleter.future;
-        return innerHandler(context);
-      };
-    },
-  );
+  final gatedHandler = handler.use((innerHandler) {
+    return (context) async {
+      await initCompleter.future;
+      return innerHandler(context);
+    };
+  });
 
   // 1. Setup Logger
   Logger.root.level = Level.ALL;
@@ -152,10 +150,10 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
   );
   final userContentPreferencesRepository =
       _createRepository<UserContentPreferences>(
-    tableName: 'user_content_preferences',
-    fromJson: UserContentPreferences.fromJson,
-    toJson: (p) => p.toJson(),
-  );
+        tableName: 'user_content_preferences',
+        fromJson: UserContentPreferences.fromJson,
+        toJson: (p) => p.toJson(),
+      );
   final appConfigRepository = _createRepository<AppConfig>(
     tableName: 'app_config',
     fromJson: AppConfig.fromJson,
@@ -167,7 +165,7 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
     emailClient: HtEmailInMemoryClient(),
   );
   final tokenBlacklistService = InMemoryTokenBlacklistService();
-  final authTokenService = JwtAuthTokenService(
+  final AuthTokenService authTokenService = JwtAuthTokenService(
     userRepository: userRepository,
     blacklistService: tokenBlacklistService,
     uuidGenerator: const Uuid(),
@@ -183,15 +181,17 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
     userContentPreferencesRepository: userContentPreferencesRepository,
     uuidGenerator: const Uuid(),
   );
-  final dashboardSummaryService = DashboardSummaryService(
-    headlineRepository: headlineRepository,
-    categoryRepository: categoryRepository,
-    sourceRepository: sourceRepository,
-  );
+  final dashboardSummaryService =
+      DashboardSummaryService(
+        headlineRepository: headlineRepository,
+        categoryRepository: categoryRepository,
+        sourceRepository: sourceRepository,
+      );
   const permissionService = PermissionService();
-  final userPreferenceLimitService = DefaultUserPreferenceLimitService(
-    appConfigRepository: appConfigRepository,
-  );
+  final UserPreferenceLimitService userPreferenceLimitService =
+      DefaultUserPreferenceLimitService(
+        appConfigRepository: appConfigRepository,
+      );
 
   // 6. Populate the DependencyContainer
   DependencyContainer.instance.init(
