@@ -66,23 +66,38 @@ for more details.
 
 1.  **Prerequisites:**
     *   Dart SDK (`>=3.0.0`)
+    *   PostgreSQL (`>=14.0` recommended)
     *   Dart Frog CLI (`dart pub global activate dart_frog_cli`)
-2.  **Clone the repository:**
+
+2.  **Configuration:**
+    Before running the server, you must configure the database connection by
+    setting the `DATABASE_URL` environment variable.
+
+    Create a `.env` file in the root of the project or export the variable in
+    your shell:
+    ```
+    DATABASE_URL="postgres://user:password@localhost:5432/ht_api_db"
+    ```
+
+3.  **Clone the repository:**
     ```bash
     git clone https://github.com/headlines-toolkit/ht-api.git
     cd ht-api
     ```
-3.  **Get dependencies:**
+4.  **Get dependencies:**
     ```bash
     dart pub get
     ```
-4.  **Run the development server:**
+5.  **Run the development server:**
     ```bash
     dart_frog dev
     ```
-    The API will typically be available at `http://localhost:8080`. Fixture data
-    from `lib/src/fixtures/` will be loaded into the in-memory repositories on
-    startup.
+    The API will typically be available at `http://localhost:8080`. On the
+    first startup, the server will connect to your PostgreSQL database, create the
+    necessary tables, and seed them with initial fixture data. This process is
+    non-destructive; it uses `CREATE TABLE IF NOT EXISTS` and `INSERT ... ON
+    CONFLICT DO NOTHING` to avoid overwriting existing tables or data.
+
 
     **Note on Web Client Integration (CORS):**
     To allow web applications (like the HT Dashboard) to connect to this API,

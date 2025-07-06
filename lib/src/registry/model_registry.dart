@@ -1,3 +1,5 @@
+// ignore_for_file: comment_references
+
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/rbac/permissions.dart';
 import 'package:ht_data_client/ht_data_client.dart';
