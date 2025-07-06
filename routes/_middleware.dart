@@ -1,24 +1,17 @@
 import 'package:dart_frog/dart_frog.dart';
-import 'package:ht_api/src/config/database_connection.dart';
+import 'package:ht_api/src/config/app_dependencies.dart';
 import 'package:ht_api/src/middlewares/error_handler.dart';
 import 'package:ht_api/src/rbac/permission_service.dart';
 import 'package:ht_api/src/services/auth_service.dart';
 import 'package:ht_api/src/services/auth_token_service.dart';
 import 'package:ht_api/src/services/dashboard_summary_service.dart';
-import 'package:ht_api/src/services/database_seeding_service.dart';
-import 'package:ht_api/src/services/default_user_preference_limit_service.dart';
-import 'package:ht_api/src/services/jwt_auth_token_service.dart';
 import 'package:ht_api/src/services/token_blacklist_service.dart';
 import 'package:ht_api/src/services/user_preference_limit_service.dart';
 import 'package:ht_api/src/services/verification_code_storage_service.dart';
-import 'package:ht_data_client/ht_data_client.dart';
-import 'package:ht_data_postgres/ht_data_postgres.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
-import 'package:ht_email_inmemory/ht_email_inmemory.dart';
 import 'package:ht_email_repository/ht_email_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 import 'package:logging/logging.dart';
-import 'package:postgres/postgres.dart';
 import 'package:uuid/uuid.dart';
 
 // --- Request ID Wrapper ---
@@ -66,24 +59,6 @@ class RequestId {
 // --- Middleware Definition ---
 final _log = Logger('RootMiddleware');
 
-/// Creates a data repository for a given type [T].
-HtDataRepository<T> _createRepository<T>({
-  required Connection connection,
-  required String tableName,
-  required FromJson<T> fromJson,
-  required ToJson<T> toJson,
-}) {
-  return HtDataRepository<T>(
-    dataClient: HtDataPostgresClient<T>(
-      connection: connection,
-      tableName: tableName,
-      fromJson: fromJson,
-      toJson: toJson,
-      log: _log,
-    ),
-  );
-}
-
 Handler middleware(Handler handler) {
   // This is the root middleware for the entire API. It's responsible for
   // providing all shared dependencies to the request context.
@@ -112,127 +87,36 @@ Handler middleware(Handler handler) {
       // dependencies for the request.
       .use((handler) {
     return (context) async {
-      // 1. Ensure the database connection is initialized.
-      await DatabaseConnectionManager.instance.init();
-      final connection = await DatabaseConnectionManager.instance.connection;
+      // 1. Ensure all dependencies are initialized (idempotent).
+      _log.info('Ensuring all application dependencies are initialized...');
+      await AppDependencies.instance.init();
+      _log.info('Dependencies are ready.');
 
-      // 2. Run database seeding (idempotent).
-      final seedingService = DatabaseSeedingService(
-        connection: connection,
-        log: _log,
-      );
-      await seedingService.createTables();
-      await seedingService.seedGlobalFixtureData();
-      await seedingService.seedInitialAdminAndConfig();
-
-      // 3. Initialize Repositories.
-      final headlineRepository = _createRepository<Headline>(
-        connection: connection,
-        tableName: 'headlines',
-        fromJson: Headline.fromJson,
-        toJson: (h) => h.toJson(),
-      );
-      final categoryRepository = _createRepository<Category>(
-        connection: connection,
-        tableName: 'categories',
-        fromJson: Category.fromJson,
-        toJson: (c) => c.toJson(),
-      );
-      final sourceRepository = _createRepository<Source>(
-        connection: connection,
-        tableName: 'sources',
-        fromJson: Source.fromJson,
-        toJson: (s) => s.toJson(),
-      );
-      final countryRepository = _createRepository<Country>(
-        connection: connection,
-        tableName: 'countries',
-        fromJson: Country.fromJson,
-        toJson: (c) => c.toJson(),
-      );
-      final userRepository = _createRepository<User>(
-        connection: connection,
-        tableName: 'users',
-        fromJson: User.fromJson,
-        toJson: (u) => u.toJson(),
-      );
-      final userAppSettingsRepository = _createRepository<UserAppSettings>(
-        connection: connection,
-        tableName: 'user_app_settings',
-        fromJson: UserAppSettings.fromJson,
-        toJson: (s) => s.toJson(),
-      );
-      final userContentPreferencesRepository =
-          _createRepository<UserContentPreferences>(
-        connection: connection,
-        tableName: 'user_content_preferences',
-        fromJson: UserContentPreferences.fromJson,
-        toJson: (p) => p.toJson(),
-      );
-      final appConfigRepository = _createRepository<AppConfig>(
-        connection: connection,
-        tableName: 'app_config',
-        fromJson: AppConfig.fromJson,
-        toJson: (c) => c.toJson(),
-      );
-
-      // 4. Initialize Services.
-      const emailRepository = HtEmailRepository(
-        emailClient: HtEmailInMemoryClient(),
-      );
-      final tokenBlacklistService = InMemoryTokenBlacklistService();
-      final AuthTokenService authTokenService = JwtAuthTokenService(
-        userRepository: userRepository,
-        blacklistService: tokenBlacklistService,
-        uuidGenerator: const Uuid(),
-      );
-      final verificationCodeStorageService =
-          InMemoryVerificationCodeStorageService();
-      final authService = AuthService(
-        userRepository: userRepository,
-        authTokenService: authTokenService,
-        verificationCodeStorageService: verificationCodeStorageService,
-        emailRepository: emailRepository,
-        userAppSettingsRepository: userAppSettingsRepository,
-        userContentPreferencesRepository: userContentPreferencesRepository,
-        uuidGenerator: const Uuid(),
-      );
-      final dashboardSummaryService = DashboardSummaryService(
-        headlineRepository: headlineRepository,
-        categoryRepository: categoryRepository,
-        sourceRepository: sourceRepository,
-      );
-      const permissionService = PermissionService();
-      final UserPreferenceLimitService userPreferenceLimitService =
-          DefaultUserPreferenceLimitService(
-        appConfigRepository: appConfigRepository,
-      );
-
-      // 5. Provide all dependencies to the inner handler.
+      // 2. Provide all dependencies to the inner handler.
+      final deps = AppDependencies.instance;
       return handler
           .use(provider<Uuid>((_) => const Uuid()))
-          .use(provider<HtDataRepository<Headline>>((_) => headlineRepository))
-          .use(provider<HtDataRepository<Category>>((_) => categoryRepository))
-          .use(provider<HtDataRepository<Source>>((_) => sourceRepository))
-          .use(provider<HtDataRepository<Country>>((_) => countryRepository))
-          .use(provider<HtDataRepository<User>>((_) => userRepository))
+          .use(provider<HtDataRepository<Headline>>((_) => deps.headlineRepository))
+          .use(provider<HtDataRepository<Category>>((_) => deps.categoryRepository))
+          .use(provider<HtDataRepository<Source>>((_) => deps.sourceRepository))
+          .use(provider<HtDataRepository<Country>>((_) => deps.countryRepository))
+          .use(provider<HtDataRepository<User>>((_) => deps.userRepository))
           .use(provider<HtDataRepository<UserAppSettings>>(
-              (_) => userAppSettingsRepository))
+              (_) => deps.userAppSettingsRepository))
           .use(provider<HtDataRepository<UserContentPreferences>>(
-              (_) => userContentPreferencesRepository))
-          .use(provider<HtDataRepository<AppConfig>>((_) => appConfigRepository))
-          .use(provider<HtEmailRepository>((_) => emailRepository))
-          .use(provider<TokenBlacklistService>((_) => tokenBlacklistService))
-          .use(provider<AuthTokenService>((_) => authTokenService))
+              (_) => deps.userContentPreferencesRepository))
+          .use(provider<HtDataRepository<AppConfig>>((_) => deps.appConfigRepository))
+          .use(provider<HtEmailRepository>((_) => deps.emailRepository))
+          .use(provider<TokenBlacklistService>((_) => deps.tokenBlacklistService))
+          .use(provider<AuthTokenService>((_) => deps.authTokenService))
           .use(provider<VerificationCodeStorageService>(
-              (_) => verificationCodeStorageService))
-          .use(provider<AuthService>((_) => authService))
-          .use(provider<DashboardSummaryService>((_) => dashboardSummaryService))
-          .use(provider<PermissionService>((_) => permissionService))
+              (_) => deps.verificationCodeStorageService))
+          .use(provider<AuthService>((_) => deps.authService))
+          .use(provider<DashboardSummaryService>((_) => deps.dashboardSummaryService))
+          .use(provider<PermissionService>((_) => deps.permissionService))
           .use(provider<UserPreferenceLimitService>(
-              (_) => userPreferenceLimitService))
+              (_) => deps.userPreferenceLimitService))
           .call(context);
     };
   });
 }
-
