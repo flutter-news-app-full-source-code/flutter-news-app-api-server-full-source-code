@@ -196,9 +196,13 @@ class DatabaseSeedingService {
           final source = Source.fromJson(data);
           final params = source.toJson();
 
-          // The `headquarters` field in the model is a nested `Country` object.
-          // We store its ID in the `headquarters_country_id` column.
+          // The `headquarters` field in the model is a nested `Country`
+          // object. We extract its ID to store in the
+          // `headquarters_country_id` column and then remove the original
+          // nested object from the parameters to avoid a "superfluous
+          // variable" error.
           params['headquarters_country_id'] = source.headquarters?.id;
+          params.remove('headquarters');
 
           // Ensure optional fields exist for the postgres driver.
           params.putIfAbsent('description', () => null);
