@@ -12,9 +12,6 @@ dependencies:
   ht_data_client:
     git:
       url: https://github.com/headlines-toolkit/ht-data-client.git
-  ht_data_inmemory:
-    git:
-      url: https://github.com/headlines-toolkit/ht-data-inmemory.git
   ht_data_postgres:
     git:
       url: https://github.com/headlines-toolkit/ht-data-postgres.git  
