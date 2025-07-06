@@ -183,8 +183,6 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
 
   // 6. Create the main handler with all dependencies provided
   final finalHandler = handler
-      // Foundational utilities
-      .use(provider<Uuid>((_) => uuid))
       // Repositories
       .use(provider<HtDataRepository<Headline>>((_) => headlineRepository))
       .use(provider<HtDataRepository<Category>>((_) => categoryRepository))
