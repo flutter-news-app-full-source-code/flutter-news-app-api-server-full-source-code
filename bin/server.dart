@@ -1,17 +1,15 @@
-import 'dart:io';
+import 'dart:async';
+import 'dart:io' show InternetAddress, Platform, ProcessSignal, exit;
 
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/config/dependency_container.dart';
 import 'package:ht_api/src/config/environment_config.dart';
 import 'package:ht_api/src/rbac/permission_service.dart';
 import 'package:ht_api/src/services/auth_service.dart';
-import 'package:ht_api/src/services/auth_token_service.dart';
 import 'package:ht_api/src/services/dashboard_summary_service.dart';
-import 'package:ht_api/src/services/database_seeding_service.dart';
 import 'package:ht_api/src/services/default_user_preference_limit_service.dart';
 import 'package:ht_api/src/services/jwt_auth_token_service.dart';
 import 'package:ht_api/src/services/token_blacklist_service.dart';
-import 'package:ht_api/src/services/user_preference_limit_service.dart';
 import 'package:ht_api/src/services/verification_code_storage_service.dart';
 import 'package:ht_data_client/ht_data_client.dart';
 import 'package:ht_data_postgres/ht_data_postgres.dart';
@@ -21,6 +19,7 @@ import 'package:ht_email_repository/ht_email_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 import 'package:logging/logging.dart';
 import 'package:postgres/postgres.dart';
+import 'package:ht_api/src/services/database_seeding_service.dart';
 import 'package:uuid/uuid.dart';
 
 // This is the generated file from Dart Frog.
@@ -32,6 +31,27 @@ final _log = Logger('ht_api');
 
 // Global PostgreSQL connection instance.
 late final Connection _connection;
+
+/// A completer that signals when all asynchronous server initialization is
+/// complete.
+///
+/// This is used by the [_initializationGate] middleware to hold requests
+/// until the server is fully ready to process them, preventing race conditions
+/// where a request arrives before the database is connected or dependencies
+/// are initialized.
+final _initCompleter = Completer<void>();
+
+/// A top-level middleware that waits for the async initialization to complete
+/// before processing any requests.
+///
+/// This acts as a "gate," ensuring that no request is handled until the future
+/// in [_initCompleter] is completed.
+Handler _initializationGate(Handler innerHandler) {
+  return (context) async {
+    await _initCompleter.future;
+    return innerHandler(context);
+  };
+}
 
 // Creates a data repository for a given type [T].
 HtDataRepository<T> _createRepository<T>({
@@ -192,9 +212,16 @@ Future<void> main() async {
   // 7. Build the handler and start the server
   final ip = InternetAddress.anyIPv4;
   final port = int.parse(Platform.environment['PORT'] ?? '8080');
-  final handler = buildRootHandler();
+  // The root handler from Dart Frog is wrapped with our initialization gate.
+  // This ensures that `_initializationGate` runs for every request, pausing
+  // it until `_initCompleter` is marked as complete.
+  final handler = _initializationGate(buildRootHandler());
   final server = await serve(handler, ip, port);
   _log.info('Server listening on port ${server.port}');
+
+  // Now that the server is running, we complete the completer to open the gate
+  // and allow requests to be processed.
+  _initCompleter.complete();
 
   // 8. Handle graceful shutdown
   ProcessSignal.sigint.watch().listen((_) async {
