@@ -100,25 +100,69 @@ class AppDependencies {
     headlineRepository = _createRepository(
       connection,
       'headlines',
-      Headline.fromJson,
-      (h) => h.toJson(),
+      (json) {
+        if (json['created_at'] is DateTime) {
+          json['created_at'] =
+              (json['created_at'] as DateTime).toIso8601String();
+        }
+        if (json['updated_at'] is DateTime) {
+          json['updated_at'] =
+              (json['updated_at'] as DateTime).toIso8601String();
+        }
+        if (json['published_at'] is DateTime) {
+          json['published_at'] =
+              (json['published_at'] as DateTime).toIso8601String();
+        }
+        return Headline.fromJson(json);
+      },
+      (h) => h.toJson(), // toJson already handles DateTime correctly
     );
     categoryRepository = _createRepository(
       connection,
       'categories',
-      Category.fromJson,
+      (json) {
+        if (json['created_at'] is DateTime) {
+          json['created_at'] =
+              (json['created_at'] as DateTime).toIso8601String();
+        }
+        if (json['updated_at'] is DateTime) {
+          json['updated_at'] =
+              (json['updated_at'] as DateTime).toIso8601String();
+        }
+        return Category.fromJson(json);
+      },
       (c) => c.toJson(),
     );
     sourceRepository = _createRepository(
       connection,
       'sources',
-      Source.fromJson,
+      (json) {
+        if (json['created_at'] is DateTime) {
+          json['created_at'] =
+              (json['created_at'] as DateTime).toIso8601String();
+        }
+        if (json['updated_at'] is DateTime) {
+          json['updated_at'] =
+              (json['updated_at'] as DateTime).toIso8601String();
+        }
+        return Source.fromJson(json);
+      },
       (s) => s.toJson(),
     );
     countryRepository = _createRepository(
       connection,
       'countries',
-      Country.fromJson,
+      (json) {
+        if (json['created_at'] is DateTime) {
+          json['created_at'] =
+              (json['created_at'] as DateTime).toIso8601String();
+        }
+        if (json['updated_at'] is DateTime) {
+          json['updated_at'] =
+              (json['updated_at'] as DateTime).toIso8601String();
+        }
+        return Country.fromJson(json);
+      },
       (c) => c.toJson(),
     );
     userRepository = _createRepository(
@@ -147,8 +191,24 @@ class AppDependencies {
     userAppSettingsRepository = _createRepository(
       connection,
       'user_app_settings',
-      UserAppSettings.fromJson,
-      (s) => s.toJson(),
+      (json) {
+        // The DB has created_at/updated_at, but the model doesn't.
+        // Remove them before deserialization to avoid CheckedFromJsonException.
+        json.remove('created_at');
+        json.remove('updated_at');
+        return UserAppSettings.fromJson(json);
+      },
+      (settings) {
+        final json = settings.toJson();
+        // These fields are complex objects and must be JSON encoded for the DB.
+        json['display_settings'] = jsonEncode(json['display_settings']);
+        json['feed_preferences'] = jsonEncode(json['feed_preferences']);
+        json['engagement_shown_counts'] =
+            jsonEncode(json['engagement_shown_counts']);
+        json['engagement_last_shown_timestamps'] =
+            jsonEncode(json['engagement_last_shown_timestamps']);
+        return json;
+      },
     );
     userContentPreferencesRepository = _createRepository(
       connection,
@@ -178,7 +238,17 @@ class AppDependencies {
     appConfigRepository = _createRepository(
       connection,
       'app_config',
-      AppConfig.fromJson,
+      (json) {
+        if (json['created_at'] is DateTime) {
+          json['created_at'] =
+              (json['created_at'] as DateTime).toIso8601String();
+        }
+        if (json['updated_at'] is DateTime) {
+          json['updated_at'] =
+              (json['updated_at'] as DateTime).toIso8601String();
+        }
+        return AppConfig.fromJson(json);
+      },
       (c) => c.toJson(),
     );
 
