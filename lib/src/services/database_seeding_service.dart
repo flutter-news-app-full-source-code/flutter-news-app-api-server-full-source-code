@@ -386,14 +386,10 @@ class DatabaseSeedingService {
             '@followed_sources, @followed_countries, @saved_headlines) '
             'ON CONFLICT (id) DO NOTHING',
           ),
-          parameters: {
-            'id': adminPreferences.id,
-            'user_id': adminUser.id,
-            'followed_categories': adminPreferences.followedCategories,
-            'followed_sources': adminPreferences.followedSources,
-            'followed_countries': adminPreferences.followedCountries,
-            'saved_headlines': adminPreferences.savedHeadlines,
-          },
+          // Use toJson() to correctly serialize the lists of complex objects
+          // into a format the database driver can handle for JSONB columns.
+          parameters: adminPreferences.toJson()
+            ..['user_id'] = adminUser.id,
         );
 
         await _connection.execute('COMMIT');
