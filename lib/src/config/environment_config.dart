@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:logging/logging.dart';
 
 /// {@template environment_config}
 /// A utility class for accessing environment variables.
@@ -9,6 +10,7 @@ import 'dart:io';
 /// {@endtemplate}
 abstract final class EnvironmentConfig {
   /// Retrieves the PostgreSQL database connection URI from the environment.
+  static final _log = Logger('EnvironmentConfig');
   ///
   /// The value is read from the `DATABASE_URL` environment variable.
   ///
@@ -17,6 +19,12 @@ abstract final class EnvironmentConfig {
   static String get databaseUrl {
     final dbUrl = Platform.environment['DATABASE_URL'];
     if (dbUrl == null || dbUrl.isEmpty) {
+      _log.severe(
+        'DATABASE_URL not found. Dumping available environment variables:',
+      );
+      Platform.environment.forEach((key, value) {
+        _log.severe('  - $key: $value');
+      });
       throw StateError(
         'FATAL: DATABASE_URL environment variable is not set. '
         'The application cannot start without a database connection.',
