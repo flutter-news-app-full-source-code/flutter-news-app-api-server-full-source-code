@@ -73,7 +73,14 @@ class DatabaseSeedingService {
         await _connection.execute('''
           CREATE TABLE IF NOT EXISTS sources (
             id TEXT PRIMARY KEY,
-            name TEXT NOT NULL UNIQUE,
+            name TEXT NOT NULL,
+            description TEXT,
+            url TEXT,
+            language TEXT,
+            status TEXT,
+            type TEXT,
+            source_type JSONB,
+            headquarters_country_id TEXT REFERENCES countries(id),
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ
           );
@@ -187,12 +194,31 @@ class DatabaseSeedingService {
         _log.fine('Seeding sources...');
         for (final data in sourcesFixturesData) {
           final source = Source.fromJson(data);
+          final params = source.toJson();
+
+          // The `headquarters` field in the model is a nested `Country` object.
+          // We store its ID in the `headquarters_country_id` column.
+          params['headquarters_country_id'] = source.headquarters?.id;
+
+          // Ensure optional fields exist for the postgres driver.
+          params.putIfAbsent('description', () => null);
+          params.putIfAbsent('url', () => null);
+          params.putIfAbsent('language', () => null);
+          params.putIfAbsent('source_type', () => null);
+          params.putIfAbsent('status', () => null);
+          params.putIfAbsent('type', () => null);
+          params.putIfAbsent('updated_at', () => null);
+
           await _connection.execute(
             Sql.named(
-              'INSERT INTO sources (id, name) VALUES (@id, @name) '
+              'INSERT INTO sources (id, name, description, url, language, '
+              'status, type, source_type, headquarters_country_id, '
+              'created_at, updated_at) VALUES (@id, @name, @description, '
+              '@url, @language, @status, @type, @source_type, '
+              '@headquarters_country_id, @created_at, @updated_at) '
               'ON CONFLICT (id) DO NOTHING',
             ),
-            parameters: source.toJson(),
+            parameters: params,
           );
         }
 
@@ -259,14 +285,20 @@ class DatabaseSeedingService {
       try {
         // Seed AppConfig
         _log.fine('Seeding AppConfig...');
-        final appConfig = AppConfig.fromJson(appConfigFixtureData);
+        final appConfig = AppConfig.fromJson(appConfigFixtureData);  
+        // The `app_config` table only has `id` and `user_preference_limits`.
+        // We must provide an explicit map to avoid a "superfluous variables"
+        // error from the postgres driver.
         await _connection.execute(
           Sql.named(
             'INSERT INTO app_config (id, user_preference_limits) '
             'VALUES (@id, @user_preference_limits) '
             'ON CONFLICT (id) DO NOTHING',
           ),
-          parameters: appConfig.toJson(),
+          parameters: {
+            'id': appConfig.id,
+            'user_preference_limits': appConfig.userPreferenceLimits.toJson(),
+          },
         );
 
         // Seed Admin User
@@ -276,13 +308,19 @@ class DatabaseSeedingService {
           (user) => user.roles.contains(UserRoles.admin),
           orElse: () => throw StateError('Admin user not found in fixtures.'),
         );
+        // The `users` table only has `id`, `email`, and `roles`. We must
+        // provide an explicit map to avoid a "superfluous variables" error.
         await _connection.execute(
           Sql.named(
             'INSERT INTO users (id, email, roles) '
             'VALUES (@id, @email, @roles) '
             'ON CONFLICT (id) DO NOTHING',
           ),
-          parameters: adminUser.toJson(),
+          parameters: {
+            'id': adminUser.id,
+            'email': adminUser.email,
+            'roles': adminUser.roles,
+          },
         );
 
         // Seed default settings and preferences for the admin user.
@@ -296,7 +334,12 @@ class DatabaseSeedingService {
             'VALUES (@id, @user_id, @display_settings, @language) '
             'ON CONFLICT (id) DO NOTHING',
           ),
-          parameters: {...adminSettings.toJson(), 'user_id': adminUser.id},
+          parameters: {
+            'id': adminSettings.id,
+            'user_id': adminUser.id,
+            'display_settings': adminSettings.displaySettings.toJson(),
+            'language': adminSettings.language.toJson(),
+          },
         );
 
         await _connection.execute(
@@ -307,7 +350,14 @@ class DatabaseSeedingService {
             '@followed_sources, @followed_countries, @saved_headlines) '
             'ON CONFLICT (id) DO NOTHING',
           ),
-          parameters: {...adminPreferences.toJson(), 'user_id': adminUser.id},
+          parameters: {
+            'id': adminPreferences.id,
+            'user_id': adminUser.id,
+            'followed_categories': adminPreferences.followedCategories,
+            'followed_sources': adminPreferences.followedSources,
+            'followed_countries': adminPreferences.followedCountries,
+            'saved_headlines': adminPreferences.savedHeadlines,
+          },
         );
 
         await _connection.execute('COMMIT');
