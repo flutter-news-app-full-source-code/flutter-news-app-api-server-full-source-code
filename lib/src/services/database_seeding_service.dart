@@ -90,8 +90,11 @@ class DatabaseSeedingService {
         await _connection.execute('''
           CREATE TABLE IF NOT EXISTS countries (
             id TEXT PRIMARY KEY,
-            name TEXT NOT NULL UNIQUE,
-            code TEXT NOT NULL UNIQUE,
+            name TEXT NOT NULL,
+            iso_code TEXT NOT NULL UNIQUE,
+            flag_url TEXT NOT NULL,
+            status TEXT,
+            type TEXT,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ
           );
@@ -194,12 +197,19 @@ class DatabaseSeedingService {
         _log.fine('Seeding countries...');
         for (final data in countriesFixturesData) {
           final country = Country.fromJson(data);
+          final params = country.toJson();
+
+          // Ensure optional fields exist for the postgres driver.
+          params.putIfAbsent('updated_at', () => null);
+
           await _connection.execute(
             Sql.named(
-              'INSERT INTO countries (id, name, code) '
-              'VALUES (@id, @name, @code) ON CONFLICT (id) DO NOTHING',
+              'INSERT INTO countries (id, name, iso_code, flag_url, status, '
+              'type, created_at, updated_at) VALUES (@id, @name, @iso_code, '
+              '@flag_url, @status, @type, @created_at, @updated_at) '
+              'ON CONFLICT (id) DO NOTHING',
             ),
-            parameters: country.toJson(),
+            parameters: params,
           );
         }
 
