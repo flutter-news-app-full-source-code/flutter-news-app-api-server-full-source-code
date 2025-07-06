@@ -55,8 +55,9 @@ Handler middleware(Handler handler) {
 
     // The handler chain needs to be built and executed within this context.
     // Order: CORS -> Auth -> Route Handler
-    final corsMiddleware =
-        fromShelfMiddleware(shelf_cors.corsHeaders(headers: corsConfig));
+    final corsMiddleware = fromShelfMiddleware(
+      shelf_cors.corsHeaders(headers: corsConfig),
+    );
     final authMiddleware = authenticationProvider();
 
     // Chain the middlewares and the original handler together.
