@@ -14,7 +14,7 @@ dependencies:
       url: https://github.com/headlines-toolkit/ht-data-client.git
   ht_data_postgres:
     git:
-      url: https://github.com/headlines-toolkit/ht-data-postgres.git  
+      url: https://github.com/headlines-toolkit/ht-data-postgres.git
   ht_data_repository:
     git:
       url: https://github.com/headlines-toolkit/ht-data-repository.git
