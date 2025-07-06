@@ -59,11 +59,29 @@ class RequestId {
 // --- Middleware Definition ---
 final _log = Logger('RootMiddleware');
 
+// A flag to ensure the logger is only configured once for the application's
+// entire lifecycle.
+bool _loggerConfigured = false;
+
 Handler middleware(Handler handler) {
   // This is the root middleware for the entire API. It's responsible for
   // providing all shared dependencies to the request context.
   // The order of `.use()` calls is important: the last one in the chain
   // runs first.
+
+  // This check ensures that the logger is configured only once.
+  if (!_loggerConfigured) {
+    Logger.root.level = Level.ALL;
+    Logger.root.onRecord.listen((record) {
+      // ignore: avoid_print
+      print(
+        '${record.level.name}: ${record.time}: ${record.loggerName}: '
+        '${record.message}',
+      );
+    });
+    _loggerConfigured = true;
+  }
+
   return handler
       // --- Core Middleware ---
       // These run after all dependencies have been provided.
