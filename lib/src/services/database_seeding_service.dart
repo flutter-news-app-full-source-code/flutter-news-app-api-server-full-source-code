@@ -190,6 +190,19 @@ class DatabaseSeedingService {
           );
         }
 
+        // Seed Countries (must be done before sources and headlines)
+        _log.fine('Seeding countries...');
+        for (final data in countriesFixturesData) {
+          final country = Country.fromJson(data);
+          await _connection.execute(
+            Sql.named(
+              'INSERT INTO countries (id, name, code) '
+              'VALUES (@id, @name, @code) ON CONFLICT (id) DO NOTHING',
+            ),
+            parameters: country.toJson(),
+          );
+        }
+
         // Seed Sources
         _log.fine('Seeding sources...');
         for (final data in sourcesFixturesData) {
@@ -223,19 +236,6 @@ class DatabaseSeedingService {
               'ON CONFLICT (id) DO NOTHING',
             ),
             parameters: params,
-          );
-        }
-
-        // Seed Countries
-        _log.fine('Seeding countries...');
-        for (final data in countriesFixturesData) {
-          final country = Country.fromJson(data);
-          await _connection.execute(
-            Sql.named(
-              'INSERT INTO countries (id, name, code) '
-              'VALUES (@id, @name, @code) ON CONFLICT (id) DO NOTHING',
-            ),
-            parameters: country.toJson(),
           );
         }
 
