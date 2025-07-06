@@ -11,6 +11,7 @@ import 'package:ht_api/src/services/verification_code_storage_service.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_email_repository/ht_email_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
+import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
 
 // --- Request ID Wrapper ---
@@ -56,6 +57,8 @@ class RequestId {
 }
 
 // --- Middleware Definition ---
+final _log = Logger('RootMiddleware');
+
 Handler middleware(Handler handler) {
   // This is the root middleware for the entire API. It's responsible for
   // providing all shared dependencies to the request context.
@@ -71,8 +74,10 @@ Handler middleware(Handler handler) {
       // It depends on the Uuid provider, so it must come after it.
       .use((innerHandler) {
         return (context) {
+          _log.info('[REQ_LIFECYCLE] Request received. Generating RequestId...');
           final uuid = context.read<Uuid>();
           final requestId = RequestId(uuid.v4());
+          _log.info('[REQ_LIFECYCLE] RequestId generated: ${requestId.id}');
           return innerHandler(context.provide<RequestId>(() => requestId));
         };
       })
