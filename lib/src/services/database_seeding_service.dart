@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:ht_shared/ht_shared.dart';
 import 'package:logging/logging.dart';
 import 'package:postgres/postgres.dart';
@@ -353,7 +354,7 @@ class DatabaseSeedingService {
           parameters: {
             'id': adminUser.id,
             'email': adminUser.email,
-            'roles': adminUser.roles,
+            'roles': jsonEncode(adminUser.roles),
           },
         );
 
