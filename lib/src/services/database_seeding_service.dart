@@ -126,6 +126,9 @@ class DatabaseSeedingService {
             user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
             display_settings JSONB NOT NULL, -- Nested object, stored as JSON
             language TEXT NOT NULL, -- Simple string, stored as TEXT
+            feed_preferences JSONB NOT NULL,
+            engagement_shown_counts JSONB NOT NULL,
+            engagement_last_shown_timestamps JSONB NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ
           );
@@ -364,19 +367,15 @@ class DatabaseSeedingService {
 
         await _connection.execute(
           Sql.named(
-            'INSERT INTO user_app_settings (id, user_id, '
-            'display_settings, language) '
-            'VALUES (@id, @user_id, @display_settings, @language) '
+            'INSERT INTO user_app_settings (id, user_id, display_settings, '
+            'language, feed_preferences, engagement_shown_counts, '
+            'engagement_last_shown_timestamps) VALUES (@id, @user_id, '
+            '@display_settings, @language, @feed_preferences, '
+            '@engagement_shown_counts, @engagement_last_shown_timestamps) '
             'ON CONFLICT (id) DO NOTHING',
           ),
-          parameters: {
-            'id': adminSettings.id,
-            'user_id': adminUser.id,
-            'display_settings':
-                adminSettings.displaySettings.toJson(), // This is a complex object
-            'language':
-                adminSettings.language, // This is a simple String
-          },
+          parameters: adminSettings.toJson()
+            ..['user_id'] = adminUser.id,
         );
 
         await _connection.execute(
