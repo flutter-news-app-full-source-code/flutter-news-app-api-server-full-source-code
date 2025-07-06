@@ -1,5 +1,6 @@
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/middlewares/error_handler.dart';
+import 'package:ht_api/src/middlewares/request_logger.dart';
 import 'package:uuid/uuid.dart';
 
 // --- Request ID Wrapper ---
@@ -46,15 +47,18 @@ class RequestId {
 
 // --- Middleware Definition ---
 Handler middleware(Handler handler) {
-  // This middleware chain will be rebuilt in a later step.
-  // For now, it only provides a request ID and basic error handling.
+  // This is the root middleware chain for the entire API.
+  // The order is important:
+  // 1. Request ID: Assigns a unique ID to each request for tracing.
+  // 2. Request Logger: Logs request and response details.
+  // 3. Error Handler: Catches all errors and formats them into a standard
+  //    JSON response.
   return handler
       .use(
         (innerHandler) {
           return (context) {
-            // In a later step, the Uuid instance will be provided from server.dart
-            // For now, we create it here.
-            const uuid = Uuid();
+            // Read the singleton Uuid instance provided from server.dart.
+            final uuid = context.read<Uuid>();
             final requestId = RequestId(uuid.v4());
             return innerHandler(context.provide<RequestId>(() => requestId));
           };
