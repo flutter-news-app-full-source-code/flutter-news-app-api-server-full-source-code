@@ -268,6 +268,37 @@ class DatabaseSeedingService {
           parameters: adminUser.toJson(),
         );
 
+        // Seed default settings and preferences for the admin user.
+        final adminSettings = UserAppSettings(id: adminUser.id);
+        final adminPreferences = UserContentPreferences(id: adminUser.id);
+
+        await _connection.execute(
+          Sql.named(
+            'INSERT INTO user_app_settings (id, user_id, '
+            'display_settings, language) '
+            'VALUES (@id, @user_id, @display_settings, @language) '
+            'ON CONFLICT (id) DO NOTHING',
+          ),
+          parameters: {
+            ...adminSettings.toJson(),
+            'user_id': adminUser.id,
+          },
+        );
+
+        await _connection.execute(
+          Sql.named(
+            'INSERT INTO user_content_preferences (id, user_id, '
+            'followed_categories, followed_sources, followed_countries, '
+            'saved_headlines) VALUES (@id, @user_id, @followed_categories, '
+            '@followed_sources, @followed_countries, @saved_headlines) '
+            'ON CONFLICT (id) DO NOTHING',
+          ),
+          parameters: {
+            ...adminPreferences.toJson(),
+            'user_id': adminUser.id,
+          },
+        );
+
         await _connection.execute('COMMIT');
         _log.info(
           'Initial AppConfig and admin user seeding completed successfully.',
