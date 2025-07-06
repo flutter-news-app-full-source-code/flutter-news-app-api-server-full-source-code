@@ -114,6 +114,8 @@ class DatabaseSeedingService {
             content TEXT,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ
+            status TEXT,
+            type TEXT
           );
         ''');
 
@@ -254,29 +256,35 @@ class DatabaseSeedingService {
         for (final data in headlinesFixturesData) {
           final headline = Headline.fromJson(data);
           final params = headline.toJson();
-
-          // The `source_id` and `category_id` columns are NOT NULL. If a
-          // fixture is missing these, the `toJson()` map will lack the key
-          // and cause a crash. We log a warning and skip the invalid entry.
-          if (params['source_id'] == null || params['category_id'] == null) {
+ 
+          // The `source_id` and `category_id` columns are NOT NULL. If a fixture
+          // is missing the nested source or category object, we cannot proceed.
+          if (headline.source == null || headline.category == null) {
             _log.warning(
               'Skipping headline fixture with missing source or category ID: '
               '${headline.title}',
             );
             continue;
           }
-
+ 
+          // Extract IDs from nested objects and remove the objects to match schema.
+          params['source_id'] = headline.source!.id;
+          params['category_id'] = headline.category!.id;
+          params.remove('source');
+          params.remove('category');
+ 
           // Ensure optional fields exist for the postgres driver.
           params.putIfAbsent('description', () => null);
           params.putIfAbsent('content', () => null);
           params.putIfAbsent('updated_at', () => null);
-
+ 
           await _connection.execute(
             Sql.named(
-              'INSERT INTO headlines (id, title, source_id, category_id, image_url, '
-              'url, published_at, description, content, created_at, updated_at) '
-              'VALUES (@id, @title, @source_id, @category_id, @image_url, @url, '
-              '@published_at, @description, @content, @created_at, @updated_at) '
+              'INSERT INTO headlines (id, title, source_id, category_id, '
+              'image_url, url, published_at, description, content, status, '
+              'type, created_at, updated_at) VALUES (@id, @title, @source_id, '
+              '@category_id, @image_url, @url, @published_at, @description, '
+              '@content, @status, @type, @created_at, @updated_at) '
               'ON CONFLICT (id) DO NOTHING',
             ),
             parameters: params,
