@@ -8,6 +8,7 @@ import 'package:ht_api/src/services/auth_token_service.dart';
 import 'package:ht_api/src/services/dashboard_summary_service.dart';
 import 'package:ht_api/src/services/default_user_preference_limit_service.dart';
 import 'package:ht_api/src/services/jwt_auth_token_service.dart';
+import 'package:ht_api/src/services/database_seeding_service.dart';
 import 'package:ht_api/src/services/token_blacklist_service.dart';
 import 'package:ht_api/src/services/user_preference_limit_service.dart';
 import 'package:ht_api/src/services/verification_code_storage_service.dart';
@@ -92,7 +93,17 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
   );
   _log.info('PostgreSQL database connection established.');
 
-  // 3. Initialize Repositories
+  // 3. Initialize and run database seeding
+  // This runs on every startup. The operations are idempotent (`IF NOT EXISTS`,
+  // `ON CONFLICT DO NOTHING`), so it's safe to run every time. This ensures
+  // the database is always in a valid state, especially for first-time setup
+  // in any environment.
+  final seedingService = DatabaseSeedingService(connection: _connection, log: _log);
+  await seedingService.createTables();
+  await seedingService.seedGlobalFixtureData();
+  await seedingService.seedInitialAdminAndConfig();
+
+  // 4. Initialize Repositories
   final headlineRepository = _createRepository<Headline>(
     tableName: 'headlines',
     fromJson: Headline.fromJson,
@@ -135,7 +146,7 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
     toJson: (c) => c.toJson(),
   );
 
-  // 4. Initialize Services
+  // 5. Initialize Services
   const uuid = Uuid();
   const emailRepository = HtEmailRepository(
     emailClient: HtEmailInMemoryClient(),
@@ -167,7 +178,7 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
     appConfigRepository: appConfigRepository,
   );
 
-  // 5. Create the main handler with all dependencies provided
+  // 6. Create the main handler with all dependencies provided
   final finalHandler = handler
       // Foundational utilities
       .use(provider<Uuid>((_) => uuid))
@@ -206,7 +217,7 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
         ),
       );
 
-  // 6. Start the server
+  // 7. Start the server
   final server = await serve(
     finalHandler,
     ip,
@@ -214,7 +225,7 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
   );
   _log.info('Server listening on port ${server.port}');
 
-  // 7. Handle graceful shutdown
+  // 8. Handle graceful shutdown
   ProcessSignal.sigint.watch().listen((_) async {
     _log.info('Received SIGINT. Shutting down...');
     await _connection.close();
