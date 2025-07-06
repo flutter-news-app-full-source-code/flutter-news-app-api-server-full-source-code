@@ -111,7 +111,6 @@ class DatabaseSeedingService {
             url TEXT,
             published_at TIMESTAMPTZ,
             description TEXT,
-            content TEXT,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ,
             status TEXT,
@@ -275,16 +274,18 @@ class DatabaseSeedingService {
  
           // Ensure optional fields exist for the postgres driver.
           params.putIfAbsent('description', () => null);
-          params.putIfAbsent('content', () => null);
           params.putIfAbsent('updated_at', () => null);
+          params.putIfAbsent('image_url', () => null);
+          params.putIfAbsent('url', () => null);
+          params.putIfAbsent('published_at', () => null);
  
           await _connection.execute(
             Sql.named(
               'INSERT INTO headlines (id, title, source_id, category_id, '
-              'image_url, url, published_at, description, content, status, '
+              'image_url, url, published_at, description, status, '
               'type, created_at, updated_at) VALUES (@id, @title, @source_id, '
               '@category_id, @image_url, @url, @published_at, @description, '
-              '@content, @status, @type, @created_at, @updated_at) '
+              '@status, @type, @created_at, @updated_at) '
               'ON CONFLICT (id) DO NOTHING',
             ),
             parameters: params,
