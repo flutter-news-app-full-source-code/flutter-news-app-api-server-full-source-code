@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
+import 'package:ht_api/src/config/dependency_container.dart';
 import 'package:ht_api/src/config/environment_config.dart';
 import 'package:ht_api/src/rbac/permission_service.dart';
 import 'package:ht_api/src/services/auth_service.dart';
@@ -180,43 +181,35 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
     appConfigRepository: appConfigRepository,
   );
 
-  // 6. Create the main handler with all dependencies provided
-  final finalHandler = handler
-      // Repositories
-      .use(provider<HtDataRepository<Headline>>((_) => headlineRepository))
-      .use(provider<HtDataRepository<Category>>((_) => categoryRepository))
-      .use(provider<HtDataRepository<Source>>((_) => sourceRepository))
-      .use(provider<HtDataRepository<Country>>((_) => countryRepository))
-      .use(provider<HtDataRepository<User>>((_) => userRepository))
-      .use(
-        provider<HtDataRepository<UserAppSettings>>(
-          (_) => userAppSettingsRepository,
-        ),
-      )
-      .use(
-        provider<HtDataRepository<UserContentPreferences>>(
-          (_) => userContentPreferencesRepository,
-        ),
-      )
-      .use(provider<HtDataRepository<AppConfig>>((_) => appConfigRepository))
-      .use(provider<HtEmailRepository>((_) => emailRepository))
-      // Services
-      .use(provider<TokenBlacklistService>((_) => tokenBlacklistService))
-      .use(provider<AuthTokenService>((_) => authTokenService))
-      .use(
-        provider<VerificationCodeStorageService>(
-          (_) => verificationCodeStorageService,
-        ),
-      )
-      .use(provider<AuthService>((_) => authService))
-      .use(provider<DashboardSummaryService>((_) => dashboardSummaryService))
-      .use(provider<PermissionService>((_) => permissionService))
-      .use(
-        provider<UserPreferenceLimitService>((_) => userPreferenceLimitService),
-      );
+  // 6. Populate the DependencyContainer with all initialized instances.
+  // This must be done before the server starts handling requests, as the
+  // root middleware will read from this container to provide dependencies.
+  DependencyContainer.instance.init(
+    // Repositories
+    headlineRepository: headlineRepository,
+    categoryRepository: categoryRepository,
+    sourceRepository: sourceRepository,
+    countryRepository: countryRepository,
+    userRepository: userRepository,
+    userAppSettingsRepository: userAppSettingsRepository,
+    userContentPreferencesRepository: userContentPreferencesRepository,
+    appConfigRepository: appConfigRepository,
+    emailRepository: emailRepository,
+    // Services
+    tokenBlacklistService: tokenBlacklistService,
+    authTokenService: authTokenService,
+    verificationCodeStorageService: verificationCodeStorageService,
+    authService: authService,
+    dashboardSummaryService: dashboardSummaryService,
+    permissionService: permissionService,
+    userPreferenceLimitService: userPreferenceLimitService,
+  );
 
-  // 7. Start the server
-  final server = await serve(finalHandler, ip, port);
+  // 7. Start the server.
+  // The original `handler` from Dart Frog is used. The root middleware in
+  // `routes/_middleware.dart` will now be responsible for injecting all the
+  // dependencies from the `DependencyContainer` into the request context.
+  final server = await serve(handler, ip, port);
   _log.info('Server listening on port ${server.port}');
 
   // 8. Handle graceful shutdown
