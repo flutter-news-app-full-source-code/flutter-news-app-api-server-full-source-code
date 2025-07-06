@@ -53,9 +53,10 @@ Handler middleware(Handler handler) {
   // 3. Error Handler: Catches all errors and formats them into a standard
   //    JSON response.
   return handler
+      .use(provider<Uuid>((_) => const Uuid()))
       .use((innerHandler) {
         return (context) {
-          // Read the singleton Uuid instance provided from server.dart.
+          // Read the Uuid instance provided from this middleware chain.
           final uuid = context.read<Uuid>();
           final requestId = RequestId(uuid.v4());
           return innerHandler(context.provide<RequestId>(() => requestId));
