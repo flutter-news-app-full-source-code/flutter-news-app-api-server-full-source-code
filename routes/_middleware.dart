@@ -52,17 +52,21 @@ Handler middleware(Handler handler) {
   // 2. Request Logger: Logs request and response details.
   // 3. Error Handler: Catches all errors and formats them into a standard
   //    JSON response.
-  return handler.use(errorHandler()).use(requestLogger()).use((innerHandler) {
-    // This middleware reads the Uuid and provides the RequestId.
-    // It must come after the Uuid provider in the chain.
-    return (context) {
-      // Read the Uuid instance provided from the previous middleware.
-      final uuid = context.read<Uuid>();
-      final requestId = RequestId(uuid.v4());
-      return innerHandler(context.provide<RequestId>(() => requestId));
-    };
-  }).use(
-    // This provider is last in the chain, so it runs first.
-    provider<Uuid>((_) => const Uuid()),
-  );
+  return handler
+      .use(errorHandler())
+      .use(requestLogger())
+      .use((innerHandler) {
+        // This middleware reads the Uuid and provides the RequestId.
+        // It must come after the Uuid provider in the chain.
+        return (context) {
+          // Read the Uuid instance provided from the previous middleware.
+          final uuid = context.read<Uuid>();
+          final requestId = RequestId(uuid.v4());
+          return innerHandler(context.provide<RequestId>(() => requestId));
+        };
+      })
+      .use(
+        // This provider is last in the chain, so it runs first.
+        provider<Uuid>((_) => const Uuid()),
+      );
 }
