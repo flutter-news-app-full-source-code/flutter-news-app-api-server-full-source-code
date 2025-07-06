@@ -1,3 +1,5 @@
+// ignore_for_file: public_member_api_docs
+
 import 'package:ht_api/src/rbac/permission_service.dart';
 import 'package:ht_api/src/services/auth_service.dart';
 import 'package:ht_api/src/services/auth_token_service.dart';
@@ -8,6 +10,7 @@ import 'package:ht_api/src/services/verification_code_storage_service.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_email_repository/ht_email_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
+import 'package:logging/logging.dart';
 
 /// {@template dependency_container}
 /// A singleton service locator for managing and providing access to all shared
@@ -50,6 +53,8 @@ class DependencyContainer {
 
   /// The single, global instance of the [DependencyContainer].
   static final instance = DependencyContainer._();
+
+  final _log = Logger('DependencyContainer');
 
   // --- Repositories ---
   late final HtDataRepository<Headline> headlineRepository;
@@ -111,5 +116,7 @@ class DependencyContainer {
     this.dashboardSummaryService = dashboardSummaryService;
     this.permissionService = permissionService;
     this.userPreferenceLimitService = userPreferenceLimitService;
+
+    _log.info('[INIT_SEQ] 6. Dependency container populated successfully.');
   }
 }
