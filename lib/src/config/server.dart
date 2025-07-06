@@ -2,9 +2,20 @@
 
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/config/environment_config.dart';
+import 'package:ht_api/src/rbac/permission_service.dart';
+import 'package:ht_api/src/services/auth_service.dart';
+import 'package:ht_api/src/services/auth_token_service.dart';
+import 'package:ht_api/src/services/dashboard_summary_service.dart';
+import 'package:ht_api/src/services/default_user_preference_limit_service.dart';
+import 'package:ht_api/src/services/jwt_auth_token_service.dart';
+import 'package:ht_api/src/services/token_blacklist_service.dart';
+import 'package:ht_api/src/services/user_preference_limit_service.dart';
+import 'package:ht_api/src/services/verification_code_storage_service.dart';
 import 'package:ht_data_client/ht_data_client.dart';
 import 'package:ht_data_postgres/ht_data_postgres.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
+import 'package:ht_email_inmemory/ht_email_inmemory.dart';
+import 'package:ht_email_repository/ht_email_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 import 'package:logging/logging.dart';
 import 'package:postgres/postgres.dart';
@@ -124,9 +135,43 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
     toJson: (c) => c.toJson(),
   );
 
-  // 4. Create the main handler with all dependencies provided
+  // 4. Initialize Services
+  const uuid = Uuid();
+  const emailRepository = HtEmailRepository(
+    emailClient: HtEmailInMemoryClient(),
+  );
+  final tokenBlacklistService = InMemoryTokenBlacklistService();
+  final authTokenService = JwtAuthTokenService(
+    userRepository: userRepository,
+    blacklistService: tokenBlacklistService,
+    uuidGenerator: uuid,
+  );
+  final verificationCodeStorageService =
+      InMemoryVerificationCodeStorageService();
+  final authService = AuthService(
+    userRepository: userRepository,
+    authTokenService: authTokenService,
+    verificationCodeStorageService: verificationCodeStorageService,
+    emailRepository: emailRepository,
+    userAppSettingsRepository: userAppSettingsRepository,
+    userContentPreferencesRepository: userContentPreferencesRepository,
+    uuidGenerator: uuid,
+  );
+  final dashboardSummaryService = DashboardSummaryService(
+    headlineRepository: headlineRepository,
+    categoryRepository: categoryRepository,
+    sourceRepository: sourceRepository,
+  );
+  const permissionService = PermissionService();
+  final userPreferenceLimitService = DefaultUserPreferenceLimitService(
+    appConfigRepository: appConfigRepository,
+  );
+
+  // 5. Create the main handler with all dependencies provided
   final finalHandler = handler
-      .use(provider<Uuid>((_) => const Uuid()))
+      // Foundational utilities
+      .use(provider<Uuid>((_) => uuid))
+      // Repositories
       .use(provider<HtDataRepository<Headline>>((_) => headlineRepository))
       .use(provider<HtDataRepository<Category>>((_) => categoryRepository))
       .use(provider<HtDataRepository<Source>>((_) => sourceRepository))
@@ -142,9 +187,26 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
           (_) => userContentPreferencesRepository,
         ),
       )
-      .use(provider<HtDataRepository<AppConfig>>((_) => appConfigRepository));
+      .use(provider<HtDataRepository<AppConfig>>((_) => appConfigRepository))
+      .use(provider<HtEmailRepository>((_) => emailRepository))
+      // Services
+      .use(provider<TokenBlacklistService>((_) => tokenBlacklistService))
+      .use(provider<AuthTokenService>((_) => authTokenService))
+      .use(
+        provider<VerificationCodeStorageService>(
+          (_) => verificationCodeStorageService,
+        ),
+      )
+      .use(provider<AuthService>((_) => authService))
+      .use(provider<DashboardSummaryService>((_) => dashboardSummaryService))
+      .use(provider<PermissionService>((_) => permissionService))
+      .use(
+        provider<UserPreferenceLimitService>(
+          (_) => userPreferenceLimitService,
+        ),
+      );
 
-  // 5. Start the server
+  // 6. Start the server
   final server = await serve(
     finalHandler,
     ip,
@@ -152,7 +214,7 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
   );
   _log.info('Server listening on port ${server.port}');
 
-  // 6. Handle graceful shutdown
+  // 7. Handle graceful shutdown
   ProcessSignal.sigint.watch().listen((_) async {
     _log.info('Received SIGINT. Shutting down...');
     await _connection.close();
