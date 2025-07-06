@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:ht_api/src/config/database_connection.dart';
 import 'package:ht_api/src/rbac/permission_service.dart';
@@ -124,7 +125,13 @@ class AppDependencies {
       connection,
       'users',
       User.fromJson,
-      (u) => u.toJson(),
+      (user) {
+        // The `roles` field is a List<String>, but the database expects a
+        // JSONB array. We must explicitly encode it.
+        final json = user.toJson();
+        json['roles'] = jsonEncode(json['roles']);
+        return json;
+      },
     );
     userAppSettingsRepository = _createRepository(
       connection,
