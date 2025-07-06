@@ -162,6 +162,16 @@ class DatabaseSeedingService {
         _log.fine('Seeding categories...');
         for (final data in categoriesFixturesData) {
           final category = Category.fromJson(data);
+          final params = category.toJson();
+
+          // Ensure optional fields exist for the postgres driver.
+          // The driver requires all named parameters to be present in the map,
+          // even if the value is null. The model's `toJson` with
+          // `includeIfNull: false` will omit keys for null fields.
+          params.putIfAbsent('description', () => null);
+          params.putIfAbsent('icon_url', () => null);
+          params.putIfAbsent('updated_at', () => null);
+
           await _connection.execute(
             Sql.named(
               'INSERT INTO categories (id, name, description, icon_url, '
@@ -169,7 +179,7 @@ class DatabaseSeedingService {
               '@icon_url, @status, @type, @created_at, @updated_at) '
               'ON CONFLICT (id) DO NOTHING',
             ),
-            parameters: category.toJson(),
+            parameters: params,
           );
         }
 
@@ -203,6 +213,13 @@ class DatabaseSeedingService {
         _log.fine('Seeding headlines...');
         for (final data in headlinesFixturesData) {
           final headline = Headline.fromJson(data);
+          final params = headline.toJson();
+
+          // Ensure optional fields exist for the postgres driver.
+          params.putIfAbsent('description', () => null);
+          params.putIfAbsent('content', () => null);
+          params.putIfAbsent('updated_at', () => null);
+
           await _connection.execute(
             Sql.named(
               'INSERT INTO headlines (id, title, source_id, category_id, '
@@ -211,7 +228,7 @@ class DatabaseSeedingService {
               '@published_at, @description, @content) '
               'ON CONFLICT (id) DO NOTHING',
             ),
-            parameters: headline.toJson(),
+            parameters: params,
           );
         }
 
