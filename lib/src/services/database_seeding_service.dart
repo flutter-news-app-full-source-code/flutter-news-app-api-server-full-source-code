@@ -60,7 +60,6 @@ class DatabaseSeedingService {
           CREATE TABLE IF NOT EXISTS categories (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
-            slug TEXT NOT NULL UNIQUE,
             description TEXT,
             status TEXT,
             type TEXT,
@@ -164,10 +163,10 @@ class DatabaseSeedingService {
           final category = Category.fromJson(data);
           await _connection.execute(
             Sql.named(
-              'INSERT INTO categories (id, name, slug, description, status, '
-              'type, created_at, updated_at) VALUES (@id, @name, @slug, '
+              'INSERT INTO categories (id, name, description, status, '
+              'type, created_at, updated_at) VALUES (@id, @name, '
               '@description, @status, @type, @created_at, @updated_at) '
-              'ON CONFLICT (slug) DO NOTHING',
+              'ON CONFLICT (id) DO NOTHING',
             ),
             parameters: category.toJson(),
           );
