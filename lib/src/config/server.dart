@@ -150,7 +150,6 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
   );
 
   // 5. Initialize Services
-  const uuid = Uuid();
   const emailRepository = HtEmailRepository(
     emailClient: HtEmailInMemoryClient(),
   );
@@ -158,7 +157,7 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
   final authTokenService = JwtAuthTokenService(
     userRepository: userRepository,
     blacklistService: tokenBlacklistService,
-    uuidGenerator: uuid,
+    uuidGenerator: const Uuid(),
   );
   final verificationCodeStorageService =
       InMemoryVerificationCodeStorageService();
@@ -169,7 +168,7 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
     emailRepository: emailRepository,
     userAppSettingsRepository: userAppSettingsRepository,
     userContentPreferencesRepository: userContentPreferencesRepository,
-    uuidGenerator: uuid,
+    uuidGenerator: const Uuid(),
   );
   final dashboardSummaryService = DashboardSummaryService(
     headlineRepository: headlineRepository,
