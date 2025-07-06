@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:dotenv/dotenv.dart' as dotenv;
+import 'package:dotenv/dotenv.dart';
 import 'package:ht_api/src/config/database_connection.dart';
 import 'package:ht_api/src/rbac/permission_service.dart';
 import 'package:ht_api/src/services/auth_service.dart';
@@ -84,7 +84,7 @@ class AppDependencies {
 
   Future<void> _init() async {
     // 0. Load environment variables from .env file.
-    dotenv.load();
+    DotEnv(includePlatformEnvironment: true).load();
     _log.info('Environment variables loaded from .env file.');
 
     // 1. Establish Database Connection.
