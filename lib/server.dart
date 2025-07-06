@@ -82,9 +82,10 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
       '${record.loggerName}: ${record.message}',
     );
   });
+  _log.info('[INIT_SEQ] 1. Logger setup complete.');
 
   // 2. Establish Database Connection
-  _log.info('Connecting to PostgreSQL database...');
+  _log.info('[INIT_SEQ] 2. Connecting to PostgreSQL database...');
   final dbUri = Uri.parse(EnvironmentConfig.databaseUrl);
   String? username;
   String? password;
@@ -106,18 +107,24 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
     ),
     settings: const ConnectionSettings(sslMode: SslMode.require),
   );
-  _log.info('PostgreSQL database connection established.');
+  _log.info('[INIT_SEQ] 2. PostgreSQL database connection established.');
 
   // 3. Initialize and run database seeding
+  _log.info('[INIT_SEQ] 3. Initializing database seeding service...');
   final seedingService = DatabaseSeedingService(
     connection: _connection,
     log: _log,
   );
+  _log.info('[INIT_SEQ] 3. Creating tables if they do not exist...');
   await seedingService.createTables();
+  _log.info('[INIT_SEQ] 3. Seeding global fixture data...');
   await seedingService.seedGlobalFixtureData();
+  _log.info('[INIT_SEQ] 3. Seeding initial admin and config...');
   await seedingService.seedInitialAdminAndConfig();
-
-  // 4. Initialize Repositories
+  _log
+    ..info('[INIT_SEQ] 3. Database seeding complete.')
+    // 4. Initialize Repositories
+    ..info('[INIT_SEQ] 4. Initializing data repositories...');
   final headlineRepository = _createRepository<Headline>(
     tableName: 'headlines',
     fromJson: Headline.fromJson,
@@ -159,8 +166,10 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
     fromJson: AppConfig.fromJson,
     toJson: (c) => c.toJson(),
   );
-
-  // 5. Initialize Services
+  _log
+    ..info('[INIT_SEQ] 4. Data repositories initialized.')
+    // 5. Initialize Services
+    ..info('[INIT_SEQ] 5. Initializing services...');
   const emailRepository = HtEmailRepository(
     emailClient: HtEmailInMemoryClient(),
   );
@@ -181,19 +190,20 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
     userContentPreferencesRepository: userContentPreferencesRepository,
     uuidGenerator: const Uuid(),
   );
-  final dashboardSummaryService =
-      DashboardSummaryService(
-        headlineRepository: headlineRepository,
-        categoryRepository: categoryRepository,
-        sourceRepository: sourceRepository,
-      );
+  final dashboardSummaryService = DashboardSummaryService(
+    headlineRepository: headlineRepository,
+    categoryRepository: categoryRepository,
+    sourceRepository: sourceRepository,
+  );
   const permissionService = PermissionService();
   final UserPreferenceLimitService userPreferenceLimitService =
       DefaultUserPreferenceLimitService(
         appConfigRepository: appConfigRepository,
       );
-
-  // 6. Populate the DependencyContainer
+  _log
+    ..info('[INIT_SEQ] 5. Services initialized.')
+    // 6. Populate the DependencyContainer
+    ..info('[INIT_SEQ] 6. Populating dependency container...');
   DependencyContainer.instance.init(
     headlineRepository: headlineRepository,
     categoryRepository: categoryRepository,
@@ -214,21 +224,25 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
   );
 
   // 7. Start the server with the gated handler
+  _log.info('[INIT_SEQ] 7. Starting server with gated handler...');
   final server = await serve(gatedHandler, ip, port);
-  _log.info('Server listening on port ${server.port}');
+  _log.info('[INIT_SEQ] 7. Server listening on port ${server.port}');
 
   // 8. Open the gate now that the server is ready.
+  _log.info('[INIT_SEQ] 8. Server ready. Opening request gate.');
   initCompleter.complete();
 
   // 9. Handle graceful shutdown
+  _log.info('[INIT_SEQ] 9. Registering graceful shutdown handler.');
   ProcessSignal.sigint.watch().listen((_) async {
-    _log.info('Received SIGINT. Shutting down...');
+    _log.info('[SHUTDOWN] Received SIGINT. Shutting down...');
     await _connection.close();
-    _log.info('Database connection closed.');
+    _log.info('[SHUTDOWN] Database connection closed.');
     await server.close(force: true);
-    _log.info('Server shut down.');
+    _log.info('[SHUTDOWN] Server shut down.');
     exit(0);
   });
+  _log.info('[INIT_SEQ] Server initialization sequence complete.');
 
   return server;
 }
