@@ -153,8 +153,27 @@ class AppDependencies {
     userContentPreferencesRepository = _createRepository(
       connection,
       'user_content_preferences',
-      UserContentPreferences.fromJson,
-      (p) => p.toJson(),
+      (json) {
+        // The postgres driver returns DateTime objects, but the model's
+        // fromJson expects ISO 8601 strings. We must convert them first.
+        if (json['created_at'] is DateTime) {
+          json['created_at'] =
+              (json['created_at'] as DateTime).toIso8601String();
+        }
+        if (json['updated_at'] is DateTime) {
+          json['updated_at'] =
+              (json['updated_at'] as DateTime).toIso8601String();
+        }
+        return UserContentPreferences.fromJson(json);
+      },
+      (preferences) {
+        final json = preferences.toJson();
+        json['followed_categories'] = jsonEncode(json['followed_categories']);
+        json['followed_sources'] = jsonEncode(json['followed_sources']);
+        json['followed_countries'] = jsonEncode(json['followed_countries']);
+        json['saved_headlines'] = jsonEncode(json['saved_headlines']);
+        return json;
+      },
     );
     appConfigRepository = _createRepository(
       connection,
