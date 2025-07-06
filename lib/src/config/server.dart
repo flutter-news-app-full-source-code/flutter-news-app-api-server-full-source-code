@@ -2,6 +2,7 @@
 
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/config/environment_config.dart';
+import 'package:ht_data_client/ht_data_client.dart';
 import 'package:ht_data_postgres/ht_data_postgres.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
