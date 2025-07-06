@@ -171,11 +171,7 @@ class AuthService {
         // Admin users must be provisioned out-of-band (e.g., via fixtures).
         final roles = [UserRoles.standardUser];
 
-        user = User(
-          id: _uuid.v4(),
-          email: email,
-          roles: roles,
-        );
+        user = User(id: _uuid.v4(), email: email, roles: roles);
         user = await _userRepository.create(item: user);
         print('Created new user: ${user.id} with roles: ${user.roles}');
 
@@ -197,7 +193,9 @@ class AuthService {
       }
     } on HtHttpException catch (e) {
       print('Error finding/creating user for $email: $e');
-      throw const OperationFailedException('Failed to find or create user account.');
+      throw const OperationFailedException(
+        'Failed to find or create user account.',
+      );
     } catch (e) {
       print('Unexpected error during user lookup/creation for $email: $e');
       throw const OperationFailedException('Failed to process user account.');
@@ -213,7 +211,7 @@ class AuthService {
       throw const OperationFailedException(
         'Failed to generate authentication token.',
       );
-    } 
+    }
   }
 
   /// Performs anonymous sign-in.
@@ -227,7 +225,7 @@ class AuthService {
     try {
       user = User(
         id: _uuid.v4(), // Generate new ID
-        roles: [UserRoles.guestUser], // Anonymous users are guest users
+        roles: const [UserRoles.guestUser], // Anonymous users are guest users
         email: null, // Anonymous users don't have an email initially
       );
       user = await _userRepository.create(item: user);
@@ -426,7 +424,7 @@ class AuthService {
       final updatedUser = User(
         id: anonymousUser.id, // Preserve original ID
         email: linkedEmail,
-        roles: [UserRoles.standardUser], // Now a permanent standard user
+        roles: const [UserRoles.standardUser], // Now a permanent standard user
       );
       final permanentUser = await _userRepository.update(
         id: updatedUser.id,

@@ -1,6 +1,6 @@
+import 'package:ht_shared/ht_shared.dart';
 import 'package:logging/logging.dart';
 import 'package:postgres/postgres.dart';
-import 'package:ht_shared/ht_shared.dart';
 
 /// {@template database_seeding_service}
 /// A service responsible for initializing the database schema and seeding it
@@ -137,11 +137,7 @@ class DatabaseSeedingService {
       }
       _log.info('Database schema creation completed successfully.');
     } on Object catch (e, st) {
-      _log.severe(
-        'An error occurred during database schema creation.',
-        e,
-        st,
-      );
+      _log.severe('An error occurred during database schema creation.', e, st);
       // Propagate as a standard exception for the server to handle.
       throw OperationFailedException(
         'Failed to initialize database schema: $e',
@@ -225,9 +221,7 @@ class DatabaseSeedingService {
         e,
         st,
       );
-      throw OperationFailedException(
-        'Failed to seed global fixture data: $e',
-      );
+      throw OperationFailedException('Failed to seed global fixture data: $e');
     }
   }
 
@@ -279,10 +273,7 @@ class DatabaseSeedingService {
             'VALUES (@id, @user_id, @display_settings, @language) '
             'ON CONFLICT (id) DO NOTHING',
           ),
-          parameters: {
-            ...adminSettings.toJson(),
-            'user_id': adminUser.id,
-          },
+          parameters: {...adminSettings.toJson(), 'user_id': adminUser.id},
         );
 
         await _connection.execute(
@@ -293,10 +284,7 @@ class DatabaseSeedingService {
             '@followed_sources, @followed_countries, @saved_headlines) '
             'ON CONFLICT (id) DO NOTHING',
           ),
-          parameters: {
-            ...adminPreferences.toJson(),
-            'user_id': adminUser.id,
-          },
+          parameters: {...adminPreferences.toJson(), 'user_id': adminUser.id},
         );
 
         await _connection.execute('COMMIT');

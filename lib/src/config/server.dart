@@ -1,4 +1,4 @@
- import 'dart:io';
+import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/config/environment_config.dart';
@@ -6,9 +6,9 @@ import 'package:ht_api/src/rbac/permission_service.dart';
 import 'package:ht_api/src/services/auth_service.dart';
 import 'package:ht_api/src/services/auth_token_service.dart';
 import 'package:ht_api/src/services/dashboard_summary_service.dart';
+import 'package:ht_api/src/services/database_seeding_service.dart';
 import 'package:ht_api/src/services/default_user_preference_limit_service.dart';
 import 'package:ht_api/src/services/jwt_auth_token_service.dart';
-import 'package:ht_api/src/services/database_seeding_service.dart';
 import 'package:ht_api/src/services/token_blacklist_service.dart';
 import 'package:ht_api/src/services/user_preference_limit_service.dart';
 import 'package:ht_api/src/services/verification_code_storage_service.dart';
@@ -23,20 +23,20 @@ import 'package:postgres/postgres.dart';
 import 'package:uuid/uuid.dart';
 
 /// Global logger instance.
- final _log = Logger('ht_api');
+final _log = Logger('ht_api');
 
 /// Global PostgreSQL connection instance.
- late final Connection _connection;
+late final Connection _connection;
 
 /// Creates a data repository for a given type [T].
 ///
 /// This helper function centralizes the creation of repositories,
 /// ensuring they all use the same database connection and logger.
- HtDataRepository<T> _createRepository<T>({
+HtDataRepository<T> _createRepository<T>({
   required String tableName,
   required FromJson<T> fromJson,
   required ToJson<T> toJson,
- }) {
+}) {
   return HtDataRepository<T>(
     dataClient: HtDataPostgresClient<T>(
       connection: _connection,
@@ -46,7 +46,7 @@ import 'package:uuid/uuid.dart';
       log: _log,
     ),
   );
- }
+}
 
 /// The main entry point for the server.
 ///
@@ -98,7 +98,10 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
   // `ON CONFLICT DO NOTHING`), so it's safe to run every time. This ensures
   // the database is always in a valid state, especially for first-time setup
   // in any environment.
-  final seedingService = DatabaseSeedingService(connection: _connection, log: _log);
+  final seedingService = DatabaseSeedingService(
+    connection: _connection,
+    log: _log,
+  );
   await seedingService.createTables();
   await seedingService.seedGlobalFixtureData();
   await seedingService.seedInitialAdminAndConfig();
@@ -136,10 +139,10 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
   );
   final userContentPreferencesRepository =
       _createRepository<UserContentPreferences>(
-    tableName: 'user_content_preferences',
-    fromJson: UserContentPreferences.fromJson,
-    toJson: (p) => p.toJson(),
-  );
+        tableName: 'user_content_preferences',
+        fromJson: UserContentPreferences.fromJson,
+        toJson: (p) => p.toJson(),
+      );
   final appConfigRepository = _createRepository<AppConfig>(
     tableName: 'app_config',
     fromJson: AppConfig.fromJson,
@@ -212,17 +215,11 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
       .use(provider<DashboardSummaryService>((_) => dashboardSummaryService))
       .use(provider<PermissionService>((_) => permissionService))
       .use(
-        provider<UserPreferenceLimitService>(
-          (_) => userPreferenceLimitService,
-        ),
+        provider<UserPreferenceLimitService>((_) => userPreferenceLimitService),
       );
 
   // 7. Start the server
-  final server = await serve(
-    finalHandler,
-    ip,
-    port,
-  );
+  final server = await serve(finalHandler, ip, port);
   _log.info('Server listening on port ${server.port}');
 
   // 8. Handle graceful shutdown
@@ -236,4 +233,4 @@ Future<HttpServer> run(Handler handler, InternetAddress ip, int port) async {
   });
 
   return server;
- }
+}

@@ -1,6 +1,5 @@
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/middlewares/error_handler.dart';
-import 'package:ht_api/src/middlewares/request_logger.dart';
 import 'package:uuid/uuid.dart';
 
 // --- Request ID Wrapper ---
@@ -54,16 +53,14 @@ Handler middleware(Handler handler) {
   // 3. Error Handler: Catches all errors and formats them into a standard
   //    JSON response.
   return handler
-      .use(
-        (innerHandler) {
-          return (context) {
-            // Read the singleton Uuid instance provided from server.dart.
-            final uuid = context.read<Uuid>();
-            final requestId = RequestId(uuid.v4());
-            return innerHandler(context.provide<RequestId>(() => requestId));
-          };
-        },
-      )
+      .use((innerHandler) {
+        return (context) {
+          // Read the singleton Uuid instance provided from server.dart.
+          final uuid = context.read<Uuid>();
+          final requestId = RequestId(uuid.v4());
+          return innerHandler(context.provide<RequestId>(() => requestId));
+        };
+      })
       .use(requestLogger())
       .use(errorHandler());
 }
