@@ -8,6 +8,16 @@ import 'package:ht_shared/ht_shared.dart';
 
 import '../../../_middleware.dart'; // Assuming RequestId is here
 
+/// Converts a camelCase string to snake_case.
+String _camelToSnake(String input) {
+  return input
+      .replaceAllMapped(
+        RegExp(r'(?<!^)(?=[A-Z])'),
+        (match) => '_${match.group(0)}',
+      )
+      .toLowerCase();
+}
+
 /// Handles requests for the /api/v1/data collection endpoint.
 /// Dispatches requests to specific handlers based on the HTTP method.
 Future<Response> onRequest(RequestContext context) async {
@@ -109,9 +119,14 @@ Future<Response> _handleGet(
   final queryParams = context.request.uri.queryParameters;
   final startAfterId = queryParams['startAfterId'];
   final limitParam = queryParams['limit'];
-  final sortBy = queryParams['sortBy'];
+  final sortByParam = queryParams['sortBy'];
   final sortOrderRaw = queryParams['sortOrder']?.toLowerCase();
   final limit = limitParam != null ? int.tryParse(limitParam) : null;
+
+  // Convert sortBy from camelCase to snake_case for the database query.
+  // This prevents errors where the client sends 'createdAt' and the database
+  // expects 'created_at'.
+  final sortBy = sortByParam != null ? _camelToSnake(sortByParam) : null;
 
   SortOrder? sortOrder;
   if (sortOrderRaw != null) {
