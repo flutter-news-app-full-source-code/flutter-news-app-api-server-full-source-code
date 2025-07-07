@@ -106,8 +106,8 @@ class DatabaseSeedingService {
           CREATE TABLE IF NOT EXISTS headlines (
             id TEXT PRIMARY KEY,
             title TEXT NOT NULL,
-            source_id TEXT NOT NULL,
-            category_id TEXT NOT NULL,
+            source_id TEXT REFERENCES sources(id),
+            category_id TEXT REFERENCES categories(id),
             image_url TEXT,
             url TEXT,
             published_at TIMESTAMPTZ,
@@ -260,19 +260,10 @@ class DatabaseSeedingService {
           final headline = Headline.fromJson(data);
           final params = headline.toJson();
  
-          // The `source_id` and `category_id` columns are NOT NULL. If a fixture
-          // is missing the nested source or category object, we cannot proceed.
-          if (headline.source == null || headline.category == null) {
-            _log.warning(
-              'Skipping headline fixture with missing source or category ID: '
-              '${headline.title}',
-            );
-            continue;
-          }
- 
           // Extract IDs from nested objects and remove the objects to match schema.
-          params['source_id'] = headline.source!.id;
-          params['category_id'] = headline.category!.id;
+          // These are now nullable to match the schema.
+          params['source_id'] = headline.source?.id;
+          params['category_id'] = headline.category?.id;
           params.remove('source');
           params.remove('category');
  
