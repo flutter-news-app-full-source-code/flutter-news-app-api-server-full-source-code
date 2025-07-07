@@ -115,7 +115,21 @@ class AppDependencies {
         }
         return Headline.fromJson(json);
       },
-      (h) => h.toJson(), // toJson already handles DateTime correctly
+      (headline) {
+        final json = headline.toJson();
+        // The database expects source_id and category_id, not nested objects.
+        // We extract the IDs and remove the original objects to match the
+        // schema.
+        if (headline.source != null) {
+          json['source_id'] = headline.source!.id;
+        }
+        if (headline.category != null) {
+          json['category_id'] = headline.category!.id;
+        }
+        json.remove('source');
+        json.remove('category');
+        return json;
+      },
     );
     categoryRepository = _createRepository(
       connection,
@@ -147,7 +161,15 @@ class AppDependencies {
         }
         return Source.fromJson(json);
       },
-      (s) => s.toJson(),
+      (source) {
+        final json = source.toJson();
+        // The database expects headquarters_country_id, not a nested object.
+        // We extract the ID and remove the original object to match the
+        // schema.
+        json['headquarters_country_id'] = source.headquarters?.id;
+        json.remove('headquarters');
+        return json;
+      },
     );
     countryRepository = _createRepository(
       connection,
