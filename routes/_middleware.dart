@@ -116,16 +116,16 @@ Handler middleware(Handler handler) {
       return handler
           .use(provider<ModelRegistryMap>((_) => modelRegistry))
           .use(provider<Uuid>((_) => const Uuid()))
-          .use(provider<HtDataRepository<Headline>>((_) => deps.headlineRepository))
-          .use(provider<HtDataRepository<Category>>((_) => deps.categoryRepository))
-          .use(provider<HtDataRepository<Source>>((_) => deps.sourceRepository))
-          .use(provider<HtDataRepository<Country>>((_) => deps.countryRepository))
-          .use(provider<HtDataRepository<User>>((_) => deps.userRepository))
+          .use(provider<HtDataRepository<Headline>>((_) => deps.headlineRepository)) //
+          .use(provider<HtDataRepository<Topic>>((_) => deps.topicRepository))
+          .use(provider<HtDataRepository<Source>>((_) => deps.sourceRepository)) //
+          .use(provider<HtDataRepository<Country>>((_) => deps.countryRepository)) //
+          .use(provider<HtDataRepository<User>>((_) => deps.userRepository)) //
           .use(provider<HtDataRepository<UserAppSettings>>(
               (_) => deps.userAppSettingsRepository))
           .use(provider<HtDataRepository<UserContentPreferences>>(
               (_) => deps.userContentPreferencesRepository))
-          .use(provider<HtDataRepository<AppConfig>>((_) => deps.appConfigRepository))
+          .use(provider<HtDataRepository<RemoteConfig>>((_) => deps.remoteConfigRepository))
           .use(provider<HtEmailRepository>((_) => deps.emailRepository))
           .use(provider<TokenBlacklistService>((_) => deps.tokenBlacklistService))
           .use(provider<AuthTokenService>((_) => deps.authTokenService))
