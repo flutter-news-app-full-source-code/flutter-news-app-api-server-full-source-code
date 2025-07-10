@@ -73,9 +73,8 @@ class AuthService {
           );
         }
 
-        final hasRequiredRole =
-            user.roles.contains(UserRoles.admin) ||
-            user.roles.contains(UserRoles.publisher);
+        final hasRequiredRole = user.dashboardRole == DashboardUserRole.admin ||
+            user.dashboardRole == DashboardUserRole.publisher;
 
         if (!hasRequiredRole) {
           print(
@@ -185,7 +184,9 @@ class AuthService {
           ),
         );
         user = await _userRepository.create(item: user);
-        print('Created new user: ${user.id} with roles: ${user.roles}');
+        print(
+          'Created new user: ${user.id} with appRole: ${user.appRole}',
+        );
 
         // Create default UserAppSettings for the new user
         final defaultAppSettings = UserAppSettings(id: user.id);
