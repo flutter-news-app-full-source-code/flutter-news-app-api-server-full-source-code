@@ -100,7 +100,7 @@ Future<Response> onRequest(RequestContext context) async {
 ///     Example: `/api/v1/data?model=country&q=US` (searches name and isoCode)
 ///   - Other parameters for countries will result in a 400 Bad Request.
 ///
-/// - **Other Models (User, UserAppSettings, UserContentPreferences, AppConfig):**
+/// - **Other Models (User, UserAppSettings, UserContentPreferences, RemoteConfig):**
 ///   - Currently support exact match for top-level query parameters passed directly.
 ///   - No specific complex filtering logic (like `_in` or `_contains`) is applied
 ///     by this handler for these models yet. The `HtDataInMemoryClient` can
@@ -307,8 +307,8 @@ Future<Response> _handleGet(
         sortBy: sortBy,
         sortOrder: sortOrder,
       );
-    case 'app_config':
-      final repo = context.read<HtDataRepository<AppConfig>>();
+    case 'remote_config':
+      final repo = context.read<HtDataRepository<RemoteConfig>>();
       paginatedResponse = await repo.readAllByQuery(
         specificQueryForClient,
         userId: userIdForRepoCall,
@@ -440,10 +440,10 @@ Future<Response> _handlePost(
       throw const ForbiddenException(
         'UserContentPreferences creation is not allowed via the generic data endpoint.',
       );
-    case 'app_config': // New case for AppConfig (create by admin)
-      final repo = context.read<HtDataRepository<AppConfig>>();
+    case 'remote_config': // New case for RemoteConfig (create by admin)
+      final repo = context.read<HtDataRepository<RemoteConfig>>();
       createdItem = await repo.create(
-        item: newItem as AppConfig,
+        item: newItem as RemoteConfig,
         userId: userIdForRepoCall, // userId should be null for AppConfig
       );
     default:
