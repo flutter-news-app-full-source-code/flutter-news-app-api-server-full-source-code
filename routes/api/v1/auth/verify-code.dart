@@ -9,7 +9,7 @@ import 'package:ht_shared/ht_shared.dart';
 ///
 /// Verifies the provided email and code, completes the sign-in/sign-up,
 /// and returns the authenticated User object along with an auth token. It
-/// supports a context-aware flow by checking for an `is_dashboard_login`
+/// supports a context-aware flow by checking for an `isDashboardLogin`
 /// flag in the request body, which dictates whether to perform a strict
 /// login-only check or a standard sign-in/sign-up.
 Future<Response> onRequest(RequestContext context) async {
@@ -67,7 +67,7 @@ Future<Response> onRequest(RequestContext context) async {
   }
 
   // Check for the optional dashboard login flag. Default to false.
-  final isDashboardLogin = (body['is_dashboard_login'] as bool?) ?? false;
+  final isDashboardLogin = (body['isDashboardLogin'] as bool?) ?? false;
 
   try {
     // Call the AuthService to handle the verification and sign-in logic
