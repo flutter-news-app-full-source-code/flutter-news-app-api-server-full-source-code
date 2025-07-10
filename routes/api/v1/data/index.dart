@@ -63,21 +63,21 @@ Future<Response> onRequest(RequestContext context) async {
 ///
 /// This handler implements model-specific filtering rules:
 /// - **Headlines (`model=headline`):**
-///   - Filterable by `q` (text query on title only).
-///     If `q` is present, `categories` and `sources` are ignored.
+///   - Filterable by `q` (text query on title only). If `q` is present,
+///     `topics` and `sources` are ignored.
 ///     Example: `/api/v1/data?model=headline&q=Dart+Frog`
 ///   - OR by a combination of:
-///     - `categories` (comma-separated category IDs).
-///       Example: `/api/v1/data?model=headline&categories=catId1,catId2`
+///     - `topics` (comma-separated topic IDs).
+///       Example: `/api/v1/data?model=headline&topics=topicId1,topicId2`
 ///     - `sources` (comma-separated source IDs).
 ///       Example: `/api/v1/data?model=headline&sources=sourceId1`
-///     - Both `categories` and `sources` can be used together (AND logic).
-///       Example: `/api/v1/data?model=headline&categories=catId1&sources=sourceId1`
+///     - Both `topics` and `sources` can be used together (AND logic).
+///       Example: `/api/v1/data?model=headline&topics=topicId1&sources=sourceId1`
 ///   - Other parameters for headlines (e.g., `countries`) will result in a 400 Bad Request.
 ///
 /// - **Sources (`model=source`):**
-///   - Filterable by `q` (text query on name only).
-///     If `q` is present, `countries`, `sourceTypes`, `languages` are ignored.
+///   - Filterable by `q` (text query on name only). If `q` is present,
+///     `countries`, `sourceTypes`, `languages` are ignored.
 ///     Example: `/api/v1/data?model=source&q=Tech+News`
 ///   - OR by a combination of:
 ///     - `countries` (comma-separated country ISO codes for `source.headquarters.iso_code`).
@@ -89,10 +89,10 @@ Future<Response> onRequest(RequestContext context) async {
 ///   - These specific filters are ANDed if multiple are provided.
 ///   - Other parameters for sources will result in a 400 Bad Request.
 ///
-/// - **Categories (`model=category`):**
+/// - **Topics (`model=topic`):**
 ///   - Filterable ONLY by `q` (text query on name only).
-///     Example: `/api/v1/data?model=category&q=Technology`
-///   - Other parameters for categories will result in a 400 Bad Request.
+///     Example: `/api/v1/data?model=topic&q=Technology`
+///   - Other parameters for topics will result in a 400 Bad Request.
 ///
 /// - **Countries (`model=country`):**
 ///   - Filterable ONLY by `q` (text query on name and isoCode).
@@ -156,14 +156,14 @@ Future<Response> _handleGet(
 
   switch (modelName) {
     case 'headline':
-      allowedKeys = {'categories', 'sources', 'q'};
+      allowedKeys = {'topics', 'sources', 'q'};
       final qValue = queryParams['q'];
       if (qValue != null && qValue.isNotEmpty) {
         specificQueryForClient['title_contains'] = qValue;
         // specificQueryForClient['description_contains'] = qValue; // Removed
       } else {
-        if (queryParams.containsKey('categories')) {
-          specificQueryForClient['category.id_in'] = queryParams['categories']!;
+        if (queryParams.containsKey('topics')) {
+          specificQueryForClient['topic.id_in'] = queryParams['topics']!;
         }
         if (queryParams.containsKey('sources')) {
           specificQueryForClient['source.id_in'] = queryParams['sources']!;
@@ -188,7 +188,7 @@ Future<Response> _handleGet(
           specificQueryForClient['language_in'] = queryParams['languages']!;
         }
       }
-    case 'category':
+    case 'topic':
       allowedKeys = {'q'};
       final qValue = queryParams['q'];
       if (qValue != null && qValue.isNotEmpty) {
@@ -217,7 +217,7 @@ Future<Response> _handleGet(
   // Validate received keys against allowed keys for the specific models
   if (modelName == 'headline' ||
       modelName == 'source' ||
-      modelName == 'category' ||
+      modelName == 'topic' ||
       modelName == 'country') {
     for (final key in receivedKeys) {
       if (!allowedKeys.contains(key)) {
@@ -247,8 +247,8 @@ Future<Response> _handleGet(
         sortBy: sortBy,
         sortOrder: sortOrder,
       );
-    case 'category':
-      final repo = context.read<HtDataRepository<Category>>();
+    case 'topic':
+      final repo = context.read<HtDataRepository<Topic>>();
       paginatedResponse = await repo.readAllByQuery(
         specificQueryForClient,
         userId: userIdForRepoCall,
@@ -406,10 +406,10 @@ Future<Response> _handlePost(
         item: newItem as Headline,
         userId: userIdForRepoCall,
       );
-    case 'category':
-      final repo = context.read<HtDataRepository<Category>>();
+    case 'topic':
+      final repo = context.read<HtDataRepository<Topic>>();
       createdItem = await repo.create(
-        item: newItem as Category,
+        item: newItem as Topic,
         userId: userIdForRepoCall,
       );
     case 'source':
@@ -493,12 +493,12 @@ Simplified Strict Filtering Rules (ALL FILTERS ARE ANDed if present):
      - `q` (free-text query, searching `source.name` only)
 
 3. Categories (`model=category`):
-   - Filterable __only__ by:
-     - `q` (free-text query, searching `category.name` only)
+   - Filterable __only__ by: - `q` (free-text query, searching `topic.name`
+     only)
 
 4. Countries (`model=country`):
-   - Filterable __only__ by:
-     - `q` (free-text query, searching `country.name` only)
+   - Filterable __only__ by: - `q` (free-text query, searching `country.name`
+     only)
 
 ------
 
@@ -515,12 +515,12 @@ Explicitly Define Allowed Parameters per Model: When processing the request for 
 Model: `headline`
 
 1. Filter by single category:
-   - URL: `/api/v1/data?model=headline&categories=c1a2b3c4-d5e6-f789-0123-456789abcdef`
-   - Expected: Headlines with category ID `c1a2b3c4-d5e6-f789-0123-456789abcdef`.
+   - URL: `/api/v1/data?model=headline&topics=c1a2b3c4-d5e6-f789-0123-456789abcdef`
+   - Expected: Headlines with topic ID `c1a2b3c4-d5e6-f789-0123-456789abcdef`.
 
 2. Filter by multiple comma-separated categories (client-side `_in` implies OR for values):
-   - URL: `/api/v1/data?model=headline&categories=c1a2b3c4-d5e6-f789-0123-456789abcdef,c2b3c4d5-e6f7-a890-1234-567890abcdef`
-   - Expected: Headlines whose category ID is *either* of the two provided.
+   - URL: `/api/v1/data?model=headline&topics=c1a2b3c4-d5e6-f789-0123-456789abcdef,c2b3c4d5-e6f7-a890-1234-567890abcdef`
+   - Expected: Headlines whose topic ID is *either* of the two provided.
 
 3. Filter by single source:
    - URL: `/api/v1/data?model=headline&sources=s1a2b3c4-d5e6-f789-0123-456789abcdef`
@@ -531,16 +531,16 @@ Model: `headline`
    - Expected: Headlines whose source ID is *either* of the two provided.
 
 5. Filter by a category AND a source:
-   - URL: `/api/v1/data?model=headline&categories=c1a2b3c4-d5e6-f789-0123-456789abcdef&sources=s1a2b3c4-d5e6-f789-0123-456789abcdef`
-   - Expected: Headlines matching *both* the category ID AND the source ID.
+   - URL: `/api/v1/data?model=headline&topics=c1a2b3c4-d5e6-f789-0123-456789abcdef&sources=s1a2b3c4-d5e6-f789-0123-456789abcdef`
+   - Expected: Headlines matching *both* the topic ID AND the source ID.
 
 6. Filter by text query `q` (title only):
    - URL: `/api/v1/data?model=headline&q=Dart`
    - Expected: Headlines where "Dart" (case-insensitive) appears in the title.
 
 7. Filter by `q` AND `categories` (q should take precedence, categories ignored):
-   - URL: `/api/v1/data?model=headline&q=Flutter&categories=c1a2b3c4-d5e6-f789-0123-456789abcdef`
-   - Expected: Headlines matching `q=Flutter` (in title), ignoring the category filter.
+   - URL: `/api/v1/data?model=headline&q=Flutter&topics=c1a2b3c4-d5e6-f789-0123-456789abcdef`
+   - Expected: Headlines matching `q=Flutter` (in title), ignoring the topic filter.
 
 8. Invalid parameter for headlines (e.g., `countries`):
    - URL: `/api/v1/data?model=headline&countries=US`
@@ -580,18 +580,18 @@ Model: `source`
     - URL: `/api/v1/data?model=source&q=Official&countries=US`
     - Expected: Sources matching `q=Official` (in name), ignoring the country filter.
 
-17. Invalid parameter for sources (e.g., `categories`):
-    - URL: `/api/v1/data?model=source&categories=catId1`
+17. Invalid parameter for sources (e.g., `topics`):
+    - URL: `/api/v1/data?model=source&topics=topicId1`
     - Expected: `400 Bad Request`.
 
-Model: `category`
+Model: `topic`
 
 18. Filter by text query `q` for categories (name only):
-    - URL: `/api/v1/data?model=category&q=Mobile`
-    - Expected: Categories where "Mobile" appears in name.
+    - URL: `/api/v1/data?model=topic&q=Mobile`
+    - Expected: Topics where "Mobile" appears in name.
 
 19. Invalid parameter for categories (e.g., `sources`):
-    - URL: `/api/v1/data?model=category&sources=sourceId1`
+    - URL: `/api/v1/data?model=topic&sources=sourceId1`
     - Expected: `400 Bad Request`.
 
 Model: `country`
@@ -605,6 +605,6 @@ Model: `country`
     - Expected: Country with name containing "US". (Note: This test's expectation might need adjustment if no country name contains "US" but its isoCode is "US". The current `q` logic for country only searches name).
 
 22. Invalid parameter for countries (e.g., `categories`):
-    - URL: `/api/v1/data?model=country&categories=catId1`
+    - URL: `/api/v1/data?model=country&topics=topicId1`
     - Expected: `400 Bad Request`.
 */
