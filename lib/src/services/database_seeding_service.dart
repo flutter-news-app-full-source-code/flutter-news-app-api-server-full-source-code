@@ -224,7 +224,7 @@ class DatabaseSeedingService {
           // `headquarters_country_id` column and then remove the original
           // nested object from the parameters to avoid a "superfluous
           // variable" error.
-          params['headquarters_country_id'] = source.headquarters?.id;
+          params['headquarters_country_id'] = source.headquarters.id;
           params.remove('headquarters');
 
           // Ensure optional fields exist for the postgres driver.

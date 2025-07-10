@@ -1,6 +1,5 @@
-import 'dart:io';
-import 'package:logging/logging.dart';
 import 'package:dotenv/dotenv.dart';
+import 'package:logging/logging.dart';
 
 /// {@template environment_config}
 /// A utility class for accessing environment variables.

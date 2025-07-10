@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:ht_shared/ht_shared.dart';
-import 'package:meta/meta.dart';
 import 'package:logging/logging.dart';
+import 'package:meta/meta.dart';
 
 /// {@template token_blacklist_service}
 /// Defines the interface for a service that manages a blacklist of
@@ -51,8 +51,7 @@ class InMemoryTokenBlacklistService implements TokenBlacklistService {
   /// - [cleanupInterval]: How often the service checks for and removes
   ///   expired token IDs. Defaults to 1 hour.
   InMemoryTokenBlacklistService({
-    Duration cleanupInterval = const Duration(hours: 1),
-    required Logger log,
+    required Logger log, Duration cleanupInterval = const Duration(hours: 1),
   }) : _log = log {
     _cleanupTimer = Timer.periodic(cleanupInterval, (_) async {
       try {

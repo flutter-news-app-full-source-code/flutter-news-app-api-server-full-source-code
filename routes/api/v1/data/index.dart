@@ -12,7 +12,7 @@ import '../../../_middleware.dart'; // Assuming RequestId is here
 String _camelToSnake(String input) {
   return input
       .replaceAllMapped(
-        RegExp(r'(?<!^)(?=[A-Z])'),
+        RegExp('(?<!^)(?=[A-Z])'),
         (match) => '_${match.group(0)}',
       )
       .toLowerCase();

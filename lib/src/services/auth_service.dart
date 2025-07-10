@@ -531,22 +531,20 @@ class AuthService {
       }
 
       // 3. Clear any pending sign-in codes for the user's email (if they had one).
-      if (userToDelete.email != null) {
-        try {
-          await _verificationCodeStorageService.clearSignInCode(
-            userToDelete.email!,
-          );
-          _log.info(
-            'Cleared sign-in code for email ${userToDelete.email}.',
-          );
-        } catch (e) {
-          // Log but don't fail deletion if clearing codes fails
-          _log.warning(
-            'Warning: Failed to clear sign-in code for email ${userToDelete.email}: $e',
-          );
-        }
+      try {
+        await _verificationCodeStorageService.clearSignInCode(
+          userToDelete.email,
+        );
+        _log.info(
+          'Cleared sign-in code for email ${userToDelete.email}.',
+        );
+      } catch (e) {
+        // Log but don't fail deletion if clearing codes fails
+        _log.warning(
+          'Warning: Failed to clear sign-in code for email ${userToDelete.email}: $e',
+        );
       }
-
+    
       // TODO(fulleni): Add logic here to delete or anonymize other
       // user-related data (e.g., settings, content) from other repositories
       // once those features are implemented.

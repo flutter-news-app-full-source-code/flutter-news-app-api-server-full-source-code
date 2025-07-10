@@ -1,6 +1,7 @@
 import 'package:ht_api/src/services/user_preference_limit_service.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
+import 'package:logging/logging.dart';
 
 /// {@template default_user_preference_limit_service}
 /// Default implementation of [UserPreferenceLimitService] that enforces limits
@@ -10,9 +11,12 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
   /// {@macro default_user_preference_limit_service}
   const DefaultUserPreferenceLimitService({
     required HtDataRepository<RemoteConfig> remoteConfigRepository,
-  }) : _remoteConfigRepository = remoteConfigRepository;
+    required Logger log,
+  })  : _remoteConfigRepository = remoteConfigRepository,
+        _log = log;
 
   final HtDataRepository<RemoteConfig> _remoteConfigRepository;
+  final Logger _log;
 
   // Assuming a fixed ID for the RemoteConfig document
   static const String _remoteConfigId = 'remote_config';
@@ -67,7 +71,9 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
       rethrow;
     } catch (e) {
       // Catch unexpected errors
-      print('Error checking limit for user ${user.id}, itemType $itemType: $e');
+      _log.severe(
+        'Error checking limit for user ${user.id}, itemType $itemType: $e',
+      );
       throw const OperationFailedException(
         'Failed to check user preference limits.',
       );
@@ -139,7 +145,7 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
       rethrow;
     } catch (e) {
       // Catch unexpected errors
-      print('Error checking update limits for user ${user.id}: $e');
+      _log.severe('Error checking update limits for user ${user.id}: $e');
       throw const OperationFailedException(
         'Failed to check user preference update limits.',
       );
