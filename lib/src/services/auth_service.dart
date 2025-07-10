@@ -193,7 +193,23 @@ class AuthService {
         );
 
         // Create default UserAppSettings for the new user
-        final defaultAppSettings = UserAppSettings(id: user.id);
+        final defaultAppSettings = UserAppSettings(
+          id: user.id,
+          displaySettings: const DisplaySettings(
+            baseTheme: AppBaseTheme.system,
+            accentTheme: AppAccentTheme.defaultBlue,
+            fontFamily: 'SystemDefault',
+            textScaleFactor: AppTextScaleFactor.medium,
+            fontWeight: AppFontWeight.regular,
+          ),
+          language: 'en',
+          feedPreferences: const FeedDisplayPreferences(
+            headlineDensity: HeadlineDensity.normal,
+            headlineImageStyle: HeadlineImageStyle.largeThumbnail,
+            showSourceInHeadlineFeed: true,
+            showPublishDateInHeadlineFeed: true,
+          ),
+        );
         await _userAppSettingsRepository.create(
           item: defaultAppSettings,
           userId: user.id,
@@ -201,7 +217,13 @@ class AuthService {
         _log.info('Created default UserAppSettings for user: ${user.id}');
 
         // Create default UserContentPreferences for the new user
-        final defaultUserPreferences = UserContentPreferences(id: user.id);
+        final defaultUserPreferences = UserContentPreferences(
+          id: user.id,
+          followedCountries: const [],
+          followedSources: const [],
+          followedTopics: const [],
+          savedHeadlines: const [],
+        );
         await _userContentPreferencesRepository.create(
           item: defaultUserPreferences,
           userId: user.id,
@@ -270,7 +292,23 @@ class AuthService {
     }
 
     // Create default UserAppSettings for the new anonymous user
-    final defaultAppSettings = UserAppSettings(id: user.id);
+    final defaultAppSettings = UserAppSettings(
+      id: user.id,
+      displaySettings: const DisplaySettings(
+        baseTheme: AppBaseTheme.system,
+        accentTheme: AppAccentTheme.defaultBlue,
+        fontFamily: 'SystemDefault',
+        textScaleFactor: AppTextScaleFactor.medium,
+        fontWeight: AppFontWeight.regular,
+      ),
+      language: 'en',
+      feedPreferences: const FeedDisplayPreferences(
+        headlineDensity: HeadlineDensity.normal,
+        headlineImageStyle: HeadlineImageStyle.largeThumbnail,
+        showSourceInHeadlineFeed: true,
+        showPublishDateInHeadlineFeed: true,
+      ),
+    );
     await _userAppSettingsRepository.create(
       item: defaultAppSettings,
       userId: user.id, // Pass user ID for scoping
@@ -278,7 +316,13 @@ class AuthService {
     _log.info('Created default UserAppSettings for anonymous user: ${user.id}');
 
     // Create default UserContentPreferences for the new anonymous user
-    final defaultUserPreferences = UserContentPreferences(id: user.id);
+    final defaultUserPreferences = UserContentPreferences(
+      id: user.id,
+      followedCountries: const [],
+      followedSources: const [],
+      followedTopics: const [],
+      savedHeadlines: const [],
+    );
     await _userContentPreferencesRepository.create(
       item: defaultUserPreferences,
       userId: user.id, // Pass user ID for scoping
@@ -509,13 +553,21 @@ class AuthService {
   /// Throws [NotFoundException] if the user does not exist.
   /// Throws [OperationFailedException] for other errors during deletion or cleanup.
   Future<void> deleteAccount({required String userId}) async {
+    // Note: The user record itself is deleted via a CASCADE constraint
+    // when the corresponding entry in the `users` table is deleted.
+    // This is because `user_app_settings.user_id` and
+    // `user_content_preferences.user_id` have `ON DELETE CASCADE`.
+    // Therefore, we only need to delete the main user record.
     try {
       // Fetch the user first to get their email if needed for cleanup
       final userToDelete = await _userRepository.read(id: userId);
       _log.info('Found user ${userToDelete.id} for deletion.');
 
-      // 1. Delete the user record from the repository.
-      // This implicitly invalidates tokens that rely on user lookup.
+      // 1. Delete the main user record from the `users` table.
+      // The `ON DELETE CASCADE` constraint on the `user_app_settings` and
+      // `user_content_preferences` tables will automatically delete the
+      // associated records in those tables. This also implicitly invalidates
+      // tokens that rely on user lookup, as the user will no longer exist.
       await _userRepository.delete(id: userId);
       _log.info('User ${userToDelete.id} deleted from repository.');
 
@@ -531,23 +583,21 @@ class AuthService {
       }
 
       // 3. Clear any pending sign-in codes for the user's email (if they had one).
-      try {
-        await _verificationCodeStorageService.clearSignInCode(
-          userToDelete.email,
-        );
-        _log.info(
-          'Cleared sign-in code for email ${userToDelete.email}.',
-        );
-      } catch (e) {
-        // Log but don't fail deletion if clearing codes fails
-        _log.warning(
-          'Warning: Failed to clear sign-in code for email ${userToDelete.email}: $e',
-        );
+      // The email for anonymous users is a placeholder and not used for sign-in.
+      if (userToDelete.appRole != AppUserRole.guestUser) {
+        try {
+          await _verificationCodeStorageService.clearSignInCode(
+            userToDelete.email,
+          );
+          _log.info(
+            'Cleared sign-in code for email ${userToDelete.email}.',
+          );
+        } catch (e) {
+          _log.warning(
+            'Warning: Failed to clear sign-in code for email ${userToDelete.email}: $e',
+          );
+        }
       }
-    
-      // TODO(fulleni): Add logic here to delete or anonymize other
-      // user-related data (e.g., settings, content) from other repositories
-      // once those features are implemented.
 
       _log.info(
         'Account deletion process completed for user $userId.',
