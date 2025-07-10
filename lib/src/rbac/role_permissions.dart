@@ -1,70 +1,70 @@
 import 'package:ht_api/src/rbac/permissions.dart';
 import 'package:ht_shared/ht_shared.dart';
 
-final Set<String> _guestUserPermissions = {
+// --- App Role Permissions ---
+
+final Set<String> _appGuestUserPermissions = {
   Permissions.headlineRead,
-  Permissions.categoryRead,
+  Permissions.topicRead,
   Permissions.sourceRead,
   Permissions.countryRead,
-  Permissions.appSettingsReadOwned,
-  Permissions.appSettingsUpdateOwned,
-  Permissions.userPreferencesReadOwned,
-  Permissions.userPreferencesUpdateOwned,
-  Permissions.appConfigRead,
+  Permissions.userAppSettingsReadOwned,
+  Permissions.userAppSettingsUpdateOwned,
+  Permissions.userContentPreferencesReadOwned,
+  Permissions.userContentPreferencesUpdateOwned,
+  Permissions.remoteConfigRead,
 };
 
-final Set<String> _standardUserPermissions = {
-  ..._guestUserPermissions,
+final Set<String> _appStandardUserPermissions = {
+  ..._appGuestUserPermissions,
   Permissions.userReadOwned,
   Permissions.userUpdateOwned,
   Permissions.userDeleteOwned,
 };
 
-// For now, premium users have the same permissions as standard users,
-// but this set can be expanded later for premium-specific features.
-final Set<String> _premiumUserPermissions = {..._standardUserPermissions};
+final Set<String> _appPremiumUserPermissions = {
+  ..._appStandardUserPermissions,
+  // Future premium-only permissions can be added here.
+};
 
-final Set<String> _publisherPermissions = {
-  ..._standardUserPermissions,
+// --- Dashboard Role Permissions ---
+
+final Set<String> _dashboardPublisherPermissions = {
   Permissions.headlineCreate,
   Permissions.headlineUpdate,
   Permissions.headlineDelete,
 };
 
-final Set<String> _adminPermissions = {
-  ..._standardUserPermissions,
-  Permissions.headlineCreate,
-  Permissions.headlineUpdate,
-  Permissions.headlineDelete,
-  Permissions.categoryCreate,
-  Permissions.categoryUpdate,
-  Permissions.categoryDelete,
+final Set<String> _dashboardAdminPermissions = {
+  ..._dashboardPublisherPermissions,
+  Permissions.topicCreate,
+  Permissions.topicUpdate,
+  Permissions.topicDelete,
   Permissions.sourceCreate,
   Permissions.sourceUpdate,
   Permissions.sourceDelete,
   Permissions.countryCreate,
   Permissions.countryUpdate,
   Permissions.countryDelete,
-  Permissions.userRead,
-  Permissions.appConfigCreate,
-  Permissions.appConfigUpdate,
-  Permissions.appConfigDelete,
+  Permissions.userRead, // Allows reading any user's profile
+  Permissions.remoteConfigCreate,
+  Permissions.remoteConfigUpdate,
+  Permissions.remoteConfigDelete,
 };
 
-/// Defines the mapping between user roles and the permissions they possess.
+/// Defines the mapping between user roles (both app and dashboard) and the
+/// permissions they possess.
 ///
-/// This map is the core of the Role-Based Access Control (RBAC) system.
-/// Each key is a role string, and the associated value is a [Set] of
-/// [Permissions] strings that users with that role are granted.
-///
-/// Note: Administrators typically have implicit access to all resources
-/// regardless of this map, but including their permissions here can aid
-/// documentation and clarity. The `PermissionService` should handle the
-/// explicit admin bypass if desired.
-final Map<String, Set<String>> rolePermissions = {
-  UserRoles.guestUser: _guestUserPermissions,
-  UserRoles.standardUser: _standardUserPermissions,
-  UserRoles.premiumUser: _premiumUserPermissions,
-  UserRoles.publisher: _publisherPermissions,
-  UserRoles.admin: _adminPermissions,
+/// The `PermissionService` will look up a user's `appRole` and
+/// `dashboardRole` in this map and combine the resulting permission sets to
+/// determine their total access rights.
+final Map<Enum, Set<String>> rolePermissions = {
+  // App Roles
+  AppUserRole.guestUser: _appGuestUserPermissions,
+  AppUserRole.standardUser: _appStandardUserPermissions,
+  AppUserRole.premiumUser: _appPremiumUserPermissions,
+  // Dashboard Roles
+  DashboardUserRole.none: {},
+  DashboardUserRole.publisher: _dashboardPublisherPermissions,
+  DashboardUser-Role.admin: _dashboardAdminPermissions,
 };
