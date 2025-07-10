@@ -38,24 +38,40 @@ class AppDependencies {
   final _completer = Completer<void>();
 
   // --- Repositories ---
+  /// A repository for managing [Headline] data.
   late final HtDataRepository<Headline> headlineRepository;
+  /// A repository for managing [Topic] data.
   late final HtDataRepository<Topic> topicRepository;
+  /// A repository for managing [Source] data.
   late final HtDataRepository<Source> sourceRepository;
+  /// A repository for managing [Country] data.
   late final HtDataRepository<Country> countryRepository;
+  /// A repository for managing [User] data.
   late final HtDataRepository<User> userRepository;
+  /// A repository for managing [UserAppSettings] data.
   late final HtDataRepository<UserAppSettings> userAppSettingsRepository;
+  /// A repository for managing [UserContentPreferences] data.
   late final HtDataRepository<UserContentPreferences>
       userContentPreferencesRepository;
+  /// A repository for managing the global [RemoteConfig] data.
   late final HtDataRepository<RemoteConfig> remoteConfigRepository;
 
   // --- Services ---
+  /// A service for sending emails.
   late final HtEmailRepository emailRepository;
+  /// A service for managing a blacklist of invalidated authentication tokens.
   late final TokenBlacklistService tokenBlacklistService;
+  /// A service for generating and validating authentication tokens.
   late final AuthTokenService authTokenService;
+  /// A service for storing and validating one-time verification codes.
   late final VerificationCodeStorageService verificationCodeStorageService;
+  /// A service that orchestrates authentication logic.
   late final AuthService authService;
+  /// A service for calculating and providing a summary for the dashboard.
   late final DashboardSummaryService dashboardSummaryService;
+  /// A service for checking user permissions.
   late final PermissionService permissionService;
+  /// A service for enforcing limits on user content preferences.
   late final UserPreferenceLimitService userPreferenceLimitService;
 
   /// Initializes all application dependencies.
@@ -104,18 +120,13 @@ class AppDependencies {
       // columns. The Headline.fromJson factory expects ISO 8601 strings.
       // This handler converts them before deserialization.
       (json) => Headline.fromJson(_convertTimestampsToString(json)),
-      (headline) {
-        final json = headline.toJson();
-        // The database expects foreign key IDs, not nested objects.
-        // We extract the IDs and remove the original objects.
-        json['source_id'] = headline.source.id;
-        json['topic_id'] = headline.topic.id;
-        json['event_country_id'] = headline.eventCountry.id;
-        json.remove('source');
-        json.remove('topic');
-        json.remove('eventCountry');
-        return json;
-      },
+      (headline) => headline.toJson()
+        ..['source_id'] = headline.source.id
+        ..['topic_id'] = headline.topic.id
+        ..['event_country_id'] = headline.eventCountry.id
+        ..remove('source')
+        ..remove('topic')
+        ..remove('eventCountry'),
     );
     topicRepository = _createRepository(
       connection,
@@ -127,13 +138,9 @@ class AppDependencies {
       connection,
       'sources',
       (json) => Source.fromJson(_convertTimestampsToString(json)),
-      (source) {
-        final json = source.toJson();
-        // The database expects headquarters_country_id, not a nested object.
-        json['headquarters_country_id'] = source.headquarters.id;
-        json.remove('headquarters');
-        return json;
-      },
+      (source) => source.toJson()
+        ..['headquarters_country_id'] = source.headquarters.id
+        ..remove('headquarters'),
     );
     countryRepository = _createRepository(
       connection,
@@ -158,7 +165,7 @@ class AppDependencies {
     userAppSettingsRepository = _createRepository(
       connection,
       'user_app_settings',
-      UserAppSettings.fromJson,
+      (json) => UserAppSettings.fromJson(json),
       (settings) {
         final json = settings.toJson();
         // These fields are complex objects and must be JSON encoded for the DB.
@@ -170,7 +177,7 @@ class AppDependencies {
     userContentPreferencesRepository = _createRepository(
       connection,
       'user_content_preferences',
-      UserContentPreferences.fromJson,
+      (json) => UserContentPreferences.fromJson(json),
       (preferences) {
         final json = preferences.toJson();
         // These fields are lists of complex objects and must be JSON encoded.
