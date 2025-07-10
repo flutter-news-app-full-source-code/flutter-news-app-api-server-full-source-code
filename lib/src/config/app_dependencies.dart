@@ -203,6 +203,7 @@ class AppDependencies {
       emailClient: HtEmailInMemoryClient(),
     );
     tokenBlacklistService = InMemoryTokenBlacklistService(
+      log: _log,
     );
     authTokenService = JwtAuthTokenService(
       userRepository: userRepository,
