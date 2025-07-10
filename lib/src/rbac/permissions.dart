@@ -10,11 +10,11 @@ abstract class Permissions {
   static const String headlineUpdate = 'headline.update';
   static const String headlineDelete = 'headline.delete';
 
-  // Category Permissions
-  static const String categoryCreate = 'category.create';
-  static const String categoryRead = 'category.read';
-  static const String categoryUpdate = 'category.update';
-  static const String categoryDelete = 'category.delete';
+  // Topic Permissions
+  static const String topicCreate = 'topic.create';
+  static const String topicRead = 'topic.read';
+  static const String topicUpdate = 'topic.update';
+  static const String topicDelete = 'topic.delete';
 
   // Source Permissions
   static const String sourceCreate = 'source.create';
@@ -38,20 +38,20 @@ abstract class Permissions {
   // Allows deleting the authenticated user's own account
   static const String userDeleteOwned = 'user.delete_owned';
 
-  // App Settings Permissions (User-owned)
-  static const String appSettingsReadOwned = 'app_settings.read_owned';
-  static const String appSettingsUpdateOwned = 'app_settings.update_owned';
+  // User App Settings Permissions (User-owned)
+  static const String userAppSettingsReadOwned = 'user_app_settings.read_owned';
+  static const String userAppSettingsUpdateOwned =
+      'user_app_settings.update_owned';
 
-  // User Preferences Permissions (User-owned)
-  static const String userPreferencesReadOwned = 'user_preferences.read_owned';
-  static const String userPreferencesUpdateOwned =
-      'user_preferences.update_owned';
+  // User Content Preferences Permissions (User-owned)
+  static const String userContentPreferencesReadOwned =
+      'user_content_preferences.read_owned';
+  static const String userContentPreferencesUpdateOwned =
+      'user_content_preferences.update_owned';
 
-  // App Config Permissions (Global/Managed)
-  static const String appConfigCreate = 'app_config.create';
-  static const String appConfigRead = 'app_config.read';
-  static const String appConfigUpdate = 'app_config.update';
-  static const String appConfigDelete = 'app_config.delete';
-
-  // Add other permissions as needed for future models/features
+  // Remote Config Permissions (Global/Managed)
+  static const String remoteConfigCreate = 'remote_config.create';
+  static const String remoteConfigRead = 'remote_config.read';
+  static const String remoteConfigUpdate = 'remote_config.update';
+  static const String remoteConfigDelete = 'remote_config.delete';
 }

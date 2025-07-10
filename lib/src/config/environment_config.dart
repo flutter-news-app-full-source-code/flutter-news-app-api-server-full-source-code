@@ -1,6 +1,5 @@
-import 'dart:io';
-import 'package:logging/logging.dart';
 import 'package:dotenv/dotenv.dart';
+import 'package:logging/logging.dart';
 
 /// {@template environment_config}
 /// A utility class for accessing environment variables.
@@ -25,12 +24,7 @@ abstract final class EnvironmentConfig {
   static String get databaseUrl {
     final dbUrl = _env['DATABASE_URL'];
     if (dbUrl == null || dbUrl.isEmpty) {
-      _log.severe(
-        'DATABASE_URL not found. Dumping available environment variables:',
-      );
-      _env.map.forEach((key, value) {
-        _log.severe('  - $key: $value');
-      });
+      _log.severe('DATABASE_URL not found in environment variables.');
       throw StateError(
         'FATAL: DATABASE_URL environment variable is not set. '
         'The application cannot start without a database connection.',

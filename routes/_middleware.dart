@@ -93,7 +93,9 @@ Handler middleware(Handler handler) {
       // It depends on the Uuid provider, so it must come after it.
       .use((innerHandler) {
         return (context) {
-          _log.info('[REQ_LIFECYCLE] Request received. Generating RequestId...');
+          _log.info(
+            '[REQ_LIFECYCLE] Request received. Generating RequestId...',
+          );
           final uuid = context.read<Uuid>();
           final requestId = RequestId(uuid.v4());
           _log.info('[REQ_LIFECYCLE] RequestId generated: ${requestId.id}');
@@ -105,38 +107,78 @@ Handler middleware(Handler handler) {
       // other middleware. It's responsible for initializing and providing all
       // dependencies for the request.
       .use((handler) {
-    return (context) async {
-      // 1. Ensure all dependencies are initialized (idempotent).
-      _log.info('Ensuring all application dependencies are initialized...');
-      await AppDependencies.instance.init();
-      _log.info('Dependencies are ready.');
+        return (context) async {
+          // 1. Ensure all dependencies are initialized (idempotent).
+          _log.info('Ensuring all application dependencies are initialized...');
+          await AppDependencies.instance.init();
+          _log.info('Dependencies are ready.');
 
-      // 2. Provide all dependencies to the inner handler.
-      final deps = AppDependencies.instance;
-      return handler
-          .use(provider<ModelRegistryMap>((_) => modelRegistry))
-          .use(provider<Uuid>((_) => const Uuid()))
-          .use(provider<HtDataRepository<Headline>>((_) => deps.headlineRepository))
-          .use(provider<HtDataRepository<Category>>((_) => deps.categoryRepository))
-          .use(provider<HtDataRepository<Source>>((_) => deps.sourceRepository))
-          .use(provider<HtDataRepository<Country>>((_) => deps.countryRepository))
-          .use(provider<HtDataRepository<User>>((_) => deps.userRepository))
-          .use(provider<HtDataRepository<UserAppSettings>>(
-              (_) => deps.userAppSettingsRepository))
-          .use(provider<HtDataRepository<UserContentPreferences>>(
-              (_) => deps.userContentPreferencesRepository))
-          .use(provider<HtDataRepository<AppConfig>>((_) => deps.appConfigRepository))
-          .use(provider<HtEmailRepository>((_) => deps.emailRepository))
-          .use(provider<TokenBlacklistService>((_) => deps.tokenBlacklistService))
-          .use(provider<AuthTokenService>((_) => deps.authTokenService))
-          .use(provider<VerificationCodeStorageService>(
-              (_) => deps.verificationCodeStorageService))
-          .use(provider<AuthService>((_) => deps.authService))
-          .use(provider<DashboardSummaryService>((_) => deps.dashboardSummaryService))
-          .use(provider<PermissionService>((_) => deps.permissionService))
-          .use(provider<UserPreferenceLimitService>(
-              (_) => deps.userPreferenceLimitService))
-          .call(context);
-    };
-  });
+          // 2. Provide all dependencies to the inner handler.
+          final deps = AppDependencies.instance;
+          return handler
+              .use(provider<ModelRegistryMap>((_) => modelRegistry))
+              .use(provider<Uuid>((_) => const Uuid()))
+              .use(
+                provider<HtDataRepository<Headline>>(
+                  (_) => deps.headlineRepository,
+                ),
+              ) //
+              .use(
+                provider<HtDataRepository<Topic>>((_) => deps.topicRepository),
+              )
+              .use(
+                provider<HtDataRepository<Source>>(
+                  (_) => deps.sourceRepository,
+                ),
+              ) //
+              .use(
+                provider<HtDataRepository<Country>>(
+                  (_) => deps.countryRepository,
+                ),
+              ) //
+              .use(
+                provider<HtDataRepository<User>>((_) => deps.userRepository),
+              ) //
+              .use(
+                provider<HtDataRepository<UserAppSettings>>(
+                  (_) => deps.userAppSettingsRepository,
+                ),
+              )
+              .use(
+                provider<HtDataRepository<UserContentPreferences>>(
+                  (_) => deps.userContentPreferencesRepository,
+                ),
+              )
+              .use(
+                provider<HtDataRepository<RemoteConfig>>(
+                  (_) => deps.remoteConfigRepository,
+                ),
+              )
+              .use(provider<HtEmailRepository>((_) => deps.emailRepository))
+              .use(
+                provider<TokenBlacklistService>(
+                  (_) => deps.tokenBlacklistService,
+                ),
+              )
+              .use(provider<AuthTokenService>((_) => deps.authTokenService))
+              .use(
+                provider<VerificationCodeStorageService>(
+                  (_) => deps.verificationCodeStorageService,
+                ),
+              )
+              .use(provider<AuthService>((_) => deps.authService))
+              .use(
+                provider<DashboardSummaryService>(
+                  (_) => deps.dashboardSummaryService,
+                ),
+              )
+              .use(provider<PermissionService>((_) => deps.permissionService))
+              .use(
+                provider<UserPreferenceLimitService>(
+                  (_) => deps.userPreferenceLimitService,
+                ),
+              )
+              .call(context);
+        };
+      });
 }

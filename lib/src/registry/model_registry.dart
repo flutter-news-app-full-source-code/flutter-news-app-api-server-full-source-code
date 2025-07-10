@@ -141,17 +141,17 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       type: RequiredPermissionType.adminOnly,
     ),
   ),
-  'category': ModelConfig<Category>(
-    fromJson: Category.fromJson,
-    getId: (c) => c.id,
-    // Categories: Admin-owned, read allowed by standard/guest users
+  'topic': ModelConfig<Topic>(
+    fromJson: Topic.fromJson,
+    getId: (t) => t.id,
+    // Topics: Admin-owned, read allowed by standard/guest users
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
-      permission: Permissions.categoryRead,
+      permission: Permissions.topicRead,
     ),
     getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
-      permission: Permissions.categoryRead,
+      permission: Permissions.topicRead,
     ),
     postPermission: const ModelActionPermission(
       type: RequiredPermissionType.adminOnly,
@@ -231,7 +231,7 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     ),
     deletePermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
-      permission: Permissions.userReadOwned, // User can delete their own
+      permission: Permissions.userDeleteOwned, // User can delete their own
       requiresOwnershipCheck: true, // Must be the owner
     ),
   ),
@@ -245,7 +245,7 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     ),
     getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
-      permission: Permissions.appSettingsReadOwned,
+      permission: Permissions.userAppSettingsReadOwned,
       requiresOwnershipCheck: true,
     ),
     postPermission: const ModelActionPermission(
@@ -255,7 +255,7 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     ),
     putPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
-      permission: Permissions.appSettingsUpdateOwned,
+      permission: Permissions.userAppSettingsUpdateOwned,
       requiresOwnershipCheck: true,
     ),
     deletePermission: const ModelActionPermission(
@@ -275,7 +275,7 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     ),
     getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
-      permission: Permissions.userPreferencesReadOwned,
+      permission: Permissions.userContentPreferencesReadOwned,
       requiresOwnershipCheck: true,
     ),
     postPermission: const ModelActionPermission(
@@ -285,7 +285,7 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     ),
     putPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
-      permission: Permissions.userPreferencesUpdateOwned,
+      permission: Permissions.userContentPreferencesUpdateOwned,
       requiresOwnershipCheck: true,
     ),
     deletePermission: const ModelActionPermission(
@@ -294,16 +294,16 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       // service during account deletion, not via a direct DELETE to /api/v1/data.
     ),
   ),
-  'app_config': ModelConfig<AppConfig>(
-    fromJson: AppConfig.fromJson,
+  'remote_config': ModelConfig<RemoteConfig>(
+    fromJson: RemoteConfig.fromJson,
     getId: (config) => config.id,
-    getOwnerId: null, // AppConfig is a global resource, not user-owned
+    getOwnerId: null, // RemoteConfig is a global resource, not user-owned
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported, // Not accessible via collection
     ),
     getItemPermission: const ModelActionPermission(
-      type: RequiredPermissionType
-          .none, // Readable by any authenticated user via /api/v1/data/[id]
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.remoteConfigRead,
     ),
     postPermission: const ModelActionPermission(
       type: RequiredPermissionType.adminOnly, // Only administrators can create

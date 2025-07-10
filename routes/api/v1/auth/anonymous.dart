@@ -4,6 +4,8 @@ import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/services/auth_service.dart';
 import 'package:ht_shared/ht_shared.dart';
 
+import '../../../_middleware.dart';
+
 /// Handles POST requests to `/api/v1/auth/anonymous`.
 ///
 /// Creates a new anonymous user and returns the User object along with an
@@ -27,11 +29,16 @@ Future<Response> onRequest(RequestContext context) async {
       token: result.token,
     );
 
+    // Create metadata, including the requestId from the context.
+    final metadata = ResponseMetadata(
+      requestId: context.read<RequestId>().id,
+      timestamp: DateTime.now().toUtc(),
+    );
+
     // Wrap the payload in the standard SuccessApiResponse
     final responsePayload = SuccessApiResponse<AuthSuccessResponse>(
       data: authPayload,
-      // Optionally add metadata if needed/available
-      // metadata: ResponseMetadata(timestamp: DateTime.now().toUtc()),
+      metadata: metadata,
     );
 
     // Return 200 OK with the standardized, serialized response

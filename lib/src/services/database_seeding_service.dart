@@ -39,32 +39,35 @@ class DatabaseSeedingService {
         await _connection.execute('''
           CREATE TABLE IF NOT EXISTS users (
             id TEXT PRIMARY KEY,
-            email TEXT UNIQUE,
-            roles JSONB NOT NULL,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-            last_engagement_shown_at TIMESTAMPTZ
+            email TEXT NOT NULL UNIQUE,
+            app_role TEXT NOT NULL,
+            dashboard_role TEXT NOT NULL,
+            feed_action_status JSONB NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
           );
         ''');
 
-        _log.fine('Creating "app_config" table...');
+        _log.fine('Creating "remote_config" table...');
         await _connection.execute('''
-          CREATE TABLE IF NOT EXISTS app_config (
+          CREATE TABLE IF NOT EXISTS remote_config (
             id TEXT PRIMARY KEY,
-            user_preference_limits JSONB NOT NULL,
+            user_preference_config JSONB NOT NULL,
+            ad_config JSONB NOT NULL,
+            account_action_config JSONB NOT NULL,
+            app_status JSONB NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ
           );
         ''');
 
-        _log.fine('Creating "categories" table...');
+        _log.fine('Creating "topics" table...');
         await _connection.execute('''
-          CREATE TABLE IF NOT EXISTS categories (
+          CREATE TABLE IF NOT EXISTS topics (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
             description TEXT,
             icon_url TEXT,
             status TEXT,
-            type TEXT,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ
           );
@@ -79,7 +82,6 @@ class DatabaseSeedingService {
             url TEXT,
             language TEXT,
             status TEXT,
-            type TEXT,
             source_type TEXT,
             headquarters_country_id TEXT REFERENCES countries(id),
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -95,7 +97,6 @@ class DatabaseSeedingService {
             iso_code TEXT NOT NULL UNIQUE,
             flag_url TEXT NOT NULL,
             status TEXT,
-            type TEXT,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ
           );
@@ -106,16 +107,15 @@ class DatabaseSeedingService {
           CREATE TABLE IF NOT EXISTS headlines (
             id TEXT PRIMARY KEY,
             title TEXT NOT NULL,
-            source_id TEXT REFERENCES sources(id),
-            category_id TEXT REFERENCES categories(id),
-            image_url TEXT,
+            excerpt TEXT,
             url TEXT,
-            published_at TIMESTAMPTZ,
-            description TEXT,
+            image_url TEXT,
+            source_id TEXT REFERENCES sources(id),
+            topic_id TEXT REFERENCES topics(id),
+            event_country_id TEXT REFERENCES countries(id),
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ,
             status TEXT,
-            type TEXT
           );
         ''');
 
@@ -127,8 +127,6 @@ class DatabaseSeedingService {
             display_settings JSONB NOT NULL, -- Nested object, stored as JSON
             language TEXT NOT NULL, -- Simple string, stored as TEXT
             feed_preferences JSONB NOT NULL,
-            engagement_shown_counts JSONB NOT NULL,
-            engagement_last_shown_timestamps JSONB NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ
           );
@@ -139,7 +137,7 @@ class DatabaseSeedingService {
           CREATE TABLE IF NOT EXISTS user_content_preferences (
             id TEXT PRIMARY KEY,
             user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-            followed_categories JSONB NOT NULL,
+            followed_topics JSONB NOT NULL,
             followed_sources JSONB NOT NULL,
             followed_countries JSONB NOT NULL,
             saved_headlines JSONB NOT NULL,
@@ -173,25 +171,19 @@ class DatabaseSeedingService {
     try {
       await _connection.execute('BEGIN');
       try {
-        // Seed Categories
-        _log.fine('Seeding categories...');
-        for (final data in categoriesFixturesData) {
-          final category = Category.fromJson(data);
-          final params = category.toJson();
-
-          // Ensure optional fields exist for the postgres driver.
-          // The driver requires all named parameters to be present in the map,
-          // even if the value is null. The model's `toJson` with
-          // `includeIfNull: false` will omit keys for null fields.
-          params.putIfAbsent('description', () => null);
-          params.putIfAbsent('icon_url', () => null);
-          params.putIfAbsent('updated_at', () => null);
+        // Seed Topics
+        _log.fine('Seeding topics...');
+        for (final topic in topicsFixturesData) {
+          final params = topic.toJson()
+            ..putIfAbsent('description', () => null)
+            ..putIfAbsent('icon_url', () => null)
+            ..putIfAbsent('updated_at', () => null);
 
           await _connection.execute(
             Sql.named(
-              'INSERT INTO categories (id, name, description, icon_url, '
-              'status, type, created_at, updated_at) VALUES (@id, @name, @description, '
-              '@icon_url, @status, @type, @created_at, @updated_at) '
+              'INSERT INTO topics (id, name, description, icon_url, '
+              'status, created_at, updated_at) VALUES (@id, @name, '
+              '@description, @icon_url, @status, @created_at, @updated_at) '
               'ON CONFLICT (id) DO NOTHING',
             ),
             parameters: params,
@@ -200,18 +192,15 @@ class DatabaseSeedingService {
 
         // Seed Countries (must be done before sources and headlines)
         _log.fine('Seeding countries...');
-        for (final data in countriesFixturesData) {
-          final country = Country.fromJson(data);
-          final params = country.toJson();
-
-          // Ensure optional fields exist for the postgres driver.
-          params.putIfAbsent('updated_at', () => null);
+        for (final country in countriesFixturesData) {
+          final params = country.toJson()
+            ..putIfAbsent('updated_at', () => null);
 
           await _connection.execute(
             Sql.named(
-              'INSERT INTO countries (id, name, iso_code, flag_url, status, '
-              'type, created_at, updated_at) VALUES (@id, @name, @iso_code, '
-              '@flag_url, @status, @type, @created_at, @updated_at) '
+              'INSERT INTO countries (id, name, iso_code, flag_url, '
+              'status, created_at, updated_at) VALUES (@id, @name, '
+              '@iso_code, @flag_url, @status, @created_at, @updated_at) '
               'ON CONFLICT (id) DO NOTHING',
             ),
             parameters: params,
@@ -220,33 +209,27 @@ class DatabaseSeedingService {
 
         // Seed Sources
         _log.fine('Seeding sources...');
-        for (final data in sourcesFixturesData) {
-          final source = Source.fromJson(data);
-          final params = source.toJson();
-
-          // The `headquarters` field in the model is a nested `Country`
-          // object. We extract its ID to store in the
-          // `headquarters_country_id` column and then remove the original
-          // nested object from the parameters to avoid a "superfluous
-          // variable" error.
-          params['headquarters_country_id'] = source.headquarters?.id;
-          params.remove('headquarters');
-
-          // Ensure optional fields exist for the postgres driver.
-          params.putIfAbsent('description', () => null);
-          params.putIfAbsent('url', () => null);
-          params.putIfAbsent('language', () => null);
-          params.putIfAbsent('source_type', () => null);
-          params.putIfAbsent('status', () => null);
-          params.putIfAbsent('type', () => null);
-          params.putIfAbsent('updated_at', () => null);
+        for (final source in sourcesFixturesData) {
+          final params = source.toJson()
+            // The `headquarters` field in the model is a nested `Country`
+            // object. We extract its ID to store in the
+            // `headquarters_country_id` column and then remove the original
+            // nested object from the parameters to avoid a "superfluous
+            // variable" error.
+            ..['headquarters_country_id'] = source.headquarters.id
+            ..remove('headquarters')
+            ..putIfAbsent('description', () => null)
+            ..putIfAbsent('url', () => null)
+            ..putIfAbsent('language', () => null)
+            ..putIfAbsent('source_type', () => null)
+            ..putIfAbsent('updated_at', () => null);
 
           await _connection.execute(
             Sql.named(
               'INSERT INTO sources (id, name, description, url, language, '
-              'status, type, source_type, headquarters_country_id, '
-              'created_at, updated_at) VALUES (@id, @name, @description, '
-              '@url, @language, @status, @type, @source_type, '
+              'status, source_type, headquarters_country_id, '
+              'created_at, updated_at) VALUES (@id, @name, @description, @url, '
+              '@language, @status, @source_type, '
               '@headquarters_country_id, @created_at, @updated_at) '
               'ON CONFLICT (id) DO NOTHING',
             ),
@@ -256,31 +239,25 @@ class DatabaseSeedingService {
 
         // Seed Headlines
         _log.fine('Seeding headlines...');
-        for (final data in headlinesFixturesData) {
-          final headline = Headline.fromJson(data);
-          final params = headline.toJson();
- 
-          // Extract IDs from nested objects and remove the objects to match schema.
-          // These are now nullable to match the schema.
-          params['source_id'] = headline.source?.id;
-          params['category_id'] = headline.category?.id;
-          params.remove('source');
-          params.remove('category');
- 
-          // Ensure optional fields exist for the postgres driver.
-          params.putIfAbsent('description', () => null);
-          params.putIfAbsent('updated_at', () => null);
-          params.putIfAbsent('image_url', () => null);
-          params.putIfAbsent('url', () => null);
-          params.putIfAbsent('published_at', () => null);
- 
+        for (final headline in headlinesFixturesData) {
+          final params = headline.toJson()
+            ..['source_id'] = headline.source.id
+            ..['topic_id'] = headline.topic.id
+            ..['event_country_id'] = headline.eventCountry.id
+            ..remove('source')
+            ..remove('topic')
+            ..remove('eventCountry')
+            ..putIfAbsent('excerpt', () => null)
+            ..putIfAbsent('updated_at', () => null)
+            ..putIfAbsent('image_url', () => null)
+            ..putIfAbsent('url', () => null);
+
           await _connection.execute(
             Sql.named(
-              'INSERT INTO headlines (id, title, source_id, category_id, '
-              'image_url, url, published_at, description, status, '
-              'type, created_at, updated_at) VALUES (@id, @title, @source_id, '
-              '@category_id, @image_url, @url, @published_at, @description, '
-              '@status, @type, @created_at, @updated_at) '
+              'INSERT INTO headlines (id, title, excerpt, url, image_url, '
+              'source_id, topic_id, event_country_id, status, created_at, '
+              'updated_at) VALUES (@id, @title, @excerpt, @url, @image_url, '
+              '@source_id, @topic_id, @event_country_id, @status, @created_at, @updated_at) '
               'ON CONFLICT (id) DO NOTHING',
             ),
             parameters: params,
@@ -303,30 +280,39 @@ class DatabaseSeedingService {
     }
   }
 
-  /// Seeds the database with the initial AppConfig and the default admin user.
+  /// Seeds the database with the initial RemoteConfig and the default admin user.
   ///
   /// This method is idempotent, using `ON CONFLICT DO NOTHING` to prevent
   /// errors if the data already exists. It runs within a single transaction.
   Future<void> seedInitialAdminAndConfig() async {
-    _log.info('Seeding initial AppConfig and admin user...');
+    _log.info('Seeding initial RemoteConfig and admin user...');
     try {
       await _connection.execute('BEGIN');
       try {
-        // Seed AppConfig
-        _log.fine('Seeding AppConfig...');
-        final appConfig = AppConfig.fromJson(appConfigFixtureData);  
-        // The `app_config` table only has `id` and `user_preference_limits`.
-        // We must provide an explicit map to avoid a "superfluous variables"
-        // error from the postgres driver.
+        // Seed RemoteConfig
+        _log.fine('Seeding RemoteConfig...');
+        const remoteConfig = remoteConfigFixtureData;
+        // The `remote_config` table has multiple JSONB columns. We must
+        // provide an explicit map with JSON-encoded values to avoid a
+        // "superfluous variables" error from the postgres driver.
         await _connection.execute(
           Sql.named(
-            'INSERT INTO app_config (id, user_preference_limits) '
-            'VALUES (@id, @user_preference_limits) '
+            'INSERT INTO remote_config (id, user_preference_config, ad_config, '
+            'account_action_config, app_status) VALUES (@id, '
+            '@user_preference_config, @ad_config, @account_action_config, '
+            '@app_status) '
             'ON CONFLICT (id) DO NOTHING',
           ),
           parameters: {
-            'id': appConfig.id,
-            'user_preference_limits': appConfig.userPreferenceLimits.toJson(),
+            'id': remoteConfig.id,
+            'user_preference_config': jsonEncode(
+              remoteConfig.userPreferenceConfig.toJson(),
+            ),
+            'ad_config': jsonEncode(remoteConfig.adConfig.toJson()),
+            'account_action_config': jsonEncode(
+              remoteConfig.accountActionConfig.toJson(),
+            ),
+            'app_status': jsonEncode(remoteConfig.appStatus.toJson()),
           },
         );
 
@@ -334,59 +320,74 @@ class DatabaseSeedingService {
         _log.fine('Seeding admin user...');
         // Find the admin user in the fixture data.
         final adminUser = usersFixturesData.firstWhere(
-          (user) => user.roles.contains(UserRoles.admin),
+          (user) => user.dashboardRole == DashboardUserRole.admin,
           orElse: () => throw StateError('Admin user not found in fixtures.'),
         );
-        // The `users` table only has `id`, `email`, and `roles`. We must
-        // provide an explicit map to avoid a "superfluous variables" error.
+
+        // The `users` table has specific columns for roles and status.
         await _connection.execute(
           Sql.named(
-            'INSERT INTO users (id, email, roles) '
-            'VALUES (@id, @email, @roles) '
+            'INSERT INTO users (id, email, app_role, dashboard_role, '
+            'feed_action_status) VALUES (@id, @email, @app_role, '
+            '@dashboard_role, @feed_action_status) '
             'ON CONFLICT (id) DO NOTHING',
           ),
-          parameters: {
-            'id': adminUser.id,
-            'email': adminUser.email,
-            'roles': jsonEncode(adminUser.roles),
-          },
+          parameters: () {
+            final params = adminUser.toJson();
+            params['feed_action_status'] = jsonEncode(
+              params['feed_action_status'],
+            );
+            return params;
+          }(),
         );
 
         // Seed default settings and preferences for the admin user.
-        final adminSettings = UserAppSettings(id: adminUser.id);
-        final adminPreferences = UserContentPreferences(id: adminUser.id);
+        final adminSettings = userAppSettingsFixturesData.firstWhere(
+          (settings) => settings.id == adminUser.id,
+        );
+        final adminPreferences = userContentPreferencesFixturesData.firstWhere(
+          (prefs) => prefs.id == adminUser.id,
+        );
 
         await _connection.execute(
           Sql.named(
             'INSERT INTO user_app_settings (id, user_id, display_settings, '
-            'language, feed_preferences, engagement_shown_counts, '
-            'engagement_last_shown_timestamps) VALUES (@id, @user_id, '
-            '@display_settings, @language, @feed_preferences, '
-            '@engagement_shown_counts, @engagement_last_shown_timestamps) '
+            'language, feed_preferences) VALUES (@id, @user_id, '
+            '@display_settings, @language, @feed_preferences) '
             'ON CONFLICT (id) DO NOTHING',
           ),
-          parameters: adminSettings.toJson()
-            ..['user_id'] = adminUser.id,
+          parameters: () {
+            final params = adminSettings.toJson();
+            params['user_id'] = adminUser.id;
+            params['display_settings'] = jsonEncode(params['display_settings']);
+            params['feed_preferences'] = jsonEncode(params['feed_preferences']);
+            return params;
+          }(),
         );
 
         await _connection.execute(
           Sql.named(
             'INSERT INTO user_content_preferences (id, user_id, '
-            'followed_categories, followed_sources, followed_countries, '
-            'saved_headlines) VALUES (@id, @user_id, @followed_categories, '
+            'followed_topics, followed_sources, followed_countries, '
+            'saved_headlines) VALUES (@id, @user_id, @followed_topics, '
             '@followed_sources, @followed_countries, @saved_headlines) '
             'ON CONFLICT (id) DO NOTHING',
           ),
-          // Use toJson() to correctly serialize the lists of complex objects
-          // into a format the database driver can handle for JSONB columns.
-          parameters: adminPreferences.toJson()
-            ..['user_id'] = adminUser.id,
+          parameters: () {
+            final params = adminPreferences.toJson();
+            params['user_id'] = adminUser.id;
+            params['followed_topics'] = jsonEncode(params['followed_topics']);
+            params['followed_sources'] = jsonEncode(params['followed_sources']);
+            params['followed_countries'] = jsonEncode(
+              params['followed_countries'],
+            );
+            params['saved_headlines'] = jsonEncode(params['saved_headlines']);
+            return params;
+          }(),
         );
 
         await _connection.execute('COMMIT');
-        _log.info(
-          'Initial AppConfig and admin user seeding completed successfully.',
-        );
+        _log.info('Initial RemoteConfig and admin user seeding completed.');
       } catch (e) {
         await _connection.execute('ROLLBACK');
         rethrow;

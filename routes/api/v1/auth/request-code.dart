@@ -10,7 +10,7 @@ import 'package:ht_shared/ht_shared.dart'; // For exceptions
 ///
 /// - For the user-facing app, it sends a verification code to the provided
 ///   email, supporting both sign-in and sign-up.
-/// - For the dashboard, the request body must include `"is_dashboard_login": true`.
+/// - For the dashboard, the request body must include `"isDashboardLogin": true`.
 ///   In this mode, it first verifies the user exists and has 'admin' or
 ///   'publisher' roles before sending a code, effectively acting as a
 ///   login-only gate.
@@ -44,7 +44,7 @@ Future<Response> onRequest(RequestContext context) async {
   }
 
   // Check for the optional dashboard login flag. Default to false if not present.
-  final isDashboardLogin = (body['is_dashboard_login'] as bool?) ?? false;
+  final isDashboardLogin = (body['isDashboardLogin'] as bool?) ?? false;
 
   // Basic email format check (more robust validation can be added)
   // Using a slightly more common regex pattern

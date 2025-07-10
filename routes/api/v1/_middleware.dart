@@ -20,13 +20,18 @@ bool _isOriginAllowed(String origin) {
   if (allowedOriginEnv != null && allowedOriginEnv.isNotEmpty) {
     // Production: strict check against the environment variable.
     final isAllowed = origin == allowedOriginEnv;
-    _log.info('[CORS] Production check result: ${isAllowed ? 'ALLOWED' : 'DENIED'}');
+    _log.info(
+      '[CORS] Production check result: ${isAllowed ? 'ALLOWED' : 'DENIED'}',
+    );
     return isAllowed;
   } else {
     // Development: dynamically allow any localhost origin.
-    final isAllowed = origin.startsWith('http://localhost:') ||
+    final isAllowed =
+        origin.startsWith('http://localhost:') ||
         origin.startsWith('http://127.0.0.1:');
-    _log.info('[CORS] Development check result: ${isAllowed ? 'ALLOWED' : 'DENIED'}');
+    _log.info(
+      '[CORS] Development check result: ${isAllowed ? 'ALLOWED' : 'DENIED'}',
+    );
     return isAllowed;
   }
 }
@@ -36,40 +41,36 @@ Handler middleware(Handler handler) {
   // `/api/v1/`. The order of `.use()` is important: the last one in the
   // chain runs first.
   return handler
-      .use(
-        (handler) {
-          // This is a custom middleware to wrap the auth provider with logging.
-          final authMiddleware = authenticationProvider();
-          final authHandler = authMiddleware(handler);
+      .use((handler) {
+        // This is a custom middleware to wrap the auth provider with logging.
+        final authMiddleware = authenticationProvider();
+        final authHandler = authMiddleware(handler);
 
-          return (context) {
-            _log.info('[REQ_LIFECYCLE] Entering authentication middleware...');
-            return authHandler(context);
-          };
-        },
-      )
-      .use(
-        (handler) {
-          // This is a custom middleware to wrap the CORS provider with logging.
-          final corsMiddleware = fromShelfMiddleware(
-            shelf_cors.corsHeaders(
-              originChecker: _isOriginAllowed,
-              headers: {
-                shelf_cors.ACCESS_CONTROL_ALLOW_CREDENTIALS: 'true',
-                shelf_cors.ACCESS_CONTROL_ALLOW_METHODS:
-                    'GET, POST, PUT, DELETE, OPTIONS',
-                shelf_cors.ACCESS_CONTROL_ALLOW_HEADERS:
-                    'Origin, Content-Type, Authorization, Accept',
-                shelf_cors.ACCESS_CONTROL_MAX_AGE: '86400',
-              },
-            ),
-          );
-          final corsHandler = corsMiddleware(handler);
+        return (context) {
+          _log.info('[REQ_LIFECYCLE] Entering authentication middleware...');
+          return authHandler(context);
+        };
+      })
+      .use((handler) {
+        // This is a custom middleware to wrap the CORS provider with logging.
+        final corsMiddleware = fromShelfMiddleware(
+          shelf_cors.corsHeaders(
+            originChecker: _isOriginAllowed,
+            headers: {
+              shelf_cors.ACCESS_CONTROL_ALLOW_CREDENTIALS: 'true',
+              shelf_cors.ACCESS_CONTROL_ALLOW_METHODS:
+                  'GET, POST, PUT, DELETE, OPTIONS',
+              shelf_cors.ACCESS_CONTROL_ALLOW_HEADERS:
+                  'Origin, Content-Type, Authorization, Accept',
+              shelf_cors.ACCESS_CONTROL_MAX_AGE: '86400',
+            },
+          ),
+        );
+        final corsHandler = corsMiddleware(handler);
 
-          return (context) {
-            _log.info('[REQ_LIFECYCLE] Entering CORS middleware...');
-            return corsHandler(context);
-          };
-        },
-      );
+        return (context) {
+          _log.info('[REQ_LIFECYCLE] Entering CORS middleware...');
+          return corsHandler(context);
+        };
+      });
 }
