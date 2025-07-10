@@ -158,7 +158,7 @@ class AppDependencies {
     userAppSettingsRepository = _createRepository(
       connection,
       'user_app_settings',
-      (json) => UserAppSettings.fromJson(json),
+      UserAppSettings.fromJson,
       (settings) {
         final json = settings.toJson();
         // These fields are complex objects and must be JSON encoded for the DB.
@@ -170,7 +170,7 @@ class AppDependencies {
     userContentPreferencesRepository = _createRepository(
       connection,
       'user_content_preferences',
-      (json) => UserContentPreferences.fromJson(json),
+      UserContentPreferences.fromJson,
       (preferences) {
         final json = preferences.toJson();
         // These fields are lists of complex objects and must be JSON encoded.
