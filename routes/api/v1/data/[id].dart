@@ -99,8 +99,8 @@ Future<Response> _handleGet(
     case 'headline':
       final repo = context.read<HtDataRepository<Headline>>();
       item = await repo.read(id: id, userId: userIdForRepoCall);
-    case 'category':
-      final repo = context.read<HtDataRepository<Category>>();
+    case 'topic':
+      final repo = context.read<HtDataRepository<Topic>>();
       item = await repo.read(id: id, userId: userIdForRepoCall);
     case 'source':
       final repo = context.read<HtDataRepository<Source>>();
@@ -117,8 +117,8 @@ Future<Response> _handleGet(
     case 'user_content_preferences': // New case for UserContentPreferences
       final repo = context.read<HtDataRepository<UserContentPreferences>>();
       item = await repo.read(id: id, userId: userIdForRepoCall);
-    case 'app_config': // New case for AppConfig (read by admin)
-      final repo = context.read<HtDataRepository<AppConfig>>();
+    case 'remote_config': // New case for RemoteConfig (read by admin)
+      final repo = context.read<HtDataRepository<RemoteConfig>>();
       item = await repo.read(
         id: id,
         userId: userIdForRepoCall,
@@ -296,12 +296,12 @@ Future<Response> _handlePut(
           userId: userIdForRepoCall,
         );
       }
-    case 'category':
+    case 'topic':
       {
-        final repo = context.read<HtDataRepository<Category>>();
+        final repo = context.read<HtDataRepository<Topic>>();
         updatedItem = await repo.update(
           id: id,
-          item: itemToUpdate as Category,
+          item: itemToUpdate as Topic,
           userId: userIdForRepoCall,
         );
       }
@@ -350,12 +350,12 @@ Future<Response> _handlePut(
           userId: userIdForRepoCall,
         );
       }
-    case 'app_config': // New case for AppConfig (update by admin)
+    case 'remote_config': // New case for RemoteConfig (update by admin)
       {
-        final repo = context.read<HtDataRepository<AppConfig>>();
+        final repo = context.read<HtDataRepository<RemoteConfig>>();
         updatedItem = await repo.update(
           id: id,
-          item: itemToUpdate as AppConfig,
+          item: itemToUpdate as RemoteConfig,
           userId: userIdForRepoCall, // userId should be null for AppConfig
         );
       }
@@ -474,8 +474,8 @@ Future<Response> _handleDelete(
       case 'headline':
         final repo = context.read<HtDataRepository<Headline>>();
         itemToDelete = await repo.read(id: id, userId: userIdForRepoCall);
-      case 'category':
-        final repo = context.read<HtDataRepository<Category>>();
+      case 'topic':
+        final repo = context.read<HtDataRepository<Topic>>();
         itemToDelete = await repo.read(id: id, userId: userIdForRepoCall);
       case 'source':
         final repo = context.read<HtDataRepository<Source>>();
@@ -492,8 +492,8 @@ Future<Response> _handleDelete(
       case 'user_content_preferences': // New case for UserContentPreferences
         final repo = context.read<HtDataRepository<UserContentPreferences>>();
         itemToDelete = await repo.read(id: id, userId: userIdForRepoCall);
-      case 'app_config': // New case for AppConfig (delete by admin)
-        final repo = context.read<HtDataRepository<AppConfig>>();
+      case 'remote_config': // New case for RemoteConfig (delete by admin)
+        final repo = context.read<HtDataRepository<RemoteConfig>>();
         itemToDelete = await repo.read(
           id: id,
           userId: userIdForRepoCall,
@@ -531,8 +531,8 @@ Future<Response> _handleDelete(
         id: id,
         userId: userIdForRepoCall,
       );
-    case 'category':
-      await context.read<HtDataRepository<Category>>().delete(
+    case 'topic':
+      await context.read<HtDataRepository<Topic>>().delete(
         id: id,
         userId: userIdForRepoCall,
       );
@@ -561,8 +561,8 @@ Future<Response> _handleDelete(
         id: id,
         userId: userIdForRepoCall,
       );
-    case 'app_config': // New case for AppConfig (delete by admin)
-      await context.read<HtDataRepository<AppConfig>>().delete(
+    case 'remote_config': // New case for RemoteConfig (delete by admin)
+      await context.read<HtDataRepository<RemoteConfig>>().delete(
         id: id,
         userId: userIdForRepoCall,
       ); // userId should be null for AppConfig
