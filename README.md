@@ -38,6 +38,14 @@ management dashboard](https://github.com/headlines-toolkit/ht-dashboard).
     topics, sources) through a well-structured API that supports flexible
     querying and sorting for dynamic content presentation.
 
+*   🌐 **Dynamic Remote Configuration:** Centrally manage application
+    behavior—including ad frequency, feature flags, and maintenance status—without
+    requiring a client-side update.
+
+*   💾 **Robust Data Management:** Securely manage core news data (headlines,
+    topics, sources) through a well-structured API that supports flexible
+    querying and sorting for dynamic content presentation.
+
 *   📊 **Dynamic Dashboard Summary:** Access real-time, aggregated metrics on
     key data points like total headlines, topics, and sources, providing
     an at-a-glance overview for administrative dashboards.
