@@ -295,90 +295,125 @@ class DatabaseSeedingService {
     }
   }
 
-  /// Seeds the database with the initial AppConfig and the default admin user.
+  /// Seeds the database with the initial RemoteConfig and the default admin user.
   ///
   /// This method is idempotent, using `ON CONFLICT DO NOTHING` to prevent
   /// errors if the data already exists. It runs within a single transaction.
   Future<void> seedInitialAdminAndConfig() async {
-    _log.info('Seeding initial AppConfig and admin user...');
+    _log.info('Seeding initial RemoteConfig and admin user...');
     try {
       await _connection.execute('BEGIN');
       try {
-        // Seed AppConfig
-        _log.fine('Seeding AppConfig...');
-        final appConfig = AppConfig.fromJson(appConfigFixtureData);  
-        // The `app_config` table only has `id` and `user_preference_limits`.
-        // We must provide an explicit map to avoid a "superfluous variables"
-        // error from the postgres driver.
+        // Seed RemoteConfig
+        _log.fine('Seeding RemoteConfig...');
+        final remoteConfig = RemoteConfig.fromJson(remoteConfigFixtureData);
+        // The `remote_config` table has multiple JSONB columns. We must
+        // provide an explicit map with JSON-encoded values to avoid a
+        // "superfluous variables" error from the postgres driver.
         await _connection.execute(
           Sql.named(
-            'INSERT INTO app_config (id, user_preference_limits) '
-            'VALUES (@id, @user_preference_limits) '
+            'INSERT INTO remote_config (id, user_preference_limits, ad_config, '
+            'account_action_config, app_status) VALUES (@id, '
+            '@user_preference_limits, @ad_config, @account_action_config, '
+            '@app_status) '
             'ON CONFLICT (id) DO NOTHING',
           ),
           parameters: {
-            'id': appConfig.id,
-            'user_preference_limits': appConfig.userPreferenceLimits.toJson(),
+            'id': remoteConfig.id,
+            'user_preference_limits':
+                jsonEncode(remoteConfig.userPreferenceLimits.toJson()),
+            'ad_config': jsonEncode(remoteConfig.adConfig.toJson()),
+            'account_action_config':
+                jsonEncode(remoteConfig.accountActionConfig.toJson()),
+            'app_status': jsonEncode(remoteConfig.appStatus.toJson()),
           },
         );
 
         // Seed Admin User
         _log.fine('Seeding admin user...');
         // Find the admin user in the fixture data.
-        final adminUser = usersFixturesData.firstWhere(
-          (user) => user.roles.contains(UserRoles.admin),
+        final adminUserData = usersFixturesData.firstWhere(
+          (data) => data['dashboard_role'] == DashboardUserRole.admin.name,
           orElse: () => throw StateError('Admin user not found in fixtures.'),
         );
-        // The `users` table only has `id`, `email`, and `roles`. We must
-        // provide an explicit map to avoid a "superfluous variables" error.
+        final adminUser = User.fromJson(adminUserData);
+
+        // The `users` table has specific columns for roles and status.
         await _connection.execute(
           Sql.named(
-            'INSERT INTO users (id, email, roles) '
-            'VALUES (@id, @email, @roles) '
+            'INSERT INTO users (id, email, app_role, dashboard_role, '
+            'feed_action_status) VALUES (@id, @email, @app_role, '
+            '@dashboard_role, @feed_action_status) '
             'ON CONFLICT (id) DO NOTHING',
           ),
           parameters: {
             'id': adminUser.id,
             'email': adminUser.email,
-            'roles': jsonEncode(adminUser.roles),
+            'app_role': adminUser.appRole.name,
+            'dashboard_role': adminUser.dashboardRole.name,
+            'feed_action_status': jsonEncode(
+              adminUser.feedActionStatus
+                  .map((key, value) => MapEntry(key.name, value.toJson())),
+            ),
           },
         );
 
         // Seed default settings and preferences for the admin user.
-        final adminSettings = UserAppSettings(id: adminUser.id);
-        final adminPreferences = UserContentPreferences(id: adminUser.id);
+        final adminSettings = UserAppSettings.fromJson(
+          userAppSettingsFixturesData
+              .firstWhere((data) => data['id'] == adminUser.id),
+        );
+        final adminPreferences = UserContentPreferences.fromJson(
+          userContentPreferencesFixturesData
+              .firstWhere((data) => data['id'] == adminUser.id),
+        );
 
         await _connection.execute(
           Sql.named(
             'INSERT INTO user_app_settings (id, user_id, display_settings, '
-            'language, feed_preferences, engagement_shown_counts, '
-            'engagement_last_shown_timestamps) VALUES (@id, @user_id, '
-            '@display_settings, @language, @feed_preferences, '
-            '@engagement_shown_counts, @engagement_last_shown_timestamps) '
+            'language, feed_preferences) VALUES (@id, @user_id, '
+            '@display_settings, @language, @feed_preferences) '
             'ON CONFLICT (id) DO NOTHING',
           ),
-          parameters: adminSettings.toJson()
-            ..['user_id'] = adminUser.id,
+          parameters: {
+            'id': adminSettings.id,
+            'user_id': adminUser.id,
+            'display_settings':
+                jsonEncode(adminSettings.displaySettings.toJson()),
+            'language': adminSettings.language,
+            'feed_preferences':
+                jsonEncode(adminSettings.feedPreferences.toJson()),
+          },
         );
 
         await _connection.execute(
           Sql.named(
             'INSERT INTO user_content_preferences (id, user_id, '
-            'followed_categories, followed_sources, followed_countries, '
-            'saved_headlines) VALUES (@id, @user_id, @followed_categories, '
+            'followed_topics, followed_sources, followed_countries, '
+            'saved_headlines) VALUES (@id, @user_id, @followed_topics, '
             '@followed_sources, @followed_countries, @saved_headlines) '
             'ON CONFLICT (id) DO NOTHING',
           ),
-          // Use toJson() to correctly serialize the lists of complex objects
-          // into a format the database driver can handle for JSONB columns.
-          parameters: adminPreferences.toJson()
-            ..['user_id'] = adminUser.id,
+          parameters: {
+            'id': adminPreferences.id,
+            'user_id': adminUser.id,
+            'followed_topics': jsonEncode(
+              adminPreferences.followedTopics.map((e) => e.toJson()).toList(),
+            ),
+            'followed_sources': jsonEncode(
+              adminPreferences.followedSources.map((e) => e.toJson()).toList(),
+            ),
+            'followed_countries': jsonEncode(
+              adminPreferences.followedCountries.map((e) => e.toJson()).toList(),
+            ),
+            'saved_headlines': jsonEncode(
+              adminPreferences.savedHeadlines.map((e) => e.toJson()).toList(),
+            ),
+          },
         );
 
         await _connection.execute('COMMIT');
-        _log.info(
-          'Initial AppConfig and admin user seeding completed successfully.',
-        );
+        _log.info('Initial RemoteConfig and admin user seeding completed.');
       } catch (e) {
         await _connection.execute('ROLLBACK');
         rethrow;
