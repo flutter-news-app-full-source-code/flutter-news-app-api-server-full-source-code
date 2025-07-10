@@ -3,6 +3,7 @@ import 'package:ht_api/src/services/verification_code_storage_service.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_email_repository/ht_email_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
+import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
 
 /// {@template auth_service}
@@ -22,13 +23,15 @@ class AuthService {
     required HtDataRepository<UserContentPreferences>
     userContentPreferencesRepository,
     required Uuid uuidGenerator,
+    required Logger log,
   }) : _userRepository = userRepository,
        _authTokenService = authTokenService,
        _verificationCodeStorageService = verificationCodeStorageService,
        _emailRepository = emailRepository,
        _userAppSettingsRepository = userAppSettingsRepository,
        _userContentPreferencesRepository = userContentPreferencesRepository,
-       _uuid = uuidGenerator;
+       _uuid = uuidGenerator,
+       _log = log;
 
   final HtDataRepository<User> _userRepository;
   final AuthTokenService _authTokenService;
@@ -37,6 +40,7 @@ class AuthService {
   final HtDataRepository<UserAppSettings> _userAppSettingsRepository;
   final HtDataRepository<UserContentPreferences>
   _userContentPreferencesRepository;
+  final Logger _log;
   final Uuid _uuid;
 
   /// Initiates the email sign-in process.
@@ -67,7 +71,7 @@ class AuthService {
       if (isDashboardLogin) {
         final user = await _findUserByEmail(email);
         if (user == null) {
-          print('Dashboard login failed: User $email not found.');
+          _log.warning('Dashboard login failed: User $email not found.');
           throw const UnauthorizedException(
             'This email address is not registered for dashboard access.',
           );
@@ -77,14 +81,14 @@ class AuthService {
             user.dashboardRole == DashboardUserRole.publisher;
 
         if (!hasRequiredRole) {
-          print(
+          _log.warning(
             'Dashboard login failed: User ${user.id} lacks required roles.',
           );
           throw const ForbiddenException(
             'Your account does not have the required permissions to sign in.',
           );
         }
-        print('Dashboard user ${user.id} verified successfully.');
+        _log.info('Dashboard user ${user.id} verified successfully.');
       }
 
       // Generate and store the code for standard sign-in
@@ -93,13 +97,13 @@ class AuthService {
 
       // Send the code via email
       await _emailRepository.sendOtpEmail(recipientEmail: email, otpCode: code);
-      print('Initiated email sign-in for $email, code sent.');
+      _log.info('Initiated email sign-in for $email, code sent.');
     } on HtHttpException {
       // Propagate known exceptions from dependencies
       rethrow;
     } catch (e) {
       // Catch unexpected errors during orchestration
-      print('Error during initiateEmailSignIn for $email: $e');
+      _log.severe('Error during initiateEmailSignIn for $email: $e');
       throw const OperationFailedException(
         'Failed to initiate email sign-in process.',
       );
@@ -140,7 +144,7 @@ class AuthService {
       await _verificationCodeStorageService.clearSignInCode(email);
     } catch (e) {
       // Log or handle if clearing fails, but don't let it block sign-in
-      print(
+      _log.warning(
         'Warning: Failed to clear sign-in code for $email after validation: $e',
       );
     }
@@ -157,14 +161,14 @@ class AuthService {
         if (isDashboardLogin) {
           // This should not happen if the request-code flow is correct.
           // It's a safeguard.
-          print(
+          _log.severe(
             'Error: Dashboard login verification failed for non-existent user $email.',
           );
           throw const UnauthorizedException('User account does not exist.');
         }
 
         // Create a new user for the standard app flow.
-        print('User not found for $email, creating new user.');
+        _log.info('User not found for $email, creating new user.');
 
         // All new users created via the public API get the standard role.
         // Admin users must be provisioned out-of-band (e.g., via fixtures).
@@ -184,7 +188,7 @@ class AuthService {
           ),
         );
         user = await _userRepository.create(item: user);
-        print(
+        _log.info(
           'Created new user: ${user.id} with appRole: ${user.appRole}',
         );
 
@@ -194,7 +198,7 @@ class AuthService {
           item: defaultAppSettings,
           userId: user.id,
         );
-        print('Created default UserAppSettings for user: ${user.id}');
+        _log.info('Created default UserAppSettings for user: ${user.id}');
 
         // Create default UserContentPreferences for the new user
         final defaultUserPreferences = UserContentPreferences(id: user.id);
@@ -202,25 +206,25 @@ class AuthService {
           item: defaultUserPreferences,
           userId: user.id,
         );
-        print('Created default UserContentPreferences for user: ${user.id}');
+        _log.info('Created default UserContentPreferences for user: ${user.id}');
       }
     } on HtHttpException catch (e) {
-      print('Error finding/creating user for $email: $e');
+      _log.severe('Error finding/creating user for $email: $e');
       throw const OperationFailedException(
         'Failed to find or create user account.',
       );
     } catch (e) {
-      print('Unexpected error during user lookup/creation for $email: $e');
+      _log.severe('Unexpected error during user lookup/creation for $email: $e');
       throw const OperationFailedException('Failed to process user account.');
     }
 
     // 3. Generate authentication token
     try {
       final token = await _authTokenService.generateToken(user);
-      print('Generated token for user ${user.id}');
+      _log.info('Generated token for user ${user.id}');
       return (user: user, token: token);
     } catch (e) {
-      print('Error generating token for user ${user.id}: $e');
+      _log.severe('Error generating token for user ${user.id}: $e');
       throw const OperationFailedException(
         'Failed to generate authentication token.',
       );
@@ -254,12 +258,12 @@ class AuthService {
         ),
       );
       user = await _userRepository.create(item: user);
-      print('Created anonymous user: ${user.id}');
+      _log.info('Created anonymous user: ${user.id}');
     } on HtHttpException catch (e) {
-      print('Error creating anonymous user: $e');
+      _log.severe('Error creating anonymous user: $e');
       throw const OperationFailedException('Failed to create anonymous user.');
     } catch (e) {
-      print('Unexpected error during anonymous user creation: $e');
+      _log.severe('Unexpected error during anonymous user creation: $e');
       throw const OperationFailedException(
         'Failed to process anonymous sign-in.',
       );
@@ -271,7 +275,7 @@ class AuthService {
       item: defaultAppSettings,
       userId: user.id, // Pass user ID for scoping
     );
-    print('Created default UserAppSettings for anonymous user: ${user.id}');
+    _log.info('Created default UserAppSettings for anonymous user: ${user.id}');
 
     // Create default UserContentPreferences for the new anonymous user
     final defaultUserPreferences = UserContentPreferences(id: user.id);
@@ -279,17 +283,17 @@ class AuthService {
       item: defaultUserPreferences,
       userId: user.id, // Pass user ID for scoping
     );
-    print(
+    _log.info(
       'Created default UserContentPreferences for anonymous user: ${user.id}',
     );
 
     // 2. Generate token
     try {
       final token = await _authTokenService.generateToken(user);
-      print('Generated token for anonymous user ${user.id}');
+      _log.info('Generated token for anonymous user ${user.id}');
       return (user: user, token: token);
     } catch (e) {
-      print('Error generating token for anonymous user ${user.id}: $e');
+      _log.severe('Error generating token for anonymous user ${user.id}: $e');
       throw const OperationFailedException(
         'Failed to generate authentication token.',
       );
@@ -319,32 +323,32 @@ class AuthService {
     required String userId,
     required String token,
   }) async {
-    print(
-      '[AuthService] Received request for server-side sign-out actions '
+    _log.info(
+      'Received request for server-side sign-out actions '
       'for user $userId.',
     );
 
     try {
       // Invalidate the token using the AuthTokenService
       await _authTokenService.invalidateToken(token);
-      print(
-        '[AuthService] Token invalidation logic executed for user $userId.',
+      _log.info(
+        'Token invalidation logic executed for user $userId.',
       );
     } on HtHttpException catch (_) {
       // Propagate known exceptions from the token service
       rethrow;
     } catch (e) {
       // Catch unexpected errors during token invalidation
-      print(
-        '[AuthService] Error during token invalidation for user $userId: $e',
+      _log.severe(
+        'Error during token invalidation for user $userId: $e',
       );
       throw const OperationFailedException(
         'Failed server-side sign-out: Token invalidation failed.',
       );
     }
 
-    print(
-      '[AuthService] Server-side sign-out actions complete for user $userId.',
+    _log.info(
+      'Server-side sign-out actions complete for user $userId.',
     );
   }
 
@@ -396,13 +400,13 @@ class AuthService {
         recipientEmail: emailToLink,
         otpCode: code,
       );
-      print(
+      _log.info(
         'Initiated email link for user ${anonymousUser.id} to email $emailToLink, code sent: $code .',
       );
     } on HtHttpException {
       rethrow;
     } catch (e) {
-      print(
+      _log.severe(
         'Error during initiateLinkEmailProcess for user ${anonymousUser.id}, email $emailToLink: $e',
       );
       throw OperationFailedException(
@@ -453,24 +457,24 @@ class AuthService {
         id: updatedUser.id,
         item: updatedUser,
       );
-      print(
+      _log.info(
         'User ${permanentUser.id} successfully linked with email $linkedEmail.',
       );
 
       // 3. Generate a new authentication token for the now-permanent user.
       final newToken = await _authTokenService.generateToken(permanentUser);
-      print('Generated new token for linked user ${permanentUser.id}');
+      _log.info('Generated new token for linked user ${permanentUser.id}');
 
       // 4. Invalidate the old anonymous token.
       try {
         await _authTokenService.invalidateToken(oldAnonymousToken);
-        print(
+        _log.info(
           'Successfully invalidated old anonymous token for user ${permanentUser.id}.',
         );
       } catch (e) {
         // Log error but don't fail the whole linking process if invalidation fails.
         // The new token is more important.
-        print(
+        _log.warning(
           'Warning: Failed to invalidate old anonymous token for user ${permanentUser.id}: $e',
         );
       }
@@ -479,7 +483,7 @@ class AuthService {
       try {
         await _verificationCodeStorageService.clearLinkCode(anonymousUser.id);
       } catch (e) {
-        print(
+        _log.warning(
           'Warning: Failed to clear link code for user ${anonymousUser.id} after linking: $e',
         );
       }
@@ -488,7 +492,7 @@ class AuthService {
     } on HtHttpException {
       rethrow;
     } catch (e) {
-      print(
+      _log.severe(
         'Error during completeLinkEmailProcess for user ${anonymousUser.id}: $e',
       );
       throw OperationFailedException(
@@ -508,21 +512,21 @@ class AuthService {
     try {
       // Fetch the user first to get their email if needed for cleanup
       final userToDelete = await _userRepository.read(id: userId);
-      print('[AuthService] Found user ${userToDelete.id} for deletion.');
+      _log.info('Found user ${userToDelete.id} for deletion.');
 
       // 1. Delete the user record from the repository.
       // This implicitly invalidates tokens that rely on user lookup.
       await _userRepository.delete(id: userId);
-      print('[AuthService] User ${userToDelete.id} deleted from repository.');
+      _log.info('User ${userToDelete.id} deleted from repository.');
 
       // 2. Clear any pending verification codes for this user ID (linking).
       try {
         await _verificationCodeStorageService.clearLinkCode(userId);
-        print('[AuthService] Cleared link code for user ${userToDelete.id}.');
+        _log.info('Cleared link code for user ${userToDelete.id}.');
       } catch (e) {
         // Log but don't fail deletion if clearing codes fails
-        print(
-          '[AuthService] Warning: Failed to clear link code for user ${userToDelete.id}: $e',
+        _log.warning(
+          'Warning: Failed to clear link code for user ${userToDelete.id}: $e',
         );
       }
 
@@ -532,13 +536,13 @@ class AuthService {
           await _verificationCodeStorageService.clearSignInCode(
             userToDelete.email!,
           );
-          print(
-            '[AuthService] Cleared sign-in code for email ${userToDelete.email}.',
+          _log.info(
+            'Cleared sign-in code for email ${userToDelete.email}.',
           );
         } catch (e) {
           // Log but don't fail deletion if clearing codes fails
-          print(
-            '[AuthService] Warning: Failed to clear sign-in code for email ${userToDelete.email}: $e',
+          _log.warning(
+            'Warning: Failed to clear sign-in code for email ${userToDelete.email}: $e',
           );
         }
       }
@@ -547,8 +551,8 @@ class AuthService {
       // user-related data (e.g., settings, content) from other repositories
       // once those features are implemented.
 
-      print(
-        '[AuthService] Account deletion process completed for user $userId.',
+      _log.info(
+        'Account deletion process completed for user $userId.',
       );
     } on NotFoundException {
       // Propagate NotFoundException if user doesn't exist
@@ -558,7 +562,7 @@ class AuthService {
       rethrow;
     } catch (e) {
       // Catch unexpected errors during orchestration
-      print('Error during deleteAccount for user $userId: $e');
+      _log.severe('Error during deleteAccount for user $userId: $e');
       throw OperationFailedException('Failed to delete user account: $e');
     }
   }
