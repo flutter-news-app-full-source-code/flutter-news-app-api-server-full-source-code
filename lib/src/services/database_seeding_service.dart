@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:ht_shared/ht_shared.dart';
-import 'package:ht_shared/src/fixtures/fixtures.dart';
 import 'package:logging/logging.dart';
 import 'package:postgres/postgres.dart';
 
@@ -174,8 +173,7 @@ class DatabaseSeedingService {
       try {
         // Seed Topics
         _log.fine('Seeding topics...');
-        for (final data in topicsFixturesData) {
-          final topic = Topic.fromJson(data);
+        for (final topic in topicsFixturesData) {
           final params = topic.toJson()
             ..putIfAbsent('description', () => null)
             ..putIfAbsent('icon_url', () => null)
@@ -194,8 +192,7 @@ class DatabaseSeedingService {
 
         // Seed Countries (must be done before sources and headlines)
         _log.fine('Seeding countries...');
-        for (final data in countriesFixturesData) {
-          final country = Country.fromJson(data);
+        for (final country in countriesFixturesData) {
           final params = country.toJson()
             ..putIfAbsent('updated_at', () => null);
 
@@ -212,8 +209,7 @@ class DatabaseSeedingService {
 
         // Seed Sources
         _log.fine('Seeding sources...');
-        for (final data in sourcesFixturesData) {
-          final source = Source.fromJson(data);
+        for (final source in sourcesFixturesData) {
           final params = source.toJson()
             // The `headquarters` field in the model is a nested `Country`
             // object. We extract its ID to store in the
@@ -243,8 +239,7 @@ class DatabaseSeedingService {
 
         // Seed Headlines
         _log.fine('Seeding headlines...');
-        for (final data in headlinesFixturesData) {
-          final headline = Headline.fromJson(data);
+        for (final headline in headlinesFixturesData) {
           final params = headline.toJson()
             ..['source_id'] = headline.source.id
             ..['topic_id'] = headline.topic.id
@@ -296,7 +291,7 @@ class DatabaseSeedingService {
       try {
         // Seed RemoteConfig
         _log.fine('Seeding RemoteConfig...');
-        final remoteConfig = RemoteConfig.fromJson(remoteConfigFixtureData);
+        final remoteConfig = remoteConfigFixture;
         // The `remote_config` table has multiple JSONB columns. We must
         // provide an explicit map with JSON-encoded values to avoid a
         // "superfluous variables" error from the postgres driver.
@@ -322,11 +317,10 @@ class DatabaseSeedingService {
         // Seed Admin User
         _log.fine('Seeding admin user...');
         // Find the admin user in the fixture data.
-        final adminUserFixture = usersFixturesData.firstWhere(
-          (data) => data['dashboard_role'] == DashboardUserRole.admin.name,
+        final adminUser = usersFixturesData.firstWhere(
+          (user) => user.dashboardRole == DashboardUserRole.admin,
           orElse: () => throw StateError('Admin user not found in fixtures.'),
         );
-        final adminUser = User.fromJson(adminUserFixture);
 
         // The `users` table has specific columns for roles and status.
         await _connection.execute(
@@ -336,19 +330,20 @@ class DatabaseSeedingService {
             '@dashboard_role, @feed_action_status) '
             'ON CONFLICT (id) DO NOTHING',
           ),
-          parameters: adminUser.toJson()
-            ..['feed_action_status'] =
-                jsonEncode(adminUser.feedActionStatus.toJson()),
+          parameters: () {
+            final params = adminUser.toJson();
+            params['feed_action_status'] =
+                jsonEncode(params['feed_action_status']);
+            return params;
+          }(),
         );
 
         // Seed default settings and preferences for the admin user.
-        final adminSettings = UserAppSettings.fromJson(
-          userAppSettingsFixturesData
-              .firstWhere((data) => data['id'] == adminUser.id),
+        final adminSettings = userAppSettingsFixturesData.firstWhere(
+          (settings) => settings.id == adminUser.id,
         );
-        final adminPreferences = UserContentPreferences.fromJson(
-          userContentPreferencesFixturesData
-              .firstWhere((data) => data['id'] == adminUser.id),
+        final adminPreferences = userContentPreferencesFixturesData.firstWhere(
+          (prefs) => prefs.id == adminUser.id,
         );
 
         await _connection.execute(
@@ -358,10 +353,13 @@ class DatabaseSeedingService {
             '@display_settings, @language, @feed_preferences) '
             'ON CONFLICT (id) DO NOTHING',
           ),
-          parameters: adminSettings.toJson()
-            ..['user_id'] = adminUser.id
-            ..['display_settings'] = jsonEncode(adminSettings.displaySettings)
-            ..['feed_preferences'] = jsonEncode(adminSettings.feedPreferences),
+          parameters: () {
+            final params = adminSettings.toJson();
+            params['user_id'] = adminUser.id;
+            params['display_settings'] = jsonEncode(params['display_settings']);
+            params['feed_preferences'] = jsonEncode(params['feed_preferences']);
+            return params;
+          }(),
         );
 
         await _connection.execute(
@@ -372,12 +370,15 @@ class DatabaseSeedingService {
             '@followed_sources, @followed_countries, @saved_headlines) '
             'ON CONFLICT (id) DO NOTHING',
           ),
-          parameters: adminPreferences.toJson()
-            ..['user_id'] = adminUser.id
-            ..['followed_topics'] = jsonEncode(adminPreferences.followedTopics)
-            ..['followed_sources'] = jsonEncode(adminPreferences.followedSources)
-            ..['followed_countries'] = jsonEncode(adminPreferences.followedCountries)
-            ..['saved_headlines'] = jsonEncode(adminPreferences.savedHeadlines),
+          parameters: () {
+            final params = adminPreferences.toJson();
+            params['user_id'] = adminUser.id;
+            params['followed_topics'] = jsonEncode(params['followed_topics']);
+            params['followed_sources'] = jsonEncode(params['followed_sources']);
+            params['followed_countries'] = jsonEncode(params['followed_countries']);
+            params['saved_headlines'] = jsonEncode(params['saved_headlines']);
+            return params;
+          }(),
         );
 
         await _connection.execute('COMMIT');
