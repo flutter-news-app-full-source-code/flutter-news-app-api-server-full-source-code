@@ -4,19 +4,18 @@ import 'package:ht_shared/ht_shared.dart';
 
 /// {@template default_user_preference_limit_service}
 /// Default implementation of [UserPreferenceLimitService] that enforces limits
-/// based on user role and [AppConfig].
+/// based on user role and [RemoteConfig].
 /// {@endtemplate}
 class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
   /// {@macro default_user_preference_limit_service}
   const DefaultUserPreferenceLimitService({
-    required HtDataRepository<AppConfig> appConfigRepository,
-    // Removed unused UserContentPreferencesRepository
-  }) : _appConfigRepository = appConfigRepository;
+    required HtDataRepository<RemoteConfig> remoteConfigRepository,
+  }) : _remoteConfigRepository = remoteConfigRepository;
 
-  final HtDataRepository<AppConfig> _appConfigRepository;
+  final HtDataRepository<RemoteConfig> _remoteConfigRepository;
 
-  // Assuming a fixed ID for the AppConfig document
-  static const String _appConfigId = 'app_config';
+  // Assuming a fixed ID for the RemoteConfig document
+  static const String _remoteConfigId = 'remote_config';
 
   @override
   Future<void> checkAddItem(
@@ -25,39 +24,35 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
     int currentCount,
   ) async {
     try {
-      // 1. Fetch the application configuration to get limits
-      final appConfig = await _appConfigRepository.read(id: _appConfigId);
-      final limits = appConfig.userPreferenceLimits;
+      // 1. Fetch the remote configuration to get limits
+      final remoteConfig = await _remoteConfigRepository.read(id: _remoteConfigId);
+      final limits = remoteConfig.userPreferenceLimits;
 
       // Admins have no limits.
-      if (user.roles.contains(UserRoles.admin)) {
+      if (user.dashboardRole == DashboardUserRole.admin) {
         return;
       }
 
-      // 2. Determine the limit based on the user's highest role.
+      // 2. Determine the limit based on the user's app role.
       int limit;
       String accountType;
 
-      if (user.roles.contains(UserRoles.premiumUser)) {
-        accountType = 'premium';
-        limit = (itemType == 'headline')
-            ? limits.premiumSavedHeadlinesLimit
-            : limits.premiumFollowedItemsLimit;
-      } else if (user.roles.contains(UserRoles.standardUser)) {
-        accountType = 'standard';
-        limit = (itemType == 'headline')
-            ? limits.authenticatedSavedHeadlinesLimit
-            : limits.authenticatedFollowedItemsLimit;
-      } else if (user.roles.contains(UserRoles.guestUser)) {
-        accountType = 'guest';
-        limit = (itemType == 'headline')
-            ? limits.guestSavedHeadlinesLimit
-            : limits.guestFollowedItemsLimit;
-      } else {
-        // Fallback for users with unknown or no roles.
-        throw const ForbiddenException(
-          'Cannot determine preference limits for this user account.',
-        );
+      switch (user.appRole) {
+        case AppUserRole.premiumUser:
+          accountType = 'premium';
+          limit = (itemType == 'headline')
+              ? limits.premiumSavedHeadlinesLimit
+              : limits.premiumFollowedItemsLimit;
+        case AppUserRole.standardUser:
+          accountType = 'standard';
+          limit = (itemType == 'headline')
+              ? limits.authenticatedSavedHeadlinesLimit
+              : limits.authenticatedFollowedItemsLimit;
+        case AppUserRole.guestUser:
+          accountType = 'guest';
+          limit = (itemType == 'headline')
+              ? limits.guestSavedHeadlinesLimit
+              : limits.guestFollowedItemsLimit;
       }
 
       // 3. Check if adding the item would exceed the limit
@@ -85,37 +80,33 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
     UserContentPreferences updatedPreferences,
   ) async {
     try {
-      // 1. Fetch the application configuration to get limits
-      final appConfig = await _appConfigRepository.read(id: _appConfigId);
-      final limits = appConfig.userPreferenceLimits;
+      // 1. Fetch the remote configuration to get limits
+      final remoteConfig = await _remoteConfigRepository.read(id: _remoteConfigId);
+      final limits = remoteConfig.userPreferenceLimits;
 
       // Admins have no limits.
-      if (user.roles.contains(UserRoles.admin)) {
+      if (user.dashboardRole == DashboardUserRole.admin) {
         return;
       }
 
-      // 2. Determine limits based on the user's highest role.
+      // 2. Determine limits based on the user's app role.
       int followedItemsLimit;
       int savedHeadlinesLimit;
       String accountType;
 
-      if (user.roles.contains(UserRoles.premiumUser)) {
-        accountType = 'premium';
-        followedItemsLimit = limits.premiumFollowedItemsLimit;
-        savedHeadlinesLimit = limits.premiumSavedHeadlinesLimit;
-      } else if (user.roles.contains(UserRoles.standardUser)) {
-        accountType = 'standard';
-        followedItemsLimit = limits.authenticatedFollowedItemsLimit;
-        savedHeadlinesLimit = limits.authenticatedSavedHeadlinesLimit;
-      } else if (user.roles.contains(UserRoles.guestUser)) {
-        accountType = 'guest';
-        followedItemsLimit = limits.guestFollowedItemsLimit;
-        savedHeadlinesLimit = limits.guestSavedHeadlinesLimit;
-      } else {
-        // Fallback for users with unknown or no roles.
-        throw const ForbiddenException(
-          'Cannot determine preference limits for this user account.',
-        );
+      switch (user.appRole) {
+        case AppUserRole.premiumUser:
+          accountType = 'premium';
+          followedItemsLimit = limits.premiumFollowedItemsLimit;
+          savedHeadlinesLimit = limits.premiumSavedHeadlinesLimit;
+        case AppUserRole.standardUser:
+          accountType = 'standard';
+          followedItemsLimit = limits.authenticatedFollowedItemsLimit;
+          savedHeadlinesLimit = limits.authenticatedSavedHeadlinesLimit;
+        case AppUserRole.guestUser:
+          accountType = 'guest';
+          followedItemsLimit = limits.guestFollowedItemsLimit;
+          savedHeadlinesLimit = limits.guestSavedHeadlinesLimit;
       }
 
       // 3. Check if proposed preferences exceed limits
@@ -131,9 +122,9 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
           'for your account type ($accountType).',
         );
       }
-      if (updatedPreferences.followedCategories.length > followedItemsLimit) {
+      if (updatedPreferences.followedTopics.length > followedItemsLimit) {
         throw ForbiddenException(
-          'You have reached the maximum number of followed categories allowed '
+          'You have reached the maximum number of followed topics allowed '
           'for your account type ($accountType).',
         );
       }
