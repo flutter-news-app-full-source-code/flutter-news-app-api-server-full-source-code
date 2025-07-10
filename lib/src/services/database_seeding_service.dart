@@ -51,7 +51,7 @@ class DatabaseSeedingService {
         await _connection.execute('''
           CREATE TABLE IF NOT EXISTS remote_config (
             id TEXT PRIMARY KEY,
-            user_preference_limits JSONB NOT NULL,
+            user_preference_config JSONB NOT NULL,
             ad_config JSONB NOT NULL,
             account_action_config JSONB NOT NULL,
             app_status JSONB NOT NULL,
@@ -291,22 +291,22 @@ class DatabaseSeedingService {
       try {
         // Seed RemoteConfig
         _log.fine('Seeding RemoteConfig...');
-        final remoteConfig = remoteConfigFixture;
+        const remoteConfig = remoteConfigFixtureData;
         // The `remote_config` table has multiple JSONB columns. We must
         // provide an explicit map with JSON-encoded values to avoid a
         // "superfluous variables" error from the postgres driver.
         await _connection.execute(
           Sql.named(
-            'INSERT INTO remote_config (id, user_preference_limits, ad_config, '
+            'INSERT INTO remote_config (id, user_preference_config, ad_config, '
             'account_action_config, app_status) VALUES (@id, '
-            '@user_preference_limits, @ad_config, @account_action_config, '
+            '@user_preference_config, @ad_config, @account_action_config, '
             '@app_status) '
             'ON CONFLICT (id) DO NOTHING',
           ),
           parameters: {
             'id': remoteConfig.id,
-            'user_preference_limits':
-                jsonEncode(remoteConfig.userPreferenceLimits.toJson()),
+            'user_preference_config':
+                jsonEncode(remoteConfig.userPreferenceConfig.toJson()),
             'ad_config': jsonEncode(remoteConfig.adConfig.toJson()),
             'account_action_config':
                 jsonEncode(remoteConfig.accountActionConfig.toJson()),

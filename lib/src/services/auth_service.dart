@@ -204,7 +204,7 @@ class AuthService {
           ),
           language: 'en',
           feedPreferences: const FeedDisplayPreferences(
-            headlineDensity: HeadlineDensity.normal,
+            headlineDensity: HeadlineDensity.standard,
             headlineImageStyle: HeadlineImageStyle.largeThumbnail,
             showSourceInHeadlineFeed: true,
             showPublishDateInHeadlineFeed: true,
@@ -303,7 +303,7 @@ class AuthService {
       ),
       language: 'en',
       feedPreferences: const FeedDisplayPreferences(
-        headlineDensity: HeadlineDensity.normal,
+        headlineDensity: HeadlineDensity.standard,
         headlineImageStyle: HeadlineImageStyle.largeThumbnail,
         showSourceInHeadlineFeed: true,
         showPublishDateInHeadlineFeed: true,

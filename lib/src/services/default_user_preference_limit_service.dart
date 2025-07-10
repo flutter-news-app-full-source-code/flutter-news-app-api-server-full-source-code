@@ -30,7 +30,7 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
     try {
       // 1. Fetch the remote configuration to get limits
       final remoteConfig = await _remoteConfigRepository.read(id: _remoteConfigId);
-      final limits = remoteConfig.userPreferenceLimits;
+      final limits = remoteConfig.userPreferenceConfig;
 
       // Admins have no limits.
       if (user.dashboardRole == DashboardUserRole.admin) {
@@ -88,7 +88,7 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
     try {
       // 1. Fetch the remote configuration to get limits
       final remoteConfig = await _remoteConfigRepository.read(id: _remoteConfigId);
-      final limits = remoteConfig.userPreferenceLimits;
+      final limits = remoteConfig.userPreferenceConfig;
 
       // Admins have no limits.
       if (user.dashboardRole == DashboardUserRole.admin) {
