@@ -12,8 +12,8 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
   const DefaultUserPreferenceLimitService({
     required HtDataRepository<RemoteConfig> remoteConfigRepository,
     required Logger log,
-  })  : _remoteConfigRepository = remoteConfigRepository,
-        _log = log;
+  }) : _remoteConfigRepository = remoteConfigRepository,
+       _log = log;
 
   final HtDataRepository<RemoteConfig> _remoteConfigRepository;
   final Logger _log;
@@ -29,7 +29,9 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
   ) async {
     try {
       // 1. Fetch the remote configuration to get limits
-      final remoteConfig = await _remoteConfigRepository.read(id: _remoteConfigId);
+      final remoteConfig = await _remoteConfigRepository.read(
+        id: _remoteConfigId,
+      );
       final limits = remoteConfig.userPreferenceConfig;
 
       // Admins have no limits.
@@ -87,7 +89,9 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
   ) async {
     try {
       // 1. Fetch the remote configuration to get limits
-      final remoteConfig = await _remoteConfigRepository.read(id: _remoteConfigId);
+      final remoteConfig = await _remoteConfigRepository.read(
+        id: _remoteConfigId,
+      );
       final limits = remoteConfig.userPreferenceConfig;
 
       // Admins have no limits.

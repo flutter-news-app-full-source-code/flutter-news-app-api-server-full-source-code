@@ -77,7 +77,8 @@ class AuthService {
           );
         }
 
-        final hasRequiredRole = user.dashboardRole == DashboardUserRole.admin ||
+        final hasRequiredRole =
+            user.dashboardRole == DashboardUserRole.admin ||
             user.dashboardRole == DashboardUserRole.publisher;
 
         if (!hasRequiredRole) {
@@ -188,9 +189,7 @@ class AuthService {
           ),
         );
         user = await _userRepository.create(item: user);
-        _log.info(
-          'Created new user: ${user.id} with appRole: ${user.appRole}',
-        );
+        _log.info('Created new user: ${user.id} with appRole: ${user.appRole}');
 
         // Create default UserAppSettings for the new user
         final defaultAppSettings = UserAppSettings(
@@ -228,7 +227,9 @@ class AuthService {
           item: defaultUserPreferences,
           userId: user.id,
         );
-        _log.info('Created default UserContentPreferences for user: ${user.id}');
+        _log.info(
+          'Created default UserContentPreferences for user: ${user.id}',
+        );
       }
     } on HtHttpException catch (e) {
       _log.severe('Error finding/creating user for $email: $e');
@@ -236,7 +237,9 @@ class AuthService {
         'Failed to find or create user account.',
       );
     } catch (e) {
-      _log.severe('Unexpected error during user lookup/creation for $email: $e');
+      _log.severe(
+        'Unexpected error during user lookup/creation for $email: $e',
+      );
       throw const OperationFailedException('Failed to process user account.');
     }
 
@@ -272,10 +275,8 @@ class AuthService {
         createdAt: DateTime.now(),
         feedActionStatus: Map.fromEntries(
           FeedActionType.values.map(
-            (type) => MapEntry(
-              type,
-              const UserFeedActionStatus(isCompleted: false),
-            ),
+            (type) =>
+                MapEntry(type, const UserFeedActionStatus(isCompleted: false)),
           ),
         ),
       );
@@ -375,25 +376,19 @@ class AuthService {
     try {
       // Invalidate the token using the AuthTokenService
       await _authTokenService.invalidateToken(token);
-      _log.info(
-        'Token invalidation logic executed for user $userId.',
-      );
+      _log.info('Token invalidation logic executed for user $userId.');
     } on HtHttpException catch (_) {
       // Propagate known exceptions from the token service
       rethrow;
     } catch (e) {
       // Catch unexpected errors during token invalidation
-      _log.severe(
-        'Error during token invalidation for user $userId: $e',
-      );
+      _log.severe('Error during token invalidation for user $userId: $e');
       throw const OperationFailedException(
         'Failed server-side sign-out: Token invalidation failed.',
       );
     }
 
-    _log.info(
-      'Server-side sign-out actions complete for user $userId.',
-    );
+    _log.info('Server-side sign-out actions complete for user $userId.');
   }
 
   /// Initiates the process of linking an [emailToLink] to an existing
@@ -589,9 +584,7 @@ class AuthService {
           await _verificationCodeStorageService.clearSignInCode(
             userToDelete.email,
           );
-          _log.info(
-            'Cleared sign-in code for email ${userToDelete.email}.',
-          );
+          _log.info('Cleared sign-in code for email ${userToDelete.email}.');
         } catch (e) {
           _log.warning(
             'Warning: Failed to clear sign-in code for email ${userToDelete.email}: $e',
@@ -599,9 +592,7 @@ class AuthService {
         }
       }
 
-      _log.info(
-        'Account deletion process completed for user $userId.',
-      );
+      _log.info('Account deletion process completed for user $userId.');
     } on NotFoundException {
       // Propagate NotFoundException if user doesn't exist
       rethrow;

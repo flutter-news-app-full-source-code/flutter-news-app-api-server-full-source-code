@@ -14,8 +14,8 @@ class SimpleAuthTokenService implements AuthTokenService {
   const SimpleAuthTokenService({
     required HtDataRepository<User> userRepository,
     required Logger log,
-  })  : _userRepository = userRepository,
-        _log = log;
+  }) : _userRepository = userRepository,
+       _log = log;
 
   final HtDataRepository<User> _userRepository;
   final Logger _log;

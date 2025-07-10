@@ -305,11 +305,13 @@ class DatabaseSeedingService {
           ),
           parameters: {
             'id': remoteConfig.id,
-            'user_preference_config':
-                jsonEncode(remoteConfig.userPreferenceConfig.toJson()),
+            'user_preference_config': jsonEncode(
+              remoteConfig.userPreferenceConfig.toJson(),
+            ),
             'ad_config': jsonEncode(remoteConfig.adConfig.toJson()),
-            'account_action_config':
-                jsonEncode(remoteConfig.accountActionConfig.toJson()),
+            'account_action_config': jsonEncode(
+              remoteConfig.accountActionConfig.toJson(),
+            ),
             'app_status': jsonEncode(remoteConfig.appStatus.toJson()),
           },
         );
@@ -332,8 +334,9 @@ class DatabaseSeedingService {
           ),
           parameters: () {
             final params = adminUser.toJson();
-            params['feed_action_status'] =
-                jsonEncode(params['feed_action_status']);
+            params['feed_action_status'] = jsonEncode(
+              params['feed_action_status'],
+            );
             return params;
           }(),
         );
@@ -375,7 +378,9 @@ class DatabaseSeedingService {
             params['user_id'] = adminUser.id;
             params['followed_topics'] = jsonEncode(params['followed_topics']);
             params['followed_sources'] = jsonEncode(params['followed_sources']);
-            params['followed_countries'] = jsonEncode(params['followed_countries']);
+            params['followed_countries'] = jsonEncode(
+              params['followed_countries'],
+            );
             params['saved_headlines'] = jsonEncode(params['saved_headlines']);
             return params;
           }(),

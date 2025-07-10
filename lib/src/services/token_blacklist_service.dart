@@ -51,16 +51,15 @@ class InMemoryTokenBlacklistService implements TokenBlacklistService {
   /// - [cleanupInterval]: How often the service checks for and removes
   ///   expired token IDs. Defaults to 1 hour.
   InMemoryTokenBlacklistService({
-    required Logger log, Duration cleanupInterval = const Duration(hours: 1),
+    required Logger log,
+    Duration cleanupInterval = const Duration(hours: 1),
   }) : _log = log {
     _cleanupTimer = Timer.periodic(cleanupInterval, (_) async {
       try {
         await cleanupExpired();
       } catch (e) {
         // Log error during cleanup, but don't let it crash the timer
-        _log.severe(
-          'Error during scheduled cleanup: $e',
-        );
+        _log.severe('Error during scheduled cleanup: $e');
       }
     });
     _log.info(
@@ -79,9 +78,7 @@ class InMemoryTokenBlacklistService implements TokenBlacklistService {
   @override
   Future<void> blacklist(String jti, DateTime expiry) async {
     if (_isDisposed) {
-      _log.warning(
-        'Attempted to blacklist on disposed service.',
-      );
+      _log.warning('Attempted to blacklist on disposed service.');
       return;
     }
     // Simulate async operation
@@ -93,9 +90,7 @@ class InMemoryTokenBlacklistService implements TokenBlacklistService {
         '(expires: $expiry)',
       );
     } catch (e) {
-      _log.severe(
-        'Error adding jti $jti to store: $e',
-      );
+      _log.severe('Error adding jti $jti to store: $e');
       throw OperationFailedException('Failed to add token to blacklist: $e');
     }
   }
@@ -103,9 +98,7 @@ class InMemoryTokenBlacklistService implements TokenBlacklistService {
   @override
   Future<bool> isBlacklisted(String jti) async {
     if (_isDisposed) {
-      _log.warning(
-        'Attempted to check blacklist on disposed service.',
-      );
+      _log.warning('Attempted to check blacklist on disposed service.');
       return false;
     }
     // Simulate async operation
@@ -124,9 +117,7 @@ class InMemoryTokenBlacklistService implements TokenBlacklistService {
       }
       return true; // It's in the blacklist and not expired
     } catch (e) {
-      _log.severe(
-        'Error checking blacklist for jti $jti: $e',
-      );
+      _log.severe('Error checking blacklist for jti $jti: $e');
       throw OperationFailedException('Failed to check token blacklist: $e');
     }
   }
@@ -134,9 +125,7 @@ class InMemoryTokenBlacklistService implements TokenBlacklistService {
   @override
   Future<void> cleanupExpired() async {
     if (_isDisposed) {
-      _log.warning(
-        'Attempted cleanup on disposed service.',
-      );
+      _log.warning('Attempted cleanup on disposed service.');
       return;
     }
     await Future<void>.delayed(Duration.zero); // Simulate async
@@ -157,9 +146,7 @@ class InMemoryTokenBlacklistService implements TokenBlacklistService {
           'expired jti entries.',
         );
       } else {
-        _log.finer(
-          'Cleanup ran, no expired entries found.',
-        );
+        _log.finer('Cleanup ran, no expired entries found.');
       }
     } catch (e) {
       _log.severe('Error during cleanup process: $e');

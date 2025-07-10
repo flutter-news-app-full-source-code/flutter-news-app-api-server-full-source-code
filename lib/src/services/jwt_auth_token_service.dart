@@ -165,8 +165,13 @@ class JwtAuthTokenService implements AuthTokenService {
       // Fetch the full user object from the repository
       // This ensures the user still exists and is valid
       final user = await _userRepository.read(id: userId);
-      _log..finer('[validateToken] User repository read successful for ID: $userId')
-      ..info('[validateToken] Token validated successfully for user ${user.id}');
+      _log
+        ..finer(
+          '[validateToken] User repository read successful for ID: $userId',
+        )
+        ..info(
+          '[validateToken] Token validated successfully for user ${user.id}',
+        );
       return user;
     } on JWTExpiredException catch (e, s) {
       _log.warning('[validateToken] Token expired.', e, s);
@@ -234,7 +239,9 @@ class JwtAuthTokenService implements AuthTokenService {
       // 3. Extract Expiry Time (exp)
       final expClaim = jwt.payload['exp'];
       if (expClaim == null || expClaim is! int) {
-        _log.warning('[invalidateToken] Failed: Missing or invalid "exp" claim.');
+        _log.warning(
+          '[invalidateToken] Failed: Missing or invalid "exp" claim.',
+        );
         throw const InvalidInputException(
           'Cannot invalidate token: Missing or invalid expiry (exp) claim.',
         );
@@ -243,12 +250,14 @@ class JwtAuthTokenService implements AuthTokenService {
         expClaim * 1000,
         isUtc: true,
       );
-      _log..finer('[invalidateToken] Extracted expiry: $expiryDateTime')
-
-      // 4. Add JTI to the blacklist
-      ..finer('[invalidateToken] Adding jti $jti to blacklist...');
+      _log
+        ..finer('[invalidateToken] Extracted expiry: $expiryDateTime')
+        // 4. Add JTI to the blacklist
+        ..finer('[invalidateToken] Adding jti $jti to blacklist...');
       await _blacklistService.blacklist(jti, expiryDateTime);
-      _log.info('[invalidateToken] Token (jti: $jti) successfully blacklisted.');
+      _log.info(
+        '[invalidateToken] Token (jti: $jti) successfully blacklisted.',
+      );
     } on JWTException catch (e, s) {
       // Catch errors during the initial verification (e.g., bad signature)
       _log.warning(

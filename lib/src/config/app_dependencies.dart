@@ -40,37 +40,51 @@ class AppDependencies {
   // --- Repositories ---
   /// A repository for managing [Headline] data.
   late final HtDataRepository<Headline> headlineRepository;
+
   /// A repository for managing [Topic] data.
   late final HtDataRepository<Topic> topicRepository;
+
   /// A repository for managing [Source] data.
   late final HtDataRepository<Source> sourceRepository;
+
   /// A repository for managing [Country] data.
   late final HtDataRepository<Country> countryRepository;
+
   /// A repository for managing [User] data.
   late final HtDataRepository<User> userRepository;
+
   /// A repository for managing [UserAppSettings] data.
   late final HtDataRepository<UserAppSettings> userAppSettingsRepository;
+
   /// A repository for managing [UserContentPreferences] data.
   late final HtDataRepository<UserContentPreferences>
-      userContentPreferencesRepository;
+  userContentPreferencesRepository;
+
   /// A repository for managing the global [RemoteConfig] data.
   late final HtDataRepository<RemoteConfig> remoteConfigRepository;
 
   // --- Services ---
   /// A service for sending emails.
   late final HtEmailRepository emailRepository;
+
   /// A service for managing a blacklist of invalidated authentication tokens.
   late final TokenBlacklistService tokenBlacklistService;
+
   /// A service for generating and validating authentication tokens.
   late final AuthTokenService authTokenService;
+
   /// A service for storing and validating one-time verification codes.
   late final VerificationCodeStorageService verificationCodeStorageService;
+
   /// A service that orchestrates authentication logic.
   late final AuthService authService;
+
   /// A service for calculating and providing a summary for the dashboard.
   late final DashboardSummaryService dashboardSummaryService;
+
   /// A service for checking user permissions.
   late final PermissionService permissionService;
+
   /// A service for enforcing limits on user content preferences.
   late final UserPreferenceLimitService userPreferenceLimitService;
 
@@ -195,11 +209,13 @@ class AppDependencies {
       (config) {
         final json = config.toJson();
         // All nested config objects must be JSON encoded for JSONB columns.
-        json['user_preference_limits'] =
-            jsonEncode(json['user_preference_limits']);
+        json['user_preference_limits'] = jsonEncode(
+          json['user_preference_limits'],
+        );
         json['ad_config'] = jsonEncode(json['ad_config']);
-        json['account_action_config'] =
-            jsonEncode(json['account_action_config']);
+        json['account_action_config'] = jsonEncode(
+          json['account_action_config'],
+        );
         json['app_status'] = jsonEncode(json['app_status']);
         return json;
       },
@@ -209,9 +225,7 @@ class AppDependencies {
     emailRepository = const HtEmailRepository(
       emailClient: HtEmailInMemoryClient(),
     );
-    tokenBlacklistService = InMemoryTokenBlacklistService(
-      log: _log,
-    );
+    tokenBlacklistService = InMemoryTokenBlacklistService(log: _log);
     authTokenService = JwtAuthTokenService(
       userRepository: userRepository,
       blacklistService: tokenBlacklistService,
@@ -235,8 +249,10 @@ class AppDependencies {
       sourceRepository: sourceRepository,
     );
     permissionService = const PermissionService();
-    userPreferenceLimitService =
-        DefaultUserPreferenceLimitService(remoteConfigRepository: remoteConfigRepository, log: _log,);
+    userPreferenceLimitService = DefaultUserPreferenceLimitService(
+      remoteConfigRepository: remoteConfigRepository,
+      log: _log,
+    );
   }
 
   HtDataRepository<T> _createRepository<T>(
