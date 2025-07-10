@@ -17,28 +17,29 @@ management dashboard](https://github.com/headlines-toolkit/ht-dashboard).
 ## ✨ Key Capabilities
 
 *   🔒 **Flexible & Secure Authentication:** Provide seamless user access with
-    a unified system supporting passwordless sign-in, anonymous guest
-    accounts, and a secure, context-aware login flow for privileged dashboard
-    users (e.g., 'admin', 'publisher').
+    a unified system supporting passwordless email sign-in, anonymous guest
+    accounts, and a secure, role-aware login flow for privileged dashboard
+    users.
 
-*   ⚡️ **Flexible Role-Based Access Control (RBAC):** Implement granular
-    permissions with a flexible, multi-role system. Assign multiple roles to
-    users (e.g., 'admin', 'publisher', 'premium_user') to precisely control
-    access to different API features and data management capabilities.
+*   ⚡️ **Granular Role-Based Access Control (RBAC):** Implement precise
+    permissions with a dual-role system (`appRole` for application features,
+    `dashboardRole` for admin functions) to control access to API features
+    and data management capabilities.
 
 *   ⚙️ **Synchronized App Settings:** Ensure a consistent and personalized user
     experience across devices by effortlessly syncing application preferences
     like theme, language, font styles, and more.
 
 *   👤 **Personalized User Preferences:** Enable richer user interactions by
-    managing and syncing user-specific data such as saved headlines, followed sources, or other personalized content tailored to individual users.
+    managing and syncing user-specific data such as saved headlines, followed
+    sources, and followed topics tailored to individual users.
 
 *   💾 **Robust Data Management:** Securely manage core news data (headlines,
-    categories, sources) through a well-structured API that supports flexible
+    topics, sources) through a well-structured API that supports flexible
     querying and sorting for dynamic content presentation.
 
 *   📊 **Dynamic Dashboard Summary:** Access real-time, aggregated metrics on
-    key data points like total headlines, categories, and sources, providing
+    key data points like total headlines, topics, and sources, providing
     an at-a-glance overview for administrative dashboards.
 
 *   🔧 **Solid Technical Foundation:** Built with Dart and the high-performance
