@@ -171,25 +171,22 @@ class DatabaseSeedingService {
     try {
       await _connection.execute('BEGIN');
       try {
-        // Seed Categories
-        _log.fine('Seeding categories...');
-        for (final data in categoriesFixturesData) {
-          final category = Category.fromJson(data);
-          final params = category.toJson();
+        // Seed Topics
+        _log.fine('Seeding topics...');
+        for (final data in topicsFixturesData) {
+          final topic = Topic.fromJson(data);
+          final params = topic.toJson();
 
           // Ensure optional fields exist for the postgres driver.
-          // The driver requires all named parameters to be present in the map,
-          // even if the value is null. The model's `toJson` with
-          // `includeIfNull: false` will omit keys for null fields.
           params.putIfAbsent('description', () => null);
           params.putIfAbsent('icon_url', () => null);
           params.putIfAbsent('updated_at', () => null);
 
           await _connection.execute(
             Sql.named(
-              'INSERT INTO categories (id, name, description, icon_url, '
-              'status, type, created_at, updated_at) VALUES (@id, @name, @description, '
-              '@icon_url, @status, @type, @created_at, @updated_at) '
+              'INSERT INTO topics (id, name, description, icon_url, '
+              'status, created_at, updated_at) VALUES (@id, @name, '
+              '@description, @icon_url, @status, @created_at, @updated_at) '
               'ON CONFLICT (id) DO NOTHING',
             ),
             parameters: params,
@@ -207,9 +204,9 @@ class DatabaseSeedingService {
 
           await _connection.execute(
             Sql.named(
-              'INSERT INTO countries (id, name, iso_code, flag_url, status, '
-              'type, created_at, updated_at) VALUES (@id, @name, @iso_code, '
-              '@flag_url, @status, @type, @created_at, @updated_at) '
+              'INSERT INTO countries (id, name, iso_code, flag_url, '
+              'status, created_at, updated_at) VALUES (@id, @name, '
+              '@iso_code, @flag_url, @status, @created_at, @updated_at) '
               'ON CONFLICT (id) DO NOTHING',
             ),
             parameters: params,
@@ -235,16 +232,14 @@ class DatabaseSeedingService {
           params.putIfAbsent('url', () => null);
           params.putIfAbsent('language', () => null);
           params.putIfAbsent('source_type', () => null);
-          params.putIfAbsent('status', () => null);
-          params.putIfAbsent('type', () => null);
           params.putIfAbsent('updated_at', () => null);
 
           await _connection.execute(
             Sql.named(
               'INSERT INTO sources (id, name, description, url, language, '
-              'status, type, source_type, headquarters_country_id, '
-              'created_at, updated_at) VALUES (@id, @name, @description, '
-              '@url, @language, @status, @type, @source_type, '
+              'status, source_type, headquarters_country_id, '
+              'created_at, updated_at) VALUES (@id, @name, @description, @url, '
+              '@language, @status, @source_type, '
               '@headquarters_country_id, @created_at, @updated_at) '
               'ON CONFLICT (id) DO NOTHING',
             ),
@@ -257,28 +252,27 @@ class DatabaseSeedingService {
         for (final data in headlinesFixturesData) {
           final headline = Headline.fromJson(data);
           final params = headline.toJson();
- 
+
           // Extract IDs from nested objects and remove the objects to match schema.
-          // These are now nullable to match the schema.
-          params['source_id'] = headline.source?.id;
-          params['category_id'] = headline.category?.id;
+          params['source_id'] = headline.source.id;
+          params['topic_id'] = headline.topic.id;
+          params['event_country_id'] = headline.eventCountry.id;
           params.remove('source');
-          params.remove('category');
- 
+          params.remove('topic');
+          params.remove('eventCountry');
+
           // Ensure optional fields exist for the postgres driver.
-          params.putIfAbsent('description', () => null);
+          params.putIfAbsent('excerpt', () => null);
           params.putIfAbsent('updated_at', () => null);
           params.putIfAbsent('image_url', () => null);
           params.putIfAbsent('url', () => null);
-          params.putIfAbsent('published_at', () => null);
- 
+
           await _connection.execute(
             Sql.named(
-              'INSERT INTO headlines (id, title, source_id, category_id, '
-              'image_url, url, published_at, description, status, '
-              'type, created_at, updated_at) VALUES (@id, @title, @source_id, '
-              '@category_id, @image_url, @url, @published_at, @description, '
-              '@status, @type, @created_at, @updated_at) '
+              'INSERT INTO headlines (id, title, excerpt, url, image_url, '
+              'source_id, topic_id, event_country_id, status, created_at, '
+              'updated_at) VALUES (@id, @title, @excerpt, @url, @image_url, '
+              '@source_id, @topic_id, @event_country_id, @status, @created_at, @updated_at) '
               'ON CONFLICT (id) DO NOTHING',
             ),
             parameters: params,
