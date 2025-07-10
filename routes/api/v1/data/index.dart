@@ -602,7 +602,7 @@ Model: `country`
 
 21. Filter by text query `q` for countries (name and iso_code):
     - URL: `/api/v1/data?model=country&q=US`
-    - Expected: Country with name containing "US". (Note: This test's expectation might need adjustment if no country name contains "US" but its isoCode is "US". The current `q` logic for country only searches name).
+    - Expected: Countries where "US" appears in the name OR the isoCode.
 
 22. Invalid parameter for countries (e.g., `categories`):
     - URL: `/api/v1/data?model=country&topics=topicId1`
