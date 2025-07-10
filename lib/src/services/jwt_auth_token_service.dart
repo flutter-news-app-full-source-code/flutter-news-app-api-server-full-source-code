@@ -3,6 +3,7 @@ import 'package:ht_api/src/services/auth_token_service.dart';
 import 'package:ht_api/src/services/token_blacklist_service.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
+import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
 
 /// {@template jwt_auth_token_service}
@@ -23,13 +24,16 @@ class JwtAuthTokenService implements AuthTokenService {
     required HtDataRepository<User> userRepository,
     required TokenBlacklistService blacklistService,
     required Uuid uuidGenerator,
+    required Logger log,
   }) : _userRepository = userRepository,
        _blacklistService = blacklistService,
-       _uuid = uuidGenerator;
+       _uuid = uuidGenerator,
+       _log = log;
 
   final HtDataRepository<User> _userRepository;
   final TokenBlacklistService _blacklistService;
   final Uuid _uuid;
+  final Logger _log;
 
   // --- Configuration ---
 
@@ -76,10 +80,10 @@ class JwtAuthTokenService implements AuthTokenService {
         expiresIn: _tokenExpiryDuration, // Redundant but safe
       );
 
-      print('Generated JWT for user ${user.id}');
+      _log.info('Generated JWT for user ${user.id}');
       return token;
     } catch (e) {
-      print('Error generating JWT for user ${user.id}: $e');
+      _log.severe('Error generating JWT for user ${user.id}: $e');
       // Map to a standard exception
       throw OperationFailedException(
         'Failed to generate authentication token: $e',
@@ -89,18 +93,18 @@ class JwtAuthTokenService implements AuthTokenService {
 
   @override
   Future<User?> validateToken(String token) async {
-    print('[validateToken] Attempting to validate token...');
+    _log.finer('[validateToken] Attempting to validate token...');
     try {
       // Verify the token's signature and expiry
-      print('[validateToken] Verifying token signature and expiry...');
+      _log.finer('[validateToken] Verifying token signature and expiry...');
       final jwt = JWT.verify(token, SecretKey(_secretKey));
-      print('[validateToken] Token verified. Payload: ${jwt.payload}');
+      _log.finer('[validateToken] Token verified. Payload: ${jwt.payload}');
 
       // --- Blacklist Check ---
       // Extract the JWT ID (jti) claim
       final jti = jwt.payload['jti'] as String?;
       if (jti == null || jti.isEmpty) {
-        print(
+        _log.warning(
           '[validateToken] Token validation failed: Missing or empty "jti" claim.',
         );
         // Throw specific exception for malformed token
@@ -109,21 +113,21 @@ class JwtAuthTokenService implements AuthTokenService {
         );
       }
 
-      print('[validateToken] Checking blacklist for jti: $jti');
+      _log.finer('[validateToken] Checking blacklist for jti: $jti');
       final isBlacklisted = await _blacklistService.isBlacklisted(jti);
       if (isBlacklisted) {
-        print(
+        _log.warning(
           '[validateToken] Token validation failed: Token is blacklisted (jti: $jti).',
         );
         // Throw specific exception for blacklisted token
         throw const UnauthorizedException('Token has been invalidated.');
       }
-      print('[validateToken] Token is not blacklisted (jti: $jti).');
+      _log.finer('[validateToken] Token is not blacklisted (jti: $jti).');
       // --- End Blacklist Check ---
 
       // Extract user ID from the subject claim ('sub')
       final subClaim = jwt.payload['sub'];
-      print(
+      _log.finer(
         '[validateToken] Extracted "sub" claim: $subClaim '
         '(Type: ${subClaim.runtimeType})',
       );
@@ -132,12 +136,12 @@ class JwtAuthTokenService implements AuthTokenService {
       String? userId;
       if (subClaim is String) {
         userId = subClaim;
-        print(
+        _log.finer(
           '[validateToken] "sub" claim successfully cast to String: $userId',
         );
       } else if (subClaim != null) {
         // Treat non-string sub as an error
-        print(
+        _log.severe(
           '[validateToken] ERROR: "sub" claim is not a String '
           '(Type: ${subClaim.runtimeType}).',
         );
@@ -148,7 +152,7 @@ class JwtAuthTokenService implements AuthTokenService {
       }
 
       if (userId == null || userId.isEmpty) {
-        print(
+        _log.warning(
           '[validateToken] Token validation failed: Missing or empty "sub" claim.',
         );
         // Throw specific exception for malformed token
@@ -157,19 +161,19 @@ class JwtAuthTokenService implements AuthTokenService {
         );
       }
 
-      print('[validateToken] Attempting to fetch user with ID: $userId');
+      _log.finer('[validateToken] Attempting to fetch user with ID: $userId');
       // Fetch the full user object from the repository
       // This ensures the user still exists and is valid
       final user = await _userRepository.read(id: userId);
-      print('[validateToken] User repository read successful for ID: $userId');
-      print('[validateToken] Token validated successfully for user ${user.id}');
+      _log.finer('[validateToken] User repository read successful for ID: $userId');
+      _log.info('[validateToken] Token validated successfully for user ${user.id}');
       return user;
     } on JWTExpiredException catch (e, s) {
-      print('[validateToken] CATCH JWTExpiredException: Token expired. $e\n$s');
+      _log.warning('[validateToken] Token expired.', e, s);
       // Throw the standardized exception instead of rethrowing the specific one
       throw const UnauthorizedException('Token expired.');
     } on JWTInvalidException catch (e, s) {
-      print(
+      _log.warning(
         '[validateToken] CATCH JWTInvalidException: Invalid token. '
         'Reason: ${e.message}\n$s',
       );
@@ -177,7 +181,7 @@ class JwtAuthTokenService implements AuthTokenService {
       throw UnauthorizedException('Invalid token: ${e.message}');
     } on JWTException catch (e, s) {
       // Use JWTException as the general catch-all for other JWT issues
-      print(
+      _log.warning(
         '[validateToken] CATCH JWTException: General JWT error. '
         'Reason: ${e.message}\n$s',
       );
@@ -186,7 +190,7 @@ class JwtAuthTokenService implements AuthTokenService {
     } on HtHttpException catch (e, s) {
       // Handle errors from the user repository (e.g., user not found)
       // or blacklist check (if it threw HtHttpException)
-      print(
+      _log.warning(
         '[validateToken] CATCH HtHttpException: Error during validation. '
         'Type: ${e.runtimeType}, Message: $e\n$s',
       );
@@ -194,7 +198,7 @@ class JwtAuthTokenService implements AuthTokenService {
       rethrow;
     } catch (e, s) {
       // Catch unexpected errors during validation
-      print('[validateToken] CATCH UNEXPECTED Exception: $e\n$s');
+      _log.severe('[validateToken] CATCH UNEXPECTED Exception', e, s);
       // Wrap unexpected errors in a standard exception type
       throw OperationFailedException(
         'Token validation failed unexpectedly: $e',
@@ -204,33 +208,33 @@ class JwtAuthTokenService implements AuthTokenService {
 
   @override
   Future<void> invalidateToken(String token) async {
-    print('[invalidateToken] Attempting to invalidate token...');
+    _log.finer('[invalidateToken] Attempting to invalidate token...');
     try {
       // 1. Verify the token signature FIRST, but ignore expiry for blacklisting
       //    We want to blacklist even if it's already expired, to be safe.
-      print('[invalidateToken] Verifying token signature (ignoring expiry)...');
+      _log.finer('[invalidateToken] Verifying signature (ignoring expiry)...');
       final jwt = JWT.verify(
         token,
         SecretKey(_secretKey),
         checkExpiresIn: false, // IMPORTANT: Don't fail if expired here
         checkHeaderType: true, // Keep other standard checks
       );
-      print('[invalidateToken] Token signature verified.');
+      _log.finer('[invalidateToken] Token signature verified.');
 
       // 2. Extract JTI (JWT ID)
       final jti = jwt.payload['jti'] as String?;
       if (jti == null || jti.isEmpty) {
-        print('[invalidateToken] Failed: Missing or empty "jti" claim.');
+        _log.warning('[invalidateToken] Failed: Missing or empty "jti" claim.');
         throw const InvalidInputException(
           'Cannot invalidate token: Missing or empty JWT ID (jti) claim.',
         );
       }
-      print('[invalidateToken] Extracted jti: $jti');
+      _log.finer('[invalidateToken] Extracted jti: $jti');
 
       // 3. Extract Expiry Time (exp)
       final expClaim = jwt.payload['exp'];
       if (expClaim == null || expClaim is! int) {
-        print('[invalidateToken] Failed: Missing or invalid "exp" claim.');
+        _log.warning('[invalidateToken] Failed: Missing or invalid "exp" claim.');
         throw const InvalidInputException(
           'Cannot invalidate token: Missing or invalid expiry (exp) claim.',
         );
@@ -239,15 +243,15 @@ class JwtAuthTokenService implements AuthTokenService {
         expClaim * 1000,
         isUtc: true,
       );
-      print('[invalidateToken] Extracted expiry: $expiryDateTime');
+      _log.finer('[invalidateToken] Extracted expiry: $expiryDateTime');
 
       // 4. Add JTI to the blacklist
-      print('[invalidateToken] Adding jti $jti to blacklist...');
+      _log.finer('[invalidateToken] Adding jti $jti to blacklist...');
       await _blacklistService.blacklist(jti, expiryDateTime);
-      print('[invalidateToken] Token (jti: $jti) successfully blacklisted.');
+      _log.info('[invalidateToken] Token (jti: $jti) successfully blacklisted.');
     } on JWTException catch (e, s) {
       // Catch errors during the initial verification (e.g., bad signature)
-      print(
+      _log.warning(
         '[invalidateToken] CATCH JWTException: Invalid token format/signature. '
         'Reason: ${e.message}\n$s',
       );
@@ -255,7 +259,7 @@ class JwtAuthTokenService implements AuthTokenService {
       throw InvalidInputException('Invalid token format: ${e.message}');
     } on HtHttpException catch (e, s) {
       // Catch errors from the blacklist service itself
-      print(
+      _log.warning(
         '[invalidateToken] CATCH HtHttpException: Error during blacklisting. '
         'Type: ${e.runtimeType}, Message: $e\n$s',
       );
@@ -263,7 +267,7 @@ class JwtAuthTokenService implements AuthTokenService {
       rethrow;
     } catch (e, s) {
       // Catch unexpected errors
-      print('[invalidateToken] CATCH UNEXPECTED Exception: $e\n$s');
+      _log.severe('[invalidateToken] CATCH UNEXPECTED Exception', e, s);
       throw OperationFailedException(
         'Token invalidation failed unexpectedly: $e',
       );
