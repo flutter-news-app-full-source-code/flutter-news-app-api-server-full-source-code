@@ -66,5 +66,5 @@ final Map<Enum, Set<String>> rolePermissions = {
   // Dashboard Roles
   DashboardUserRole.none: {},
   DashboardUserRole.publisher: _dashboardPublisherPermissions,
-  DashboardUser-Role.admin: _dashboardAdminPermissions,
+  DashboardUserRole.admin: _dashboardAdminPermissions,
 };
