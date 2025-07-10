@@ -39,32 +39,35 @@ class DatabaseSeedingService {
         await _connection.execute('''
           CREATE TABLE IF NOT EXISTS users (
             id TEXT PRIMARY KEY,
-            email TEXT UNIQUE,
-            roles JSONB NOT NULL,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-            last_engagement_shown_at TIMESTAMPTZ
+            email TEXT NOT NULL UNIQUE,
+            app_role TEXT NOT NULL,
+            dashboard_role TEXT NOT NULL,
+            feed_action_status JSONB NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
           );
         ''');
 
-        _log.fine('Creating "app_config" table...');
+        _log.fine('Creating "remote_config" table...');
         await _connection.execute('''
-          CREATE TABLE IF NOT EXISTS app_config (
+          CREATE TABLE IF NOT EXISTS remote_config (
             id TEXT PRIMARY KEY,
             user_preference_limits JSONB NOT NULL,
+            ad_config JSONB NOT NULL,
+            account_action_config JSONB NOT NULL,
+            app_status JSONB NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ
           );
         ''');
 
-        _log.fine('Creating "categories" table...');
+        _log.fine('Creating "topics" table...');
         await _connection.execute('''
-          CREATE TABLE IF NOT EXISTS categories (
+          CREATE TABLE IF NOT EXISTS topics (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
             description TEXT,
             icon_url TEXT,
             status TEXT,
-            type TEXT,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ
           );
@@ -79,7 +82,6 @@ class DatabaseSeedingService {
             url TEXT,
             language TEXT,
             status TEXT,
-            type TEXT,
             source_type TEXT,
             headquarters_country_id TEXT REFERENCES countries(id),
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -95,7 +97,6 @@ class DatabaseSeedingService {
             iso_code TEXT NOT NULL UNIQUE,
             flag_url TEXT NOT NULL,
             status TEXT,
-            type TEXT,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ
           );
@@ -106,16 +107,15 @@ class DatabaseSeedingService {
           CREATE TABLE IF NOT EXISTS headlines (
             id TEXT PRIMARY KEY,
             title TEXT NOT NULL,
-            source_id TEXT REFERENCES sources(id),
-            category_id TEXT REFERENCES categories(id),
-            image_url TEXT,
+            excerpt TEXT,
             url TEXT,
-            published_at TIMESTAMPTZ,
-            description TEXT,
+            image_url TEXT,
+            source_id TEXT REFERENCES sources(id),
+            topic_id TEXT REFERENCES topics(id),
+            event_country_id TEXT REFERENCES countries(id),
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ,
             status TEXT,
-            type TEXT
           );
         ''');
 
@@ -127,8 +127,6 @@ class DatabaseSeedingService {
             display_settings JSONB NOT NULL, -- Nested object, stored as JSON
             language TEXT NOT NULL, -- Simple string, stored as TEXT
             feed_preferences JSONB NOT NULL,
-            engagement_shown_counts JSONB NOT NULL,
-            engagement_last_shown_timestamps JSONB NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ
           );
@@ -139,7 +137,7 @@ class DatabaseSeedingService {
           CREATE TABLE IF NOT EXISTS user_content_preferences (
             id TEXT PRIMARY KEY,
             user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-            followed_categories JSONB NOT NULL,
+            followed_topics JSONB NOT NULL,
             followed_sources JSONB NOT NULL,
             followed_countries JSONB NOT NULL,
             saved_headlines JSONB NOT NULL,
