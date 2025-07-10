@@ -11,14 +11,14 @@ class DashboardSummaryService {
   /// {@macro dashboard_summary_service}
   const DashboardSummaryService({
     required HtDataRepository<Headline> headlineRepository,
-    required HtDataRepository<Category> categoryRepository,
+    required HtDataRepository<Topic> topicRepository,
     required HtDataRepository<Source> sourceRepository,
   }) : _headlineRepository = headlineRepository,
-       _categoryRepository = categoryRepository,
+       _topicRepository = topicRepository,
        _sourceRepository = sourceRepository;
 
   final HtDataRepository<Headline> _headlineRepository;
-  final HtDataRepository<Category> _categoryRepository;
+  final HtDataRepository<Topic> _topicRepository;
   final HtDataRepository<Source> _sourceRepository;
 
   /// Calculates and returns the current dashboard summary.
@@ -29,19 +29,19 @@ class DashboardSummaryService {
     // Use Future.wait to fetch all counts in parallel for efficiency.
     final results = await Future.wait([
       _headlineRepository.readAll(),
-      _categoryRepository.readAll(),
+      _topicRepository.readAll(),
       _sourceRepository.readAll(),
     ]);
 
     // The results are PaginatedResponse objects.
     final headlineResponse = results[0] as PaginatedResponse<Headline>;
-    final categoryResponse = results[1] as PaginatedResponse<Category>;
+    final topicResponse = results[1] as PaginatedResponse<Topic>;
     final sourceResponse = results[2] as PaginatedResponse<Source>;
 
     return DashboardSummary(
       id: 'dashboard_summary', // Fixed ID for the singleton summary
       headlineCount: headlineResponse.items.length,
-      categoryCount: categoryResponse.items.length,
+      topicCount: topicResponse.items.length,
       sourceCount: sourceResponse.items.length,
     );
   }
