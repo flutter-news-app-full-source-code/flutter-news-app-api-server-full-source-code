@@ -39,14 +39,14 @@ class AppDependencies {
 
   // --- Repositories ---
   late final HtDataRepository<Headline> headlineRepository;
-  late final HtDataRepository<Category> categoryRepository;
+  late final HtDataRepository<Topic> topicRepository;
   late final HtDataRepository<Source> sourceRepository;
   late final HtDataRepository<Country> countryRepository;
   late final HtDataRepository<User> userRepository;
   late final HtDataRepository<UserAppSettings> userAppSettingsRepository;
   late final HtDataRepository<UserContentPreferences>
-  userContentPreferencesRepository;
-  late final HtDataRepository<AppConfig> appConfigRepository;
+      userContentPreferencesRepository;
+  late final HtDataRepository<RemoteConfig> remoteConfigRepository;
 
   // --- Services ---
   late final HtEmailRepository emailRepository;
@@ -100,73 +100,37 @@ class AppDependencies {
     headlineRepository = _createRepository(
       connection,
       'headlines',
-      (json) {
-        if (json['created_at'] is DateTime) {
-          json['created_at'] =
-              (json['created_at'] as DateTime).toIso8601String();
-        }
-        if (json['updated_at'] is DateTime) {
-          json['updated_at'] =
-              (json['updated_at'] as DateTime).toIso8601String();
-        }
-        if (json['published_at'] is DateTime) {
-          json['published_at'] =
-              (json['published_at'] as DateTime).toIso8601String();
-        }
-        return Headline.fromJson(json);
-      },
+      // The HtDataPostgresClient returns DateTime objects from TIMESTAMPTZ
+      // columns. The Headline.fromJson factory expects ISO 8601 strings.
+      // This handler converts them before deserialization.
+      (json) => Headline.fromJson(_convertTimestampsToString(json)),
       (headline) {
         final json = headline.toJson();
-        // The database expects source_id and category_id, not nested objects.
-        // We extract the IDs and remove the original objects to match the
-        // schema.
-        if (headline.source != null) {
-          json['source_id'] = headline.source!.id;
-        }
-        if (headline.category != null) {
-          json['category_id'] = headline.category!.id;
-        }
+        // The database expects foreign key IDs, not nested objects.
+        // We extract the IDs and remove the original objects.
+        json['source_id'] = headline.source.id;
+        json['topic_id'] = headline.topic.id;
+        json['event_country_id'] = headline.eventCountry.id;
         json.remove('source');
-        json.remove('category');
+        json.remove('topic');
+        json.remove('eventCountry');
         return json;
       },
     );
-    categoryRepository = _createRepository(
+    topicRepository = _createRepository(
       connection,
-      'categories',
-      (json) {
-        if (json['created_at'] is DateTime) {
-          json['created_at'] =
-              (json['created_at'] as DateTime).toIso8601String();
-        }
-        if (json['updated_at'] is DateTime) {
-          json['updated_at'] =
-              (json['updated_at'] as DateTime).toIso8601String();
-        }
-        return Category.fromJson(json);
-      },
-      (c) => c.toJson(),
+      'topics',
+      (json) => Topic.fromJson(_convertTimestampsToString(json)),
+      (topic) => topic.toJson(),
     );
     sourceRepository = _createRepository(
       connection,
       'sources',
-      (json) {
-        if (json['created_at'] is DateTime) {
-          json['created_at'] =
-              (json['created_at'] as DateTime).toIso8601String();
-        }
-        if (json['updated_at'] is DateTime) {
-          json['updated_at'] =
-              (json['updated_at'] as DateTime).toIso8601String();
-        }
-        return Source.fromJson(json);
-      },
+      (json) => Source.fromJson(_convertTimestampsToString(json)),
       (source) {
         final json = source.toJson();
         // The database expects headquarters_country_id, not a nested object.
-        // We extract the ID and remove the original object to match the
-        // schema.
-        json['headquarters_country_id'] = source.headquarters?.id;
+        json['headquarters_country_id'] = source.headquarters.id;
         json.remove('headquarters');
         return json;
       },
@@ -174,104 +138,64 @@ class AppDependencies {
     countryRepository = _createRepository(
       connection,
       'countries',
-      (json) {
-        if (json['created_at'] is DateTime) {
-          json['created_at'] =
-              (json['created_at'] as DateTime).toIso8601String();
-        }
-        if (json['updated_at'] is DateTime) {
-          json['updated_at'] =
-              (json['updated_at'] as DateTime).toIso8601String();
-        }
-        return Country.fromJson(json);
-      },
-      (c) => c.toJson(),
+      (json) => Country.fromJson(_convertTimestampsToString(json)),
+      (country) => country.toJson(),
     );
     userRepository = _createRepository(
       connection,
       'users',
-      (json) {
-        // The postgres driver returns DateTime objects, but the model's
-        // fromJson expects ISO 8601 strings. We must convert them first.
-        if (json['created_at'] is DateTime) {
-          json['created_at'] = (json['created_at'] as DateTime).toIso8601String();
-        }
-        if (json['last_engagement_shown_at'] is DateTime) {
-          json['last_engagement_shown_at'] =
-              (json['last_engagement_shown_at'] as DateTime).toIso8601String();
-        }
-        return User.fromJson(json);
-      },
+      (json) => User.fromJson(_convertTimestampsToString(json)),
       (user) {
-        // The `roles` field is a List<String>, but the database expects a
-        // JSONB array. We must explicitly encode it.
         final json = user.toJson();
-        json['roles'] = jsonEncode(json['roles']);
+        // Convert enums to their string names for the database.
+        json['app_role'] = user.appRole.name;
+        json['dashboard_role'] = user.dashboardRole.name;
+        // The `feed_action_status` map must be JSON encoded for the JSONB column.
+        json['feed_action_status'] = jsonEncode(json['feed_action_status']);
         return json;
       },
     );
     userAppSettingsRepository = _createRepository(
       connection,
       'user_app_settings',
-      (json) {
-        // The DB has created_at/updated_at, but the model doesn't.
-        // Remove them before deserialization to avoid CheckedFromJsonException.
-        json.remove('created_at');
-        json.remove('updated_at');
-        return UserAppSettings.fromJson(json);
-      },
+      (json) => UserAppSettings.fromJson(json),
       (settings) {
         final json = settings.toJson();
         // These fields are complex objects and must be JSON encoded for the DB.
         json['display_settings'] = jsonEncode(json['display_settings']);
         json['feed_preferences'] = jsonEncode(json['feed_preferences']);
-        json['engagement_shown_counts'] =
-            jsonEncode(json['engagement_shown_counts']);
-        json['engagement_last_shown_timestamps'] =
-            jsonEncode(json['engagement_last_shown_timestamps']);
         return json;
       },
     );
     userContentPreferencesRepository = _createRepository(
       connection,
       'user_content_preferences',
-      (json) {
-        // The postgres driver returns DateTime objects, but the model's
-        // fromJson expects ISO 8601 strings. We must convert them first.
-        if (json['created_at'] is DateTime) {
-          json['created_at'] =
-              (json['created_at'] as DateTime).toIso8601String();
-        }
-        if (json['updated_at'] is DateTime) {
-          json['updated_at'] =
-              (json['updated_at'] as DateTime).toIso8601String();
-        }
-        return UserContentPreferences.fromJson(json);
-      },
+      (json) => UserContentPreferences.fromJson(json),
       (preferences) {
         final json = preferences.toJson();
-        json['followed_categories'] = jsonEncode(json['followed_categories']);
+        // These fields are lists of complex objects and must be JSON encoded.
+        json['followed_topics'] = jsonEncode(json['followed_topics']);
         json['followed_sources'] = jsonEncode(json['followed_sources']);
         json['followed_countries'] = jsonEncode(json['followed_countries']);
         json['saved_headlines'] = jsonEncode(json['saved_headlines']);
         return json;
       },
     );
-    appConfigRepository = _createRepository(
+    remoteConfigRepository = _createRepository(
       connection,
-      'app_config',
-      (json) {
-        if (json['created_at'] is DateTime) {
-          json['created_at'] =
-              (json['created_at'] as DateTime).toIso8601String();
-        }
-        if (json['updated_at'] is DateTime) {
-          json['updated_at'] =
-              (json['updated_at'] as DateTime).toIso8601String();
-        }
-        return AppConfig.fromJson(json);
+      'remote_config',
+      (json) => RemoteConfig.fromJson(_convertTimestampsToString(json)),
+      (config) {
+        final json = config.toJson();
+        // All nested config objects must be JSON encoded for JSONB columns.
+        json['user_preference_limits'] =
+            jsonEncode(json['user_preference_limits']);
+        json['ad_config'] = jsonEncode(json['ad_config']);
+        json['account_action_config'] =
+            jsonEncode(json['account_action_config']);
+        json['app_status'] = jsonEncode(json['app_status']);
+        return json;
       },
-      (c) => c.toJson(),
     );
 
     // 4. Initialize Services.
@@ -296,12 +220,12 @@ class AppDependencies {
     );
     dashboardSummaryService = DashboardSummaryService(
       headlineRepository: headlineRepository,
-      categoryRepository: categoryRepository,
+      topicRepository: topicRepository,
       sourceRepository: sourceRepository,
     );
     permissionService = const PermissionService();
     userPreferenceLimitService = DefaultUserPreferenceLimitService(
-      appConfigRepository: appConfigRepository,
+      remoteConfigRepository: remoteConfigRepository,
     );
   }
 
@@ -320,5 +244,21 @@ class AppDependencies {
         log: _log,
       ),
     );
+  }
+
+  /// Converts DateTime values in a JSON map to ISO 8601 strings.
+  ///
+  /// The postgres driver returns DateTime objects for TIMESTAMPTZ columns,
+  /// but our models' `fromJson` factories expect ISO 8601 strings. This
+  /// utility function performs the conversion for known timestamp fields.
+  Map<String, dynamic> _convertTimestampsToString(Map<String, dynamic> json) {
+    const timestampKeys = {'created_at', 'updated_at'};
+    final newJson = Map<String, dynamic>.from(json);
+    for (final key in timestampKeys) {
+      if (newJson[key] is DateTime) {
+        newJson[key] = (newJson[key] as DateTime).toIso8601String();
+      }
+    }
+    return newJson;
   }
 }
