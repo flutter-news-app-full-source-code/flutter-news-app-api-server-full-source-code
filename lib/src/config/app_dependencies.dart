@@ -202,11 +202,13 @@ class AppDependencies {
     emailRepository = const HtEmailRepository(
       emailClient: HtEmailInMemoryClient(),
     );
-    tokenBlacklistService = InMemoryTokenBlacklistService();
+    tokenBlacklistService = InMemoryTokenBlacklistService(
+    );
     authTokenService = JwtAuthTokenService(
       userRepository: userRepository,
       blacklistService: tokenBlacklistService,
       uuidGenerator: const Uuid(),
+      log: _log,
     );
     verificationCodeStorageService = InMemoryVerificationCodeStorageService();
     authService = AuthService(
@@ -217,6 +219,7 @@ class AppDependencies {
       userAppSettingsRepository: userAppSettingsRepository,
       userContentPreferencesRepository: userContentPreferencesRepository,
       uuidGenerator: const Uuid(),
+      log: _log,
     );
     dashboardSummaryService = DashboardSummaryService(
       headlineRepository: headlineRepository,
@@ -224,10 +227,8 @@ class AppDependencies {
       sourceRepository: sourceRepository,
     );
     permissionService = const PermissionService();
-    userPreferenceLimitService = DefaultUserPreferenceLimitService(
-      remoteConfigRepository: remoteConfigRepository,
-      log: _log,
-    );
+    userPreferenceLimitService =
+        DefaultUserPreferenceLimitService(remoteConfigRepository: remoteConfigRepository, log: _log,);
   }
 
   HtDataRepository<T> _createRepository<T>(
