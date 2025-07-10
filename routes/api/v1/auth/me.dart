@@ -30,19 +30,9 @@ Future<Response> onRequest(RequestContext context) async {
     throw const UnauthorizedException('Authentication required.');
   }
 
-  // Create metadata. Include requestId if it's available in context.
-  // Note: Need to ensure RequestId is provided globally or adjust accordingly.
-  String? requestId;
-  try {
-    // Attempt to read RequestId, handle gracefully if not provided at this level
-    requestId = context.read<RequestId>().id;
-  } catch (_) {
-    // RequestId might not be provided directly in this context scope
-    print('RequestId not found in context for /auth/me');
-  }
-
+  // Create metadata, including the requestId from the context.
   final metadata = ResponseMetadata(
-    requestId: requestId,
+    requestId: context.read<RequestId>().id,
     timestamp: DateTime.now().toUtc(),
   );
 
