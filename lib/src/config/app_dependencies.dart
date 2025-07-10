@@ -226,6 +226,7 @@ class AppDependencies {
     permissionService = const PermissionService();
     userPreferenceLimitService = DefaultUserPreferenceLimitService(
       remoteConfigRepository: remoteConfigRepository,
+      log: _log,
     );
   }
 
