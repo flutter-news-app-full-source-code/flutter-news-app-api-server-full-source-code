@@ -33,7 +33,7 @@ Middleware errorHandler() {
           statusCode: HttpStatus.badRequest, // 400
           body: {
             'error': {
-              'code': 'INVALID_FORMAT',
+              'code': 'invalidFormat',
               'message': 'Invalid data format: ${e.message}',
             },
           },
@@ -45,7 +45,7 @@ Middleware errorHandler() {
           statusCode: HttpStatus.internalServerError, // 500
           body: {
             'error': {
-              'code': 'INTERNAL_SERVER_ERROR',
+              'code': 'internalServerError',
               'message': 'An unexpected internal server error occurred.',
               // Avoid leaking sensitive details in production responses
               // 'details': e.toString(), // Maybe include in dev mode only
@@ -78,17 +78,17 @@ int _mapExceptionToStatusCode(HtHttpException exception) {
 /// Maps HtHttpException subtypes to consistent error code strings.
 String _mapExceptionToCodeString(HtHttpException exception) {
   return switch (exception) {
-    InvalidInputException() => 'INVALID_INPUT',
-    AuthenticationException() => 'AUTHENTICATION_FAILED',
-    BadRequestException() => 'BAD_REQUEST',
-    UnauthorizedException() => 'UNAUTHORIZED',
-    ForbiddenException() => 'FORBIDDEN',
-    NotFoundException() => 'NOT_FOUND',
-    ServerException() => 'SERVER_ERROR',
-    OperationFailedException() => 'OPERATION_FAILED',
-    NetworkException() => 'NETWORK_ERROR',
-    ConflictException() => 'CONFLICT',
-    UnknownException() => 'UNKNOWN_ERROR',
-    _ => 'UNKNOWN_ERROR', // Default
+    InvalidInputException() => 'invalidInput',
+    AuthenticationException() => 'authenticationFailed',
+    BadRequestException() => 'badRequest',
+    UnauthorizedException() => 'unauthorized',
+    ForbiddenException() => 'forbidden',
+    NotFoundException() => 'notFound',
+    ServerException() => 'serverError',
+    OperationFailedException() => 'operationFailed',
+    NetworkException() => 'networkError',
+    ConflictException() => 'conflict',
+    UnknownException() => 'unknownError',
+    _ => 'unknownError', // Default
   };
 }
