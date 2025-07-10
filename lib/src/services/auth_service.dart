@@ -169,9 +169,21 @@ class AuthService {
 
         // All new users created via the public API get the standard role.
         // Admin users must be provisioned out-of-band (e.g., via fixtures).
-        final roles = [UserRoles.standardUser];
-
-        user = User(id: _uuid.v4(), email: email, roles: roles);
+        user = User(
+          id: _uuid.v4(),
+          email: email,
+          appRole: AppUserRole.standardUser,
+          dashboardRole: DashboardUserRole.none,
+          createdAt: DateTime.now(),
+          feedActionStatus: Map.fromEntries(
+            FeedActionType.values.map(
+              (type) => MapEntry(
+                type,
+                const UserFeedActionStatus(isCompleted: false),
+              ),
+            ),
+          ),
+        );
         user = await _userRepository.create(item: user);
         print('Created new user: ${user.id} with roles: ${user.roles}');
 
@@ -224,9 +236,21 @@ class AuthService {
     User user;
     try {
       user = User(
-        id: _uuid.v4(), // Generate new ID
-        roles: const [UserRoles.guestUser], // Anonymous users are guest users
-        email: null, // Anonymous users don't have an email initially
+        id: _uuid.v4(),
+        // Use a unique placeholder email for anonymous users to satisfy the
+        // non-nullable email constraint.
+        email: '${_uuid.v4()}@anonymous.com',
+        appRole: AppUserRole.guestUser,
+        dashboardRole: DashboardUserRole.none,
+        createdAt: DateTime.now(),
+        feedActionStatus: Map.fromEntries(
+          FeedActionType.values.map(
+            (type) => MapEntry(
+              type,
+              const UserFeedActionStatus(isCompleted: false),
+            ),
+          ),
+        ),
       );
       user = await _userRepository.create(item: user);
       print('Created anonymous user: ${user.id}');
@@ -335,7 +359,7 @@ class AuthService {
     required User anonymousUser,
     required String emailToLink,
   }) async {
-    if (!anonymousUser.roles.contains(UserRoles.guestUser)) {
+    if (anonymousUser.appRole != AppUserRole.guestUser) {
       throw const BadRequestException(
         'Account is already permanent. Cannot link email.',
       );
@@ -348,8 +372,7 @@ class AuthService {
 
       // Filter for permanent users (not guests) that are not the current user.
       final conflictingPermanentUsers = existingUsersResponse.items.where(
-        (u) =>
-            !u.roles.contains(UserRoles.guestUser) && u.id != anonymousUser.id,
+        (u) => u.appRole != AppUserRole.guestUser && u.id != anonymousUser.id,
       );
 
       if (conflictingPermanentUsers.isNotEmpty) {
@@ -399,7 +422,7 @@ class AuthService {
     required String codeFromUser,
     required String oldAnonymousToken, // Needed to invalidate it
   }) async {
-    if (!anonymousUser.roles.contains(UserRoles.guestUser)) {
+    if (anonymousUser.appRole != AppUserRole.guestUser) {
       // Should ideally not happen if flow is correct, but good safeguard.
       throw const BadRequestException(
         'Account is already permanent. Cannot complete email linking.',
@@ -421,10 +444,9 @@ class AuthService {
       }
 
       // 2. Update the user to be permanent.
-      final updatedUser = User(
-        id: anonymousUser.id, // Preserve original ID
+      final updatedUser = anonymousUser.copyWith(
         email: linkedEmail,
-        roles: const [UserRoles.standardUser], // Now a permanent standard user
+        appRole: AppUserRole.standardUser,
       );
       final permanentUser = await _userRepository.update(
         id: updatedUser.id,
