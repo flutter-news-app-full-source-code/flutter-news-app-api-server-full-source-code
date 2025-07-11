@@ -411,8 +411,9 @@ class AuthService {
 
     try {
       // 1. Check if emailToLink is already used by another permanent user.
-      final query = {'email': emailToLink};
-      final existingUsersResponse = await _userRepository.readAllByQuery(query);
+      final existingUsersResponse = await _userRepository.readAll(
+        filter: {'email': emailToLink},
+      );
 
       // Filter for permanent users (not guests) that are not the current user.
       final conflictingPermanentUsers = existingUsersResponse.items.where(
@@ -612,8 +613,9 @@ class AuthService {
   /// Re-throws any [HtHttpException] from the repository.
   Future<User?> _findUserByEmail(String email) async {
     try {
-      final query = {'email': email};
-      final response = await _userRepository.readAllByQuery(query);
+      final response = await _userRepository.readAll(
+        filter: {'email': email},
+      );
       if (response.items.isNotEmpty) {
         return response.items.first;
       }
