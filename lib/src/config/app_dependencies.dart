@@ -32,6 +32,7 @@ class AppDependencies {
   static AppDependencies get instance => _instance;
 
   bool _isInitialized = false;
+  Exception? _initializationError;
   final _log = Logger('AppDependencies');
 
   // --- Late-initialized fields for all dependencies ---
@@ -64,132 +65,146 @@ class AppDependencies {
   ///
   /// This method is idempotent; it will only run the initialization logic once.
   Future<void> init() async {
+    // If initialization previously failed, re-throw the original error.
+    if (_initializationError != null) {
+      throw _initializationError!;
+    }
+
     if (_isInitialized) return;
 
     _log.info('Initializing application dependencies...');
 
-    // 1. Initialize Database Connection
-    _mongoDbConnectionManager = MongoDbConnectionManager();
-    await _mongoDbConnectionManager.init(EnvironmentConfig.databaseUrl);
-    _log.info('MongoDB connection established.');
+    try {
+      // 1. Initialize Database Connection
+      _mongoDbConnectionManager = MongoDbConnectionManager();
+      await _mongoDbConnectionManager.init(EnvironmentConfig.databaseUrl);
+      _log.info('MongoDB connection established.');
 
-    // 2. Seed Database
-    final seedingService = DatabaseSeedingService(
-      db: _mongoDbConnectionManager.db,
-      log: Logger('DatabaseSeedingService'),
-    );
-    await seedingService.seedInitialData();
-    _log.info('Database seeding complete.');
+      // 2. Seed Database
+      final seedingService = DatabaseSeedingService(
+        db: _mongoDbConnectionManager.db,
+        log: Logger('DatabaseSeedingService'),
+      );
+      await seedingService.seedInitialData();
+      _log.info('Database seeding complete.');
 
-    // 3. Initialize Data Clients (MongoDB implementation)
-    final headlineClient = HtDataMongodb<Headline>(
-      connectionManager: _mongoDbConnectionManager,
-      modelName: 'headlines',
-      fromJson: Headline.fromJson,
-      toJson: (item) => item.toJson(),
-      logger: Logger('HtDataMongodb<Headline>'),
-    );
-    final topicClient = HtDataMongodb<Topic>(
-      connectionManager: _mongoDbConnectionManager,
-      modelName: 'topics',
-      fromJson: Topic.fromJson,
-      toJson: (item) => item.toJson(),
-      logger: Logger('HtDataMongodb<Topic>'),
-    );
-    final sourceClient = HtDataMongodb<Source>(
-      connectionManager: _mongoDbConnectionManager,
-      modelName: 'sources',
-      fromJson: Source.fromJson,
-      toJson: (item) => item.toJson(),
-      logger: Logger('HtDataMongodb<Source>'),
-    );
-    final countryClient = HtDataMongodb<Country>(
-      connectionManager: _mongoDbConnectionManager,
-      modelName: 'countries',
-      fromJson: Country.fromJson,
-      toJson: (item) => item.toJson(),
-      logger: Logger('HtDataMongodb<Country>'),
-    );
-    final userClient = HtDataMongodb<User>(
-      connectionManager: _mongoDbConnectionManager,
-      modelName: 'users',
-      fromJson: User.fromJson,
-      toJson: (item) => item.toJson(),
-      logger: Logger('HtDataMongodb<User>'),
-    );
-    final userAppSettingsClient = HtDataMongodb<UserAppSettings>(
-      connectionManager: _mongoDbConnectionManager,
-      modelName: 'user_app_settings',
-      fromJson: UserAppSettings.fromJson,
-      toJson: (item) => item.toJson(),
-      logger: Logger('HtDataMongodb<UserAppSettings>'),
-    );
-    final userContentPreferencesClient = HtDataMongodb<UserContentPreferences>(
-      connectionManager: _mongoDbConnectionManager,
-      modelName: 'user_content_preferences',
-      fromJson: UserContentPreferences.fromJson,
-      toJson: (item) => item.toJson(),
-      logger: Logger('HtDataMongodb<UserContentPreferences>'),
-    );
-    final remoteConfigClient = HtDataMongodb<RemoteConfig>(
-      connectionManager: _mongoDbConnectionManager,
-      modelName: 'remote_configs',
-      fromJson: RemoteConfig.fromJson,
-      toJson: (item) => item.toJson(),
-      logger: Logger('HtDataMongodb<RemoteConfig>'),
-    );
+      // 3. Initialize Data Clients (MongoDB implementation)
+      final headlineClient = HtDataMongodb<Headline>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'headlines',
+        fromJson: Headline.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('HtDataMongodb<Headline>'),
+      );
+      final topicClient = HtDataMongodb<Topic>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'topics',
+        fromJson: Topic.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('HtDataMongodb<Topic>'),
+      );
+      final sourceClient = HtDataMongodb<Source>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'sources',
+        fromJson: Source.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('HtDataMongodb<Source>'),
+      );
+      final countryClient = HtDataMongodb<Country>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'countries',
+        fromJson: Country.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('HtDataMongodb<Country>'),
+      );
+      final userClient = HtDataMongodb<User>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'users',
+        fromJson: User.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('HtDataMongodb<User>'),
+      );
+      final userAppSettingsClient = HtDataMongodb<UserAppSettings>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'user_app_settings',
+        fromJson: UserAppSettings.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('HtDataMongodb<UserAppSettings>'),
+      );
+      final userContentPreferencesClient =
+          HtDataMongodb<UserContentPreferences>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'user_content_preferences',
+        fromJson: UserContentPreferences.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('HtDataMongodb<UserContentPreferences>'),
+      );
+      final remoteConfigClient = HtDataMongodb<RemoteConfig>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'remote_configs',
+        fromJson: RemoteConfig.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('HtDataMongodb<RemoteConfig>'),
+      );
 
-    // 4. Initialize Repositories
-    headlineRepository = HtDataRepository(dataClient: headlineClient);
-    topicRepository = HtDataRepository(dataClient: topicClient);
-    sourceRepository = HtDataRepository(dataClient: sourceClient);
-    countryRepository = HtDataRepository(dataClient: countryClient);
-    userRepository = HtDataRepository(dataClient: userClient);
-    userAppSettingsRepository =
-        HtDataRepository(dataClient: userAppSettingsClient);
-    userContentPreferencesRepository =
-        HtDataRepository(dataClient: userContentPreferencesClient);
-    remoteConfigRepository = HtDataRepository(dataClient: remoteConfigClient);
+      // 4. Initialize Repositories
+      headlineRepository = HtDataRepository(dataClient: headlineClient);
+      topicRepository = HtDataRepository(dataClient: topicClient);
+      sourceRepository = HtDataRepository(dataClient: sourceClient);
+      countryRepository = HtDataRepository(dataClient: countryClient);
+      userRepository = HtDataRepository(dataClient: userClient);
+      userAppSettingsRepository =
+          HtDataRepository(dataClient: userAppSettingsClient);
+      userContentPreferencesRepository =
+          HtDataRepository(dataClient: userContentPreferencesClient);
+      remoteConfigRepository =
+          HtDataRepository(dataClient: remoteConfigClient);
 
-    final emailClient = HtEmailInMemoryClient(
-      logger: Logger('HtEmailInMemoryClient'),
-    );
-    emailRepository = HtEmailRepository(emailClient: emailClient);
+      final emailClient = HtEmailInMemoryClient(
+        logger: Logger('HtEmailInMemoryClient'),
+      );
+      emailRepository = HtEmailRepository(emailClient: emailClient);
 
-    // 5. Initialize Services
-    tokenBlacklistService = InMemoryTokenBlacklistService(
-      log: Logger('InMemoryTokenBlacklistService'),
-    );
-    authTokenService = JwtAuthTokenService(
-      userRepository: userRepository,
-      blacklistService: tokenBlacklistService,
-      uuidGenerator: const Uuid(),
-      log: Logger('JwtAuthTokenService'),
-    );
-    verificationCodeStorageService = InMemoryVerificationCodeStorageService();
-    authService = AuthService(
-      userRepository: userRepository,
-      authTokenService: authTokenService,
-      verificationCodeStorageService: verificationCodeStorageService,
-      emailRepository: emailRepository,
-      userAppSettingsRepository: userAppSettingsRepository,
-      userContentPreferencesRepository: userContentPreferencesRepository,
-      uuidGenerator: const Uuid(),
-      log: Logger('AuthService'),
-    );
-    dashboardSummaryService = DashboardSummaryService(
-      headlineRepository: headlineRepository,
-      topicRepository: topicRepository,
-      sourceRepository: sourceRepository,
-    );
-    permissionService = const PermissionService();
-    userPreferenceLimitService = DefaultUserPreferenceLimitService(
-      remoteConfigRepository: remoteConfigRepository,
-      log: Logger('DefaultUserPreferenceLimitService'),
-    );
+      // 5. Initialize Services
+      tokenBlacklistService = InMemoryTokenBlacklistService(
+        log: Logger('InMemoryTokenBlacklistService'),
+      );
+      authTokenService = JwtAuthTokenService(
+        userRepository: userRepository,
+        blacklistService: tokenBlacklistService,
+        uuidGenerator: const Uuid(),
+        log: Logger('JwtAuthTokenService'),
+      );
+      verificationCodeStorageService =
+          InMemoryVerificationCodeStorageService();
+      authService = AuthService(
+        userRepository: userRepository,
+        authTokenService: authTokenService,
+        verificationCodeStorageService: verificationCodeStorageService,
+        emailRepository: emailRepository,
+        userAppSettingsRepository: userAppSettingsRepository,
+        userContentPreferencesRepository: userContentPreferencesRepository,
+        uuidGenerator: const Uuid(),
+        log: Logger('AuthService'),
+      );
+      dashboardSummaryService = DashboardSummaryService(
+        headlineRepository: headlineRepository,
+        topicRepository: topicRepository,
+        sourceRepository: sourceRepository,
+      );
+      permissionService = const PermissionService();
+      userPreferenceLimitService = DefaultUserPreferenceLimitService(
+        remoteConfigRepository: remoteConfigRepository,
+        log: Logger('DefaultUserPreferenceLimitService'),
+      );
 
-    _isInitialized = true;
-    _log.info('Application dependencies initialized successfully.');
+      _isInitialized = true;
+      _log.info('Application dependencies initialized successfully.');
+    } on Exception catch (e) {
+      _log.severe('Failed to initialize application dependencies', e);
+      _initializationError = e;
+      rethrow;
+    }
   }
 
   /// Disposes of resources, such as closing the database connection.
