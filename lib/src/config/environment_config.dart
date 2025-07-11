@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dotenv/dotenv.dart';
 import 'package:logging/logging.dart';
 
@@ -11,11 +13,46 @@ import 'package:logging/logging.dart';
 abstract final class EnvironmentConfig {
   static final _log = Logger('EnvironmentConfig');
 
-  // The DotEnv instance that loads the .env file and platform variables.
-  // It's initialized once and reused.
-  static final _env = DotEnv(includePlatformEnvironment: true)..load();
+  // The DotEnv instance is now loaded via a helper method to make it more
+  // resilient to current working directory issues.
+  static final _env = _loadEnv();
 
-  /// Retrieves the PostgreSQL database connection URI from the environment.
+  /// Helper method to load the .env file more robustly.
+  ///
+  /// It searches for the .env file starting from the current directory
+  /// and moving up to parent directories. This makes it resilient to
+  /// issues where the execution context's working directory is not the
+  /// project root.
+  static DotEnv _loadEnv() {
+    final env = DotEnv(includePlatformEnvironment: true);
+    var dir = Directory.current;
+
+    // Loop to search up the directory tree for the .env file.
+    while (true) {
+      final envFile = File('${dir.path}/.env');
+      if (envFile.existsSync()) {
+        _log.info('Found .env file at: ${envFile.path}');
+        // Load the variables from the found file.
+        env.load([envFile.path]);
+        return env;
+      }
+
+      // Stop if we have reached the root of the filesystem.
+      if (dir.parent.path == dir.path) {
+        _log.warning(
+          '.env file not found by searching. Falling back to default load().',
+        );
+        // Fallback to the original behavior if no file is found.
+        env.load();
+        return env;
+      }
+
+      // Move up to the parent directory.
+      dir = dir.parent;
+    }
+  }
+
+  /// Retrieves the database connection URI from the environment.
   ///
   /// The value is read from the `DATABASE_URL` environment variable.
   ///
@@ -33,7 +70,7 @@ abstract final class EnvironmentConfig {
     return dbUrl;
   }
 
-  /// Retrieves the current environment mode (e.g., 'development', 'production').
+  /// Retrieves the current environment mode (e.g., 'development').
   ///
   /// The value is read from the `ENV` environment variable.
   /// Defaults to 'production' if the variable is not set.

@@ -1,0 +1,6 @@
+# This is an example environment file.
+# Copy this file to .env and fill in your actual configuration values.
+# The .env file is ignored by Git and should NOT be committed.
+
+# DATABASE_URL="mongodb://user:password@localhost:27017/ht_api_db"
+DATABASE_URL="mongodb://localhost:27017/ht_api_db"
