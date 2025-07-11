@@ -80,28 +80,17 @@ class DatabaseSeedingService {
       final operations = <Map<String, Object>>[];
 
       for (final item in fixtureData) {
-        final id = getId(item);
-
-        if (!ObjectId.isValidHexId(id)) {
-          _log.warning('Skipping document with invalid ID format: $id');
-          continue;
-        }
-
-        final objectId = ObjectId.fromHexString(id);
+        // Generate a new ObjectId for each document
+        final objectId = ObjectId();
         final document = toJson(item)..remove('id');
 
         operations.add({
           'replaceOne': {
-            'filter': {'_id': objectId},
+            'filter': {}, // Match all documents (replace existing or insert new)
             'replacement': document,
             'upsert': true,
           },
         });
-      }
-
-      if (operations.isEmpty) {
-        _log.info('No valid documents to write for "$collectionName".');
-        return;
       }
 
       final result = await collection.bulkWrite(operations);
