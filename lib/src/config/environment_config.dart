@@ -24,40 +24,33 @@ abstract final class EnvironmentConfig {
   /// issues where the execution context's working directory is not the
   /// project root.
   static DotEnv _loadEnv() {
-    final env = DotEnv(includePlatformEnvironment: true);
-    try {
-      // Find the project root by looking for pubspec.yaml, then find .env
-      var dir = Directory.current;
-      while (true) {
-        final pubspecFile = File('${dir.path}/pubspec.yaml');
-        if (pubspecFile.existsSync()) {
-          // Found project root, now look for .env in this directory
-          final envFile = File('${dir.path}/.env');
-          if (envFile.existsSync()) {
-            _log.info('Found .env file at: ${envFile.path}');
-            env.load([envFile.path]);
-            return env;
-          }
-          break; // Found pubspec but no .env, break and fall back
+    final env = DotEnv(includePlatformEnvironment: true); // Start with default
+    var currentDir = Directory.current;
+    _log.fine('Starting .env search from: ${currentDir.path}');
+    // Traverse up the directory tree to find pubspec.yaml
+    while (currentDir.parent.path != currentDir.path) {
+      final pubspecPath = '${currentDir.path}/pubspec.yaml';
+      _log.finer('Checking for pubspec.yaml at: ');
+      if (File(pubspecPath).existsSync()) {
+        // Found pubspec.yaml, now load .env from the same directory
+        final envPath = '${currentDir.path}/.env';
+        _log.info('Found pubspec.yaml, now looking for .env at: ');
+        if (File(envPath).existsSync()) {
+          _log.info('Found .env file at: ');
+          env.load([envPath]); // Load variables from the found .env file
+          return env; // Return immediately upon finding
+        } else {
+          _log.warning('pubspec.yaml found, but no .env in the same directory.');
+          break; // Stop searching since pubspec.yaml should contain .env
         }
-
-        // Stop if we have reached the root of the filesystem.
-        if (dir.parent.path == dir.path) {
-          break;
-        }
-        dir = dir.parent;
       }
-    } catch (e) {
-      _log.warning('Error during robust .env search: $e. Falling back.');
+      currentDir = currentDir.parent; // Move to the parent directory
+      _log.finer('Moving up to parent directory: ${currentDir.path}');
     }
-
-    // Fallback for when the robust search fails
-    _log.warning(
-      '.env file not found by searching for project root. '
-      'Falling back to default load().',
-    );
-    env.load();
-    return env;
+    // If loop completes without returning, .env was not found
+    _log.warning('.env not found by searching. Falling back to default load().');
+    env.load(); // Fallback to default load
+    return env; // Return even if fallback
   }
 
   /// Retrieves the database connection URI from the environment.
