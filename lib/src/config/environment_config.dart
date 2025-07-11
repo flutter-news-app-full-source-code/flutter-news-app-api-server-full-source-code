@@ -25,31 +25,39 @@ abstract final class EnvironmentConfig {
   /// project root.
   static DotEnv _loadEnv() {
     final env = DotEnv(includePlatformEnvironment: true);
-    var dir = Directory.current;
+    try {
+      // Find the project root by looking for pubspec.yaml, then find .env
+      var dir = Directory.current;
+      while (true) {
+        final pubspecFile = File('${dir.path}/pubspec.yaml');
+        if (pubspecFile.existsSync()) {
+          // Found project root, now look for .env in this directory
+          final envFile = File('${dir.path}/.env');
+          if (envFile.existsSync()) {
+            _log.info('Found .env file at: ${envFile.path}');
+            env.load([envFile.path]);
+            return env;
+          }
+          break; // Found pubspec but no .env, break and fall back
+        }
 
-    // Loop to search up the directory tree for the .env file.
-    while (true) {
-      final envFile = File('${dir.path}/.env');
-      if (envFile.existsSync()) {
-        _log.info('Found .env file at: ${envFile.path}');
-        // Load the variables from the found file.
-        env.load([envFile.path]);
-        return env;
+        // Stop if we have reached the root of the filesystem.
+        if (dir.parent.path == dir.path) {
+          break;
+        }
+        dir = dir.parent;
       }
-
-      // Stop if we have reached the root of the filesystem.
-      if (dir.parent.path == dir.path) {
-        _log.warning(
-          '.env file not found by searching. Falling back to default load().',
-        );
-        // Fallback to the original behavior if no file is found.
-        env.load();
-        return env;
-      }
-
-      // Move up to the parent directory.
-      dir = dir.parent;
+    } catch (e) {
+      _log.warning('Error during robust .env search: $e. Falling back.');
     }
+
+    // Fallback for when the robust search fails
+    _log.warning(
+      '.env file not found by searching for project root. '
+      'Falling back to default load().',
+    );
+    env.load();
+    return env;
   }
 
   /// Retrieves the database connection URI from the environment.
