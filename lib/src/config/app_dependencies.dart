@@ -32,7 +32,8 @@ class AppDependencies {
   static AppDependencies get instance => _instance;
 
   bool _isInitialized = false;
-  Exception? _initializationError;
+  Object? _initializationError;
+  StackTrace? _initializationStackTrace;
   final _log = Logger('AppDependencies');
 
   // --- Late-initialized fields for all dependencies ---
@@ -67,7 +68,7 @@ class AppDependencies {
   Future<void> init() async {
     // If initialization previously failed, re-throw the original error.
     if (_initializationError != null) {
-      throw _initializationError!;
+      return Future.error(_initializationError!, _initializationStackTrace);
     }
 
     if (_isInitialized) return;
@@ -200,9 +201,10 @@ class AppDependencies {
 
       _isInitialized = true;
       _log.info('Application dependencies initialized successfully.');
-    } on Exception catch (e) {
-      _log.severe('Failed to initialize application dependencies', e);
+    } catch (e, s) {
+      _log.severe('Failed to initialize application dependencies', e, s);
       _initializationError = e;
+      _initializationStackTrace = s;
       rethrow;
     }
   }
