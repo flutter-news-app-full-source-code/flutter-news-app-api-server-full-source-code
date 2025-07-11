@@ -29,14 +29,17 @@ abstract final class EnvironmentConfig {
     _log.fine('Starting .env search from: ${currentDir.path}');
     // Traverse up the directory tree to find pubspec.yaml
     while (currentDir.parent.path != currentDir.path) {
-      final pubspecPath = '${currentDir.path}/pubspec.yaml';
-      _log.finer('Checking for pubspec.yaml at: ');
+      final pubspecPath =
+          '${currentDir.path}${Platform.pathSeparator}pubspec.yaml';
+      _log.finer('Checking for pubspec.yaml at: $pubspecPath');
       if (File(pubspecPath).existsSync()) {
         // Found pubspec.yaml, now load .env from the same directory
-        final envPath = '${currentDir.path}/.env';
-        _log.info('Found pubspec.yaml, now looking for .env at: ');
+        final envPath = '${currentDir.path}${Platform.pathSeparator}.env';
+        _log.info(
+          'Found pubspec.yaml, now looking for .env at: ${currentDir.path}',
+        );
         if (File(envPath).existsSync()) {
-          _log.info('Found .env file at: ');
+          _log.info('Found .env file at: $envPath');
           env.load([envPath]); // Load variables from the found .env file
           return env; // Return immediately upon finding
         } else {
