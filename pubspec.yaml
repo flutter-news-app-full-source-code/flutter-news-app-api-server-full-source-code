@@ -13,6 +13,9 @@ dependencies:
   ht_data_client:
     git:
       url: https://github.com/headlines-toolkit/ht-data-client.git
+  ht_data_mongodb:
+    git:
+      url: https://github.com/headlines-toolkit/ht-data-mongodb.git
   ht_data_postgres:
     git:
       url: https://github.com/headlines-toolkit/ht-data-postgres.git
@@ -37,6 +40,7 @@ dependencies:
 
   logging: ^1.3.0
   meta: ^1.16.0
+  mongo_dart: ^0.10.5
   postgres: ^3.5.6
   shelf_cors_headers: ^0.1.5
   uuid: ^4.5.1
