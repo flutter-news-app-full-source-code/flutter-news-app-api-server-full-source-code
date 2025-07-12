@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
+import 'package:ht_api/src/rbac/permission_service.dart';
 import 'package:ht_shared/ht_shared.dart';
 
 import '../../../_middleware.dart'; // For RequestId
@@ -77,8 +78,10 @@ Future<Response> _handleGet(RequestContext context) async {
   }
 
   // --- Repository Call ---
-  final userIdForRepoCall =
-      (modelConfig.getOwnerId != null) ? authenticatedUser.id : null;
+  final userIdForRepoCall = (modelConfig.getOwnerId != null &&
+          !context.read<PermissionService>().isAdmin(authenticatedUser))
+      ? authenticatedUser.id
+      : null;
 
   dynamic responseData;
 
@@ -175,8 +178,10 @@ Future<Response> _handlePost(RequestContext context) async {
   }
 
   // --- Repository Call ---
-  final userIdForRepoCall =
-      (modelConfig.getOwnerId != null) ? authenticatedUser.id : null;
+  final userIdForRepoCall = (modelConfig.getOwnerId != null &&
+          !context.read<PermissionService>().isAdmin(authenticatedUser))
+      ? authenticatedUser.id
+      : null;
 
   dynamic createdItem;
   switch (modelName) {
