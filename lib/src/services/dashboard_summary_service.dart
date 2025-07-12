@@ -23,26 +23,26 @@ class DashboardSummaryService {
 
   /// Calculates and returns the current dashboard summary.
   ///
-  /// This method fetches all items from the required repositories to count them
-  /// and constructs a [DashboardSummary] object.
+  /// This method fetches the counts of all items from the required
+  /// repositories and constructs a [DashboardSummary] object.
   Future<DashboardSummary> getSummary() async {
     // Use Future.wait to fetch all counts in parallel for efficiency.
     final results = await Future.wait([
-      _headlineRepository.readAll(),
-      _topicRepository.readAll(),
-      _sourceRepository.readAll(),
+      _headlineRepository.count(),
+      _topicRepository.count(),
+      _sourceRepository.count(),
     ]);
 
-    // The results are PaginatedResponse objects.
-    final headlineResponse = results[0] as PaginatedResponse<Headline>;
-    final topicResponse = results[1] as PaginatedResponse<Topic>;
-    final sourceResponse = results[2] as PaginatedResponse<Source>;
+    // The results are integers.
+    final headlineCount = results[0];
+    final topicCount = results[1];
+    final sourceCount = results[2];
 
     return DashboardSummary(
       id: 'dashboard_summary', // Fixed ID for the singleton summary
-      headlineCount: headlineResponse.items.length,
-      topicCount: topicResponse.items.length,
-      sourceCount: sourceResponse.items.length,
+      headlineCount: headlineCount,
+      topicCount: topicCount,
+      sourceCount: sourceCount,
     );
   }
 }
