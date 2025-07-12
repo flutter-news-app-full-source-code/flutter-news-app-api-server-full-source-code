@@ -80,14 +80,19 @@ class DatabaseSeedingService {
       final operations = <Map<String, Object>>[];
 
       for (final item in fixtureData) {
-        // Generate a new ObjectId for each document
-        final objectId = ObjectId();
+        // Use the predefined hex string ID from the fixture to create a
+        // deterministic ObjectId. This is crucial for maintaining relationships
+        // between documents (e.g., a headline and its source).
+        final objectId = ObjectId.fromHexString(getId(item));
         final document = toJson(item)..remove('id');
 
         operations.add({
-          'replaceOne': {
-            'filter': {}, // Match all documents (replace existing or insert new)
-            'replacement': document,
+          // Use updateOne with $set to be less destructive than replaceOne.
+          'updateOne': {
+            // Filter by the specific, deterministic _id.
+            'filter': {'_id': objectId},
+            // Set the fields of the document.
+            'update': {'\$set': document},
             'upsert': true,
           },
         });
