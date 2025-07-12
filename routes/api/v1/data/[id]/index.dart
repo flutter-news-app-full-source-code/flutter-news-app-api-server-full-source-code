@@ -8,7 +8,7 @@ import 'package:ht_api/src/services/user_preference_limit_service.dart'; // Impo
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 
-import '../../../_middleware.dart'; // Assuming RequestId is here
+import '../../../../_middleware.dart'; // Assuming RequestId is here
 
 /// Handles requests for the /api/v1/data/[id] endpoint.
 /// Dispatches requests to specific handlers based on the HTTP method.
@@ -87,7 +87,8 @@ Future<Response> _handleGet(
   // for filtering. Otherwise, pass null.
   // Note: This is for data *scoping* by the repository, not the permission check.
   // We infer user-owned based on the presence of getOwnerId function.
-  if (modelConfig.getOwnerId != null) {
+  if (modelConfig.getOwnerId != null &&
+      !permissionService.isAdmin(authenticatedUser)) {
     userIdForRepoCall = authenticatedUser.id;
   } else {
     userIdForRepoCall = null;
@@ -276,7 +277,8 @@ Future<Response> _handlePut(
   String? userIdForRepoCall;
   // If the model is user-owned, pass the authenticated user's ID to the repository
   // for ownership enforcement. Otherwise, pass null.
-  if (modelConfig.getOwnerId != null) {
+  if (modelConfig.getOwnerId != null &&
+      !permissionService.isAdmin(authenticatedUser)) {
     userIdForRepoCall = authenticatedUser.id;
   } else {
     userIdForRepoCall = null;
@@ -445,7 +447,8 @@ Future<Response> _handleDelete(
   String? userIdForRepoCall;
   // If the model is user-owned, pass the authenticated user's ID to the repository
   // for ownership enforcement. Otherwise, pass null.
-  if (modelConfig.getOwnerId != null) {
+  if (modelConfig.getOwnerId != null &&
+      !permissionService.isAdmin(authenticatedUser)) {
     userIdForRepoCall = authenticatedUser.id;
   } else {
     userIdForRepoCall = null;

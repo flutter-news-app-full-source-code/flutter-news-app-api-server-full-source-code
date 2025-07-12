@@ -411,8 +411,9 @@ class AuthService {
 
     try {
       // 1. Check if emailToLink is already used by another permanent user.
-      final query = {'email': emailToLink};
-      final existingUsersResponse = await _userRepository.readAllByQuery(query);
+      final existingUsersResponse = await _userRepository.readAll(
+        filter: {'email': emailToLink},
+      );
 
       // Filter for permanent users (not guests) that are not the current user.
       final conflictingPermanentUsers = existingUsersResponse.items.where(
@@ -548,25 +549,29 @@ class AuthService {
   /// Throws [NotFoundException] if the user does not exist.
   /// Throws [OperationFailedException] for other errors during deletion or cleanup.
   Future<void> deleteAccount({required String userId}) async {
-    // Note: The user record itself is deleted via a CASCADE constraint
-    // when the corresponding entry in the `users` table is deleted.
-    // This is because `user_app_settings.user_id` and
-    // `user_content_preferences.user_id` have `ON DELETE CASCADE`.
-    // Therefore, we only need to delete the main user record.
     try {
       // Fetch the user first to get their email if needed for cleanup
       final userToDelete = await _userRepository.read(id: userId);
       _log.info('Found user ${userToDelete.id} for deletion.');
 
-      // 1. Delete the main user record from the `users` table.
-      // The `ON DELETE CASCADE` constraint on the `user_app_settings` and
-      // `user_content_preferences` tables will automatically delete the
-      // associated records in those tables. This also implicitly invalidates
+      // 1. Explicitly delete associated user data. Unlike relational databases
+      // with CASCADE constraints, MongoDB requires manual deletion of related
+      // documents in different collections.
+      await _userAppSettingsRepository.delete(id: userId, userId: userId);
+      _log.info('Deleted UserAppSettings for user ${userToDelete.id}.');
+
+      await _userContentPreferencesRepository.delete(
+        id: userId,
+        userId: userId,
+      );
+      _log.info('Deleted UserContentPreferences for user ${userToDelete.id}.');
+
+      // 2. Delete the main user record. This also implicitly invalidates
       // tokens that rely on user lookup, as the user will no longer exist.
       await _userRepository.delete(id: userId);
       _log.info('User ${userToDelete.id} deleted from repository.');
 
-      // 2. Clear any pending verification codes for this user ID (linking).
+      // 3. Clear any pending verification codes for this user ID (linking).
       try {
         await _verificationCodeStorageService.clearLinkCode(userId);
         _log.info('Cleared link code for user ${userToDelete.id}.');
@@ -577,7 +582,7 @@ class AuthService {
         );
       }
 
-      // 3. Clear any pending sign-in codes for the user's email (if they had one).
+      // 4. Clear any pending sign-in codes for the user's email (if they had one).
       // The email for anonymous users is a placeholder and not used for sign-in.
       if (userToDelete.appRole != AppUserRole.guestUser) {
         try {
@@ -612,8 +617,9 @@ class AuthService {
   /// Re-throws any [HtHttpException] from the repository.
   Future<User?> _findUserByEmail(String email) async {
     try {
-      final query = {'email': email};
-      final response = await _userRepository.readAllByQuery(query);
+      final response = await _userRepository.readAll(
+        filter: {'email': email},
+      );
       if (response.items.isNotEmpty) {
         return response.items.first;
       }

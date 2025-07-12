@@ -5,6 +5,7 @@ import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_shared/ht_shared.dart';
+import 'package:json_annotation/json_annotation.dart';
 
 /// Middleware that catches errors and converts them into
 /// standardized JSON responses.
@@ -24,6 +25,21 @@ Middleware errorHandler() {
           statusCode: statusCode,
           body: {
             'error': {'code': errorCode, 'message': e.message},
+          },
+        );
+      } on CheckedFromJsonException catch (e, stackTrace) {
+        // Handle json_serializable validation errors. These are client errors.
+        final field = e.key ?? 'unknown';
+        final message = 'Invalid request body: Field "$field" has an '
+            'invalid value or is missing. ${e.message}';
+        print('CheckedFromJsonException Caught: $e\n$stackTrace');
+        return Response.json(
+          statusCode: HttpStatus.badRequest, // 400
+          body: {
+            'error': {
+              'code': 'invalidField',
+              'message': message,
+            },
           },
         );
       } on FormatException catch (e, stackTrace) {

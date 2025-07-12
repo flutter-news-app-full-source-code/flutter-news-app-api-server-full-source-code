@@ -42,10 +42,6 @@ management dashboard](https://github.com/headlines-toolkit/ht-dashboard).
     behavior—including ad frequency, feature flags, and maintenance status—without
     requiring a client-side update.
 
-*   💾 **Robust Data Management:** Securely manage core news data (headlines,
-    topics, sources) through a well-structured API that supports flexible
-    querying and sorting for dynamic content presentation.
-
 *   📊 **Dynamic Dashboard Summary:** Access real-time, aggregated metrics on
     key data points like total headlines, topics, and sources, providing
     an at-a-glance overview for administrative dashboards.
@@ -75,7 +71,7 @@ for more details.
 
 1.  **Prerequisites:**
     *   Dart SDK (`>=3.0.0`)
-    *   PostgreSQL (`>=14.0` recommended)
+    *   MongoDB (`>=5.0` recommended)
     *   Dart Frog CLI (`dart pub global activate dart_frog_cli`)
 
 2.  **Configuration:**
@@ -85,7 +81,7 @@ for more details.
     Create a `.env` file in the root of the project or export the variable in
     your shell:
     ```
-    DATABASE_URL="postgres://user:password@localhost:5432/ht_api_db"
+    DATABASE_URL="mongodb://user:password@localhost:27017/ht_api_db"
     ```
 
 3.  **Clone the repository:**
@@ -101,11 +97,10 @@ for more details.
     ```bash
     dart_frog dev
     ```
-    The API will typically be available at `http://localhost:8080`. On the
-    first startup, the server will connect to your PostgreSQL database, create the
-    necessary tables, and seed them with initial fixture data. This process is
-    non-destructive; it uses `CREATE TABLE IF NOT EXISTS` and `INSERT ... ON
-    CONFLICT DO NOTHING` to avoid overwriting existing tables or data.
+    The API will typically be available at `http://localhost:8080`. On startup,
+    the server will connect to your MongoDB database and seed it with initial
+    fixture data. This seeding process is idempotent (using `upsert`
+    operations), so it can be run multiple times without creating duplicates.
 
 
     **Note on Web Client Integration (CORS):** To allow web applications (like

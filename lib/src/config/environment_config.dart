@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dotenv/dotenv.dart';
 import 'package:logging/logging.dart';
 
@@ -11,11 +13,50 @@ import 'package:logging/logging.dart';
 abstract final class EnvironmentConfig {
   static final _log = Logger('EnvironmentConfig');
 
-  // The DotEnv instance that loads the .env file and platform variables.
-  // It's initialized once and reused.
-  static final _env = DotEnv(includePlatformEnvironment: true)..load();
+  // The DotEnv instance is now loaded via a helper method to make it more
+  // resilient to current working directory issues.
+  static final _env = _loadEnv();
 
-  /// Retrieves the PostgreSQL database connection URI from the environment.
+  /// Helper method to load the .env file more robustly.
+  ///
+  /// It searches for the .env file starting from the current directory
+  /// and moving up to parent directories. This makes it resilient to
+  /// issues where the execution context's working directory is not the
+  /// project root.
+  static DotEnv _loadEnv() {
+    final env = DotEnv(includePlatformEnvironment: true); // Start with default
+    var currentDir = Directory.current;
+    _log.fine('Starting .env search from: ${currentDir.path}');
+    // Traverse up the directory tree to find pubspec.yaml
+    while (currentDir.parent.path != currentDir.path) {
+      final pubspecPath =
+          '${currentDir.path}${Platform.pathSeparator}pubspec.yaml';
+      _log.finer('Checking for pubspec.yaml at: $pubspecPath');
+      if (File(pubspecPath).existsSync()) {
+        // Found pubspec.yaml, now load .env from the same directory
+        final envPath = '${currentDir.path}${Platform.pathSeparator}.env';
+        _log.info(
+          'Found pubspec.yaml, now looking for .env at: ${currentDir.path}',
+        );
+        if (File(envPath).existsSync()) {
+          _log.info('Found .env file at: $envPath');
+          env.load([envPath]); // Load variables from the found .env file
+          return env; // Return immediately upon finding
+        } else {
+          _log.warning('pubspec.yaml found, but no .env in the same directory.');
+          break; // Stop searching since pubspec.yaml should contain .env
+        }
+      }
+      currentDir = currentDir.parent; // Move to the parent directory
+      _log.finer('Moving up to parent directory: ${currentDir.path}');
+    }
+    // If loop completes without returning, .env was not found
+    _log.warning('.env not found by searching. Falling back to default load().');
+    env.load(); // Fallback to default load
+    return env; // Return even if fallback
+  }
+
+  /// Retrieves the database connection URI from the environment.
   ///
   /// The value is read from the `DATABASE_URL` environment variable.
   ///
@@ -33,7 +74,7 @@ abstract final class EnvironmentConfig {
     return dbUrl;
   }
 
-  /// Retrieves the current environment mode (e.g., 'development', 'production').
+  /// Retrieves the current environment mode (e.g., 'development').
   ///
   /// The value is read from the `ENV` environment variable.
   /// Defaults to 'production' if the variable is not set.
