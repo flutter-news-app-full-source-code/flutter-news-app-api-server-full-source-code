@@ -43,8 +43,17 @@ Future<Response> onRequest(RequestContext context) async {
     );
   }
 
-  // Check for the optional dashboard login flag. Default to false if not present.
-  final isDashboardLogin = (body['isDashboardLogin'] as bool?) ?? false;
+  // Check for the optional dashboard login flag. This handles both boolean
+  // `true` and string `"true"` values to prevent type cast errors.
+  // It defaults to `false` if the key is missing or the value is not
+  // recognized as true.
+  final isDashboardLoginRaw = body['isDashboardLogin'];
+  var isDashboardLogin = false;
+  if (isDashboardLoginRaw is bool) {
+    isDashboardLogin = isDashboardLoginRaw;
+  } else if (isDashboardLoginRaw is String) {
+    isDashboardLogin = isDashboardLoginRaw.toLowerCase() == 'true';
+  }
 
   // Basic email format check (more robust validation can be added)
   // Using a slightly more common regex pattern
