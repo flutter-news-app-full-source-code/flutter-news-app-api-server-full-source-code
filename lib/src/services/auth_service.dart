@@ -256,14 +256,14 @@ class AuthService {
           'Created default UserContentPreferences for user: ${user.id}',
         );
       }
-    } on HtHttpException catch (e) {
-      _log.severe('Error finding/creating user for $email: $e');
-      throw const OperationFailedException(
-        'Failed to find or create user account.',
-      );
-    } catch (e) {
+    } on HtHttpException {
+      // Propagate known exceptions from dependencies or from this method's logic.
+      // This ensures that specific errors like ForbiddenException are not
+      // masked as a generic server error.
+      rethrow;
+    } catch (e, s) {
       _log.severe(
-        'Unexpected error during user lookup/creation for $email: $e',
+        'Unexpected error during user lookup/creation for $email: $e', e, s,
       );
       throw const OperationFailedException('Failed to process user account.');
     }
