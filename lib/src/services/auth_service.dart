@@ -75,18 +75,15 @@ class AuthService {
       // For dashboard login, first validate the user exists and has permissions.
       if (isDashboardLogin) {
         final user = await _findUserByEmail(email);
+
+        // For dashboard login, the user must exist AND have permission.
+        // If either condition fails, throw the appropriate exception.
         if (user == null) {
           _log.warning('Dashboard login failed: User $email not found.');
           throw const UnauthorizedException(
             'This email address is not registered for dashboard access.',
           );
-        }
-
-        // Use the PermissionService to check for the specific dashboard login permission.
-        if (!_permissionService.hasPermission(
-          user,
-          Permissions.dashboardLogin,
-        )) {
+        } else if (!_permissionService.hasPermission(user, Permissions.dashboardLogin)) {
           _log.warning(
             'Dashboard login failed: User ${user.id} lacks required permission (${Permissions.dashboardLogin}).',
           );
@@ -94,6 +91,7 @@ class AuthService {
             'Your account does not have the required permissions to sign in.',
           );
         }
+
         _log.info('Dashboard user ${user.id} verified successfully.');
       }
 
@@ -105,11 +103,13 @@ class AuthService {
       await _emailRepository.sendOtpEmail(recipientEmail: email, otpCode: code);
       _log.info('Initiated email sign-in for $email, code sent.');
     } on HtHttpException {
-      // Propagate known exceptions from dependencies
+      // Propagate known exceptions from dependencies or from this method's logic.
+      // This ensures that specific errors like ForbiddenException are not
+      // masked as a generic server error.
       rethrow;
-    } catch (e) {
-      // Catch unexpected errors during orchestration
-      _log.severe('Error during initiateEmailSignIn for $email: $e');
+    } catch (e, s) {
+      // Catch unexpected errors during orchestration.
+      _log.severe('Error during initiateEmailSignIn for $email: $e', e, s);
       throw const OperationFailedException(
         'Failed to initiate email sign-in process.',
       );
@@ -166,13 +166,25 @@ class AuthService {
         // This closes the loophole where a non-admin user could request a code
         // via the app flow and then use it to log into the dashboard.
         if (isDashboardLogin) {
+          if (user.email != email) {
+            // This is a critical security check. If the user found by email
+            // somehow has a different email than the one provided, it's a
+            // sign of a serious issue (like the data layer bug we fixed).
+            // We throw a generic error to avoid revealing information.
+            _log.severe(
+              'CRITICAL: Mismatch between requested email ($email) and found '
+              'user email (${user.email}) during dashboard login for user '
+              'ID ${user.id}.',
+            );
+            throw const UnauthorizedException('User account does not exist.');
+          }
           if (!_permissionService.hasPermission(
             user,
             Permissions.dashboardLogin,
           )) {
             _log.warning(
-              'Dashboard login failed: User ${user.id} lacks required permission '
-              'during code verification.',
+              'Dashboard login failed: User ${user.id} lacks required '
+              'permission during code verification.',
             );
             throw const ForbiddenException(
               'Your account does not have the required permissions to sign in.',
@@ -254,14 +266,14 @@ class AuthService {
           'Created default UserContentPreferences for user: ${user.id}',
         );
       }
-    } on HtHttpException catch (e) {
-      _log.severe('Error finding/creating user for $email: $e');
-      throw const OperationFailedException(
-        'Failed to find or create user account.',
-      );
-    } catch (e) {
+    } on HtHttpException {
+      // Propagate known exceptions from dependencies or from this method's logic.
+      // This ensures that specific errors like ForbiddenException are not
+      // masked as a generic server error.
+      rethrow;
+    } catch (e, s) {
       _log.severe(
-        'Unexpected error during user lookup/creation for $email: $e',
+        'Unexpected error during user lookup/creation for $email: $e', e, s,
       );
       throw const OperationFailedException('Failed to process user account.');
     }
