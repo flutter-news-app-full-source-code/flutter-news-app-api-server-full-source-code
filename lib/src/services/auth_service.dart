@@ -75,18 +75,15 @@ class AuthService {
       // For dashboard login, first validate the user exists and has permissions.
       if (isDashboardLogin) {
         final user = await _findUserByEmail(email);
+
+        // For dashboard login, the user must exist AND have permission.
+        // If either condition fails, throw the appropriate exception.
         if (user == null) {
           _log.warning('Dashboard login failed: User $email not found.');
           throw const UnauthorizedException(
             'This email address is not registered for dashboard access.',
           );
-        }
-
-        // Use the PermissionService to check for the specific dashboard login permission.
-        if (!_permissionService.hasPermission(
-          user,
-          Permissions.dashboardLogin,
-        )) {
+        } else if (!_permissionService.hasPermission(user, Permissions.dashboardLogin)) {
           _log.warning(
             'Dashboard login failed: User ${user.id} lacks required permission (${Permissions.dashboardLogin}).',
           );
@@ -94,6 +91,7 @@ class AuthService {
             'Your account does not have the required permissions to sign in.',
           );
         }
+
         _log.info('Dashboard user ${user.id} verified successfully.');
       }
 
