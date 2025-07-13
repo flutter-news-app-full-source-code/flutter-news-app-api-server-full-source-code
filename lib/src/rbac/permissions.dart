@@ -57,4 +57,8 @@ abstract class Permissions {
 
   // Dashboard Permissions
   static const String dashboardLogin = 'dashboard.login';
+
+  // User Preference Permissions
+  static const String userPreferenceBypassLimits =
+      'user_preference.bypass_limits';
 }
