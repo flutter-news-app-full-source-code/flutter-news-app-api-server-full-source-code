@@ -157,6 +157,25 @@ class AuthService {
       final existingUser = await _findUserByEmail(email);
       if (existingUser != null) {
         user = existingUser;
+        // If this is a dashboard login, re-verify the user's dashboard role.
+        // This closes the loophole where a non-admin user could request a code
+        // via the app flow and then use it to log into the dashboard.
+        if (isDashboardLogin) {
+          final hasRequiredRole =
+              user.dashboardRole == DashboardUserRole.admin ||
+              user.dashboardRole == DashboardUserRole.publisher;
+
+          if (!hasRequiredRole) {
+            _log.warning(
+              'Dashboard login failed: User ${user.id} lacks required roles '
+              'during code verification.',
+            );
+            throw const ForbiddenException(
+              'Your account does not have the required permissions to sign in.',
+            );
+          }
+          _log.info('Dashboard user ${user.id} re-verified successfully.');
+        }
       } else {
         // User not found.
         if (isDashboardLogin) {
