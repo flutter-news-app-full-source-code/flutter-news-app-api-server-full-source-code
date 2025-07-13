@@ -1,3 +1,5 @@
+import 'package:ht_api/src/rbac/permission_service.dart';
+import 'package:ht_api/src/rbac/permissions.dart';
 import 'package:ht_api/src/services/auth_token_service.dart';
 import 'package:ht_api/src/services/verification_code_storage_service.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
@@ -21,12 +23,14 @@ class AuthService {
     required HtEmailRepository emailRepository,
     required HtDataRepository<UserAppSettings> userAppSettingsRepository,
     required HtDataRepository<UserContentPreferences>
-    userContentPreferencesRepository,
+        userContentPreferencesRepository,
+    required PermissionService permissionService,
     required Uuid uuidGenerator,
     required Logger log,
   }) : _userRepository = userRepository,
        _authTokenService = authTokenService,
        _verificationCodeStorageService = verificationCodeStorageService,
+        _permissionService = permissionService,
        _emailRepository = emailRepository,
        _userAppSettingsRepository = userAppSettingsRepository,
        _userContentPreferencesRepository = userContentPreferencesRepository,
@@ -39,7 +43,8 @@ class AuthService {
   final HtEmailRepository _emailRepository;
   final HtDataRepository<UserAppSettings> _userAppSettingsRepository;
   final HtDataRepository<UserContentPreferences>
-  _userContentPreferencesRepository;
+      _userContentPreferencesRepository;
+  final PermissionService _permissionService;
   final Logger _log;
   final Uuid _uuid;
 
@@ -77,13 +82,13 @@ class AuthService {
           );
         }
 
-        final hasRequiredRole =
-            user.dashboardRole == DashboardUserRole.admin ||
-            user.dashboardRole == DashboardUserRole.publisher;
-
-        if (!hasRequiredRole) {
+        // Use the PermissionService to check for the specific dashboard login permission.
+        if (!_permissionService.hasPermission(
+          user,
+          Permissions.dashboardLogin,
+        )) {
           _log.warning(
-            'Dashboard login failed: User ${user.id} lacks required roles.',
+            'Dashboard login failed: User ${user.id} lacks required permission (${Permissions.dashboardLogin}).',
           );
           throw const ForbiddenException(
             'Your account does not have the required permissions to sign in.',
@@ -157,6 +162,24 @@ class AuthService {
       final existingUser = await _findUserByEmail(email);
       if (existingUser != null) {
         user = existingUser;
+        // If this is a dashboard login, re-verify the user's dashboard role.
+        // This closes the loophole where a non-admin user could request a code
+        // via the app flow and then use it to log into the dashboard.
+        if (isDashboardLogin) {
+          if (!_permissionService.hasPermission(
+            user,
+            Permissions.dashboardLogin,
+          )) {
+            _log.warning(
+              'Dashboard login failed: User ${user.id} lacks required permission '
+              'during code verification.',
+            );
+            throw const ForbiddenException(
+              'Your account does not have the required permissions to sign in.',
+            );
+          }
+          _log.info('Dashboard user ${user.id} re-verified successfully.');
+        }
       } else {
         // User not found.
         if (isDashboardLogin) {

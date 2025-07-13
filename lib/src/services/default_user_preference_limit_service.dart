@@ -1,3 +1,5 @@
+import 'package:ht_api/src/rbac/permission_service.dart';
+import 'package:ht_api/src/rbac/permissions.dart';
 import 'package:ht_api/src/services/user_preference_limit_service.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
@@ -11,11 +13,14 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
   /// {@macro default_user_preference_limit_service}
   const DefaultUserPreferenceLimitService({
     required HtDataRepository<RemoteConfig> remoteConfigRepository,
+    required PermissionService permissionService,
     required Logger log,
   }) : _remoteConfigRepository = remoteConfigRepository,
+       _permissionService = permissionService,
        _log = log;
 
   final HtDataRepository<RemoteConfig> _remoteConfigRepository;
+  final PermissionService _permissionService;
   final Logger _log;
 
   // Assuming a fixed ID for the RemoteConfig document
@@ -34,8 +39,11 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
       );
       final limits = remoteConfig.userPreferenceConfig;
 
-      // Admins have no limits.
-      if (user.dashboardRole == DashboardUserRole.admin) {
+      // Users with the bypass permission (e.g., admins) have no limits.
+      if (_permissionService.hasPermission(
+        user,
+        Permissions.userPreferenceBypassLimits,
+      )) {
         return;
       }
 
@@ -94,8 +102,11 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
       );
       final limits = remoteConfig.userPreferenceConfig;
 
-      // Admins have no limits.
-      if (user.dashboardRole == DashboardUserRole.admin) {
+      // Users with the bypass permission (e.g., admins) have no limits.
+      if (_permissionService.hasPermission(
+        user,
+        Permissions.userPreferenceBypassLimits,
+      )) {
         return;
       }
 

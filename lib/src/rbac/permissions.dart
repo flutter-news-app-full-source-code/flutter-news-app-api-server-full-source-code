@@ -54,4 +54,11 @@ abstract class Permissions {
   static const String remoteConfigRead = 'remote_config.read';
   static const String remoteConfigUpdate = 'remote_config.update';
   static const String remoteConfigDelete = 'remote_config.delete';
+
+  // Dashboard Permissions
+  static const String dashboardLogin = 'dashboard.login';
+
+  // User Preference Permissions
+  static const String userPreferenceBypassLimits =
+      'user_preference.bypass_limits';
 }

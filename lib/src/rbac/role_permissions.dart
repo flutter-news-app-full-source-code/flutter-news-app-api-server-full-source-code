@@ -33,6 +33,7 @@ final Set<String> _dashboardPublisherPermissions = {
   Permissions.headlineCreate,
   Permissions.headlineUpdate,
   Permissions.headlineDelete,
+  Permissions.dashboardLogin,
 };
 
 final Set<String> _dashboardAdminPermissions = {
@@ -50,6 +51,7 @@ final Set<String> _dashboardAdminPermissions = {
   Permissions.remoteConfigCreate,
   Permissions.remoteConfigUpdate,
   Permissions.remoteConfigDelete,
+  Permissions.userPreferenceBypassLimits,
 };
 
 /// Defines the mapping between user roles (both app and dashboard) and the
