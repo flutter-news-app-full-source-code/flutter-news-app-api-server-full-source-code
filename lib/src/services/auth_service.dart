@@ -105,11 +105,13 @@ class AuthService {
       await _emailRepository.sendOtpEmail(recipientEmail: email, otpCode: code);
       _log.info('Initiated email sign-in for $email, code sent.');
     } on HtHttpException {
-      // Propagate known exceptions from dependencies
+      // Propagate known exceptions from dependencies or from this method's logic.
+      // This ensures that specific errors like ForbiddenException are not
+      // masked as a generic server error.
       rethrow;
-    } catch (e) {
-      // Catch unexpected errors during orchestration
-      _log.severe('Error during initiateEmailSignIn for $email: $e');
+    } catch (e, s) {
+      // Catch unexpected errors during orchestration.
+      _log.severe('Error during initiateEmailSignIn for $email: $e', e, s);
       throw const OperationFailedException(
         'Failed to initiate email sign-in process.',
       );
