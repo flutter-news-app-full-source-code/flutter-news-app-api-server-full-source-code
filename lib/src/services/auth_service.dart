@@ -166,13 +166,25 @@ class AuthService {
         // This closes the loophole where a non-admin user could request a code
         // via the app flow and then use it to log into the dashboard.
         if (isDashboardLogin) {
+          if (user.email != email) {
+            // This is a critical security check. If the user found by email
+            // somehow has a different email than the one provided, it's a
+            // sign of a serious issue (like the data layer bug we fixed).
+            // We throw a generic error to avoid revealing information.
+            _log.severe(
+              'CRITICAL: Mismatch between requested email ($email) and found '
+              'user email (${user.email}) during dashboard login for user '
+              'ID ${user.id}.',
+            );
+            throw const UnauthorizedException('User account does not exist.');
+          }
           if (!_permissionService.hasPermission(
             user,
             Permissions.dashboardLogin,
           )) {
             _log.warning(
-              'Dashboard login failed: User ${user.id} lacks required permission '
-              'during code verification.',
+              'Dashboard login failed: User ${user.id} lacks required '
+              'permission during code verification.',
             );
             throw const ForbiddenException(
               'Your account does not have the required permissions to sign in.',
