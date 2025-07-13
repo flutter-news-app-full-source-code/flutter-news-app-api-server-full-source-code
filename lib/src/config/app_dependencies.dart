@@ -178,10 +178,12 @@ class AppDependencies {
       );
       verificationCodeStorageService =
           InMemoryVerificationCodeStorageService();
+      permissionService = const PermissionService();
       authService = AuthService(
         userRepository: userRepository,
         authTokenService: authTokenService,
         verificationCodeStorageService: verificationCodeStorageService,
+        permissionService: permissionService,
         emailRepository: emailRepository,
         userAppSettingsRepository: userAppSettingsRepository,
         userContentPreferencesRepository: userContentPreferencesRepository,
@@ -193,7 +195,6 @@ class AppDependencies {
         topicRepository: topicRepository,
         sourceRepository: sourceRepository,
       );
-      permissionService = const PermissionService();
       userPreferenceLimitService = DefaultUserPreferenceLimitService(
         remoteConfigRepository: remoteConfigRepository,
         log: Logger('DefaultUserPreferenceLimitService'),

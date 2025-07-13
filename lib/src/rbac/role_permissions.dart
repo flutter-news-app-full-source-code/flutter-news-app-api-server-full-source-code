@@ -33,6 +33,7 @@ final Set<String> _dashboardPublisherPermissions = {
   Permissions.headlineCreate,
   Permissions.headlineUpdate,
   Permissions.headlineDelete,
+  Permissions.dashboardLogin,
 };
 
 final Set<String> _dashboardAdminPermissions = {
