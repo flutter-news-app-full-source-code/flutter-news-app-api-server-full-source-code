@@ -127,6 +127,7 @@ Response _jsonErrorResponse({
 
     if (isOriginAllowed) {
       headers[HttpHeaders.accessControlAllowOriginHeader] = requestOrigin;
+      headers[HttpHeaders.accessControlAllowCredentialsHeader] = 'true';
       headers[HttpHeaders.accessControlAllowMethodsHeader] =
           'GET, POST, PUT, DELETE, OPTIONS';
       headers[HttpHeaders.accessControlAllowHeadersHeader] =
