@@ -1,10 +1,8 @@
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
-// To read RequestId if needed
+import 'package:ht_api/src/helpers/response_helper.dart';
 import 'package:ht_shared/ht_shared.dart'; // For User, SuccessApiResponse etc.
-
-import '../../../_middleware.dart'; // Potentially for RequestId definition
 
 /// Handles GET requests to `/api/v1/auth/me`.
 ///
@@ -30,18 +28,10 @@ Future<Response> onRequest(RequestContext context) async {
     throw const UnauthorizedException('Authentication required.');
   }
 
-  // Create metadata, including the requestId from the context.
-  final metadata = ResponseMetadata(
-    requestId: context.read<RequestId>().id,
-    timestamp: DateTime.now().toUtc(),
-  );
-
-  // Wrap the user data in SuccessApiResponse
-  final responsePayload = SuccessApiResponse<User>(
+  // Use the helper to create a standardized success response
+  return ResponseHelper.success(
+    context: context,
     data: user,
-    metadata: metadata,
+    toJsonT: (data) => data.toJson(),
   );
-
-  // Return 200 OK with the wrapped and serialized response
-  return Response.json(body: responsePayload.toJson((user) => user.toJson()));
 }

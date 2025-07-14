@@ -92,7 +92,7 @@ class DatabaseSeedingService {
             // Filter by the specific, deterministic _id.
             'filter': {'_id': objectId},
             // Set the fields of the document.
-            'update': {'\$set': document},
+            'update': {r'$set': document},
             'upsert': true,
           },
         });

@@ -1,10 +1,9 @@
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
+import 'package:ht_api/src/helpers/response_helper.dart';
 import 'package:ht_api/src/services/auth_service.dart';
 import 'package:ht_shared/ht_shared.dart';
-
-import '../../../_middleware.dart';
 
 /// Handles POST requests to `/api/v1/auth/verify-link-email`.
 ///
@@ -90,21 +89,11 @@ Future<Response> onRequest(RequestContext context) async {
       token: result.token,
     );
 
-    // Create metadata, including the requestId from the context.
-    final metadata = ResponseMetadata(
-      requestId: context.read<RequestId>().id,
-      timestamp: DateTime.now().toUtc(),
-    );
-
-    // Wrap the payload in the standard SuccessApiResponse
-    final responsePayload = SuccessApiResponse<AuthSuccessResponse>(
+    // Use the helper to create a standardized success response
+    return ResponseHelper.success(
+      context: context,
       data: authPayload,
-      metadata: metadata,
-    );
-
-    // Return 200 OK with the standardized, serialized response
-    return Response.json(
-      body: responsePayload.toJson((authSuccess) => authSuccess.toJson()),
+      toJsonT: (data) => data.toJson(),
     );
   } on HtHttpException catch (_) {
     rethrow;

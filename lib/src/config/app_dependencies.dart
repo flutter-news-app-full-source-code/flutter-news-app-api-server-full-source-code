@@ -49,7 +49,7 @@ class AppDependencies {
   late final HtDataRepository<User> userRepository;
   late final HtDataRepository<UserAppSettings> userAppSettingsRepository;
   late final HtDataRepository<UserContentPreferences>
-      userContentPreferencesRepository;
+  userContentPreferencesRepository;
   late final HtDataRepository<RemoteConfig> remoteConfigRepository;
   late final HtEmailRepository emailRepository;
 
@@ -134,12 +134,12 @@ class AppDependencies {
       );
       final userContentPreferencesClient =
           HtDataMongodb<UserContentPreferences>(
-        connectionManager: _mongoDbConnectionManager,
-        modelName: 'user_content_preferences',
-        fromJson: UserContentPreferences.fromJson,
-        toJson: (item) => item.toJson(),
-        logger: Logger('HtDataMongodb<UserContentPreferences>'),
-      );
+            connectionManager: _mongoDbConnectionManager,
+            modelName: 'user_content_preferences',
+            fromJson: UserContentPreferences.fromJson,
+            toJson: (item) => item.toJson(),
+            logger: Logger('HtDataMongodb<UserContentPreferences>'),
+          );
       final remoteConfigClient = HtDataMongodb<RemoteConfig>(
         connectionManager: _mongoDbConnectionManager,
         modelName: 'remote_configs',
@@ -154,12 +154,13 @@ class AppDependencies {
       sourceRepository = HtDataRepository(dataClient: sourceClient);
       countryRepository = HtDataRepository(dataClient: countryClient);
       userRepository = HtDataRepository(dataClient: userClient);
-      userAppSettingsRepository =
-          HtDataRepository(dataClient: userAppSettingsClient);
-      userContentPreferencesRepository =
-          HtDataRepository(dataClient: userContentPreferencesClient);
-      remoteConfigRepository =
-          HtDataRepository(dataClient: remoteConfigClient);
+      userAppSettingsRepository = HtDataRepository(
+        dataClient: userAppSettingsClient,
+      );
+      userContentPreferencesRepository = HtDataRepository(
+        dataClient: userContentPreferencesClient,
+      );
+      remoteConfigRepository = HtDataRepository(dataClient: remoteConfigClient);
 
       final emailClient = HtEmailInMemoryClient(
         logger: Logger('HtEmailInMemoryClient'),
@@ -176,8 +177,7 @@ class AppDependencies {
         uuidGenerator: const Uuid(),
         log: Logger('JwtAuthTokenService'),
       );
-      verificationCodeStorageService =
-          InMemoryVerificationCodeStorageService();
+      verificationCodeStorageService = InMemoryVerificationCodeStorageService();
       permissionService = const PermissionService();
       authService = AuthService(
         userRepository: userRepository,
