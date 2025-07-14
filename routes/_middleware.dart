@@ -1,7 +1,7 @@
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/config/app_dependencies.dart';
-import 'package:ht_api/src/models/request_id.dart';
 import 'package:ht_api/src/middlewares/error_handler.dart';
+import 'package:ht_api/src/models/request_id.dart';
 import 'package:ht_api/src/rbac/permission_service.dart';
 import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_api/src/services/auth_service.dart';
