@@ -135,8 +135,9 @@ Future<Response> _handleGet(RequestContext context) async {
   return ResponseHelper.success(
     context: context,
     data: responseData,
-    toJsonT: (paginated) => (paginated as PaginatedResponse<dynamic>)
-        .toJson((item) => (item as dynamic).toJson()),
+    toJsonT: (paginated) =>
+        (paginated as PaginatedResponse<dynamic>).toJson(
+            (item) => (item as dynamic).toJson() as Map<String, dynamic>),
   );
 }
 
@@ -209,7 +210,7 @@ Future<Response> _handlePost(RequestContext context) async {
   return ResponseHelper.success(
     context: context,
     data: createdItem,
-    toJsonT: (item) => (item as dynamic).toJson(),
+    toJsonT: (item) => (item as dynamic).toJson() as Map<String, dynamic>,
     statusCode: HttpStatus.created,
   );
 }
