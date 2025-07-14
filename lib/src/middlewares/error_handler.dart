@@ -29,7 +29,8 @@ Middleware errorHandler() {
       } on CheckedFromJsonException catch (e, stackTrace) {
         // Handle json_serializable validation errors. These are client errors.
         final field = e.key ?? 'unknown';
-        final message = 'Invalid request body: Field "$field" has an '
+        final message =
+            'Invalid request body: Field "$field" has an '
             'invalid value or is missing. ${e.message}';
         print('CheckedFromJsonException Caught: $e\n$stackTrace');
         return _jsonErrorResponse(
@@ -50,7 +51,9 @@ Middleware errorHandler() {
         print('Unhandled Exception Caught: $e\n$stackTrace');
         return _jsonErrorResponse(
           statusCode: HttpStatus.internalServerError, // 500
-          exception: const UnknownException('An unexpected internal server error occurred.'),
+          exception: const UnknownException(
+            'An unexpected internal server error occurred.',
+          ),
           context: context,
         );
       }
@@ -137,7 +140,9 @@ Response _jsonErrorResponse({
 
   return Response.json(
     statusCode: statusCode,
-    body: {'error': {'code': errorCode, 'message': exception.message}},
+    body: {
+      'error': {'code': errorCode, 'message': exception.message},
+    },
     headers: headers,
   );
 }

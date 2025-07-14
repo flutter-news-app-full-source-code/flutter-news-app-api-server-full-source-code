@@ -191,9 +191,7 @@ Future<Response> _handlePut(
     itemToUpdate = modelConfig.fromJson(requestBody);
   } on TypeError catch (e) {
     // Catch errors during deserialization (e.g., missing required fields)
-    print(
-      'Deserialization TypeError in PUT /data/[id]: $e',
-    );
+    print('Deserialization TypeError in PUT /data/[id]: $e');
     // Throw BadRequestException to be caught by the errorHandler
     throw const BadRequestException(
       'Invalid request body: Missing or invalid required field(s).',

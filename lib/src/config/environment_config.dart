@@ -43,7 +43,9 @@ abstract final class EnvironmentConfig {
           env.load([envPath]); // Load variables from the found .env file
           return env; // Return immediately upon finding
         } else {
-          _log.warning('pubspec.yaml found, but no .env in the same directory.');
+          _log.warning(
+            'pubspec.yaml found, but no .env in the same directory.',
+          );
           break; // Stop searching since pubspec.yaml should contain .env
         }
       }
@@ -51,7 +53,9 @@ abstract final class EnvironmentConfig {
       _log.finer('Moving up to parent directory: ${currentDir.path}');
     }
     // If loop completes without returning, .env was not found
-    _log.warning('.env not found by searching. Falling back to default load().');
+    _log.warning(
+      '.env not found by searching. Falling back to default load().',
+    );
     env.load(); // Fallback to default load
     return env; // Return even if fallback
   }

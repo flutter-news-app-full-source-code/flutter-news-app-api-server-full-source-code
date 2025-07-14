@@ -50,17 +50,14 @@ Future<Response> _handleGet(RequestContext context) async {
   List<SortOption>? sort;
   if (params.containsKey('sort')) {
     try {
-      sort = params['sort']!
-          .split(',')
-          .map((s) {
-            final parts = s.split(':');
-            final field = parts[0];
-            final order = (parts.length > 1 && parts[1] == 'desc')
-                ? SortOrder.desc
-                : SortOrder.asc;
-            return SortOption(field, order);
-          })
-          .toList();
+      sort = params['sort']!.split(',').map((s) {
+        final parts = s.split(':');
+        final field = parts[0];
+        final order = (parts.length > 1 && parts[1] == 'desc')
+            ? SortOrder.desc
+            : SortOrder.asc;
+        return SortOption(field, order);
+      }).toList();
     } catch (e) {
       throw const BadRequestException(
         'Invalid "sort" parameter format. Use "field:order,field2:order".',
@@ -76,7 +73,8 @@ Future<Response> _handleGet(RequestContext context) async {
   }
 
   // --- Repository Call ---
-  final userIdForRepoCall = (modelConfig.getOwnerId != null &&
+  final userIdForRepoCall =
+      (modelConfig.getOwnerId != null &&
           !context.read<PermissionService>().isAdmin(authenticatedUser))
       ? authenticatedUser.id
       : null;
@@ -135,9 +133,9 @@ Future<Response> _handleGet(RequestContext context) async {
   return ResponseHelper.success(
     context: context,
     data: responseData,
-    toJsonT: (paginated) =>
-        (paginated as PaginatedResponse<dynamic>).toJson(
-            (item) => (item as dynamic).toJson() as Map<String, dynamic>),
+    toJsonT: (paginated) => (paginated as PaginatedResponse<dynamic>).toJson(
+      (item) => (item as dynamic).toJson() as Map<String, dynamic>,
+    ),
   );
 }
 
@@ -164,7 +162,8 @@ Future<Response> _handlePost(RequestContext context) async {
   }
 
   // --- Repository Call ---
-  final userIdForRepoCall = (modelConfig.getOwnerId != null &&
+  final userIdForRepoCall =
+      (modelConfig.getOwnerId != null &&
           !context.read<PermissionService>().isAdmin(authenticatedUser))
       ? authenticatedUser.id
       : null;

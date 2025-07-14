@@ -23,14 +23,14 @@ class AuthService {
     required HtEmailRepository emailRepository,
     required HtDataRepository<UserAppSettings> userAppSettingsRepository,
     required HtDataRepository<UserContentPreferences>
-        userContentPreferencesRepository,
+    userContentPreferencesRepository,
     required PermissionService permissionService,
     required Uuid uuidGenerator,
     required Logger log,
   }) : _userRepository = userRepository,
        _authTokenService = authTokenService,
        _verificationCodeStorageService = verificationCodeStorageService,
-        _permissionService = permissionService,
+       _permissionService = permissionService,
        _emailRepository = emailRepository,
        _userAppSettingsRepository = userAppSettingsRepository,
        _userContentPreferencesRepository = userContentPreferencesRepository,
@@ -43,7 +43,7 @@ class AuthService {
   final HtEmailRepository _emailRepository;
   final HtDataRepository<UserAppSettings> _userAppSettingsRepository;
   final HtDataRepository<UserContentPreferences>
-      _userContentPreferencesRepository;
+  _userContentPreferencesRepository;
   final PermissionService _permissionService;
   final Logger _log;
   final Uuid _uuid;
@@ -83,7 +83,10 @@ class AuthService {
           throw const UnauthorizedException(
             'This email address is not registered for dashboard access.',
           );
-        } else if (!_permissionService.hasPermission(user, Permissions.dashboardLogin)) {
+        } else if (!_permissionService.hasPermission(
+          user,
+          Permissions.dashboardLogin,
+        )) {
           _log.warning(
             'Dashboard login failed: User ${user.id} lacks required permission (${Permissions.dashboardLogin}).',
           );
@@ -273,7 +276,9 @@ class AuthService {
       rethrow;
     } catch (e, s) {
       _log.severe(
-        'Unexpected error during user lookup/creation for $email: $e', e, s,
+        'Unexpected error during user lookup/creation for $email: $e',
+        e,
+        s,
       );
       throw const OperationFailedException('Failed to process user account.');
     }
@@ -652,9 +657,7 @@ class AuthService {
   /// Re-throws any [HtHttpException] from the repository.
   Future<User?> _findUserByEmail(String email) async {
     try {
-      final response = await _userRepository.readAll(
-        filter: {'email': email},
-      );
+      final response = await _userRepository.readAll(filter: {'email': email});
       if (response.items.isNotEmpty) {
         return response.items.first;
       }

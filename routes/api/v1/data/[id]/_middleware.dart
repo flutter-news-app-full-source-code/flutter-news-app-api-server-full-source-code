@@ -16,4 +16,3 @@ Handler middleware(Handler handler) {
   // `/api/v1/data/_middleware.dart` (authn, authz, model validation).
   return handler.use(ownershipCheckMiddleware());
 }
-
