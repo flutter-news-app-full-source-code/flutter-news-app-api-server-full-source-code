@@ -19,13 +19,11 @@ Middleware errorHandler() {
       } on HtHttpException catch (e, stackTrace) {
         // Handle specific HtHttpExceptions from the client/repository layers
         final statusCode = _mapExceptionToStatusCode(e);
-        final errorCode = _mapExceptionToCodeString(e);
         print('HtHttpException Caught: $e\n$stackTrace'); // Log for debugging
-        return Response.json(
+        return _jsonErrorResponse(
           statusCode: statusCode,
-          body: {
-            'error': {'code': errorCode, 'message': e.message},
-          },
+          exception: e,
+          context: context,
         );
       } on CheckedFromJsonException catch (e, stackTrace) {
         // Handle json_serializable validation errors. These are client errors.
@@ -33,40 +31,26 @@ Middleware errorHandler() {
         final message = 'Invalid request body: Field "$field" has an '
             'invalid value or is missing. ${e.message}';
         print('CheckedFromJsonException Caught: $e\n$stackTrace');
-        return Response.json(
+        return _jsonErrorResponse(
           statusCode: HttpStatus.badRequest, // 400
-          body: {
-            'error': {
-              'code': 'invalidField',
-              'message': message,
-            },
-          },
+          exception: InvalidInputException(message),
+          context: context,
         );
       } on FormatException catch (e, stackTrace) {
         // Handle data format/parsing errors (often indicates bad client input)
         print('FormatException Caught: $e\n$stackTrace'); // Log for debugging
-        return Response.json(
+        return _jsonErrorResponse(
           statusCode: HttpStatus.badRequest, // 400
-          body: {
-            'error': {
-              'code': 'invalidFormat',
-              'message': 'Invalid data format: ${e.message}',
-            },
-          },
+          exception: InvalidInputException('Invalid data format: ${e.message}'),
+          context: context,
         );
       } catch (e, stackTrace) {
         // Handle any other unexpected errors
         print('Unhandled Exception Caught: $e\n$stackTrace');
-        return Response.json(
+        return _jsonErrorResponse(
           statusCode: HttpStatus.internalServerError, // 500
-          body: {
-            'error': {
-              'code': 'internalServerError',
-              'message': 'An unexpected internal server error occurred.',
-              // Avoid leaking sensitive details in production responses
-              // 'details': e.toString(), // Maybe include in dev mode only
-            },
-          },
+          exception: const UnknownException('An unexpected internal server error occurred.'),
+          context: context,
         );
       }
     };
@@ -107,4 +91,42 @@ String _mapExceptionToCodeString(HtHttpException exception) {
     UnknownException() => 'unknownError',
     _ => 'unknownError', // Default
   };
+}
+
+/// Creates a standardized JSON error response with appropriate CORS headers.
+///
+/// This helper ensures that error responses sent to the client include the
+/// necessary `Access-Control-Allow-Origin` header, allowing the client-side
+/// application to read the error message body.
+Response _jsonErrorResponse({
+  required int statusCode,
+  required HtHttpException exception,
+  required RequestContext context,
+}) {
+  final errorCode = _mapExceptionToCodeString(exception);
+  final headers = <String, String>{
+    HttpHeaders.contentTypeHeader: 'application/json',
+  };
+
+  // Add CORS headers to error responses to allow the client to read them.
+  // This logic mirrors the behavior of `shelf_cors_headers` for development.
+  final origin = context.request.headers['Origin'];
+  if (origin != null) {
+    // A simple check for localhost development environments.
+    // For production, this should be a more robust check against a list
+    // of allowed origins from environment variables.
+    if (Uri.tryParse(origin)?.host == 'localhost') {
+      headers[HttpHeaders.accessControlAllowOriginHeader] = origin;
+      headers[HttpHeaders.accessControlAllowMethodsHeader] =
+          'GET, POST, PUT, DELETE, OPTIONS';
+      headers[HttpHeaders.accessControlAllowHeadersHeader] =
+          'Origin, Content-Type, Authorization';
+    }
+  }
+
+  return Response.json(
+    statusCode: statusCode,
+    body: {'error': {'code': errorCode, 'message': exception.message}},
+    headers: headers,
+  );
 }
