@@ -80,8 +80,14 @@ for more details.
 
     Create a `.env` file in the root of the project or export the variable in
     your shell:
-    ```
-    DATABASE_URL="mongodb://user:password@localhost:27017/ht_api_db"
+    ```shell
+    # The full connection string for your MongoDB instance.
+    # Required for the application to connect to the database.
+    # DATABASE_URL="mongodb://user:password@localhost:27017/ht_api_db"
+
+    # (Optional for Production) The specific origin URL of your web client.
+    # This is required for production deployments to allow cross-origin requests.
+    # CORS_ALLOWED_ORIGIN="https://your-dashboard.com"
     ```
 
 3.  **Clone the repository:**
