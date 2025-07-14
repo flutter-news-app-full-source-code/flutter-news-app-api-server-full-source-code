@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
+import 'package:ht_api/src/helpers/response_helper.dart';
 import 'package:ht_api/src/rbac/permission_service.dart';
 import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_api/src/services/dashboard_summary_service.dart';
@@ -8,15 +9,12 @@ import 'package:ht_api/src/services/user_preference_limit_service.dart'; // Impo
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 
-import '../../../../_middleware.dart'; // Assuming RequestId is here
-
 /// Handles requests for the /api/v1/data/[id] endpoint.
 /// Dispatches requests to specific handlers based on the HTTP method.
 Future<Response> onRequest(RequestContext context, String id) async {
   // Read dependencies provided by middleware
   final modelName = context.read<String>();
   final modelConfig = context.read<ModelConfig<dynamic>>();
-  final requestId = context.read<RequestId>().id;
   // User is guaranteed non-null by requireAuthentication() middleware
   final authenticatedUser = context.read<User>();
   final permissionService = context
@@ -35,7 +33,6 @@ Future<Response> onRequest(RequestContext context, String id) async {
         modelConfig,
         authenticatedUser,
         permissionService, // Pass PermissionService
-        requestId,
       );
     case HttpMethod.put:
       return _handlePut(
@@ -46,7 +43,6 @@ Future<Response> onRequest(RequestContext context, String id) async {
         authenticatedUser,
         permissionService, // Pass PermissionService
         userPreferenceLimitService, // Pass the limit service
-        requestId,
       );
     case HttpMethod.delete:
       return _handleDelete(
@@ -56,7 +52,6 @@ Future<Response> onRequest(RequestContext context, String id) async {
         modelConfig,
         authenticatedUser,
         permissionService, // Pass PermissionService
-        requestId,
       );
     default:
       // Methods not allowed on the item endpoint
@@ -74,7 +69,6 @@ Future<Response> _handleGet(
   ModelConfig<dynamic> modelConfig,
   User authenticatedUser,
   PermissionService permissionService,
-  String requestId,
 ) async {
   // Authorization check is handled by authorizationMiddleware before this.
   // This handler only needs to perform the ownership check if required.
@@ -143,7 +137,7 @@ Future<Response> _handleGet(
     // Ensure getOwnerId is provided for models requiring ownership check
     if (modelConfig.getOwnerId == null) {
       print(
-        '[ReqID: $requestId] Configuration Error: Model "$modelName" requires '
+        'Configuration Error: Model "$modelName" requires '
         'ownership check for GET item but getOwnerId is not provided.',
       );
       // Throw an exception to be caught by the errorHandler
@@ -162,25 +156,11 @@ Future<Response> _handleGet(
     }
   }
 
-  // Create metadata including the request ID and current timestamp
-  final metadata = ResponseMetadata(
-    requestId: requestId,
-    timestamp: DateTime.now().toUtc(), // Use UTC for consistency
-  );
-
-  // Wrap the item in SuccessApiResponse with metadata
-  final successResponse = SuccessApiResponse<dynamic>(
+  return ResponseHelper.success(
+    context: context,
     data: item,
-    metadata: metadata, // Include the created metadata
+    toJsonT: (data) => (data as dynamic).toJson() as Map<String, dynamic>,
   );
-
-  // Provide the correct toJsonT for the specific model type
-  final responseJson = successResponse.toJson(
-    (item) => (item as dynamic).toJson(), // Assuming all models have toJson
-  );
-
-  // Return 200 OK with the wrapped and serialized response
-  return Response.json(body: responseJson);
 }
 
 // --- PUT Handler ---
@@ -195,7 +175,6 @@ Future<Response> _handlePut(
   PermissionService permissionService, // Receive PermissionService
   UserPreferenceLimitService
   userPreferenceLimitService, // Receive Limit Service
-  String requestId,
 ) async {
   // Authorization check is handled by authorizationMiddleware before this.
   // This handler only needs to perform the ownership check if required.
@@ -212,9 +191,8 @@ Future<Response> _handlePut(
     itemToUpdate = modelConfig.fromJson(requestBody);
   } on TypeError catch (e) {
     // Catch errors during deserialization (e.g., missing required fields)
-    // Include requestId in the server log
     print(
-      '[ReqID: $requestId] Deserialization TypeError in PUT /data/[id]: $e',
+      'Deserialization TypeError in PUT /data/[id]: $e',
     );
     // Throw BadRequestException to be caught by the errorHandler
     throw const BadRequestException(
@@ -235,8 +213,7 @@ Future<Response> _handlePut(
   } catch (e) {
     // Ignore if getId throws, means ID might not be in the body,
     // which is acceptable depending on the model/client.
-    // Log for debugging if needed.
-    print('[ReqID: $requestId] Warning: Could not get ID from PUT body: $e');
+    print('Warning: Could not get ID from PUT body: $e');
   }
 
   // --- Handler-Level Limit Check (for UserContentPreferences PUT) ---
@@ -247,7 +224,7 @@ Future<Response> _handlePut(
       // Ensure the itemToUpdate is the correct type for the limit service
       if (itemToUpdate is! UserContentPreferences) {
         print(
-          '[ReqID: $requestId] Type Error: Expected UserContentPreferences '
+          'Type Error: Expected UserContentPreferences '
           'for limit check, but got ${itemToUpdate.runtimeType}.',
         );
         throw const OperationFailedException(
@@ -264,7 +241,7 @@ Future<Response> _handlePut(
     } catch (e) {
       // Catch unexpected errors from the limit service
       print(
-        '[ReqID: $requestId] Unexpected error during limit check for '
+        'Unexpected error during limit check for '
         'UserContentPreferences PUT: $e',
       );
       throw const OperationFailedException(
@@ -381,7 +358,7 @@ Future<Response> _handlePut(
     // Ensure getOwnerId is provided for models requiring ownership check
     if (modelConfig.getOwnerId == null) {
       print(
-        '[ReqID: $requestId] Configuration Error: Model "$modelName" requires '
+        'Configuration Error: Model "$modelName" requires '
         'ownership check for PUT but getOwnerId is not provided.',
       );
       // Throw an exception to be caught by the errorHandler
@@ -396,9 +373,8 @@ Future<Response> _handlePut(
     if (itemOwnerId != authenticatedUser.id) {
       // This scenario should ideally not happen if the repository correctly
       // enforced ownership during the update call when userId was passed.
-      // But as a defense-in-depth, we check here.
       print(
-        '[ReqID: $requestId] Ownership check failed AFTER PUT for item $id. '
+        'Ownership check failed AFTER PUT for item $id. '
         'Item owner: $itemOwnerId, User: ${authenticatedUser.id}',
       );
       // Throw ForbiddenException to be caught by the errorHandler
@@ -408,25 +384,11 @@ Future<Response> _handlePut(
     }
   }
 
-  // Create metadata including the request ID and current timestamp
-  final metadata = ResponseMetadata(
-    requestId: requestId,
-    timestamp: DateTime.now().toUtc(), // Use UTC for consistency
-  );
-
-  // Wrap the updated item in SuccessApiResponse with metadata
-  final successResponse = SuccessApiResponse<dynamic>(
+  return ResponseHelper.success(
+    context: context,
     data: updatedItem,
-    metadata: metadata,
+    toJsonT: (data) => (data as dynamic).toJson() as Map<String, dynamic>,
   );
-
-  // Provide the correct toJsonT for the specific model type
-  final responseJson = successResponse.toJson(
-    (item) => (item as dynamic).toJson(), // Assuming all models have toJson
-  );
-
-  // Return 200 OK with the wrapped and serialized response
-  return Response.json(body: responseJson);
 }
 
 // --- DELETE Handler ---
@@ -438,7 +400,6 @@ Future<Response> _handleDelete(
   ModelConfig<dynamic> modelConfig,
   User authenticatedUser,
   PermissionService permissionService,
-  String requestId,
 ) async {
   // Authorization check is handled by authorizationMiddleware before this.
   // This handler only needs to perform the ownership check if required.
@@ -463,7 +424,7 @@ Future<Response> _handleDelete(
     // Ensure getOwnerId is provided for models requiring ownership check
     if (modelConfig.getOwnerId == null) {
       print(
-        '[ReqID: $requestId] Configuration Error: Model "$modelName" requires '
+        'Configuration Error: Model "$modelName" requires '
         'ownership check for DELETE but getOwnerId is not provided.',
       );
       // Throw an exception to be caught by the errorHandler
@@ -503,7 +464,7 @@ Future<Response> _handleDelete(
         ); // userId should be null for AppConfig
       default:
         print(
-          '[ReqID: $requestId] Error: Unsupported model type "$modelName" reached _handleDelete ownership check.',
+          'Error: Unsupported model type "$modelName" reached _handleDelete ownership check.',
         );
         // Throw an exception to be caught by the errorHandler
         throw OperationFailedException(
@@ -571,9 +532,9 @@ Future<Response> _handleDelete(
       ); // userId should be null for AppConfig
     default:
       // This case should ideally be caught by the data/_middleware.dart,
-      // but added for safety. Consider logging this unexpected state.
+      // but added for safety.
       print(
-        '[ReqID: $requestId] Error: Unsupported model type "$modelName" reached _handleDelete.',
+        'Error: Unsupported model type "$modelName" reached _handleDelete.',
       );
       // Throw an exception to be caught by the errorHandler
       throw OperationFailedException(
