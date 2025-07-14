@@ -4,6 +4,7 @@
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
+import 'package:ht_api/src/config/environment_config.dart';
 import 'package:ht_shared/ht_shared.dart';
 import 'package:json_annotation/json_annotation.dart';
 
@@ -108,15 +109,24 @@ Response _jsonErrorResponse({
     HttpHeaders.contentTypeHeader: 'application/json',
   };
 
-  // Add CORS headers to error responses to allow the client to read them.
-  // This logic mirrors the behavior of `shelf_cors_headers` for development.
-  final origin = context.request.headers['Origin'];
-  if (origin != null) {
-    // A simple check for localhost development environments.
-    // For production, this should be a more robust check against a list
-    // of allowed origins from environment variables.
-    if (Uri.tryParse(origin)?.host == 'localhost') {
-      headers[HttpHeaders.accessControlAllowOriginHeader] = origin;
+  // Add CORS headers to error responses. This logic is environment-aware.
+  // In production, it uses a specific origin from `CORS_ALLOWED_ORIGIN`.
+  // In development (if the variable is not set), it allows any localhost.
+  final requestOrigin = context.request.headers['Origin'];
+  if (requestOrigin != null) {
+    final allowedOrigin = EnvironmentConfig.corsAllowedOrigin;
+
+    var isOriginAllowed = false;
+    if (allowedOrigin != null) {
+      // Production: Check against the specific allowed origin.
+      isOriginAllowed = (requestOrigin == allowedOrigin);
+    } else {
+      // Development: Allow any localhost origin.
+      isOriginAllowed = (Uri.tryParse(requestOrigin)?.host == 'localhost');
+    }
+
+    if (isOriginAllowed) {
+      headers[HttpHeaders.accessControlAllowOriginHeader] = requestOrigin;
       headers[HttpHeaders.accessControlAllowMethodsHeader] =
           'GET, POST, PUT, DELETE, OPTIONS';
       headers[HttpHeaders.accessControlAllowHeadersHeader] =

@@ -79,4 +79,11 @@ abstract final class EnvironmentConfig {
   /// The value is read from the `ENV` environment variable.
   /// Defaults to 'production' if the variable is not set.
   static String get environment => _env['ENV'] ?? 'production';
+
+  /// Retrieves the allowed CORS origin from the environment.
+  ///
+  /// The value is read from the `CORS_ALLOWED_ORIGIN` environment variable.
+  /// This is used to configure CORS for production environments.
+  /// Returns `null` if the variable is not set.
+  static String? get corsAllowedOrigin => _env['CORS_ALLOWED_ORIGIN'];
 }
