@@ -75,20 +75,15 @@ for more details.
     *   Dart Frog CLI (`dart pub global activate dart_frog_cli`)
 
 2.  **Configuration:**
-    Before running the server, you must configure the database connection by
-    setting the `DATABASE_URL` environment variable.
+    Before running the server, you must configure the necessary environment
+    variables.
 
-    Create a `.env` file in the root of the project or export the variable in
-    your shell:
-    ```shell
-    # The full connection string for your MongoDB instance.
-    # Required for the application to connect to the database.
-    # DATABASE_URL="mongodb://user:password@localhost:27017/ht_api_db"
-
-    # (Optional for Production) The specific origin URL of your web client.
-    # This is required for production deployments to allow cross-origin requests.
-    # CORS_ALLOWED_ORIGIN="https://your-dashboard.com"
+    Copy the `.env.example` file to a new file named `.env`:
+    ```bash
+    cp .env.example .env
     ```
+    Then, open the new `.env` file and update the variables with your actual
+    configuration values, such as the `DATABASE_URL`.
 
 3.  **Clone the repository:**
     ```bash
