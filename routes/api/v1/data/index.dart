@@ -2,12 +2,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
+import 'package:ht_api/src/helpers/response_helper.dart';
+import 'package:ht_api/src/rbac/permission_service.dart';
 import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
-import 'package:ht_api/src/rbac/permission_service.dart';
 import 'package:ht_shared/ht_shared.dart';
-
-import '../../../_middleware.dart'; // For RequestId
 
 /// Handles requests for the /api/v1/data collection endpoint.
 /// Dispatches requests to specific handlers based on the HTTP method.
@@ -31,7 +30,6 @@ Future<Response> _handleGet(RequestContext context) async {
   final modelName = context.read<String>();
   final modelConfig = context.read<ModelConfig<dynamic>>();
   final authenticatedUser = context.read<User>();
-  final requestId = context.read<RequestId>().id;
 
   // --- Parse Query Parameters ---
   final params = context.request.uri.queryParameters;
@@ -64,7 +62,7 @@ Future<Response> _handleGet(RequestContext context) async {
           })
           .toList();
     } catch (e) {
-      throw BadRequestException(
+      throw const BadRequestException(
         'Invalid "sort" parameter format. Use "field:order,field2:order".',
       );
     }
@@ -134,24 +132,12 @@ Future<Response> _handleGet(RequestContext context) async {
       );
   }
 
-  // --- Format and Return Response ---
-  final metadata = ResponseMetadata(
-    requestId: requestId,
-    timestamp: DateTime.now().toUtc(),
-  );
-
-  final successResponse = SuccessApiResponse<dynamic>(
+  return ResponseHelper.success(
+    context: context,
     data: responseData,
-    metadata: metadata,
+    toJsonT: (paginated) => (paginated as PaginatedResponse<dynamic>)
+        .toJson((item) => (item as dynamic).toJson()),
   );
-
-  final responseJson = successResponse.toJson(
-    (paginated) => (paginated as PaginatedResponse<dynamic>).toJson(
-      (item) => (item as dynamic).toJson(),
-    ),
-  );
-
-  return Response.json(body: responseJson);
 }
 
 /// Handles POST requests: Creates a new item in a collection.
@@ -160,7 +146,6 @@ Future<Response> _handlePost(RequestContext context) async {
   final modelName = context.read<String>();
   final modelConfig = context.read<ModelConfig<dynamic>>();
   final authenticatedUser = context.read<User>();
-  final requestId = context.read<RequestId>().id;
 
   // --- Parse Body ---
   final requestBody = await context.request.json() as Map<String, dynamic>?;
@@ -221,20 +206,10 @@ Future<Response> _handlePost(RequestContext context) async {
       );
   }
 
-  // --- Format and Return Response ---
-  final metadata = ResponseMetadata(
-    requestId: requestId,
-    timestamp: DateTime.now().toUtc(),
-  );
-
-  final successResponse = SuccessApiResponse<dynamic>(
+  return ResponseHelper.success(
+    context: context,
     data: createdItem,
-    metadata: metadata,
+    toJsonT: (item) => (item as dynamic).toJson(),
+    statusCode: HttpStatus.created,
   );
-
-  final responseJson = successResponse.toJson(
-    (item) => (item as dynamic).toJson(),
-  );
-
-  return Response.json(statusCode: HttpStatus.created, body: responseJson);
 }
