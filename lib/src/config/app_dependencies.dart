@@ -162,10 +162,9 @@ class AppDependencies {
       );
       remoteConfigRepository = HtDataRepository(dataClient: remoteConfigClient);
 
-      final emailClient = HtEmailInMemoryClient(
-        logger: Logger('HtEmailInMemoryClient'),
-      );
-      emailRepository = HtEmailRepository(emailClient: emailClient);
+      const emailClient =  HtEmailInMemoryClient();
+      
+      emailRepository = const HtEmailRepository(emailClient: emailClient);
 
       // 5. Initialize Services
       tokenBlacklistService = InMemoryTokenBlacklistService(
