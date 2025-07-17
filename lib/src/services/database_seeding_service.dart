@@ -52,6 +52,13 @@ class DatabaseSeedingService {
       getId: (item) => item.id,
       toJson: (item) => item.toJson(),
     );
+    await _seedCollection<UserAppSettings>(
+      collectionName: 'user_app_settings',
+      fixtureData: userAppSettingsFixturesData,
+      getId: (item) => item.id,
+      toJson: (item) => item.toJson(),
+    );
+
     await _seedCollection<RemoteConfig>(
       collectionName: 'remote_configs',
       fixtureData: remoteConfigsFixturesData,
