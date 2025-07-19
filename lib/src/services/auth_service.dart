@@ -229,45 +229,8 @@ class AuthService {
         user = await _userRepository.create(item: user);
         _log.info('Created new user: ${user.id} with appRole: ${user.appRole}');
 
-        // Create default UserAppSettings for the new user
-        final defaultAppSettings = UserAppSettings(
-          id: user.id,
-          displaySettings: const DisplaySettings(
-            baseTheme: AppBaseTheme.system,
-            accentTheme: AppAccentTheme.defaultBlue,
-            fontFamily: 'SystemDefault',
-            textScaleFactor: AppTextScaleFactor.medium,
-            fontWeight: AppFontWeight.regular,
-          ),
-          language: 'en',
-          feedPreferences: const FeedDisplayPreferences(
-            headlineDensity: HeadlineDensity.standard,
-            headlineImageStyle: HeadlineImageStyle.largeThumbnail,
-            showSourceInHeadlineFeed: true,
-            showPublishDateInHeadlineFeed: true,
-          ),
-        );
-        await _userAppSettingsRepository.create(
-          item: defaultAppSettings,
-          userId: user.id,
-        );
-        _log.info('Created default UserAppSettings for user: ${user.id}');
-
-        // Create default UserContentPreferences for the new user
-        final defaultUserPreferences = UserContentPreferences(
-          id: user.id,
-          followedCountries: const [],
-          followedSources: const [],
-          followedTopics: const [],
-          savedHeadlines: const [],
-        );
-        await _userContentPreferencesRepository.create(
-          item: defaultUserPreferences,
-          userId: user.id,
-        );
-        _log.info(
-          'Created default UserContentPreferences for user: ${user.id}',
-        );
+        // Ensure default documents are created for the new user.
+        await _ensureUserDataExists(user);
       }
     } on HtHttpException {
       // Propagate known exceptions from dependencies or from this method's logic.
@@ -322,6 +285,9 @@ class AuthService {
       );
       user = await _userRepository.create(item: user);
       _log.info('Created anonymous user: ${user.id}');
+
+      // Ensure default documents are created for the new anonymous user.
+      await _ensureUserDataExists(user);
     } on HtHttpException catch (e) {
       _log.severe('Error creating anonymous user: $e');
       throw const OperationFailedException('Failed to create anonymous user.');
@@ -331,46 +297,6 @@ class AuthService {
         'Failed to process anonymous sign-in.',
       );
     }
-
-    // Create default UserAppSettings for the new anonymous user
-    final defaultAppSettings = UserAppSettings(
-      id: user.id,
-      displaySettings: const DisplaySettings(
-        baseTheme: AppBaseTheme.system,
-        accentTheme: AppAccentTheme.defaultBlue,
-        fontFamily: 'SystemDefault',
-        textScaleFactor: AppTextScaleFactor.medium,
-        fontWeight: AppFontWeight.regular,
-      ),
-      language: 'en',
-      feedPreferences: const FeedDisplayPreferences(
-        headlineDensity: HeadlineDensity.standard,
-        headlineImageStyle: HeadlineImageStyle.largeThumbnail,
-        showSourceInHeadlineFeed: true,
-        showPublishDateInHeadlineFeed: true,
-      ),
-    );
-    await _userAppSettingsRepository.create(
-      item: defaultAppSettings,
-      userId: user.id, // Pass user ID for scoping
-    );
-    _log.info('Created default UserAppSettings for anonymous user: ${user.id}');
-
-    // Create default UserContentPreferences for the new anonymous user
-    final defaultUserPreferences = UserContentPreferences(
-      id: user.id,
-      followedCountries: const [],
-      followedSources: const [],
-      followedTopics: const [],
-      savedHeadlines: const [],
-    );
-    await _userContentPreferencesRepository.create(
-      item: defaultUserPreferences,
-      userId: user.id, // Pass user ID for scoping
-    );
-    _log.info(
-      'Created default UserContentPreferences for anonymous user: ${user.id}',
-    );
 
     // 2. Generate token
     try {
@@ -541,6 +467,9 @@ class AuthService {
         'User ${permanentUser.id} successfully linked with email $linkedEmail.',
       );
 
+      // Ensure user data exists after linking.
+      await _ensureUserDataExists(permanentUser);
+
       // 3. Generate a new authentication token for the now-permanent user.
       final newToken = await _authTokenService.generateToken(permanentUser);
       _log.info('Generated new token for linked user ${permanentUser.id}');
@@ -664,6 +593,64 @@ class AuthService {
       return null;
     } on HtHttpException {
       rethrow;
+    }
+  }
+
+  /// Ensures that the essential user-specific documents (settings, preferences)
+  /// exist for a given user, creating them with default values if they are missing.
+  ///
+  /// This method is crucial for maintaining data integrity, especially for users
+  /// who might have been created before these documents were part of the standard
+  /// user creation process.
+  Future<void> _ensureUserDataExists(User user) async {
+    // Check for UserAppSettings
+    try {
+      await _userAppSettingsRepository.read(id: user.id, userId: user.id);
+    } on NotFoundException {
+      _log.info(
+        'UserAppSettings not found for user ${user.id}. Creating with defaults.',
+      );
+      final defaultAppSettings = UserAppSettings(
+        id: user.id,
+        displaySettings: const DisplaySettings(
+          baseTheme: AppBaseTheme.system,
+          accentTheme: AppAccentTheme.defaultBlue,
+          fontFamily: 'SystemDefault',
+          textScaleFactor: AppTextScaleFactor.medium,
+          fontWeight: AppFontWeight.regular,
+        ),
+        language: 'en',
+        feedPreferences: const FeedDisplayPreferences(
+          headlineDensity: HeadlineDensity.standard,
+          headlineImageStyle: HeadlineImageStyle.largeThumbnail,
+          showSourceInHeadlineFeed: true,
+          showPublishDateInHeadlineFeed: true,
+        ),
+      );
+      await _userAppSettingsRepository.create(
+        item: defaultAppSettings,
+        userId: user.id,
+      );
+    }
+
+    // Check for UserContentPreferences
+    try {
+      await _userContentPreferencesRepository.read(id: user.id, userId: user.id);
+    } on NotFoundException {
+      _log.info(
+        'UserContentPreferences not found for user ${user.id}. Creating with defaults.',
+      );
+      final defaultUserPreferences = UserContentPreferences(
+        id: user.id,
+        followedCountries: const [],
+        followedSources: const [],
+        followedTopics: const [],
+        savedHeadlines: const [],
+      );
+      await _userContentPreferencesRepository.create(
+        item: defaultUserPreferences,
+        userId: user.id,
+      );
     }
   }
 }
