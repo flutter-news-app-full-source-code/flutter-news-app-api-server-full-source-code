@@ -185,6 +185,9 @@ Future<Response> _handlePut(
     throw const BadRequestException('Missing or invalid request body.');
   }
 
+  // Standardize timestamp before model creation
+  requestBody['updatedAt'] = DateTime.now().toUtc().toIso8601String();
+
   // Deserialize using ModelConfig's fromJson, catching TypeErrors locally
   dynamic itemToUpdate;
   try {
