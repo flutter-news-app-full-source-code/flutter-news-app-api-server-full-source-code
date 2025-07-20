@@ -1,3 +1,5 @@
+import 'package:ht_api/src/services/mongodb_token_blacklist_service.dart';
+import 'package:ht_api/src/services/mongodb_verification_code_storage_service.dart';
 import 'package:ht_shared/ht_shared.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
@@ -142,6 +144,35 @@ class DatabaseSeedingService {
         keys: {'name': 'text'},
         name: 'sources_text_index',
       );
+
+      // Indexes for the verification codes collection
+      await _db.runCommand({
+        'createIndexes': kVerificationCodesCollection,
+        'indexes': [
+          {
+            'key': {'expiresAt': 1},
+            'name': 'expiresAt_ttl_index',
+            'expireAfterSeconds': 0,
+          },
+          {
+            'key': {'email': 1},
+            'name': 'email_unique_index',
+            'unique': true,
+          }
+        ]
+      });
+
+      // Index for the token blacklist collection
+      await _db.runCommand({
+        'createIndexes': kBlacklistedTokensCollection,
+        'indexes': [
+          {
+            'key': {'expiry': 1},
+            'name': 'expiry_ttl_index',
+            'expireAfterSeconds': 0,
+          }
+        ]
+      });
 
       _log.info('Database indexes are set up correctly.');
     } on Exception catch (e, s) {
