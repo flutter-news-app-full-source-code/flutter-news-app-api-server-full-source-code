@@ -32,17 +32,6 @@ class _SignInCodeEntry extends _CodeEntryBase {
   _SignInCodeEntry(super.code, super.expiresAt);
 }
 
-/// {@template link_code_entry}
-/// Stores a verification code for linking an email to an existing user.
-/// {@endtemplate}
-class _LinkCodeEntry extends _CodeEntryBase {
-  /// {@macro link_code_entry}
-  _LinkCodeEntry(super.code, super.expiresAt, this.emailToLink);
-
-  /// The email address this link code is intended to verify.
-  final String emailToLink;
-}
-
 /// {@template verification_code_storage_service}
 /// Defines the interface for a service that manages verification codes
 /// for different authentication flows (sign-in and account linking).
@@ -68,36 +57,6 @@ abstract class VerificationCodeStorageService {
   /// Clears any sign-in code associated with the given [email].
   /// Throws [OperationFailedException] if clearing fails.
   Future<void> clearSignInCode(String email);
-
-  // --- For Linking an Email to an Existing Authenticated (Anonymous) User ---
-
-  /// Generates, stores, and returns a verification code for linking
-  /// [emailToLink] to the account of [userId].
-  /// The [userId] is that of the currently authenticated anonymous user.
-  /// Codes are typically 6 digits.
-  /// Throws [OperationFailedException] on storage failure.
-  /// Throws [ConflictException] if [emailToLink] is already actively pending
-  /// for linking by another user, or if this [userId] already has an active
-  /// link code pending.
-  Future<String> generateAndStoreLinkCode({
-    required String userId,
-    required String emailToLink,
-  });
-
-  /// Validates the [linkCode] provided by the user with [userId] who is
-  /// attempting to link an email.
-  /// Returns the "emailToLink" if the code is valid and matches the one
-  /// stored for this [userId]. Returns `null` if invalid or expired.
-  /// Throws [OperationFailedException] on validation failure if an unexpected
-  /// error occurs during the check.
-  Future<String?> validateAndRetrieveLinkedEmail({
-    required String userId,
-    required String linkCode,
-  });
-
-  /// Clears any pending link-code data associated with [userId].
-  /// Throws [OperationFailedException] if clearing fails.
-  Future<void> clearLinkCode(String userId);
 
   // --- General ---
 
@@ -143,10 +102,6 @@ class InMemoryVerificationCodeStorageService
   /// Store for standard sign-in codes: Key is email.
   @visibleForTesting
   final Map<String, _SignInCodeEntry> signInCodesStore = {};
-
-  /// Store for account linking codes: Key is userId.
-  @visibleForTesting
-  final Map<String, _LinkCodeEntry> linkCodesStore = {};
 
   Timer? _cleanupTimer;
   bool _isDisposed = false;
@@ -197,85 +152,12 @@ class InMemoryVerificationCodeStorageService
   }
 
   @override
-  Future<String> generateAndStoreLinkCode({
-    required String userId,
-    required String emailToLink,
-  }) async {
-    if (_isDisposed) {
-      throw const OperationFailedException('Service is disposed.');
-    }
-    await Future<void>.delayed(Duration.zero); // Simulate async
-
-    // Check if this userId already has a pending link code
-    if (linkCodesStore.containsKey(userId) &&
-        !linkCodesStore[userId]!.isExpired) {
-      throw const ConflictException(
-        'User already has an active email linking process pending.',
-      );
-    }
-    // Check if emailToLink is already pending for another user
-    final isEmailPendingForOther = linkCodesStore.values.any(
-      (entry) =>
-          entry.emailToLink == emailToLink &&
-          !entry.isExpired &&
-          linkCodesStore.keys.firstWhere((id) => linkCodesStore[id] == entry) !=
-              userId,
-    );
-    if (isEmailPendingForOther) {
-      throw const ConflictException(
-        'Email is already pending verification for another account linking process.',
-      );
-    }
-
-    final code = _generateNumericCode();
-    final expiresAt = DateTime.now().add(codeExpiryDuration);
-    linkCodesStore[userId] = _LinkCodeEntry(code, expiresAt, emailToLink);
-    print(
-      '[InMemoryVerificationCodeStorageService] Stored link code for user $userId, email $emailToLink (expires: $expiresAt)',
-    );
-    return code;
-  }
-
-  @override
-  Future<String?> validateAndRetrieveLinkedEmail({
-    required String userId,
-    required String linkCode,
-  }) async {
-    if (_isDisposed) return null;
-    await Future<void>.delayed(Duration.zero); // Simulate async
-    final entry = linkCodesStore[userId];
-    if (entry == null || entry.isExpired || entry.code != linkCode) {
-      return null;
-    }
-    return entry
-        .emailToLink; // Return the email associated with this valid code
-  }
-
-  @override
-  Future<void> clearLinkCode(String userId) async {
-    if (_isDisposed) return;
-    await Future<void>.delayed(Duration.zero); // Simulate async
-    linkCodesStore.remove(userId);
-    print(
-      '[InMemoryVerificationCodeStorageService] Cleared link code for user $userId',
-    );
-  }
-
-  @override
   Future<void> cleanupExpiredCodes() async {
     if (_isDisposed) return;
     await Future<void>.delayed(Duration.zero); // Simulate async
     var cleanedCount = 0;
 
     signInCodesStore.removeWhere((key, entry) {
-      if (entry.isExpired) {
-        cleanedCount++;
-        return true;
-      }
-      return false;
-    });
-
-    linkCodesStore.removeWhere((key, entry) {
       if (entry.isExpired) {
         cleanedCount++;
         return true;
@@ -296,7 +178,6 @@ class InMemoryVerificationCodeStorageService
       _isDisposed = true;
       _cleanupTimer?.cancel();
       signInCodesStore.clear();
-      linkCodesStore.clear();
       print('[InMemoryVerificationCodeStorageService] Disposed.');
     }
   }
