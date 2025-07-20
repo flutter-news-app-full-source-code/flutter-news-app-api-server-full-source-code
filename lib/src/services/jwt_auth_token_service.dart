@@ -1,7 +1,5 @@
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:ht_api/src/services/auth_token_service.dart';
-import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
-import 'package:ht_api/src/services/auth_token_service.dart';
 import 'package:ht_api/src/services/token_blacklist_service.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_shared/ht_shared.dart';

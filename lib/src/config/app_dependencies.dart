@@ -15,7 +15,6 @@ import 'package:ht_email_inmemory/ht_email_inmemory.dart';
 import 'package:ht_email_repository/ht_email_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 import 'package:logging/logging.dart';
-import 'package:uuid/uuid.dart';
 
 /// {@template app_dependencies}
 /// A singleton class responsible for initializing and providing all application
