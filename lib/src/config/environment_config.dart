@@ -78,6 +78,24 @@ abstract final class EnvironmentConfig {
     return dbUrl;
   }
 
+  /// Retrieves the JWT secret key from the environment.
+  ///
+  /// The value is read from the `JWT_SECRET_KEY` environment variable.
+  ///
+  /// Throws a [StateError] if the `JWT_SECRET_KEY` environment variable is not
+  /// set, as the application cannot function without it.
+  static String get jwtSecretKey {
+    final jwtKey = _env['JWT_SECRET_KEY'];
+    if (jwtKey == null || jwtKey.isEmpty) {
+      _log.severe('JWT_SECRET_KEY not found in environment variables.');
+      throw StateError(
+        'FATAL: JWT_SECRET_KEY environment variable is not set. '
+        'The application cannot start without a JWT secret.',
+      );
+    }
+    return jwtKey;
+  }
+
   /// Retrieves the current environment mode (e.g., 'development').
   ///
   /// The value is read from the `ENV` environment variable.
