@@ -25,9 +25,7 @@ class MongoDbVerificationCodeStorageService
     required Logger log,
     this.codeExpiryDuration = const Duration(minutes: 15),
   })  : _connectionManager = connectionManager,
-        _log = log {
-    _init();
-  }
+        _log = log;
 
   final MongoDbConnectionManager _connectionManager;
   final Logger _log;
@@ -38,39 +36,6 @@ class MongoDbVerificationCodeStorageService
 
   DbCollection get _collection =>
       _connectionManager.db.collection(kVerificationCodesCollection);
-
-  /// Initializes the service by ensuring required indexes exist.
-  Future<void> _init() async {
-    try {
-      _log.info('Ensuring indexes exist for verification codes...');
-      final command = {
-        'createIndexes': kVerificationCodesCollection,
-        'indexes': [
-          // TTL index for automatic document expiration
-          {
-            'key': {'expiresAt': 1},
-            'name': 'expiresAt_ttl_index',
-            'expireAfterSeconds': 0,
-          },
-          // Unique index to ensure only one code per email
-          {
-            'key': {'email': 1},
-            'name': 'email_unique_index',
-            'unique': true,
-          }
-        ]
-      };
-      await _connectionManager.db.runCommand(command);
-      _log.info('Verification codes indexes are set up correctly.');
-    } catch (e, s) {
-      _log.severe(
-        'Failed to create indexes for verification codes collection.',
-        e,
-        s,
-      );
-      rethrow;
-    }
-  }
 
   String _generateNumericCode({int length = 6}) {
     final buffer = StringBuffer();
