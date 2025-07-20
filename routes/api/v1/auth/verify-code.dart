@@ -69,15 +69,24 @@ Future<Response> onRequest(RequestContext context) async {
   // Check for the optional dashboard login flag. Default to false.
   final isDashboardLogin = (body['isDashboardLogin'] as bool?) ?? false;
 
+  // Extract the current token from the Authorization header, if it exists.
+  // This is needed for the guest-to-permanent flow to invalidate the old token.
+  final authHeader = context.request.headers[HttpHeaders.authorizationHeader];
+  String? currentToken;
+  if (authHeader != null && authHeader.startsWith('Bearer ')) {
+    currentToken = authHeader.substring(7);
+  }
+
   try {
     // Call the AuthService to handle the verification and sign-in logic.
     // Pass the authenticatedUser to allow for anonymous-to-permanent account
-    // conversion.
+    // conversion, and the currentToken for invalidation.
     final result = await authService.completeEmailSignIn(
       email,
       code,
       isDashboardLogin: isDashboardLogin,
       authenticatedUser: authenticatedUser,
+      currentToken: currentToken,
     );
 
     // Create the specific payload containing user and token
