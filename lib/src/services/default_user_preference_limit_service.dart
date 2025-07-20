@@ -24,7 +24,7 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
   final Logger _log;
 
   // Assuming a fixed ID for the RemoteConfig document
-  static const String _remoteConfigId = 'remote_config';
+  static const String _remoteConfigId = kRemoteConfigId;
 
   @override
   Future<void> checkAddItem(
