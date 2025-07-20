@@ -4,6 +4,10 @@ import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/helpers/response_helper.dart';
 import 'package:ht_api/src/services/auth_service.dart';
 import 'package:ht_shared/ht_shared.dart';
+import 'package:logging/logging.dart';
+
+// Create a logger for this file.
+final _logger = Logger('anonymous_handler');
 
 /// Handles POST requests to `/api/v1/auth/anonymous`.
 ///
@@ -37,9 +41,9 @@ Future<Response> onRequest(RequestContext context) async {
   } on HtHttpException catch (_) {
     // Let the central errorHandler middleware handle known exceptions
     rethrow;
-  } catch (e) {
+  } catch (e, s) {
     // Catch unexpected errors from the service layer
-    print('Unexpected error in /anonymous handler: $e');
+    _logger.severe('Unexpected error in /anonymous handler', e, s);
     // Let the central errorHandler handle this as a 500
     throw const OperationFailedException(
       'An unexpected error occurred during anonymous sign-in.',

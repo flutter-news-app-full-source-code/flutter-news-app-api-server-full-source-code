@@ -7,6 +7,9 @@ import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/config/environment_config.dart';
 import 'package:ht_shared/ht_shared.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:logging/logging.dart';
+
+final _log = Logger('ErrorHandler');
 
 /// Middleware that catches errors and converts them into
 /// standardized JSON responses.
@@ -20,7 +23,7 @@ Middleware errorHandler() {
       } on HtHttpException catch (e, stackTrace) {
         // Handle specific HtHttpExceptions from the client/repository layers
         final statusCode = _mapExceptionToStatusCode(e);
-        print('HtHttpException Caught: $e\n$stackTrace'); // Log for debugging
+        _log.warning('HtHttpException Caught', e, stackTrace);
         return _jsonErrorResponse(
           statusCode: statusCode,
           exception: e,
@@ -32,7 +35,7 @@ Middleware errorHandler() {
         final message =
             'Invalid request body: Field "$field" has an '
             'invalid value or is missing. ${e.message}';
-        print('CheckedFromJsonException Caught: $e\n$stackTrace');
+        _log.warning('CheckedFromJsonException Caught', e, stackTrace);
         return _jsonErrorResponse(
           statusCode: HttpStatus.badRequest, // 400
           exception: InvalidInputException(message),
@@ -40,7 +43,7 @@ Middleware errorHandler() {
         );
       } on FormatException catch (e, stackTrace) {
         // Handle data format/parsing errors (often indicates bad client input)
-        print('FormatException Caught: $e\n$stackTrace'); // Log for debugging
+        _log.warning('FormatException Caught', e, stackTrace);
         return _jsonErrorResponse(
           statusCode: HttpStatus.badRequest, // 400
           exception: InvalidInputException('Invalid data format: ${e.message}'),
@@ -48,7 +51,7 @@ Middleware errorHandler() {
         );
       } catch (e, stackTrace) {
         // Handle any other unexpected errors
-        print('Unhandled Exception Caught: $e\n$stackTrace');
+        _log.severe('Unhandled Exception Caught', e, stackTrace);
         return _jsonErrorResponse(
           statusCode: HttpStatus.internalServerError, // 500
           exception: const UnknownException(

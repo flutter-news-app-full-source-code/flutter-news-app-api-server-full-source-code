@@ -3,6 +3,10 @@ import 'dart:io';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/services/auth_service.dart';
 import 'package:ht_shared/ht_shared.dart'; // For User and exceptions
+import 'package:logging/logging.dart';
+
+// Create a logger for this file.
+final _logger = Logger('delete_account_handler');
 
 /// Handles DELETE requests to `/api/v1/auth/delete-account`.
 ///
@@ -38,10 +42,12 @@ Future<Response> onRequest(RequestContext context) async {
   } on HtHttpException catch (_) {
     // Let the central errorHandler middleware handle known exceptions
     rethrow;
-  } catch (e) {
+  } catch (e, s) {
     // Catch unexpected errors from the service layer
-    print(
-      'Unexpected error in /delete-account handler for user ${user.id}: $e',
+    _logger.severe(
+      'Unexpected error in /delete-account handler for user ${user.id}',
+      e,
+      s,
     );
     // Let the central errorHandler handle this as a 500
     throw const OperationFailedException(

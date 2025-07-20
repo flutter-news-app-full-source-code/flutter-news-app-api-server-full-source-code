@@ -2,6 +2,9 @@ import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/rbac/permission_service.dart';
 import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_shared/ht_shared.dart';
+import 'package:logging/logging.dart';
+
+final _log = Logger('AuthorizationMiddleware');
 
 /// {@template authorization_middleware}
 /// Middleware to enforce role-based permissions and model-specific access rules.
@@ -81,9 +84,9 @@ Middleware authorizationMiddleware() {
           final permission = requiredPermissionConfig.permission;
           if (permission == null) {
             // This indicates a configuration error in ModelRegistry
-            print(
-              '[AuthorizationMiddleware] Configuration Error: specificPermission '
-              'type requires a permission string for model "$modelName", method "$method".',
+            _log.severe(
+              'Configuration Error: specificPermission type requires a '
+              'permission string for model "$modelName", method "$method".',
             );
             throw const OperationFailedException(
               'Internal Server Error: Authorization configuration error.',
@@ -97,9 +100,9 @@ Middleware authorizationMiddleware() {
         case RequiredPermissionType.unsupported:
           // This action is explicitly marked as not supported via this generic route.
           // Return Method Not Allowed.
-          print(
-            '[AuthorizationMiddleware] Action for model "$modelName", method "$method" '
-            'is marked as unsupported via generic route.',
+          _log.warning(
+            'Action for model "$modelName", method "$method" is marked as '
+            'unsupported via generic route.',
           );
           // Throw ForbiddenException to be caught by the errorHandler
           throw ForbiddenException(

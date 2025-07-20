@@ -78,6 +78,24 @@ abstract final class EnvironmentConfig {
     return dbUrl;
   }
 
+  /// Retrieves the JWT secret key from the environment.
+  ///
+  /// The value is read from the `JWT_SECRET_KEY` environment variable.
+  ///
+  /// Throws a [StateError] if the `JWT_SECRET_KEY` environment variable is not
+  /// set, as the application cannot function without it.
+  static String get jwtSecretKey {
+    final jwtKey = _env['JWT_SECRET_KEY'];
+    if (jwtKey == null || jwtKey.isEmpty) {
+      _log.severe('JWT_SECRET_KEY not found in environment variables.');
+      throw StateError(
+        'FATAL: JWT_SECRET_KEY environment variable is not set. '
+        'The application cannot start without a JWT secret.',
+      );
+    }
+    return jwtKey;
+  }
+
   /// Retrieves the current environment mode (e.g., 'development').
   ///
   /// The value is read from the `ENV` environment variable.
@@ -90,4 +108,20 @@ abstract final class EnvironmentConfig {
   /// This is used to configure CORS for production environments.
   /// Returns `null` if the variable is not set.
   static String? get corsAllowedOrigin => _env['CORS_ALLOWED_ORIGIN'];
+
+  /// Retrieves the JWT issuer URL from the environment.
+  ///
+  /// The value is read from the `JWT_ISSUER` environment variable.
+  /// Defaults to 'http://localhost:8080' if not set.
+  static String get jwtIssuer =>
+      _env['JWT_ISSUER'] ?? 'http://localhost:8080';
+
+  /// Retrieves the JWT expiry duration in hours from the environment.
+  ///
+  /// The value is read from the `JWT_EXPIRY_HOURS` environment variable.
+  /// Defaults to 1 hour if not set or if parsing fails.
+  static Duration get jwtExpiryDuration {
+    final hours = int.tryParse(_env['JWT_EXPIRY_HOURS'] ?? '1');
+    return Duration(hours: hours ?? 1);
+  }
 }

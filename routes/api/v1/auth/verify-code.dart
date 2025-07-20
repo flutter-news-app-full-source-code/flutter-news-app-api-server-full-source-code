@@ -5,6 +5,10 @@ import 'package:ht_api/src/helpers/response_helper.dart';
 import 'package:ht_api/src/services/auth_service.dart';
 // Import exceptions, User, SuccessApiResponse, AND AuthSuccessResponse
 import 'package:ht_shared/ht_shared.dart';
+import 'package:logging/logging.dart';
+
+// Create a logger for this file.
+final _logger = Logger('verify_code_handler');
 
 /// Handles POST requests to `/api/v1/auth/verify-code`.
 ///
@@ -105,9 +109,9 @@ Future<Response> onRequest(RequestContext context) async {
     // Let the central errorHandler middleware handle known exceptions
     // (e.g., InvalidInputException if code is wrong/expired)
     rethrow;
-  } catch (e) {
+  } catch (e, s) {
     // Catch unexpected errors from the service layer
-    print('Unexpected error in /verify-code handler: $e');
+    _logger.severe('Unexpected error in /verify-code handler', e, s);
     // Let the central errorHandler handle this as a 500
     throw const OperationFailedException(
       'An unexpected error occurred while verifying the sign-in code.',
