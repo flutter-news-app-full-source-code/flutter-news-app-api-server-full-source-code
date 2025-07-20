@@ -14,7 +14,7 @@ import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_email_repository/ht_email_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 import 'package:logging/logging.dart';
-import 'package:uuid/uuid.dart';
+import 'package:mongo_dart/mongo_dart.dart';
 
 // --- Middleware Definition ---
 final _log = Logger('RootMiddleware');
@@ -55,8 +55,7 @@ Handler middleware(Handler handler) {
           _log.info(
             '[REQ_LIFECYCLE] Request received. Generating RequestId...',
           );
-          final uuid = context.read<Uuid>();
-          final requestId = RequestId(uuid.v4());
+          final requestId = RequestId(ObjectId().oid);
           _log.info('[REQ_LIFECYCLE] RequestId generated: ${requestId.id}');
           return innerHandler(context.provide<RequestId>(() => requestId));
         };
@@ -76,7 +75,6 @@ Handler middleware(Handler handler) {
           final deps = AppDependencies.instance;
           return handler
               .use(provider<ModelRegistryMap>((_) => modelRegistry))
-              .use(provider<Uuid>((_) => const Uuid()))
               .use(
                 provider<HtDataRepository<Headline>>(
                   (_) => deps.headlineRepository,
