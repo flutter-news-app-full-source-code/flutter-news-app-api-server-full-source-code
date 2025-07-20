@@ -7,6 +7,7 @@ import 'package:ht_api/src/services/database_seeding_service.dart';
 import 'package:ht_api/src/services/default_user_preference_limit_service.dart';
 import 'package:ht_api/src/services/jwt_auth_token_service.dart';
 import 'package:ht_api/src/services/mongodb_token_blacklist_service.dart';
+import 'package:ht_api/src/services/mongodb_verification_code_storage_service.dart';
 import 'package:ht_api/src/services/token_blacklist_service.dart';
 import 'package:ht_api/src/services/user_preference_limit_service.dart';
 import 'package:ht_api/src/services/verification_code_storage_service.dart';
@@ -179,7 +180,10 @@ class AppDependencies {
         blacklistService: tokenBlacklistService,
         log: Logger('JwtAuthTokenService'),
       );
-      verificationCodeStorageService = InMemoryVerificationCodeStorageService();
+      verificationCodeStorageService = MongoDbVerificationCodeStorageService(
+        connectionManager: _mongoDbConnectionManager,
+        log: Logger('MongoDbVerificationCodeStorageService'),
+      );
       permissionService = const PermissionService();
       authService = AuthService(
         userRepository: userRepository,
