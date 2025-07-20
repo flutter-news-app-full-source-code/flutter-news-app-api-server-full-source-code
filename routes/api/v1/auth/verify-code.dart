@@ -19,10 +19,9 @@ Future<Response> onRequest(RequestContext context) async {
     return Response(statusCode: HttpStatus.methodNotAllowed);
   }
 
-  // Read the AuthService provided by middleware.
-  // The `authenticatedUser` is no longer needed here as the service handles
-  // all context internally.
+  // Read the AuthService and the currently authenticated user from middleware.
   final authService = context.read<AuthService>();
+  final authenticatedUser = context.read<User?>();
 
   // Parse the request body
   final dynamic body;
@@ -71,12 +70,14 @@ Future<Response> onRequest(RequestContext context) async {
   final isDashboardLogin = (body['isDashboardLogin'] as bool?) ?? false;
 
   try {
-    // Call the AuthService to handle the verification and sign-in logic
-    // Pass the context flag to determine the correct flow.
+    // Call the AuthService to handle the verification and sign-in logic.
+    // Pass the authenticatedUser to allow for anonymous-to-permanent account
+    // conversion.
     final result = await authService.completeEmailSignIn(
       email,
       code,
       isDashboardLogin: isDashboardLogin,
+      authenticatedUser: authenticatedUser,
     );
 
     // Create the specific payload containing user and token
