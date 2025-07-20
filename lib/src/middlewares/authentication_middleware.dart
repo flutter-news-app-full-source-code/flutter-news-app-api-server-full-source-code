@@ -1,6 +1,9 @@
 import 'package:dart_frog/dart_frog.dart';
 import 'package:ht_api/src/services/auth_token_service.dart';
 import 'package:ht_shared/ht_shared.dart';
+import 'package:logging/logging.dart';
+
+final _log = Logger('AuthMiddleware');
 
 /// Middleware to handle authentication by verifying Bearer tokens.
 ///
@@ -17,43 +20,41 @@ import 'package:ht_shared/ht_shared.dart';
 Middleware authenticationProvider() {
   return (handler) {
     return (context) async {
-      print('[AuthMiddleware] Entered.');
+      _log.finer('Entered.');
       // Read the interface type
       AuthTokenService tokenService;
       try {
-        print('[AuthMiddleware] Attempting to read AuthTokenService...');
+        _log.finer('Attempting to read AuthTokenService...');
         tokenService = context.read<AuthTokenService>();
-        print('[AuthMiddleware] Successfully read AuthTokenService.');
+        _log.finer('Successfully read AuthTokenService.');
       } catch (e, s) {
-        print('[AuthMiddleware] FAILED to read AuthTokenService: $e\n$s');
+        _log.severe('FAILED to read AuthTokenService.', e, s);
         // Re-throw the error to be caught by the main error handler
         rethrow;
       }
       User? user;
 
       // Extract the Authorization header
-      print('[AuthMiddleware] Attempting to read Authorization header...');
+      _log.finer('Attempting to read Authorization header...');
       final authHeader = context.request.headers['Authorization'];
-      print('[AuthMiddleware] Authorization header value: $authHeader');
+      _log.finer('Authorization header value: $authHeader');
 
       if (authHeader != null && authHeader.startsWith('Bearer ')) {
         // Extract the token string
         final token = authHeader.substring(7); // Length of 'Bearer '
-        print('[AuthMiddleware] Extracted Bearer token.');
+        _log.finer('Extracted Bearer token.');
         try {
-          print('[AuthMiddleware] Attempting to validate token...');
+          _log.finer('Attempting to validate token...');
           // Validate the token using the service
           user = await tokenService.validateToken(token);
-          print(
-            '[AuthMiddleware] Token validation returned: ${user?.id ?? 'null'}',
+          _log.finer(
+            'Token validation returned: ${user?.id ?? 'null'}',
           );
           if (user != null) {
-            print(
-              '[AuthMiddleware] Authentication successful for user: ${user.id}',
-            );
+            _log.info('Authentication successful for user: ${user.id}');
           } else {
-            print(
-              '[AuthMiddleware] Invalid token provided (validateToken returned null).',
+            _log.warning(
+              'Invalid token provided (validateToken returned null).',
             );
             // Optional: Could throw UnauthorizedException here if *all* routes
             // using this middleware strictly require a valid token.
@@ -61,25 +62,27 @@ Middleware authenticationProvider() {
           }
         } on HtHttpException catch (e) {
           // Log token validation errors from the service
-          print('Token validation failed: $e');
+          _log.warning('Token validation failed.', e);
           // Let the error propagate if needed, or handle specific cases.
           // For now, we treat validation errors as resulting in no user.
           user = null; // Keep user null if HtHttpException occurred
         } catch (e, s) {
           // Catch unexpected errors during validation
-          print(
-            '[AuthMiddleware] Unexpected error during token validation: $e\n$s',
+          _log.severe(
+            'Unexpected error during token validation.',
+            e,
+            s,
           );
           user = null; // Keep user null if unexpected error occurred
         }
       } else {
-        print('[AuthMiddleware] No valid Bearer token found in header.');
+        _log.finer('No valid Bearer token found in header.');
       }
 
       // Provide the User object (or null) into the context
       // This makes `context.read<User?>()` available downstream.
-      print(
-        '[AuthMiddleware] Providing User (${user?.id ?? 'null'}) to context.',
+      _log.finer(
+        'Providing User (${user?.id ?? 'null'}) to context.',
       );
       return handler(context.provide<User?>(() => user));
     };
@@ -96,14 +99,14 @@ Middleware requireAuthentication() {
     return (context) {
       final user = context.read<User?>();
       if (user == null) {
-        print(
+        _log.warning(
           'Authentication required but no valid user found. Denying access.',
         );
         // Throwing allows the central errorHandler to create the 401 response.
         throw const UnauthorizedException('Authentication required.');
       }
       // If user exists, proceed to the handler
-      print('Authentication check passed for user: ${user.id}');
+      _log.info('Authentication check passed for user: ${user.id}');
       return handler(context.provide<User>(() => user));
     };
   };
