@@ -173,7 +173,6 @@ class AppDependencies {
       authTokenService = JwtAuthTokenService(
         userRepository: userRepository,
         blacklistService: tokenBlacklistService,
-        uuidGenerator: const Uuid(),
         log: Logger('JwtAuthTokenService'),
       );
       verificationCodeStorageService = InMemoryVerificationCodeStorageService();
