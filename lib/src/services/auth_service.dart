@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:ht_api/src/rbac/permission_service.dart';
 import 'package:ht_api/src/rbac/permissions.dart';
 import 'package:ht_api/src/services/auth_token_service.dart';
@@ -118,27 +120,19 @@ class AuthService {
 
   /// Completes the email sign-in process by verifying the code.
   ///
-  /// This method is context-aware based on the [isDashboardLogin] flag.
-  ///
-  /// - For the dashboard (`isDashboardLogin: true`), it validates the code and
-  ///   logs in the existing user. It will not create a new user in this flow.
-  /// - For the user-facing app (`isDashboardLogin: false`), it validates the
-  ///   code and either logs in the existing user or creates a new one with a
-  ///   'standardUser' role if they don't exist.
-  ///
-  /// Returns the authenticated [User] and a new authentication token.
-  ///
-  /// Throws [InvalidInputException] if the code is invalid or expired.
-  /// Completes the email sign-in process by verifying the code.
-  ///
   /// This method is context-aware and handles multiple scenarios:
   ///
-  /// - **Guest to Permanent Conversion:** If an authenticated `guestUser`
-  ///   (from [authenticatedUser]) performs this action, their account is
-  ///   upgraded to a permanent `standardUser` with the verified [email].
-  ///   Their existing data is preserved.
+  /// - **Guest Sign-In:** If an authenticated `guestUser` (from
+  ///   [authenticatedUser]) performs this action, the service checks if a
+  ///   permanent account with the verified [email] already exists.
+  ///   - If it exists, the user is signed into that account, the old guest
+  ///     token is invalidated, and the temporary guest account is deleted.
+  ///   - If it does not exist, the guest account is converted into a new
+  ///     permanent `standardUser`, and the old guest token is invalidated.
+  ///
   /// - **Dashboard Login:** If [isDashboardLogin] is true, it performs a
   ///   strict login for an existing user with dashboard permissions.
+  ///
   /// - **Standard Sign-In/Sign-Up:** If no authenticated user is present, it
   ///   either logs in an existing user with the given [email] or creates a
   ///   new `standardUser`.
@@ -151,6 +145,7 @@ class AuthService {
     String code, {
     required bool isDashboardLogin,
     User? authenticatedUser,
+    String? currentToken,
   }) async {
     // 1. Validate the verification code.
     final isValidCode =
@@ -168,21 +163,73 @@ class AuthService {
       );
     }
 
-    // 2. Check for Guest-to-Permanent user conversion flow.
+    // 2. If this is a guest flow, invalidate the old anonymous token.
+    // This is a fire-and-forget operation; we don't want to block the
+    // login if invalidation fails, but we should log any errors.
     if (authenticatedUser != null &&
-        authenticatedUser.appRole == AppUserRole.guestUser) {
-      _log.info(
-        'Starting account conversion for guest user ${authenticatedUser.id} to email $email.',
-      );
-      return _convertGuestUserToPermanent(
-        guestUser: authenticatedUser,
-        verifiedEmail: email,
+        authenticatedUser.appRole == AppUserRole.guestUser &&
+        currentToken != null) {
+      unawaited(
+        _authTokenService.invalidateToken(currentToken).catchError((e, s) {
+          _log.warning(
+            'Failed to invalidate old anonymous token for user ${authenticatedUser.id}.',
+            e,
+            s is StackTrace ? s : null,
+          );
+        }),
       );
     }
 
-    // 3. If not a conversion, proceed with standard or dashboard login.
+    // 3. Check if the sign-in is initiated from an authenticated guest session.
+    if (authenticatedUser != null &&
+        authenticatedUser.appRole == AppUserRole.guestUser) {
+      _log.info(
+        'Guest user ${authenticatedUser.id} is attempting to sign in with email $email.',
+      );
 
-    // Find or create the user based on the context.
+      // Check if an account with the target email already exists.
+      final existingUser = await _findUserByEmail(email);
+
+      if (existingUser != null) {
+        // --- Scenario A: Sign-in to an existing account ---
+        // The user wants to log into their existing account, abandoning the
+        // guest session.
+        _log.info(
+          'Existing account found for email $email (ID: ${existingUser.id}). '
+          'Signing in and abandoning guest session ${authenticatedUser.id}.',
+        );
+
+        // Delete the now-orphaned anonymous user account and its data.
+        // This is a fire-and-forget operation; we don't want to block the
+        // login if cleanup fails, but we should log any errors.
+        unawaited(
+          deleteAccount(userId: authenticatedUser.id).catchError((e, s) {
+            _log.severe(
+              'Failed to clean up orphaned anonymous user ${authenticatedUser.id} after sign-in.',
+              e,
+              s is StackTrace ? s : null,
+            );
+          }),
+        );
+
+        // Generate a new token for the existing permanent user.
+        final token = await _authTokenService.generateToken(existingUser);
+        _log.info('Generated new token for existing user ${existingUser.id}.');
+        return (user: existingUser, token: token);
+      } else {
+        // --- Scenario B: Convert guest to a new permanent account ---
+        // No account exists with this email, so proceed with conversion.
+        _log.info(
+          'No existing account for $email. Converting guest user ${authenticatedUser.id} to a new permanent account.',
+        );
+        return _convertGuestUserToPermanent(
+          guestUser: authenticatedUser,
+          verifiedEmail: email,
+        );
+      }
+    }
+
+    // 4. If not a guest flow, proceed with standard or dashboard login.
     User user;
     try {
       // Attempt to find user by email
@@ -258,7 +305,7 @@ class AuthService {
       throw const OperationFailedException('Failed to process user account.');
     }
 
-    // 3. Generate authentication token
+    // 4. Generate authentication token
     try {
       final token = await _authTokenService.generateToken(user);
       _log.info('Generated token for user ${user.id}');
@@ -507,29 +554,20 @@ class AuthService {
     }
   }
 
-  /// Converts a guest user to a permanent standard user.
+  /// Converts a guest user to a new permanent standard user.
   ///
   /// This helper method encapsulates the logic for updating the user's
-  /// record with a verified email, upgrading their role, and generating a new
-  /// authentication token. It ensures that all associated user data is
-  /// preserved during the conversion.
-  ///
-  /// Throws [ConflictException] if the target email is already in use by
-  /// another permanent account.
+  /// record with a verified email and upgrading their role. It assumes that
+  /// the target email is not already in use by another account.
   Future<({User user, String token})> _convertGuestUserToPermanent({
     required User guestUser,
     required String verifiedEmail,
   }) async {
-    // 1. Check if the target email is already in use by another permanent user.
-    final existingUser = await _findUserByEmail(verifiedEmail);
-    if (existingUser != null && existingUser.id != guestUser.id) {
-      // If a different user already exists with this email, throw an error.
-      throw ConflictException(
-        'This email address is already associated with another account.',
-      );
-    }
+    // The check for an existing user with the verifiedEmail is now handled
+    // by the calling method, `completeEmailSignIn`. This method now only
+    // handles the conversion itself.
 
-    // 2. Update the guest user's details to make them permanent.
+    // 1. Update the guest user's details to make them permanent.
     final updatedUser = guestUser.copyWith(
       email: verifiedEmail,
       appRole: AppUserRole.standardUser,
@@ -543,7 +581,7 @@ class AuthService {
       'User ${permanentUser.id} successfully converted to permanent account with email $verifiedEmail.',
     );
 
-    // 3. Generate a new token for the now-permanent user.
+    // 2. Generate a new token for the now-permanent user.
     final newToken = await _authTokenService.generateToken(permanentUser);
     _log.info('Generated new token for converted user ${permanentUser.id}');
 
