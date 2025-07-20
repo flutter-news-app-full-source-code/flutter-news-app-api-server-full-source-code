@@ -404,18 +404,7 @@ class AuthService {
       await _userRepository.delete(id: userId);
       _log.info('User ${userToDelete.id} deleted from repository.');
 
-      // 3. Clear any pending verification codes for this user ID (linking).
-      try {
-        await _verificationCodeStorageService.clearLinkCode(userId);
-        _log.info('Cleared link code for user ${userToDelete.id}.');
-      } catch (e) {
-        // Log but don't fail deletion if clearing codes fails
-        _log.warning(
-          'Warning: Failed to clear link code for user ${userToDelete.id}: $e',
-        );
-      }
-
-      // 4. Clear any pending sign-in codes for the user's email.
+      // 3. Clear any pending sign-in codes for the user's email.
       try {
         await _verificationCodeStorageService.clearSignInCode(
           userToDelete.email,
