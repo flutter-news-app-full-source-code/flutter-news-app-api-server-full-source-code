@@ -22,47 +22,13 @@ class MongoDbTokenBlacklistService implements TokenBlacklistService {
     required MongoDbConnectionManager connectionManager,
     required Logger log,
   })  : _connectionManager = connectionManager,
-        _log = log {
-    // Fire-and-forget initialization. Errors are logged internally.
-    _init();
-  }
+        _log = log;
 
   final MongoDbConnectionManager _connectionManager;
   final Logger _log;
 
   DbCollection get _collection =>
       _connectionManager.db.collection(kBlacklistedTokensCollection);
-
-  /// Initializes the service by ensuring the TTL index exists.
-  /// This is idempotent and safe to call multiple times.
-  Future<void> _init() async {
-    try {
-      _log.info('Ensuring TTL index exists for blacklist collection...');
-      // Using a raw command is more robust against client library changes.
-      final command = {
-        'createIndexes': kBlacklistedTokensCollection,
-        'indexes': [
-          {
-            'key': {'expiry': 1},
-            'name': 'expiry_ttl_index',
-            'expireAfterSeconds': 0,
-          }
-        ]
-      };
-      await _connectionManager.db.runCommand(command);
-      _log.info('Blacklist TTL index is set up correctly.');
-    } catch (e, s) {
-      _log.severe(
-        'Failed to create TTL index for blacklist collection. '
-        'Failed to create TTL index for blacklist collection. '
-        'Automatic cleanup of expired tokens will not work.',
-        e,
-        s,
-      );
-      // Rethrow the exception to halt startup if the index is critical.
-      rethrow;
-    }
-  }
 
   @override
   Future<void> blacklist(String jti, DateTime expiry) async {
