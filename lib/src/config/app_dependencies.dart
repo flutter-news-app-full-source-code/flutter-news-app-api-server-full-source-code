@@ -94,6 +94,7 @@ class AppDependencies {
         modelName: 'headlines',
         fromJson: Headline.fromJson,
         toJson: (item) => item.toJson(),
+        searchableFields: ['title'],
         logger: Logger('HtDataMongodb<Headline>'),
       );
       final topicClient = HtDataMongodb<Topic>(
@@ -101,6 +102,7 @@ class AppDependencies {
         modelName: 'topics',
         fromJson: Topic.fromJson,
         toJson: (item) => item.toJson(),
+        searchableFields: ['name'],
         logger: Logger('HtDataMongodb<Topic>'),
       );
       final sourceClient = HtDataMongodb<Source>(
@@ -108,6 +110,7 @@ class AppDependencies {
         modelName: 'sources',
         fromJson: Source.fromJson,
         toJson: (item) => item.toJson(),
+        searchableFields: ['name'],
         logger: Logger('HtDataMongodb<Source>'),
       );
       final countryClient = HtDataMongodb<Country>(
