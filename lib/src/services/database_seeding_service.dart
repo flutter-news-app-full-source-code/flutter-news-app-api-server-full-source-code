@@ -145,16 +145,27 @@ class DatabaseSeedingService {
         name: 'sources_text_index',
       );
 
+      // --- TTL and Unique Indexes via runCommand ---
+      // The following indexes are created using the generic `runCommand` because
+      // they require specific options not exposed by the simpler `createIndex`
+      // helper method in the `mongo_dart` library.
+      // Specifically, `expireAfterSeconds` is needed for TTL indexes.
+
       // Indexes for the verification codes collection
       await _db.runCommand({
         'createIndexes': kVerificationCodesCollection,
         'indexes': [
           {
+            // This is a TTL (Time-To-Live) index. MongoDB will automatically
+            // delete documents from this collection when the `expiresAt` field's
+            // value is older than the specified number of seconds (0).
             'key': {'expiresAt': 1},
             'name': 'expiresAt_ttl_index',
             'expireAfterSeconds': 0,
           },
           {
+            // This ensures that each email can only have one pending
+            // verification code at a time, preventing duplicates.
             'key': {'email': 1},
             'name': 'email_unique_index',
             'unique': true,
@@ -167,6 +178,8 @@ class DatabaseSeedingService {
         'createIndexes': kBlacklistedTokensCollection,
         'indexes': [
           {
+            // This is a TTL index. MongoDB will automatically delete documents
+            // (blacklisted tokens) when the `expiry` field's value is past.
             'key': {'expiry': 1},
             'name': 'expiry_ttl_index',
             'expireAfterSeconds': 0,

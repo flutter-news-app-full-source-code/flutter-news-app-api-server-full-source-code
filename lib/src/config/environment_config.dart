@@ -108,4 +108,20 @@ abstract final class EnvironmentConfig {
   /// This is used to configure CORS for production environments.
   /// Returns `null` if the variable is not set.
   static String? get corsAllowedOrigin => _env['CORS_ALLOWED_ORIGIN'];
+
+  /// Retrieves the JWT issuer URL from the environment.
+  ///
+  /// The value is read from the `JWT_ISSUER` environment variable.
+  /// Defaults to 'http://localhost:8080' if not set.
+  static String get jwtIssuer =>
+      _env['JWT_ISSUER'] ?? 'http://localhost:8080';
+
+  /// Retrieves the JWT expiry duration in hours from the environment.
+  ///
+  /// The value is read from the `JWT_EXPIRY_HOURS` environment variable.
+  /// Defaults to 1 hour if not set or if parsing fails.
+  static Duration get jwtExpiryDuration {
+    final hours = int.tryParse(_env['JWT_EXPIRY_HOURS'] ?? '1');
+    return Duration(hours: hours ?? 1);
+  }
 }

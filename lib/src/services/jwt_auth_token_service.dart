@@ -32,19 +32,14 @@ class JwtAuthTokenService implements AuthTokenService {
   final TokenBlacklistService _blacklistService;
   final Logger _log;
 
-  // --- Configuration ---
-
-  // Define token issuer and default expiry duration
-  static const String _issuer = 'http://localhost:8080';
-  static const Duration _tokenExpiryDuration = Duration(hours: 1);
-
   // --- Interface Implementation ---
 
   @override
   Future<String> generateToken(User user) async {
     try {
       final now = DateTime.now();
-      final expiry = now.add(_tokenExpiryDuration);
+      final expiry = now.add(EnvironmentConfig.jwtExpiryDuration);
+      final issuer = EnvironmentConfig.jwtIssuer;
 
       final jwt = JWT(
         {
@@ -52,7 +47,7 @@ class JwtAuthTokenService implements AuthTokenService {
           'sub': user.id, // Subject (user ID) - REQUIRED
           'exp': expiry.millisecondsSinceEpoch ~/ 1000, // Expiration Time
           'iat': now.millisecondsSinceEpoch ~/ 1000, // Issued At
-          'iss': _issuer, // Issuer
+          'iss': issuer, // Issuer
           'jti': ObjectId().oid, // JWT ID (for potential blacklisting)
           // Custom claims (optional, include what's useful)
           'email': user.email, // Kept for convenience
@@ -60,7 +55,7 @@ class JwtAuthTokenService implements AuthTokenService {
           'appRole': user.appRole.name,
           'dashboardRole': user.dashboardRole.name,
         },
-        issuer: _issuer,
+        issuer: issuer,
         subject: user.id,
         jwtId: ObjectId().oid, // Re-setting jti here for clarity if needed
       );
@@ -69,7 +64,7 @@ class JwtAuthTokenService implements AuthTokenService {
       final token = jwt.sign(
         SecretKey(EnvironmentConfig.jwtSecretKey),
         algorithm: JWTAlgorithm.HS256,
-        expiresIn: _tokenExpiryDuration, // Redundant but safe
+        expiresIn: EnvironmentConfig.jwtExpiryDuration, // Redundant but safe
       );
 
       _log.info('Generated JWT for user ${user.id}');
