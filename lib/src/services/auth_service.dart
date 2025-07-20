@@ -6,7 +6,7 @@ import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_email_repository/ht_email_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 import 'package:logging/logging.dart';
-import 'package:uuid/uuid.dart';
+import 'package:mongo_dart/mongo_dart.dart';
 
 /// {@template auth_service}
 /// Service responsible for orchestrating authentication logic on the backend.
@@ -25,7 +25,6 @@ class AuthService {
     required HtDataRepository<UserContentPreferences>
     userContentPreferencesRepository,
     required PermissionService permissionService,
-    required Uuid uuidGenerator,
     required Logger log,
   }) : _userRepository = userRepository,
        _authTokenService = authTokenService,
@@ -34,7 +33,6 @@ class AuthService {
        _emailRepository = emailRepository,
        _userAppSettingsRepository = userAppSettingsRepository,
        _userContentPreferencesRepository = userContentPreferencesRepository,
-       _uuid = uuidGenerator,
        _log = log;
 
   final HtDataRepository<User> _userRepository;
@@ -46,7 +44,6 @@ class AuthService {
   _userContentPreferencesRepository;
   final PermissionService _permissionService;
   final Logger _log;
-  final Uuid _uuid;
 
   /// Initiates the email sign-in process.
   ///
@@ -212,7 +209,7 @@ class AuthService {
         // All new users created via the public API get the standard role.
         // Admin users must be provisioned out-of-band (e.g., via fixtures).
         user = User(
-          id: _uuid.v4(),
+          id: ObjectId().oid,
           email: email,
           appRole: AppUserRole.standardUser,
           dashboardRole: DashboardUserRole.none,
@@ -268,11 +265,12 @@ class AuthService {
     // 1. Create anonymous user
     User user;
     try {
+      final newId = ObjectId().oid;
       user = User(
-        id: _uuid.v4(),
+        id: newId,
         // Use a unique placeholder email for anonymous users to satisfy the
         // non-nullable email constraint.
-        email: '${_uuid.v4()}@anonymous.com',
+        email: '$newId@anonymous.com',
         appRole: AppUserRole.guestUser,
         dashboardRole: DashboardUserRole.none,
         createdAt: DateTime.now(),

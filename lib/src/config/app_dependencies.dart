@@ -15,7 +15,6 @@ import 'package:ht_email_inmemory/ht_email_inmemory.dart';
 import 'package:ht_email_repository/ht_email_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 import 'package:logging/logging.dart';
-import 'package:uuid/uuid.dart';
 
 /// {@template app_dependencies}
 /// A singleton class responsible for initializing and providing all application
@@ -173,7 +172,6 @@ class AppDependencies {
       authTokenService = JwtAuthTokenService(
         userRepository: userRepository,
         blacklistService: tokenBlacklistService,
-        uuidGenerator: const Uuid(),
         log: Logger('JwtAuthTokenService'),
       );
       verificationCodeStorageService = InMemoryVerificationCodeStorageService();
@@ -186,7 +184,6 @@ class AppDependencies {
         emailRepository: emailRepository,
         userAppSettingsRepository: userAppSettingsRepository,
         userContentPreferencesRepository: userContentPreferencesRepository,
-        uuidGenerator: const Uuid(),
         log: Logger('AuthService'),
       );
       dashboardSummaryService = DashboardSummaryService(

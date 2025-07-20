@@ -4,7 +4,7 @@ import 'package:ht_api/src/services/token_blacklist_service.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
 import 'package:logging/logging.dart';
-import 'package:uuid/uuid.dart';
+import 'package:mongo_dart/mongo_dart.dart';
 
 /// {@template jwt_auth_token_service}
 /// An implementation of [AuthTokenService] using JSON Web Tokens (JWT).
@@ -19,20 +19,16 @@ class JwtAuthTokenService implements AuthTokenService {
   /// - [userRepository]: To fetch user details after validating the token's
   ///   subject claim.
   /// - [blacklistService]: To manage the blacklist of invalidated tokens.
-  /// - [uuidGenerator]: For creating unique JWT IDs (jti).
   const JwtAuthTokenService({
     required HtDataRepository<User> userRepository,
     required TokenBlacklistService blacklistService,
-    required Uuid uuidGenerator,
     required Logger log,
   }) : _userRepository = userRepository,
        _blacklistService = blacklistService,
-       _uuid = uuidGenerator,
        _log = log;
 
   final HtDataRepository<User> _userRepository;
   final TokenBlacklistService _blacklistService;
-  final Uuid _uuid;
   final Logger _log;
 
   // --- Configuration ---
@@ -61,7 +57,7 @@ class JwtAuthTokenService implements AuthTokenService {
           'exp': expiry.millisecondsSinceEpoch ~/ 1000, // Expiration Time
           'iat': now.millisecondsSinceEpoch ~/ 1000, // Issued At
           'iss': _issuer, // Issuer
-          'jti': _uuid.v4(), // JWT ID (for potential blacklisting)
+          'jti': ObjectId().oid, // JWT ID (for potential blacklisting)
           // Custom claims (optional, include what's useful)
           'email': user.email, // Kept for convenience
           // Embed the new enum-based roles. Use .name for string value.
@@ -70,7 +66,7 @@ class JwtAuthTokenService implements AuthTokenService {
         },
         issuer: _issuer,
         subject: user.id,
-        jwtId: _uuid.v4(), // Re-setting jti here for clarity if needed
+        jwtId: ObjectId().oid, // Re-setting jti here for clarity if needed
       );
 
       // Sign the token using HMAC-SHA256
