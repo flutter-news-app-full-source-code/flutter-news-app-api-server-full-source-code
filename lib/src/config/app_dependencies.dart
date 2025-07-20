@@ -186,7 +186,6 @@ class AppDependencies {
         emailRepository: emailRepository,
         userAppSettingsRepository: userAppSettingsRepository,
         userContentPreferencesRepository: userContentPreferencesRepository,
-        uuidGenerator: const Uuid(),
         log: Logger('AuthService'),
       );
       dashboardSummaryService = DashboardSummaryService(
