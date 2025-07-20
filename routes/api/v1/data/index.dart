@@ -7,6 +7,7 @@ import 'package:ht_api/src/rbac/permission_service.dart';
 import 'package:ht_api/src/registry/model_registry.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
+import 'package:mongo_dart/mongo_dart.dart';
 
 /// Handles requests for the /api/v1/data collection endpoint.
 /// Dispatches requests to specific handlers based on the HTTP method.
@@ -151,6 +152,12 @@ Future<Response> _handlePost(RequestContext context) async {
   if (requestBody == null) {
     throw const BadRequestException('Missing or invalid request body.');
   }
+
+  // Standardize ID and timestamps before model creation
+  final now = DateTime.now().toUtc().toIso8601String();
+  requestBody['id'] = ObjectId().oid;
+  requestBody['createdAt'] = now;
+  requestBody['updatedAt'] = now;
 
   dynamic itemToCreate;
   try {
