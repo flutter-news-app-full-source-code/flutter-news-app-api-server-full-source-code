@@ -125,10 +125,10 @@ class AuthService {
   /// - **Guest Sign-In:** If an authenticated `guestUser` (from
   ///   [authenticatedUser]) performs this action, the service checks if a
   ///   permanent account with the verified [email] already exists.
-  ///   - If it exists, the user is signed into that account, and the temporary
-  ///     guest account is deleted.
+  ///   - If it exists, the user is signed into that account, the old guest
+  ///     token is invalidated, and the temporary guest account is deleted.
   ///   - If it does not exist, the guest account is converted into a new
-  ///     permanent `standardUser` with the verified [email].
+  ///     permanent `standardUser`, and the old guest token is invalidated.
   ///
   /// - **Dashboard Login:** If [isDashboardLogin] is true, it performs a
   ///   strict login for an existing user with dashboard permissions.
@@ -145,6 +145,7 @@ class AuthService {
     String code, {
     required bool isDashboardLogin,
     User? authenticatedUser,
+    String? currentToken,
   }) async {
     // 1. Validate the verification code.
     final isValidCode =
@@ -162,7 +163,24 @@ class AuthService {
       );
     }
 
-    // 2. Check if the sign-in is initiated from an authenticated guest session.
+    // 2. If this is a guest flow, invalidate the old anonymous token.
+    // This is a fire-and-forget operation; we don't want to block the
+    // login if invalidation fails, but we should log any errors.
+    if (authenticatedUser != null &&
+        authenticatedUser.appRole == AppUserRole.guestUser &&
+        currentToken != null) {
+      unawaited(
+        _authTokenService.invalidateToken(currentToken).catchError((e, s) {
+          _log.warning(
+            'Failed to invalidate old anonymous token for user ${authenticatedUser.id}.',
+            e,
+            s is StackTrace ? s : null,
+          );
+        }),
+      );
+    }
+
+    // 3. Check if the sign-in is initiated from an authenticated guest session.
     if (authenticatedUser != null &&
         authenticatedUser.appRole == AppUserRole.guestUser) {
       _log.info(
@@ -211,7 +229,7 @@ class AuthService {
       }
     }
 
-    // 3. If not a guest flow, proceed with standard or dashboard login.
+    // 4. If not a guest flow, proceed with standard or dashboard login.
     User user;
     try {
       // Attempt to find user by email
@@ -287,7 +305,7 @@ class AuthService {
       throw const OperationFailedException('Failed to process user account.');
     }
 
-    // 3. Generate authentication token
+    // 4. Generate authentication token
     try {
       final token = await _authTokenService.generateToken(user);
       _log.info('Generated token for user ${user.id}');
