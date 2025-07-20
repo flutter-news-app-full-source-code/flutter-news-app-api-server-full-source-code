@@ -8,6 +8,10 @@ import 'package:ht_api/src/services/dashboard_summary_service.dart';
 import 'package:ht_api/src/services/user_preference_limit_service.dart'; // Import UserPreferenceLimitService
 import 'package:ht_data_repository/ht_data_repository.dart';
 import 'package:ht_shared/ht_shared.dart';
+import 'package:logging/logging.dart';
+
+// Create a logger for this file.
+final _logger = Logger('data_item_handler');
 
 /// Handles requests for the /api/v1/data/[id] endpoint.
 /// Dispatches requests to specific handlers based on the HTTP method.
@@ -136,7 +140,7 @@ Future<Response> _handleGet(
       !permissionService.isAdmin(authenticatedUser)) {
     // Ensure getOwnerId is provided for models requiring ownership check
     if (modelConfig.getOwnerId == null) {
-      print(
+      _logger.severe(
         'Configuration Error: Model "$modelName" requires '
         'ownership check for GET item but getOwnerId is not provided.',
       );
@@ -192,9 +196,9 @@ Future<Response> _handlePut(
   dynamic itemToUpdate;
   try {
     itemToUpdate = modelConfig.fromJson(requestBody);
-  } on TypeError catch (e) {
+  } on TypeError catch (e, s) {
     // Catch errors during deserialization (e.g., missing required fields)
-    print('Deserialization TypeError in PUT /data/[id]: $e');
+    _logger.warning('Deserialization TypeError in PUT /data/[id]', e, s);
     // Throw BadRequestException to be caught by the errorHandler
     throw const BadRequestException(
       'Invalid request body: Missing or invalid required field(s).',
@@ -214,7 +218,7 @@ Future<Response> _handlePut(
   } catch (e) {
     // Ignore if getId throws, means ID might not be in the body,
     // which is acceptable depending on the model/client.
-    print('Warning: Could not get ID from PUT body: $e');
+    _logger.info('Could not get ID from PUT body: $e');
   }
 
   // --- Handler-Level Limit Check (for UserContentPreferences PUT) ---
@@ -224,7 +228,7 @@ Future<Response> _handlePut(
     try {
       // Ensure the itemToUpdate is the correct type for the limit service
       if (itemToUpdate is! UserContentPreferences) {
-        print(
+        _logger.severe(
           'Type Error: Expected UserContentPreferences '
           'for limit check, but got ${itemToUpdate.runtimeType}.',
         );
@@ -239,11 +243,13 @@ Future<Response> _handlePut(
     } on HtHttpException {
       // Propagate known exceptions from the limit service (e.g., ForbiddenException)
       rethrow;
-    } catch (e) {
+    } catch (e, s) {
       // Catch unexpected errors from the limit service
-      print(
+      _logger.severe(
         'Unexpected error during limit check for '
-        'UserContentPreferences PUT: $e',
+        'UserContentPreferences PUT',
+        e,
+        s,
       );
       throw const OperationFailedException(
         'An unexpected error occurred during limit check.',
@@ -358,7 +364,7 @@ Future<Response> _handlePut(
       !permissionService.isAdmin(authenticatedUser)) {
     // Ensure getOwnerId is provided for models requiring ownership check
     if (modelConfig.getOwnerId == null) {
-      print(
+      _logger.severe(
         'Configuration Error: Model "$modelName" requires '
         'ownership check for PUT but getOwnerId is not provided.',
       );
@@ -374,7 +380,7 @@ Future<Response> _handlePut(
     if (itemOwnerId != authenticatedUser.id) {
       // This scenario should ideally not happen if the repository correctly
       // enforced ownership during the update call when userId was passed.
-      print(
+      _logger.warning(
         'Ownership check failed AFTER PUT for item $id. '
         'Item owner: $itemOwnerId, User: ${authenticatedUser.id}',
       );
@@ -424,7 +430,7 @@ Future<Response> _handleDelete(
       !permissionService.isAdmin(authenticatedUser)) {
     // Ensure getOwnerId is provided for models requiring ownership check
     if (modelConfig.getOwnerId == null) {
-      print(
+      _logger.severe(
         'Configuration Error: Model "$modelName" requires '
         'ownership check for DELETE but getOwnerId is not provided.',
       );
@@ -461,15 +467,15 @@ Future<Response> _handleDelete(
         final repo = context.read<HtDataRepository<RemoteConfig>>();
         itemToDelete = await repo.read(
           id: id,
-          userId: userIdForRepoCall,
-        ); // userId should be null for AppConfig
-      default:
-        print(
-          'Error: Unsupported model type "$modelName" reached _handleDelete ownership check.',
-        );
-        // Throw an exception to be caught by the errorHandler
-        throw OperationFailedException(
-          'Unsupported model type "$modelName" reached handler.',
+        userId: userIdForRepoCall,
+      ); // userId should be null for AppConfig
+    default:
+      _logger.severe(
+        'Unsupported model type "$modelName" reached _handleDelete ownership check.',
+      );
+      // Throw an exception to be caught by the errorHandler
+      throw OperationFailedException(
+        'Unsupported model type "$modelName" reached handler.',
         );
     }
 
@@ -534,8 +540,8 @@ Future<Response> _handleDelete(
     default:
       // This case should ideally be caught by the data/_middleware.dart,
       // but added for safety.
-      print(
-        'Error: Unsupported model type "$modelName" reached _handleDelete.',
+      _logger.severe(
+        'Unsupported model type "$modelName" reached _handleDelete.',
       );
       // Throw an exception to be caught by the errorHandler
       throw OperationFailedException(
