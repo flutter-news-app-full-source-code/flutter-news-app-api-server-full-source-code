@@ -17,9 +17,10 @@ management dashboard](https://github.com/headlines-toolkit/ht-dashboard).
 ## ✨ Key Capabilities
 
 *   🔒 **Flexible & Secure Authentication:** Provide seamless user access with
-    a unified system supporting passwordless email sign-in, anonymous guest
-    accounts, and a secure, role-aware login flow for privileged dashboard
-    users.
+    a unified system supporting passwordless email sign-in and anonymous guest
+    accounts. The API intelligently handles the conversion from a guest to a
+    permanent user, preserving all settings and preferences. It also includes
+    a secure, role-aware login flow for privileged dashboard users.
 
 *   ⚡️ **Granular Role-Based Access Control (RBAC):** Implement precise
     permissions with a dual-role system (`appRole` for application features,

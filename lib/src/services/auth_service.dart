@@ -129,33 +129,60 @@ class AuthService {
   /// Returns the authenticated [User] and a new authentication token.
   ///
   /// Throws [InvalidInputException] if the code is invalid or expired.
+  /// Completes the email sign-in process by verifying the code.
+  ///
+  /// This method is context-aware and handles multiple scenarios:
+  ///
+  /// - **Guest to Permanent Conversion:** If an authenticated `guestUser`
+  ///   (from [authenticatedUser]) performs this action, their account is
+  ///   upgraded to a permanent `standardUser` with the verified [email].
+  ///   Their existing data is preserved.
+  /// - **Dashboard Login:** If [isDashboardLogin] is true, it performs a
+  ///   strict login for an existing user with dashboard permissions.
+  /// - **Standard Sign-In/Sign-Up:** If no authenticated user is present, it
+  ///   either logs in an existing user with the given [email] or creates a
+  ///   new `standardUser`.
+  ///
+  /// Returns the authenticated [User] and a new authentication token.
+  ///
+  /// Throws [InvalidInputException] if the code is invalid or expired.
   Future<({User user, String token})> completeEmailSignIn(
     String email,
     String code, {
-    // Flag to indicate if this is a login attempt from the dashboard,
-    // which enforces stricter checks.
-    bool isDashboardLogin = false,
+    required bool isDashboardLogin,
+    User? authenticatedUser,
   }) async {
-    // 1. Validate the code for standard sign-in
-    final isValidCode = await _verificationCodeStorageService
-        .validateSignInCode(email, code);
+    // 1. Validate the verification code.
+    final isValidCode =
+        await _verificationCodeStorageService.validateSignInCode(email, code);
     if (!isValidCode) {
-      throw const InvalidInputException(
-        'Invalid or expired verification code.',
-      );
+      throw const InvalidInputException('Invalid or expired verification code.');
     }
 
-    // After successful code validation, clear the sign-in code
+    // After successful validation, clear the code from storage.
     try {
       await _verificationCodeStorageService.clearSignInCode(email);
     } catch (e) {
-      // Log or handle if clearing fails, but don't let it block sign-in
       _log.warning(
         'Warning: Failed to clear sign-in code for $email after validation: $e',
       );
     }
 
-    // 2. Find or create the user based on the context
+    // 2. Check for Guest-to-Permanent user conversion flow.
+    if (authenticatedUser != null &&
+        authenticatedUser.appRole == AppUserRole.guestUser) {
+      _log.info(
+        'Starting account conversion for guest user ${authenticatedUser.id} to email $email.',
+      );
+      return _convertGuestUserToPermanent(
+        guestUser: authenticatedUser,
+        verifiedEmail: email,
+      );
+    }
+
+    // 3. If not a conversion, proceed with standard or dashboard login.
+
+    // Find or create the user based on the context.
     User user;
     try {
       // Attempt to find user by email
@@ -166,18 +193,6 @@ class AuthService {
         // This closes the loophole where a non-admin user could request a code
         // via the app flow and then use it to log into the dashboard.
         if (isDashboardLogin) {
-          if (user.email != email) {
-            // This is a critical security check. If the user found by email
-            // somehow has a different email than the one provided, it's a
-            // sign of a serious issue (like the data layer bug we fixed).
-            // We throw a generic error to avoid revealing information.
-            _log.severe(
-              'CRITICAL: Mismatch between requested email ($email) and found '
-              'user email (${user.email}) during dashboard login for user '
-              'ID ${user.id}.',
-            );
-            throw const UnauthorizedException('User account does not exist.');
-          }
           if (!_permissionService.hasPermission(
             user,
             Permissions.dashboardLogin,
@@ -358,155 +373,6 @@ class AuthService {
   /// Initiates the process of linking an [emailToLink] to an existing
   /// authenticated [anonymousUser]'s account.
   ///
-  /// Throws [ConflictException] if the [emailToLink] is already in use by
-  /// another permanent account, or if the [anonymousUser] is not actually
-  /// anonymous, or if the [emailToLink] is already pending verification for
-  /// another linking process.
-  /// Throws [OperationFailedException] for other errors.
-  Future<void> initiateLinkEmailProcess({
-    required User anonymousUser,
-    required String emailToLink,
-  }) async {
-    if (anonymousUser.appRole != AppUserRole.guestUser) {
-      throw const BadRequestException(
-        'Account is already permanent. Cannot link email.',
-      );
-    }
-
-    try {
-      // 1. Check if emailToLink is already used by another permanent user.
-      final existingUsersResponse = await _userRepository.readAll(
-        filter: {'email': emailToLink},
-      );
-
-      // Filter for permanent users (not guests) that are not the current user.
-      final conflictingPermanentUsers = existingUsersResponse.items.where(
-        (u) => u.appRole != AppUserRole.guestUser && u.id != anonymousUser.id,
-      );
-
-      if (conflictingPermanentUsers.isNotEmpty) {
-        throw ConflictException(
-          'Email address "$emailToLink" is already in use by another account.',
-        );
-      }
-
-      // 2. Generate and store the link code.
-      // The storage service itself might throw ConflictException if emailToLink
-      // is pending for another user or if this user has a pending code.
-      final code = await _verificationCodeStorageService
-          .generateAndStoreLinkCode(
-            userId: anonymousUser.id,
-            emailToLink: emailToLink,
-          );
-
-      // 3. Send the code via email
-      await _emailRepository.sendOtpEmail(
-        recipientEmail: emailToLink,
-        otpCode: code,
-      );
-      _log.info(
-        'Initiated email link for user ${anonymousUser.id} to email $emailToLink, code sent: $code .',
-      );
-    } on HtHttpException {
-      rethrow;
-    } catch (e) {
-      _log.severe(
-        'Error during initiateLinkEmailProcess for user ${anonymousUser.id}, email $emailToLink: $e',
-      );
-      throw OperationFailedException(
-        'Failed to initiate email linking process: $e',
-      );
-    }
-  }
-
-  /// Completes the email linking process for an [anonymousUser] by verifying
-  /// the [codeFromUser].
-  ///
-  /// If successful, updates the user to be permanent with the linked email
-  /// and returns the updated User and a new authentication token.
-  /// Throws [InvalidInputException] if the code is invalid or expired.
-  /// Throws [OperationFailedException] for other errors.
-  Future<({User user, String token})> completeLinkEmailProcess({
-    required User anonymousUser,
-    required String codeFromUser,
-    required String oldAnonymousToken, // Needed to invalidate it
-  }) async {
-    if (anonymousUser.appRole != AppUserRole.guestUser) {
-      // Should ideally not happen if flow is correct, but good safeguard.
-      throw const BadRequestException(
-        'Account is already permanent. Cannot complete email linking.',
-      );
-    }
-
-    try {
-      // 1. Validate the link code and retrieve the email that was being linked.
-      final linkedEmail = await _verificationCodeStorageService
-          .validateAndRetrieveLinkedEmail(
-            userId: anonymousUser.id,
-            linkCode: codeFromUser,
-          );
-
-      if (linkedEmail == null) {
-        throw const InvalidInputException(
-          'Invalid or expired verification code for email linking.',
-        );
-      }
-
-      // 2. Update the user to be permanent.
-      final updatedUser = anonymousUser.copyWith(
-        email: linkedEmail,
-        appRole: AppUserRole.standardUser,
-      );
-      final permanentUser = await _userRepository.update(
-        id: updatedUser.id,
-        item: updatedUser,
-      );
-      _log.info(
-        'User ${permanentUser.id} successfully linked with email $linkedEmail.',
-      );
-
-      // Ensure user data exists after linking.
-      await _ensureUserDataExists(permanentUser);
-
-      // 3. Generate a new authentication token for the now-permanent user.
-      final newToken = await _authTokenService.generateToken(permanentUser);
-      _log.info('Generated new token for linked user ${permanentUser.id}');
-
-      // 4. Invalidate the old anonymous token.
-      try {
-        await _authTokenService.invalidateToken(oldAnonymousToken);
-        _log.info(
-          'Successfully invalidated old anonymous token for user ${permanentUser.id}.',
-        );
-      } catch (e) {
-        // Log error but don't fail the whole linking process if invalidation fails.
-        // The new token is more important.
-        _log.warning(
-          'Warning: Failed to invalidate old anonymous token for user ${permanentUser.id}: $e',
-        );
-      }
-
-      // 5. Clear the link code from storage.
-      try {
-        await _verificationCodeStorageService.clearLinkCode(anonymousUser.id);
-      } catch (e) {
-        _log.warning(
-          'Warning: Failed to clear link code for user ${anonymousUser.id} after linking: $e',
-        );
-      }
-
-      return (user: permanentUser, token: newToken);
-    } on HtHttpException {
-      rethrow;
-    } catch (e) {
-      _log.severe(
-        'Error during completeLinkEmailProcess for user ${anonymousUser.id}: $e',
-      );
-      throw OperationFailedException(
-        'Failed to complete email linking process: $e',
-      );
-    }
-  }
 
   /// Deletes a user account and associated authentication data.
   ///
@@ -538,30 +404,16 @@ class AuthService {
       await _userRepository.delete(id: userId);
       _log.info('User ${userToDelete.id} deleted from repository.');
 
-      // 3. Clear any pending verification codes for this user ID (linking).
+      // 3. Clear any pending sign-in codes for the user's email.
       try {
-        await _verificationCodeStorageService.clearLinkCode(userId);
-        _log.info('Cleared link code for user ${userToDelete.id}.');
-      } catch (e) {
-        // Log but don't fail deletion if clearing codes fails
-        _log.warning(
-          'Warning: Failed to clear link code for user ${userToDelete.id}: $e',
+        await _verificationCodeStorageService.clearSignInCode(
+          userToDelete.email,
         );
-      }
-
-      // 4. Clear any pending sign-in codes for the user's email (if they had one).
-      // The email for anonymous users is a placeholder and not used for sign-in.
-      if (userToDelete.appRole != AppUserRole.guestUser) {
-        try {
-          await _verificationCodeStorageService.clearSignInCode(
-            userToDelete.email,
-          );
-          _log.info('Cleared sign-in code for email ${userToDelete.email}.');
-        } catch (e) {
-          _log.warning(
-            'Warning: Failed to clear sign-in code for email ${userToDelete.email}: $e',
-          );
-        }
+        _log.info('Cleared sign-in code for email ${userToDelete.email}.');
+      } catch (e) {
+        _log.warning(
+          'Warning: Failed to clear sign-in code for email ${userToDelete.email}: $e',
+        );
       }
 
       _log.info('Account deletion process completed for user $userId.');
@@ -633,7 +485,10 @@ class AuthService {
 
     // Check for UserContentPreferences
     try {
-      await _userContentPreferencesRepository.read(id: user.id, userId: user.id);
+      await _userContentPreferencesRepository.read(
+        id: user.id,
+        userId: user.id,
+      );
     } on NotFoundException {
       _log.info(
         'UserContentPreferences not found for user ${user.id}. Creating with defaults.',
@@ -650,5 +505,53 @@ class AuthService {
         userId: user.id,
       );
     }
+  }
+
+  /// Converts a guest user to a permanent standard user.
+  ///
+  /// This helper method encapsulates the logic for updating the user's
+  /// record with a verified email, upgrading their role, and generating a new
+  /// authentication token. It ensures that all associated user data is
+  /// preserved during the conversion.
+  ///
+  /// Throws [ConflictException] if the target email is already in use by
+  /// another permanent account.
+  Future<({User user, String token})> _convertGuestUserToPermanent({
+    required User guestUser,
+    required String verifiedEmail,
+  }) async {
+    // 1. Check if the target email is already in use by another permanent user.
+    final existingUser = await _findUserByEmail(verifiedEmail);
+    if (existingUser != null && existingUser.id != guestUser.id) {
+      // If a different user already exists with this email, throw an error.
+      throw ConflictException(
+        'This email address is already associated with another account.',
+      );
+    }
+
+    // 2. Update the guest user's details to make them permanent.
+    final updatedUser = guestUser.copyWith(
+      email: verifiedEmail,
+      appRole: AppUserRole.standardUser,
+    );
+
+    final permanentUser = await _userRepository.update(
+      id: updatedUser.id,
+      item: updatedUser,
+    );
+    _log.info(
+      'User ${permanentUser.id} successfully converted to permanent account with email $verifiedEmail.',
+    );
+
+    // 3. Generate a new token for the now-permanent user.
+    final newToken = await _authTokenService.generateToken(permanentUser);
+    _log.info('Generated new token for converted user ${permanentUser.id}');
+
+    // Note: Invalidation of the old anonymous token is handled implicitly.
+    // The client will receive the new token and stop using the old one.
+    // The old token will eventually expire. For immediate invalidation,
+    // the old token would need to be passed into this flow and blacklisted.
+
+    return (user: permanentUser, token: newToken);
   }
 }
