@@ -6,6 +6,7 @@ import 'package:ht_api/src/services/dashboard_summary_service.dart';
 import 'package:ht_api/src/services/database_seeding_service.dart';
 import 'package:ht_api/src/services/default_user_preference_limit_service.dart';
 import 'package:ht_api/src/services/jwt_auth_token_service.dart';
+import 'package:ht_api/src/services/mongodb_token_blacklist_service.dart';
 import 'package:ht_api/src/services/token_blacklist_service.dart';
 import 'package:ht_api/src/services/user_preference_limit_service.dart';
 import 'package:ht_api/src/services/verification_code_storage_service.dart';
@@ -169,8 +170,9 @@ class AppDependencies {
       emailRepository = const HtEmailRepository(emailClient: emailClient);
 
       // 5. Initialize Services
-      tokenBlacklistService = InMemoryTokenBlacklistService(
-        log: Logger('InMemoryTokenBlacklistService'),
+      tokenBlacklistService = MongoDbTokenBlacklistService(
+        connectionManager: _mongoDbConnectionManager,
+        log: Logger('MongoDbTokenBlacklistService'),
       );
       authTokenService = JwtAuthTokenService(
         userRepository: userRepository,
