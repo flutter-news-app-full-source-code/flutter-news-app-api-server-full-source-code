@@ -14,7 +14,8 @@ const String kVerificationCodesCollection = 'verification_codes';
 /// A MongoDB-backed implementation of [VerificationCodeStorageService].
 ///
 /// Stores verification codes in a dedicated MongoDB collection with a TTL
-/// index on an `expiresAt` field for automatic cleanup.
+/// index on an `expiresAt` field for automatic cleanup. It uses a unique
+/// index on the `email` field to ensure data integrity.
 /// {@endtemplate}
 class MongoDbVerificationCodeStorageService
     implements VerificationCodeStorageService {
@@ -38,25 +39,32 @@ class MongoDbVerificationCodeStorageService
   DbCollection get _collection =>
       _connectionManager.db.collection(kVerificationCodesCollection);
 
-  /// Initializes the service by ensuring the TTL index exists.
+  /// Initializes the service by ensuring required indexes exist.
   Future<void> _init() async {
     try {
-      _log.info('Ensuring TTL index exists for verification codes...');
+      _log.info('Ensuring indexes exist for verification codes...');
       final command = {
         'createIndexes': kVerificationCodesCollection,
         'indexes': [
+          // TTL index for automatic document expiration
           {
             'key': {'expiresAt': 1},
             'name': 'expiresAt_ttl_index',
             'expireAfterSeconds': 0,
+          },
+          // Unique index to ensure only one code per email
+          {
+            'key': {'email': 1},
+            'name': 'email_unique_index',
+            'unique': true,
           }
         ]
       };
       await _connectionManager.db.runCommand(command);
-      _log.info('Verification codes TTL index is set up correctly.');
+      _log.info('Verification codes indexes are set up correctly.');
     } catch (e, s) {
       _log.severe(
-        'Failed to create TTL index for verification codes collection.',
+        'Failed to create indexes for verification codes collection.',
         e,
         s,
       );
@@ -78,9 +86,14 @@ class MongoDbVerificationCodeStorageService
     final expiresAt = DateTime.now().add(codeExpiryDuration);
 
     try {
+      // Use updateOne with upsert: if a document for the email exists,
+      // it's updated with a new code and expiry; otherwise, it's created.
       await _collection.updateOne(
-        where.eq('_id', email),
-        modify.set('code', code).set('expiresAt', expiresAt),
+        where.eq('email', email),
+        modify
+            .set('code', code)
+            .set('expiresAt', expiresAt)
+            .setOnInsert('_id', ObjectId()),
         upsert: true,
       );
       _log.info(
@@ -96,7 +109,7 @@ class MongoDbVerificationCodeStorageService
   @override
   Future<bool> validateSignInCode(String email, String code) async {
     try {
-      final entry = await _collection.findOne(where.id(email));
+      final entry = await _collection.findOne(where.eq('email', email));
       if (entry == null) {
         return false; // No code found for this email
       }
@@ -104,6 +117,8 @@ class MongoDbVerificationCodeStorageService
       final storedCode = entry['code'] as String?;
       final expiresAt = entry['expiresAt'] as DateTime?;
 
+      // The TTL index handles automatic deletion, but this check prevents
+      // using a code in the brief window before it's deleted.
       if (storedCode != code ||
           expiresAt == null ||
           DateTime.now().isAfter(expiresAt)) {
@@ -120,7 +135,8 @@ class MongoDbVerificationCodeStorageService
   @override
   Future<void> clearSignInCode(String email) async {
     try {
-      await _collection.deleteOne(where.id(email));
+      // After successful validation, the code should be removed immediately.
+      await _collection.deleteOne(where.eq('email', email));
       _log.info('Cleared sign-in code for $email');
     } catch (e) {
       _log.severe('Failed to clear sign-in code for $email: $e');
@@ -130,7 +146,8 @@ class MongoDbVerificationCodeStorageService
 
   @override
   Future<void> cleanupExpiredCodes() async {
-    // No-op, handled by TTL index.
+    // This is a no-op because the TTL index on the MongoDB collection
+    // handles the cleanup automatically on the server side.
     _log.finer(
       'cleanupExpiredCodes() called, but no action is needed due to TTL index.',
     );
@@ -139,7 +156,8 @@ class MongoDbVerificationCodeStorageService
 
   @override
   void dispose() {
-    // No-op, connection managed by AppDependencies.
+    // This is a no-op because the underlying database connection is managed
+    // by the injected MongoDbConnectionManager.
     _log.finer('dispose() called, no action needed.');
   }
 }
