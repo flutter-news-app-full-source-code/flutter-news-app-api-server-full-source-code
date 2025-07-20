@@ -1,4 +1,5 @@
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
+import 'package:ht_api/src/config/environment_config.dart';
 import 'package:ht_api/src/services/auth_token_service.dart';
 import 'package:ht_api/src/services/token_blacklist_service.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
@@ -33,11 +34,6 @@ class JwtAuthTokenService implements AuthTokenService {
 
   // --- Configuration ---
 
-  // WARNING: Hardcoding secrets is insecure. Use environment variables
-  // or a proper secrets management solution in production.
-  static const String _secretKey =
-      'your-very-hardcoded-super-secret-key-replace-this-in-prod';
-
   // Define token issuer and default expiry duration
   static const String _issuer = 'http://localhost:8080';
   static const Duration _tokenExpiryDuration = Duration(hours: 1);
@@ -71,7 +67,7 @@ class JwtAuthTokenService implements AuthTokenService {
 
       // Sign the token using HMAC-SHA256
       final token = jwt.sign(
-        SecretKey(_secretKey),
+        SecretKey(EnvironmentConfig.jwtSecretKey),
         algorithm: JWTAlgorithm.HS256,
         expiresIn: _tokenExpiryDuration, // Redundant but safe
       );
@@ -93,7 +89,7 @@ class JwtAuthTokenService implements AuthTokenService {
     try {
       // Verify the token's signature and expiry
       _log.finer('[validateToken] Verifying token signature and expiry...');
-      final jwt = JWT.verify(token, SecretKey(_secretKey));
+      final jwt = JWT.verify(token, SecretKey(EnvironmentConfig.jwtSecretKey));
       _log.finer('[validateToken] Token verified. Payload: ${jwt.payload}');
 
       // --- Blacklist Check ---
@@ -216,7 +212,7 @@ class JwtAuthTokenService implements AuthTokenService {
       _log.finer('[invalidateToken] Verifying signature (ignoring expiry)...');
       final jwt = JWT.verify(
         token,
-        SecretKey(_secretKey),
+        SecretKey(EnvironmentConfig.jwtSecretKey),
         checkExpiresIn: false, // IMPORTANT: Don't fail if expired here
         checkHeaderType: true, // Keep other standard checks
       );
