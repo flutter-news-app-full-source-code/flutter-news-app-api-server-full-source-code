@@ -22,6 +22,8 @@ class DatabaseSeedingService {
   Future<void> seedInitialData() async {
     _log.info('Starting database seeding process...');
 
+    await _ensureIndexes();
+
     await _seedCollection<Country>(
       collectionName: 'countries',
       fixtureData: countriesFixturesData,
@@ -112,6 +114,40 @@ class DatabaseSeedingService {
       );
     } on Exception catch (e, s) {
       _log.severe('Failed to seed collection "$collectionName".', e, s);
+      rethrow;
+    }
+  }
+
+  /// Ensures that the necessary indexes exist on the collections.
+  ///
+  /// This method is idempotent; it will only create indexes if they do not
+  /// already exist. It's crucial for enabling efficient text searches.
+  Future<void> _ensureIndexes() async {
+    _log.info('Ensuring database indexes exist...');
+    try {
+      // Text index for searching headlines by title
+      await _db.collection('headlines').createIndex(
+        keys: {'title': 'text'},
+        name: 'headlines_text_index',
+      );
+
+      // Text index for searching topics by name
+      await _db.collection('topics').createIndex(
+        keys: {'name': 'text'},
+        name: 'topics_text_index',
+      );
+
+      // Text index for searching sources by name
+      await _db.collection('sources').createIndex(
+        keys: {'name': 'text'},
+        name: 'sources_text_index',
+      );
+
+      _log.info('Database indexes are set up correctly.');
+    } on Exception catch (e, s) {
+      _log.severe('Failed to create database indexes.', e, s);
+      // We rethrow here because if indexes can't be created,
+      // critical features like search will fail.
       rethrow;
     }
   }
