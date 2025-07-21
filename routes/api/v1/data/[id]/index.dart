@@ -467,15 +467,15 @@ Future<Response> _handleDelete(
         final repo = context.read<HtDataRepository<RemoteConfig>>();
         itemToDelete = await repo.read(
           id: id,
-        userId: userIdForRepoCall,
-      ); // userId should be null for AppConfig
-    default:
-      _logger.severe(
-        'Unsupported model type "$modelName" reached _handleDelete ownership check.',
-      );
-      // Throw an exception to be caught by the errorHandler
-      throw OperationFailedException(
-        'Unsupported model type "$modelName" reached handler.',
+          userId: userIdForRepoCall,
+        ); // userId should be null for AppConfig
+      default:
+        _logger.severe(
+          'Unsupported model type "$modelName" reached _handleDelete ownership check.',
+        );
+        // Throw an exception to be caught by the errorHandler
+        throw OperationFailedException(
+          'Unsupported model type "$modelName" reached handler.',
         );
     }
 

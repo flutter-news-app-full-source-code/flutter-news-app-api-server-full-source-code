@@ -113,8 +113,7 @@ abstract final class EnvironmentConfig {
   ///
   /// The value is read from the `JWT_ISSUER` environment variable.
   /// Defaults to 'http://localhost:8080' if not set.
-  static String get jwtIssuer =>
-      _env['JWT_ISSUER'] ?? 'http://localhost:8080';
+  static String get jwtIssuer => _env['JWT_ISSUER'] ?? 'http://localhost:8080';
 
   /// Retrieves the JWT expiry duration in hours from the environment.
   ///

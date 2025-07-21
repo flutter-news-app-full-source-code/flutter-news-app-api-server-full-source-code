@@ -24,8 +24,8 @@ class MongoDbVerificationCodeStorageService
     required MongoDbConnectionManager connectionManager,
     required Logger log,
     this.codeExpiryDuration = const Duration(minutes: 15),
-  })  : _connectionManager = connectionManager,
-        _log = log;
+  }) : _connectionManager = connectionManager,
+       _log = log;
 
   final MongoDbConnectionManager _connectionManager;
   final Logger _log;
@@ -61,9 +61,7 @@ class MongoDbVerificationCodeStorageService
             .setOnInsert('_id', ObjectId()),
         upsert: true,
       );
-      _log.info(
-        'Stored sign-in code for $email (expires: $expiresAt)',
-      );
+      _log.info('Stored sign-in code for $email (expires: $expiresAt)');
       return code;
     } catch (e) {
       _log.severe('Failed to store sign-in code for $email: $e');

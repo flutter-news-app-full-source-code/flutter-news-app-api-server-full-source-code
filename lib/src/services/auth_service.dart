@@ -1,3 +1,5 @@
+// ignore_for_file: inference_failure_on_untyped_parameter
+
 import 'dart:async';
 
 import 'package:ht_api/src/config/environment_config.dart';
@@ -154,10 +156,12 @@ class AuthService {
     String? currentToken,
   }) async {
     // 1. Validate the verification code.
-    final isValidCode =
-        await _verificationCodeStorageService.validateSignInCode(email, code);
+    final isValidCode = await _verificationCodeStorageService
+        .validateSignInCode(email, code);
     if (!isValidCode) {
-      throw const InvalidInputException('Invalid or expired verification code.');
+      throw const InvalidInputException(
+        'Invalid or expired verification code.',
+      );
     }
 
     // After successful validation, clear the code from storage.
