@@ -64,9 +64,7 @@ abstract final class EnvironmentConfig {
     final value = _env[key];
     if (value == null || value.isEmpty) {
       _log.severe('$key not found in environment variables.');
-      throw StateError(
-        'FATAL: $key environment variable is not set.',
-      );
+      throw StateError('FATAL: $key environment variable is not set.');
     }
     return value;
   }
