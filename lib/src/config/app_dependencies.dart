@@ -175,7 +175,6 @@ class AppDependencies {
       final sendGridHttpClient = HtHttpClient(
         baseUrl: '$sendGridApiBase/v3',
         tokenProvider: () async => EnvironmentConfig.sendGridApiKey,
-        isWeb: false, // This is a server-side implementation.
         logger: Logger('HtEmailSendgridClient'),
       );
 
