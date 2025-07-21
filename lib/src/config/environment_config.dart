@@ -60,23 +60,22 @@ abstract final class EnvironmentConfig {
     return env; // Return even if fallback
   }
 
+  static String _getRequiredEnv(String key) {
+    final value = _env[key];
+    if (value == null || value.isEmpty) {
+      _log.severe('$key not found in environment variables.');
+      throw StateError('FATAL: $key environment variable is not set.');
+    }
+    return value;
+  }
+
   /// Retrieves the database connection URI from the environment.
   ///
   /// The value is read from the `DATABASE_URL` environment variable.
   ///
   /// Throws a [StateError] if the `DATABASE_URL` environment variable is not
   /// set, as the application cannot function without it.
-  static String get databaseUrl {
-    final dbUrl = _env['DATABASE_URL'];
-    if (dbUrl == null || dbUrl.isEmpty) {
-      _log.severe('DATABASE_URL not found in environment variables.');
-      throw StateError(
-        'FATAL: DATABASE_URL environment variable is not set. '
-        'The application cannot start without a database connection.',
-      );
-    }
-    return dbUrl;
-  }
+  static String get databaseUrl => _getRequiredEnv('DATABASE_URL');
 
   /// Retrieves the JWT secret key from the environment.
   ///
@@ -84,17 +83,7 @@ abstract final class EnvironmentConfig {
   ///
   /// Throws a [StateError] if the `JWT_SECRET_KEY` environment variable is not
   /// set, as the application cannot function without it.
-  static String get jwtSecretKey {
-    final jwtKey = _env['JWT_SECRET_KEY'];
-    if (jwtKey == null || jwtKey.isEmpty) {
-      _log.severe('JWT_SECRET_KEY not found in environment variables.');
-      throw StateError(
-        'FATAL: JWT_SECRET_KEY environment variable is not set. '
-        'The application cannot start without a JWT secret.',
-      );
-    }
-    return jwtKey;
-  }
+  static String get jwtSecretKey => _getRequiredEnv('JWT_SECRET_KEY');
 
   /// Retrieves the current environment mode (e.g., 'development').
   ///
@@ -127,44 +116,18 @@ abstract final class EnvironmentConfig {
   /// Retrieves the SendGrid API key from the environment.
   ///
   /// Throws a [StateError] if the `SENDGRID_API_KEY` is not set.
-  static String get sendGridApiKey {
-    final apiKey = _env['SENDGRID_API_KEY'];
-    if (apiKey == null || apiKey.isEmpty) {
-      _log.severe('SENDGRID_API_KEY not found in environment variables.');
-      throw StateError(
-        'FATAL: SENDGRID_API_KEY environment variable is not set.',
-      );
-    }
-    return apiKey;
-  }
+  static String get sendGridApiKey => _getRequiredEnv('SENDGRID_API_KEY');
 
   /// Retrieves the default sender email from the environment.
   ///
   /// Throws a [StateError] if the `DEFAULT_SENDER_EMAIL` is not set.
-  static String get defaultSenderEmail {
-    final email = _env['DEFAULT_SENDER_EMAIL'];
-    if (email == null || email.isEmpty) {
-      _log.severe('DEFAULT_SENDER_EMAIL not found in environment variables.');
-      throw StateError(
-        'FATAL: DEFAULT_SENDER_EMAIL environment variable is not set.',
-      );
-    }
-    return email;
-  }
+  static String get defaultSenderEmail =>
+      _getRequiredEnv('DEFAULT_SENDER_EMAIL');
 
   /// Retrieves the SendGrid OTP template ID from the environment.
   ///
   /// Throws a [StateError] if the `OTP_TEMPLATE_ID` is not set.
-  static String get otpTemplateId {
-    final templateId = _env['OTP_TEMPLATE_ID'];
-    if (templateId == null || templateId.isEmpty) {
-      _log.severe('OTP_TEMPLATE_ID not found in environment variables.');
-      throw StateError(
-        'FATAL: OTP_TEMPLATE_ID environment variable is not set.',
-      );
-    }
-    return templateId;
-  }
+  static String get otpTemplateId => _getRequiredEnv('OTP_TEMPLATE_ID');
 
   /// Retrieves the SendGrid API URL from the environment, if provided.
   ///
