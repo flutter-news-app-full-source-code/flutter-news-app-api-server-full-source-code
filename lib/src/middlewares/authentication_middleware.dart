@@ -47,9 +47,7 @@ Middleware authenticationProvider() {
           _log.finer('Attempting to validate token...');
           // Validate the token using the service
           user = await tokenService.validateToken(token);
-          _log.finer(
-            'Token validation returned: ${user?.id ?? 'null'}',
-          );
+          _log.finer('Token validation returned: ${user?.id ?? 'null'}');
           if (user != null) {
             _log.info('Authentication successful for user: ${user.id}');
           } else {
@@ -68,11 +66,7 @@ Middleware authenticationProvider() {
           user = null; // Keep user null if HtHttpException occurred
         } catch (e, s) {
           // Catch unexpected errors during validation
-          _log.severe(
-            'Unexpected error during token validation.',
-            e,
-            s,
-          );
+          _log.severe('Unexpected error during token validation.', e, s);
           user = null; // Keep user null if unexpected error occurred
         }
       } else {
@@ -81,9 +75,7 @@ Middleware authenticationProvider() {
 
       // Provide the User object (or null) into the context
       // This makes `context.read<User?>()` available downstream.
-      _log.finer(
-        'Providing User (${user?.id ?? 'null'}) to context.',
-      );
+      _log.finer('Providing User (${user?.id ?? 'null'}) to context.');
       return handler(context.provide<User?>(() => user));
     };
   };

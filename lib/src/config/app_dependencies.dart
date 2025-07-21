@@ -13,8 +13,9 @@ import 'package:ht_api/src/services/user_preference_limit_service.dart';
 import 'package:ht_api/src/services/verification_code_storage_service.dart';
 import 'package:ht_data_mongodb/ht_data_mongodb.dart';
 import 'package:ht_data_repository/ht_data_repository.dart';
-import 'package:ht_email_inmemory/ht_email_inmemory.dart';
 import 'package:ht_email_repository/ht_email_repository.dart';
+import 'package:ht_email_sendgrid/ht_email_sendgrid.dart';
+import 'package:ht_http_client/ht_http_client.dart';
 import 'package:ht_shared/ht_shared.dart';
 import 'package:logging/logging.dart';
 
@@ -166,9 +167,24 @@ class AppDependencies {
       );
       remoteConfigRepository = HtDataRepository(dataClient: remoteConfigClient);
 
-      const emailClient =  HtEmailInMemoryClient();
-      
-      emailRepository = const HtEmailRepository(emailClient: emailClient);
+      // Configure the HTTP client for SendGrid.
+      // The HtHttpClient's AuthInterceptor will use the tokenProvider to add
+      // the 'Authorization: Bearer <SENDGRID_API_KEY>' header.
+      final sendGridHttpClient = HtHttpClient(
+        baseUrl:
+            EnvironmentConfig.sendGridApiUrl ?? 'https://api.sendgrid.com/v3',
+        tokenProvider: () async => EnvironmentConfig.sendGridApiKey,
+        isWeb: false, // This is a server-side implementation.
+        logger: Logger('HtEmailSendgridClient'),
+      );
+
+      // Initialize the SendGrid email client with the dedicated HTTP client.
+      final emailClient = HtEmailSendGrid(
+        httpClient: sendGridHttpClient,
+        log: Logger('HtEmailSendgrid'),
+      );
+
+      emailRepository = HtEmailRepository(emailClient: emailClient);
 
       // 5. Initialize Services
       tokenBlacklistService = MongoDbTokenBlacklistService(

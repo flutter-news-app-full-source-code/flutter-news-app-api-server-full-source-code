@@ -113,8 +113,7 @@ abstract final class EnvironmentConfig {
   ///
   /// The value is read from the `JWT_ISSUER` environment variable.
   /// Defaults to 'http://localhost:8080' if not set.
-  static String get jwtIssuer =>
-      _env['JWT_ISSUER'] ?? 'http://localhost:8080';
+  static String get jwtIssuer => _env['JWT_ISSUER'] ?? 'http://localhost:8080';
 
   /// Retrieves the JWT expiry duration in hours from the environment.
   ///
@@ -124,4 +123,51 @@ abstract final class EnvironmentConfig {
     final hours = int.tryParse(_env['JWT_EXPIRY_HOURS'] ?? '1');
     return Duration(hours: hours ?? 1);
   }
+
+  /// Retrieves the SendGrid API key from the environment.
+  ///
+  /// Throws a [StateError] if the `SENDGRID_API_KEY` is not set.
+  static String get sendGridApiKey {
+    final apiKey = _env['SENDGRID_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty) {
+      _log.severe('SENDGRID_API_KEY not found in environment variables.');
+      throw StateError(
+        'FATAL: SENDGRID_API_KEY environment variable is not set.',
+      );
+    }
+    return apiKey;
+  }
+
+  /// Retrieves the default sender email from the environment.
+  ///
+  /// Throws a [StateError] if the `DEFAULT_SENDER_EMAIL` is not set.
+  static String get defaultSenderEmail {
+    final email = _env['DEFAULT_SENDER_EMAIL'];
+    if (email == null || email.isEmpty) {
+      _log.severe('DEFAULT_SENDER_EMAIL not found in environment variables.');
+      throw StateError(
+        'FATAL: DEFAULT_SENDER_EMAIL environment variable is not set.',
+      );
+    }
+    return email;
+  }
+
+  /// Retrieves the SendGrid OTP template ID from the environment.
+  ///
+  /// Throws a [StateError] if the `OTP_TEMPLATE_ID` is not set.
+  static String get otpTemplateId {
+    final templateId = _env['OTP_TEMPLATE_ID'];
+    if (templateId == null || templateId.isEmpty) {
+      _log.severe('OTP_TEMPLATE_ID not found in environment variables.');
+      throw StateError(
+        'FATAL: OTP_TEMPLATE_ID environment variable is not set.',
+      );
+    }
+    return templateId;
+  }
+
+  /// Retrieves the SendGrid API URL from the environment, if provided.
+  ///
+  /// Returns `null` if the `SENDGRID_API_URL` is not set.
+  static String? get sendGridApiUrl => _env['SENDGRID_API_URL'];
 }

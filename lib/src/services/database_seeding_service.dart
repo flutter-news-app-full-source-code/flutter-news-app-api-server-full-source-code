@@ -128,22 +128,19 @@ class DatabaseSeedingService {
     _log.info('Ensuring database indexes exist...');
     try {
       // Text index for searching headlines by title
-      await _db.collection('headlines').createIndex(
-        keys: {'title': 'text'},
-        name: 'headlines_text_index',
-      );
+      await _db
+          .collection('headlines')
+          .createIndex(keys: {'title': 'text'}, name: 'headlines_text_index');
 
       // Text index for searching topics by name
-      await _db.collection('topics').createIndex(
-        keys: {'name': 'text'},
-        name: 'topics_text_index',
-      );
+      await _db
+          .collection('topics')
+          .createIndex(keys: {'name': 'text'}, name: 'topics_text_index');
 
       // Text index for searching sources by name
-      await _db.collection('sources').createIndex(
-        keys: {'name': 'text'},
-        name: 'sources_text_index',
-      );
+      await _db
+          .collection('sources')
+          .createIndex(keys: {'name': 'text'}, name: 'sources_text_index');
 
       // --- TTL and Unique Indexes via runCommand ---
       // The following indexes are created using the generic `runCommand` because
@@ -169,8 +166,8 @@ class DatabaseSeedingService {
             'key': {'email': 1},
             'name': 'email_unique_index',
             'unique': true,
-          }
-        ]
+          },
+        ],
       });
 
       // Index for the token blacklist collection
@@ -183,8 +180,8 @@ class DatabaseSeedingService {
             'key': {'expiry': 1},
             'name': 'expiry_ttl_index',
             'expireAfterSeconds': 0,
-          }
-        ]
+          },
+        ],
       });
 
       _log.info('Database indexes are set up correctly.');

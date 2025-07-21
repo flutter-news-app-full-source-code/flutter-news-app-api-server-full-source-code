@@ -21,8 +21,8 @@ class MongoDbTokenBlacklistService implements TokenBlacklistService {
   MongoDbTokenBlacklistService({
     required MongoDbConnectionManager connectionManager,
     required Logger log,
-  })  : _connectionManager = connectionManager,
-        _log = log;
+  }) : _connectionManager = connectionManager,
+       _log = log;
 
   final MongoDbConnectionManager _connectionManager;
   final Logger _log;
@@ -35,19 +35,14 @@ class MongoDbTokenBlacklistService implements TokenBlacklistService {
     try {
       // The document structure is simple: the JTI is the primary key (_id)
       // and `expiry` is the TTL-indexed field.
-      await _collection.insertOne({
-        '_id': jti,
-        'expiry': expiry,
-      });
+      await _collection.insertOne({'_id': jti, 'expiry': expiry});
       _log.info('Blacklisted jti: $jti (expires: $expiry)');
     } on MongoDartError catch (e) {
       // Handle the specific case of a duplicate key error, which means the
       // token is already blacklisted. This is not a failure condition.
       // We check the message because the error type may not be specific enough.
       if (e.message.contains('duplicate key')) {
-        _log.warning(
-          'Attempted to blacklist an already blacklisted jti: $jti',
-        );
+        _log.warning('Attempted to blacklist an already blacklisted jti: $jti');
         // Swallow the exception as the desired state is already achieved.
         return;
       }

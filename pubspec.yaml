@@ -22,12 +22,12 @@ dependencies:
   ht_email_client:
     git:
       url: https://github.com/headlines-toolkit/ht-email-client.git
-  ht_email_inmemory:
-    git:
-      url: https://github.com/headlines-toolkit/ht-email-inmemory.git
   ht_email_repository:
     git:
       url: https://github.com/headlines-toolkit/ht-email-repository.git
+  ht_email_sendgrid:
+    git:
+      url: https://github.com/headlines-toolkit/ht-email-sendgrid.git  
   ht_http_client:
     git:
       url: https://github.com/headlines-toolkit/ht-http-client.git

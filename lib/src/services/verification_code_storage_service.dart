@@ -1,36 +1,8 @@
 // ignore_for_file: library_private_types_in_public_api
 
 import 'dart:async';
-import 'dart:math';
 
 import 'package:ht_shared/ht_shared.dart';
-import 'package:meta/meta.dart';
-
-// Default duration for code expiry (e.g., 15 minutes)
-const _defaultCodeExpiryDuration = Duration(minutes: 15);
-// Default interval for cleaning up expired codes (e.g., 1 hour)
-const _defaultCleanupInterval = Duration(hours: 1);
-
-/// {@template code_entry_base}
-/// Base class for storing verification code entries.
-/// {@endtemplate}
-class _CodeEntryBase {
-  /// {@macro code_entry_base}
-  _CodeEntryBase(this.code, this.expiresAt);
-
-  final String code;
-  final DateTime expiresAt;
-
-  bool get isExpired => DateTime.now().isAfter(expiresAt);
-}
-
-/// {@template sign_in_code_entry}
-/// Stores a verification code for standard email sign-in.
-/// {@endtemplate}
-class _SignInCodeEntry extends _CodeEntryBase {
-  /// {@macro sign_in_code_entry}
-  _SignInCodeEntry(super.code, super.expiresAt);
-}
 
 /// {@template verification_code_storage_service}
 /// Defines the interface for a service that manages verification codes

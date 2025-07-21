@@ -1,5 +1,8 @@
+// ignore_for_file: inference_failure_on_untyped_parameter, comment_references
+
 import 'dart:async';
 
+import 'package:ht_api/src/config/environment_config.dart';
 import 'package:ht_api/src/rbac/permission_service.dart';
 import 'package:ht_api/src/rbac/permissions.dart';
 import 'package:ht_api/src/services/auth_token_service.dart';
@@ -102,7 +105,12 @@ class AuthService {
           .generateAndStoreSignInCode(email);
 
       // Send the code via email
-      await _emailRepository.sendOtpEmail(recipientEmail: email, otpCode: code);
+      await _emailRepository.sendOtpEmail(
+        senderEmail: EnvironmentConfig.defaultSenderEmail,
+        recipientEmail: email,
+        templateId: EnvironmentConfig.otpTemplateId,
+        otpCode: code,
+      );
       _log.info('Initiated email sign-in for $email, code sent.');
     } on HtHttpException {
       // Propagate known exceptions from dependencies or from this method's logic.
@@ -148,10 +156,12 @@ class AuthService {
     String? currentToken,
   }) async {
     // 1. Validate the verification code.
-    final isValidCode =
-        await _verificationCodeStorageService.validateSignInCode(email, code);
+    final isValidCode = await _verificationCodeStorageService
+        .validateSignInCode(email, code);
     if (!isValidCode) {
-      throw const InvalidInputException('Invalid or expired verification code.');
+      throw const InvalidInputException(
+        'Invalid or expired verification code.',
+      );
     }
 
     // After successful validation, clear the code from storage.
