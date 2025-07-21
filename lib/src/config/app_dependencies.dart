@@ -170,9 +170,10 @@ class AppDependencies {
       // Configure the HTTP client for SendGrid.
       // The HtHttpClient's AuthInterceptor will use the tokenProvider to add
       // the 'Authorization: Bearer <SENDGRID_API_KEY>' header.
+      final sendGridApiBase =
+          EnvironmentConfig.sendGridApiUrl ?? 'https://api.sendgrid.com';
       final sendGridHttpClient = HtHttpClient(
-        baseUrl:
-            EnvironmentConfig.sendGridApiUrl ?? 'https://api.sendgrid.com/v3',
+        baseUrl: '$sendGridApiBase/v3',
         tokenProvider: () async => EnvironmentConfig.sendGridApiKey,
         isWeb: false, // This is a server-side implementation.
         logger: Logger('HtEmailSendgridClient'),
