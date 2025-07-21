@@ -1,4 +1,4 @@
-// ignore_for_file: inference_failure_on_untyped_parameter
+// ignore_for_file: inference_failure_on_untyped_parameter, comment_references
 
 import 'dart:async';
 
