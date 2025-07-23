@@ -1,126 +1,108 @@
-# flutter_news_app_api_server_full_source_code
+<div align="center">
+<img src="https://avatars.githubusercontent.com/u/202675624?s=400&u=2daf23e8872a3b666bcd4f792a21fe2633097e79&v=4" alt="Flutter News App Toolkit Logo" width="220">
 
-![coverage: percentage](https://img.shields.io/badge/coverage-xx-green)
-[![style: very good analysis](https://img.shields.io/badge/style-very_good_analysis-B22C89.svg)](https://pub.dev/packages/very_good_analysis)
-[![License: PolyForm Free Trial](https://img.shields.io/badge/License-PolyForm%20Free%20Trial-blue)](https://polyformproject.org/licenses/free-trial/1.0.0)
+# Flutter News App - API Server Full Source Code
 
-🚀 Accelerate the development of your news application backend with **flutter_news_app_api_server_full_source_code**, the
-dedicated API service for the Headlines Toolkit. Built on the high-performance
-Dart Frog framework, `flutter_news_app_api_server_full_source_code` provides the essential server-side infrastructure
-specifically designed to power robust and feature-rich news applications.
+<p>
+<img src="https://img.shields.io/badge/coverage-XX-green?style=for-the-badge" alt="coverage: percentage">
+<a href="https://github.com/sponsors/flutter-news-app-full-source-code"><img src="https://img.shields.io/badge/DOCS-READ-purple?style=for-the-badge" alt="DOCS READ"></a>
+<a href="https://github.com/sponsors/flutter-news-app-full-source-code"><img src="https://img.shields.io/badge/LICENSE-BUY-pink?style=for-the-badge" alt="License: Buy"></a>
+</p>
+</div>
 
-`flutter_news_app_api_server_full_source_code` is a core component of the **Headlines Toolkit**, a comprehensive,
-source-available ecosystem designed for building feature-rich news
-applications, which also includes a Flutter [mobile app](https://github.com/flutter-news-app-full-source-code/ht-main) and a web-based [content
-management dashboard](https://github.com/flutter-news-app-full-source-code/ht-dashboard).
+This is the complete and fully-functional backend API server for the Flutter News App Toolkit. Built with the high-performance Dart Frog framework, it gives you all the server-side features you need to power your news app, right out of the box. It is a key component of the [**flutter news app full source code toolkit**](https://github.com/flutter-news-app-full-source-code), an ecosystem that also includes a Flutter [mobile app](https://github.com/flutter-news-app-full-source-code/flutter-news-app-mobile-client-full-source-code) and a web-based [content dashboard](https://github.com/flutter-news-app-full-source-code/flutter-news-app-web-dashboard-full-source-code).
 
-## ✨ Key Capabilities
+## ⭐ Everything You Get, Ready to Go
 
-*   🔒 **Flexible & Secure Authentication:** Provide seamless user access with
-    a unified system supporting passwordless email sign-in and anonymous guest
-    accounts. The API intelligently handles the conversion from a guest to a
-    permanent user, preserving all settings and preferences. It also includes
-    a secure, role-aware login flow for privileged dashboard users.
+This API server comes packed with all the features you need to launch a professional, scalable news application.
 
-*   ⚡️ **Granular Role-Based Access Control (RBAC):** Implement precise
-    permissions with a dual-role system (`appRole` for application features,
-    `dashboardRole` for admin functions) to control access to API features
-    and data management capabilities.
+#### 🔐 **Robust & Flexible Authentication**
+*   Provides secure, modern authentication flows, including passwordless email sign-in and anonymous guest accounts.
+*   Intelligently handles converting guest users to permanent accounts, preserving all their settings and saved content.
+*   Includes a separate, role-aware login flow for privileged dashboard users.
+> **Your Advantage:** You get a complete, secure authentication system without the complexity. All the user management logic is done for you. ✅
 
-*   ⚙️ **Synchronized App Settings:** Ensure a consistent and personalized user
-    experience across devices by effortlessly syncing application preferences
-    like theme, language, font styles, and more.
+#### ⚡️ **Granular Role-Based Access Control (RBAC)**
+*   Implement precise permissions with a dual-role system: `appRole` for mobile app features and `dashboardRole` for admin functions.
+*   Securely control access to API features and data management capabilities based on user roles.
+> **Your Advantage:** A powerful, built-in security model that protects your data and ensures users only access what they're supposed to. 🛡️
 
-*   👤 **Personalized User Preferences:** Enable richer user interactions by
-    managing and syncing user-specific data such as saved headlines, followed
-    sources, and followed topics tailored to individual users.
+#### ⚙️ **Centralized App & User Settings**
+*   Effortlessly sync user-specific settings like theme, language, and font styles across devices.
+*   Manage personalized content preferences, including saved headlines and followed topics/sources.
+> **Your Advantage:** Deliver a seamless, personalized experience that keeps users' settings in sync, boosting engagement and retention. ❤️
 
-*   💾 **Robust Data Management:** Securely manage core news data (headlines,
-    topics, sources) through a well-structured API that supports flexible
-    querying and sorting for dynamic content presentation.
+#### 💾 **Robust Data Management API**
+*   Securely manage all your core news data, including headlines, topics, sources, and countries.
+*   The API supports flexible querying, filtering, and sorting, allowing your app to display dynamic content feeds.
+> **Your Advantage:** A powerful and secure data backend that's ready to scale with your content needs. 📈
 
-*   🌐 **Dynamic Remote Configuration:** Centrally manage application
-    behavior—including ad frequency, feature flags, and maintenance status—without
-    requiring a client-side update.
+#### 🌐 **Dynamic Remote Configuration**
+*   Centrally manage your app's behavior without shipping an update.
+*   Control ad frequency, feature flags, force-update prompts, and maintenance status directly from the server.
+> **Your Advantage:** Adapt your app on the fly, run experiments, and respond to issues instantly, giving you maximum operational control. 🕹️
 
-*   📊 **Dynamic Dashboard Summary:** Access real-time, aggregated metrics on
-    key data points like total headlines, topics, and sources, providing
-    an at-a-glance overview for administrative dashboards.
+#### 📊 **Real-Time Dashboard Analytics**
+*   Access real-time, aggregated metrics on key data points like total headlines, topics, and sources.
+*   Provides an at-a-glance overview perfect for administrative dashboards.
+> **Your Advantage:** Instantly feed your content dashboard with the data it needs to provide valuable insights. 🎯
 
-*   🔧 **Solid Technical Foundation:** Built with Dart and the high-performance
-    Dart Frog framework, offering a maintainable codebase, standardized API
-    responses, and built-in access control for developers.
+#### 🏗️ **Clean & Modern Architecture**
+*   Built with Dart and the high-performance Dart Frog framework.
+*   Features a clean, layered architecture with standardized API responses and built-in dependency injection.
+> **Your Advantage:** A solid, maintainable codebase that's easy to understand, extend, and build upon. 🔧
 
-## 🔌 API Endpoints
+---
 
-`flutter_news_app_api_server_full_source_code` provides a clear and organized API surface under the `/api/v1/` path.
-Key endpoint groups cover authentication, data access, and user settings.
+## 🔑 License: Source-Available with a Free Trial
 
-For complete API specifications, detailed endpoint documentation,
-request/response schemas, and error codes, please refer to the dedicated
-documentation website [todo:Link to the docs website].
+Get started for free and purchase when you're ready to launch!
 
-## 🔑 Access and Licensing
+*   **TRY IT:** Download and explore the full source code under the PolyForm Free Trial [license](LICENSE). Perfect for evaluation.
+*   **BUY IT:** Get an unlimited commercial lifetime license with a **one-time payment**. No subscriptions!
+*   **GET YOURS:** [**Purchase via GitHub Sponsors**](https://github.com/sponsors/flutter-news-app-full-source-code).
 
-`flutter_news_app_api_server_full_source_code` is source-available as part of the Headlines Toolkit ecosystem.
+> *<p style="color:grey">Note: The single purchase provides a comprehensive commercial license covering every repository within the [Flutter News App - Full Source Code Toolkit](https://github.com/flutter-news-app-full-source-code) organization. No separate purchases are needed for the mobile app or dashboard.</p>*
 
-To acquire a commercial license for building unlimited news applications, please visit 
-the [Headlines Toolkit GitHub organization page](https://github.com/flutter-news-app-full-source-code)
-for more details.
+---
 
-## 💻 Setup & Running
+## 🚀 Getting Started & Running Locally
 
 1.  **Prerequisites:**
     *   Dart SDK (`>=3.0.0`)
     *   MongoDB (`>=5.0` recommended)
     *   Dart Frog CLI (`dart pub global activate dart_frog_cli`)
 
-2.  **Configuration:**
-    Before running the server, you must configure the necessary environment
-    variables.
-
-    Copy the `.env.example` file to a new file named `.env`:
-    ```bash
-    cp .env.example .env
-    ```
-    Then, open the new `.env` file and update the variables with your actual
-    configuration values, such as the `DATABASE_URL`.
-
-3.  **Clone the repository:**
+2.  **Clone the repository:**
     ```bash
     git clone https://github.com/flutter-news-app-full-source-code/flutter-news-app-api-server-full-source-code.git
     cd flutter-news-app-api-server-full-source-code
     ```
+
+3.  **Configure your environment:**
+    Copy the `.env.example` file to a new file named `.env`:
+    ```bash
+    cp .env.example .env
+    ```
+    Then, open the new `.env` file and update the variables with your actual configuration values (e.g., `DATABASE_URL`).
+
 4.  **Get dependencies:**
     ```bash
     dart pub get
     ```
+
 5.  **Run the development server:**
     ```bash
     dart_frog dev
     ```
-    The API will typically be available at `http://localhost:8080`. On startup,
-    the server will connect to your MongoDB database and seed it with initial
-    fixture data. This seeding process is idempotent (using `upsert`
-    operations), so it can be run multiple times without creating duplicates.
+    The API will be available at `http://localhost:8080`. On startup, the server will connect to your MongoDB database and seed it with initial data. This process is idempotent, so it can be run multiple times without creating duplicates.
 
-
-    **Note on Web Client Integration (CORS):** To allow web applications (like
-    the HT Dashboard) to connect to this API in production, the
-    `CORS_ALLOWED_ORIGIN` environment variable must be set to the specific
-    origin of your web application (e.g., `https://your-dashboard.com`).
-
-    For local development, the API automatically allows any request
-    originating from `localhost` on any port, so you do not need to set this
-    variable.
+---
 
 ## ✅ Testing
 
-Ensure the API is robust and meets quality standards by running the test suite:
+This project aims for high test coverage to ensure quality and reliability.
 
-```bash
-# Ensure very_good_cli is activated: dart pub global activate very_good_cli
-very_good test --min-coverage 90
-```
-
-Aim for a minimum of 90% line coverage.
+*   Run tests with:
+    ```bash
+    very_good test --min-coverage 90
