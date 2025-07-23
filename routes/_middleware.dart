@@ -1,18 +1,18 @@
+import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:ht_api/src/config/app_dependencies.dart';
-import 'package:ht_api/src/middlewares/error_handler.dart';
-import 'package:ht_api/src/models/request_id.dart';
-import 'package:ht_api/src/rbac/permission_service.dart';
-import 'package:ht_api/src/registry/model_registry.dart';
-import 'package:ht_api/src/services/auth_service.dart';
-import 'package:ht_api/src/services/auth_token_service.dart';
-import 'package:ht_api/src/services/dashboard_summary_service.dart';
-import 'package:ht_api/src/services/token_blacklist_service.dart';
-import 'package:ht_api/src/services/user_preference_limit_service.dart';
-import 'package:ht_api/src/services/verification_code_storage_service.dart';
-import 'package:ht_data_repository/ht_data_repository.dart';
-import 'package:ht_email_repository/ht_email_repository.dart';
-import 'package:ht_shared/ht_shared.dart';
+import 'package:data_repository/data_repository.dart';
+import 'package:email_repository/email_repository.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/config/app_dependencies.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/error_handler.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/request_id.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_registry.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/user_preference_limit_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/verification_code_storage_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 
@@ -76,42 +76,38 @@ Handler middleware(Handler handler) {
           return handler
               .use(provider<ModelRegistryMap>((_) => modelRegistry))
               .use(
-                provider<HtDataRepository<Headline>>(
+                provider<DataRepository<Headline>>(
                   (_) => deps.headlineRepository,
                 ),
               ) //
+              .use(provider<DataRepository<Topic>>((_) => deps.topicRepository))
               .use(
-                provider<HtDataRepository<Topic>>((_) => deps.topicRepository),
-              )
-              .use(
-                provider<HtDataRepository<Source>>(
-                  (_) => deps.sourceRepository,
-                ),
+                provider<DataRepository<Source>>((_) => deps.sourceRepository),
               ) //
               .use(
-                provider<HtDataRepository<Country>>(
+                provider<DataRepository<Country>>(
                   (_) => deps.countryRepository,
                 ),
               ) //
               .use(
-                provider<HtDataRepository<User>>((_) => deps.userRepository),
+                provider<DataRepository<User>>((_) => deps.userRepository),
               ) //
               .use(
-                provider<HtDataRepository<UserAppSettings>>(
+                provider<DataRepository<UserAppSettings>>(
                   (_) => deps.userAppSettingsRepository,
                 ),
               )
               .use(
-                provider<HtDataRepository<UserContentPreferences>>(
+                provider<DataRepository<UserContentPreferences>>(
                   (_) => deps.userContentPreferencesRepository,
                 ),
               )
               .use(
-                provider<HtDataRepository<RemoteConfig>>(
+                provider<DataRepository<RemoteConfig>>(
                   (_) => deps.remoteConfigRepository,
                 ),
               )
-              .use(provider<HtEmailRepository>((_) => deps.emailRepository))
+              .use(provider<EmailRepository>((_) => deps.emailRepository))
               .use(
                 provider<TokenBlacklistService>(
                   (_) => deps.tokenBlacklistService,
