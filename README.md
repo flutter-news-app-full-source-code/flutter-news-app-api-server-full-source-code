@@ -1,18 +1,18 @@
-# ht_api
+# flutter_news_app_api_server_full_source_code
 
 ![coverage: percentage](https://img.shields.io/badge/coverage-xx-green)
 [![style: very good analysis](https://img.shields.io/badge/style-very_good_analysis-B22C89.svg)](https://pub.dev/packages/very_good_analysis)
 [![License: PolyForm Free Trial](https://img.shields.io/badge/License-PolyForm%20Free%20Trial-blue)](https://polyformproject.org/licenses/free-trial/1.0.0)
 
-🚀 Accelerate the development of your news application backend with **ht_api**, the
+🚀 Accelerate the development of your news application backend with **flutter_news_app_api_server_full_source_code**, the
 dedicated API service for the Headlines Toolkit. Built on the high-performance
-Dart Frog framework, `ht_api` provides the essential server-side infrastructure
+Dart Frog framework, `flutter_news_app_api_server_full_source_code` provides the essential server-side infrastructure
 specifically designed to power robust and feature-rich news applications.
 
-`ht_api` is a core component of the **Headlines Toolkit**, a comprehensive,
+`flutter_news_app_api_server_full_source_code` is a core component of the **Headlines Toolkit**, a comprehensive,
 source-available ecosystem designed for building feature-rich news
-applications, which also includes a Flutter [mobile app](https://github.com/headlines-toolkit/ht-main) and a web-based [content
-management dashboard](https://github.com/headlines-toolkit/ht-dashboard).
+applications, which also includes a Flutter [mobile app](https://github.com/flutter-news-app-full-source-code/ht-main) and a web-based [content
+management dashboard](https://github.com/flutter-news-app-full-source-code/ht-dashboard).
 
 ## ✨ Key Capabilities
 
@@ -53,7 +53,7 @@ management dashboard](https://github.com/headlines-toolkit/ht-dashboard).
 
 ## 🔌 API Endpoints
 
-`ht_api` provides a clear and organized API surface under the `/api/v1/` path.
+`flutter_news_app_api_server_full_source_code` provides a clear and organized API surface under the `/api/v1/` path.
 Key endpoint groups cover authentication, data access, and user settings.
 
 For complete API specifications, detailed endpoint documentation,
@@ -62,10 +62,10 @@ documentation website [todo:Link to the docs website].
 
 ## 🔑 Access and Licensing
 
-`ht_api` is source-available as part of the Headlines Toolkit ecosystem.
+`flutter_news_app_api_server_full_source_code` is source-available as part of the Headlines Toolkit ecosystem.
 
 To acquire a commercial license for building unlimited news applications, please visit 
-the [Headlines Toolkit GitHub organization page](https://github.com/headlines-toolkit)
+the [Headlines Toolkit GitHub organization page](https://github.com/flutter-news-app-full-source-code)
 for more details.
 
 ## 💻 Setup & Running
@@ -88,8 +88,8 @@ for more details.
 
 3.  **Clone the repository:**
     ```bash
-    git clone https://github.com/headlines-toolkit/ht-api.git
-    cd ht-api
+    git clone https://github.com/flutter-news-app-full-source-code/flutter-news-app-api-server-full-source-code.git
+    cd flutter-news-app-api-server-full-source-code
     ```
 4.  **Get dependencies:**
     ```bash
