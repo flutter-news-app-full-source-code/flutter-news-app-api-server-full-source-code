@@ -1,22 +1,24 @@
-import 'package:ht_api/src/config/environment_config.dart';
-import 'package:ht_api/src/rbac/permission_service.dart';
-import 'package:ht_api/src/services/auth_service.dart';
-import 'package:ht_api/src/services/auth_token_service.dart';
-import 'package:ht_api/src/services/dashboard_summary_service.dart';
-import 'package:ht_api/src/services/database_seeding_service.dart';
-import 'package:ht_api/src/services/default_user_preference_limit_service.dart';
-import 'package:ht_api/src/services/jwt_auth_token_service.dart';
-import 'package:ht_api/src/services/mongodb_token_blacklist_service.dart';
-import 'package:ht_api/src/services/mongodb_verification_code_storage_service.dart';
-import 'package:ht_api/src/services/token_blacklist_service.dart';
-import 'package:ht_api/src/services/user_preference_limit_service.dart';
-import 'package:ht_api/src/services/verification_code_storage_service.dart';
-import 'package:ht_data_mongodb/ht_data_mongodb.dart';
-import 'package:ht_data_repository/ht_data_repository.dart';
-import 'package:ht_email_repository/ht_email_repository.dart';
-import 'package:ht_email_sendgrid/ht_email_sendgrid.dart';
-import 'package:ht_http_client/ht_http_client.dart';
-import 'package:ht_shared/ht_shared.dart';
+// ignore_for_file: public_member_api_docs
+
+import 'package:core/core.dart';
+import 'package:data_mongodb/data_mongodb.dart';
+import 'package:data_repository/data_repository.dart';
+import 'package:email_repository/email_repository.dart';
+import 'package:email_sendgrid/email_sendgrid.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/database_seeding_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/default_user_preference_limit_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/jwt_auth_token_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_token_blacklist_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_verification_code_storage_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/user_preference_limit_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/verification_code_storage_service.dart';
+import 'package:http_client/http_client.dart';
 import 'package:logging/logging.dart';
 
 /// {@template app_dependencies}
@@ -44,16 +46,16 @@ class AppDependencies {
   late final MongoDbConnectionManager _mongoDbConnectionManager;
 
   // Repositories
-  late final HtDataRepository<Headline> headlineRepository;
-  late final HtDataRepository<Topic> topicRepository;
-  late final HtDataRepository<Source> sourceRepository;
-  late final HtDataRepository<Country> countryRepository;
-  late final HtDataRepository<User> userRepository;
-  late final HtDataRepository<UserAppSettings> userAppSettingsRepository;
-  late final HtDataRepository<UserContentPreferences>
+  late final DataRepository<Headline> headlineRepository;
+  late final DataRepository<Topic> topicRepository;
+  late final DataRepository<Source> sourceRepository;
+  late final DataRepository<Country> countryRepository;
+  late final DataRepository<User> userRepository;
+  late final DataRepository<UserAppSettings> userAppSettingsRepository;
+  late final DataRepository<UserContentPreferences>
   userContentPreferencesRepository;
-  late final HtDataRepository<RemoteConfig> remoteConfigRepository;
-  late final HtEmailRepository emailRepository;
+  late final DataRepository<RemoteConfig> remoteConfigRepository;
+  late final EmailRepository emailRepository;
 
   // Services
   late final TokenBlacklistService tokenBlacklistService;
@@ -92,99 +94,98 @@ class AppDependencies {
       _log.info('Database seeding complete.');
 
       // 3. Initialize Data Clients (MongoDB implementation)
-      final headlineClient = HtDataMongodb<Headline>(
+      final headlineClient = DataMongodb<Headline>(
         connectionManager: _mongoDbConnectionManager,
         modelName: 'headlines',
         fromJson: Headline.fromJson,
         toJson: (item) => item.toJson(),
         searchableFields: ['title'],
-        logger: Logger('HtDataMongodb<Headline>'),
+        logger: Logger('DataMongodb<Headline>'),
       );
-      final topicClient = HtDataMongodb<Topic>(
+      final topicClient = DataMongodb<Topic>(
         connectionManager: _mongoDbConnectionManager,
         modelName: 'topics',
         fromJson: Topic.fromJson,
         toJson: (item) => item.toJson(),
         searchableFields: ['name'],
-        logger: Logger('HtDataMongodb<Topic>'),
+        logger: Logger('DataMongodb<Topic>'),
       );
-      final sourceClient = HtDataMongodb<Source>(
+      final sourceClient = DataMongodb<Source>(
         connectionManager: _mongoDbConnectionManager,
         modelName: 'sources',
         fromJson: Source.fromJson,
         toJson: (item) => item.toJson(),
         searchableFields: ['name'],
-        logger: Logger('HtDataMongodb<Source>'),
+        logger: Logger('DataMongodb<Source>'),
       );
-      final countryClient = HtDataMongodb<Country>(
+      final countryClient = DataMongodb<Country>(
         connectionManager: _mongoDbConnectionManager,
         modelName: 'countries',
         fromJson: Country.fromJson,
         toJson: (item) => item.toJson(),
-        logger: Logger('HtDataMongodb<Country>'),
+        logger: Logger('DataMongodb<Country>'),
       );
-      final userClient = HtDataMongodb<User>(
+      final userClient = DataMongodb<User>(
         connectionManager: _mongoDbConnectionManager,
         modelName: 'users',
         fromJson: User.fromJson,
         toJson: (item) => item.toJson(),
-        logger: Logger('HtDataMongodb<User>'),
+        logger: Logger('DataMongodb<User>'),
       );
-      final userAppSettingsClient = HtDataMongodb<UserAppSettings>(
+      final userAppSettingsClient = DataMongodb<UserAppSettings>(
         connectionManager: _mongoDbConnectionManager,
         modelName: 'user_app_settings',
         fromJson: UserAppSettings.fromJson,
         toJson: (item) => item.toJson(),
-        logger: Logger('HtDataMongodb<UserAppSettings>'),
+        logger: Logger('DataMongodb<UserAppSettings>'),
       );
-      final userContentPreferencesClient =
-          HtDataMongodb<UserContentPreferences>(
-            connectionManager: _mongoDbConnectionManager,
-            modelName: 'user_content_preferences',
-            fromJson: UserContentPreferences.fromJson,
-            toJson: (item) => item.toJson(),
-            logger: Logger('HtDataMongodb<UserContentPreferences>'),
-          );
-      final remoteConfigClient = HtDataMongodb<RemoteConfig>(
+      final userContentPreferencesClient = DataMongodb<UserContentPreferences>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'user_content_preferences',
+        fromJson: UserContentPreferences.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<UserContentPreferences>'),
+      );
+      final remoteConfigClient = DataMongodb<RemoteConfig>(
         connectionManager: _mongoDbConnectionManager,
         modelName: 'remote_configs',
         fromJson: RemoteConfig.fromJson,
         toJson: (item) => item.toJson(),
-        logger: Logger('HtDataMongodb<RemoteConfig>'),
+        logger: Logger('DataMongodb<RemoteConfig>'),
       );
 
       // 4. Initialize Repositories
-      headlineRepository = HtDataRepository(dataClient: headlineClient);
-      topicRepository = HtDataRepository(dataClient: topicClient);
-      sourceRepository = HtDataRepository(dataClient: sourceClient);
-      countryRepository = HtDataRepository(dataClient: countryClient);
-      userRepository = HtDataRepository(dataClient: userClient);
-      userAppSettingsRepository = HtDataRepository(
+      headlineRepository = DataRepository(dataClient: headlineClient);
+      topicRepository = DataRepository(dataClient: topicClient);
+      sourceRepository = DataRepository(dataClient: sourceClient);
+      countryRepository = DataRepository(dataClient: countryClient);
+      userRepository = DataRepository(dataClient: userClient);
+      userAppSettingsRepository = DataRepository(
         dataClient: userAppSettingsClient,
       );
-      userContentPreferencesRepository = HtDataRepository(
+      userContentPreferencesRepository = DataRepository(
         dataClient: userContentPreferencesClient,
       );
-      remoteConfigRepository = HtDataRepository(dataClient: remoteConfigClient);
+      remoteConfigRepository = DataRepository(dataClient: remoteConfigClient);
 
       // Configure the HTTP client for SendGrid.
-      // The HtHttpClient's AuthInterceptor will use the tokenProvider to add
+      // The HttpClient's AuthInterceptor will use the tokenProvider to add
       // the 'Authorization: Bearer <SENDGRID_API_KEY>' header.
       final sendGridApiBase =
           EnvironmentConfig.sendGridApiUrl ?? 'https://api.sendgrid.com';
-      final sendGridHttpClient = HtHttpClient(
+      final sendGridHttpClient = HttpClient(
         baseUrl: '$sendGridApiBase/v3',
         tokenProvider: () async => EnvironmentConfig.sendGridApiKey,
-        logger: Logger('HtEmailSendgridClient'),
+        logger: Logger('EmailSendgridClient'),
       );
 
       // Initialize the SendGrid email client with the dedicated HTTP client.
-      final emailClient = HtEmailSendGrid(
+      final emailClient = EmailSendGrid(
         httpClient: sendGridHttpClient,
-        log: Logger('HtEmailSendgrid'),
+        log: Logger('EmailSendgrid'),
       );
 
-      emailRepository = HtEmailRepository(emailClient: emailClient);
+      emailRepository = EmailRepository(emailClient: emailClient);
 
       // 5. Initialize Services
       tokenBlacklistService = MongoDbTokenBlacklistService(
