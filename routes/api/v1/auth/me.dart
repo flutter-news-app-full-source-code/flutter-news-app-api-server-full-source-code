@@ -1,8 +1,8 @@
 import 'dart:io';
 
+import 'package:core/core.dart'; // For User, SuccessApiResponse etc.
 import 'package:dart_frog/dart_frog.dart';
-import 'package:ht_api/src/helpers/response_helper.dart';
-import 'package:ht_shared/ht_shared.dart'; // For User, SuccessApiResponse etc.
+import 'package:flutter_news_app_api_server_full_source_code/src/helpers/response_helper.dart';
 
 /// Handles GET requests to `/api/v1/auth/me`.
 ///

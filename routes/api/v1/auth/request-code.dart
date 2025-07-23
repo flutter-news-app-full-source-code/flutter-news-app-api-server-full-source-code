@@ -1,8 +1,8 @@
 import 'dart:io';
 
+import 'package:core/core.dart'; // For exceptions
 import 'package:dart_frog/dart_frog.dart';
-import 'package:ht_api/src/services/auth_service.dart';
-import 'package:ht_shared/ht_shared.dart'; // For exceptions
+import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_service.dart';
 import 'package:logging/logging.dart';
 
 // Create a logger for this file.
@@ -80,7 +80,7 @@ Future<Response> onRequest(RequestContext context) async {
     // but the processing (email sending) hasn't necessarily completed.
     // 200 OK is also acceptable if you consider the API call itself complete.
     return Response(statusCode: HttpStatus.accepted);
-  } on HtHttpException catch (_) {
+  } on HttpException catch (_) {
     // Let the central errorHandler middleware handle known exceptions
     rethrow;
   } catch (e, s) {
