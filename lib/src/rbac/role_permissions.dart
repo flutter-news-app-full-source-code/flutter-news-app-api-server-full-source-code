@@ -1,5 +1,5 @@
-import 'package:ht_api/src/rbac/permissions.dart';
-import 'package:ht_shared/ht_shared.dart';
+import 'package:core/core.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 
 // --- App Role Permissions ---
 
