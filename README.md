@@ -10,7 +10,7 @@
 </p>
 </div>
 
-This is the complete and fully-functional backend API server for the Flutter News App Toolkit. Built with the high-performance Dart Frog framework, it gives you all the server-side features you need to power your news app, right out of the box. It is a key component of the [**Flutter News App Toolkit**](https://github.com/flutter-news-app-full-source-code), an ecosystem that also includes a flutter [mobile app](https://github.com/flutter-news-app-full-source-code/flutter-news-app-mobile-client-full-source-code) and a web-based [content dashboard](https://github.com/flutter-news-app-full-source-code/flutter-news-app-web-dashboard-full-source-code).
+This repository contains the complete, production-ready source code for the backend API server that powers the entire Flutter News App ecosystem. Built with the high-performance Dart Frog framework, it gives you all the server-side features you need, right out of the box. It is the core component of the [**Flutter News App - Full Source Code Toolkit**](https://github.com/flutter-news-app-full-source-code), serving the Flutter [mobile app](https://github.com/flutter-news-app-full-source-code/flutter-news-app-mobile-client-full-source-code) and the web-based [content dashboard](https://github.com/flutter-news-app-full-source-code/flutter-news-app-web-dashboard-full-source-code).
 
 ## ⭐ Everything You Get, Ready to Go
 
@@ -59,10 +59,11 @@ This API server comes packed with all the features you need to launch a professi
 Get started for free and purchase when you're ready to launch!
 
 *   **TRY IT:** Download and explore the full source code under the PolyForm Free Trial [license](LICENSE). Perfect for evaluation.
-*   **BUY IT:** Get an unlimited commercial lifetime license with a **one-time payment**. No subscriptions!
+*   **BUY IT:** One-time payment for a lifetime license to publish unlimited commercial apps.
 *   **GET YOURS:** [**Purchase via GitHub Sponsors**](https://github.com/sponsors/flutter-news-app-full-source-code).
 
-> *<p style="color:grey">Note: The single purchase provides a comprehensive commercial license covering every repository within the [Flutter News App Toolkit](https://github.com/flutter-news-app-full-source-code) organization. No separate purchases are needed for the mobile app or dashboard.</p>*
+> [!NOTE]
+> *A single purchase provides a commercial license for every repository within the [Flutter News App - Full Source Code Toolkit](https://github.com/flutter-news-app-full-source-code). No other purchases are needed..*
 
 ---
 
