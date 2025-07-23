@@ -2,14 +2,14 @@
 
 import 'dart:async';
 
-import 'package:ht_api/src/config/environment_config.dart';
-import 'package:ht_api/src/rbac/permission_service.dart';
-import 'package:ht_api/src/rbac/permissions.dart';
-import 'package:ht_api/src/services/auth_token_service.dart';
-import 'package:ht_api/src/services/verification_code_storage_service.dart';
-import 'package:ht_data_repository/ht_data_repository.dart';
-import 'package:ht_email_repository/ht_email_repository.dart';
-import 'package:ht_shared/ht_shared.dart';
+import 'package:core/core.dart';
+import 'package:data_repository/data_repository.dart';
+import 'package:email_repository/email_repository.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/verification_code_storage_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 
@@ -22,12 +22,12 @@ import 'package:mongo_dart/mongo_dart.dart';
 class AuthService {
   /// {@macro auth_service}
   const AuthService({
-    required HtDataRepository<User> userRepository,
+    required DataRepository<User> userRepository,
     required AuthTokenService authTokenService,
     required VerificationCodeStorageService verificationCodeStorageService,
-    required HtEmailRepository emailRepository,
-    required HtDataRepository<UserAppSettings> userAppSettingsRepository,
-    required HtDataRepository<UserContentPreferences>
+    required EmailRepository emailRepository,
+    required DataRepository<UserAppSettings> userAppSettingsRepository,
+    required DataRepository<UserContentPreferences>
     userContentPreferencesRepository,
     required PermissionService permissionService,
     required Logger log,
@@ -40,12 +40,12 @@ class AuthService {
        _userContentPreferencesRepository = userContentPreferencesRepository,
        _log = log;
 
-  final HtDataRepository<User> _userRepository;
+  final DataRepository<User> _userRepository;
   final AuthTokenService _authTokenService;
   final VerificationCodeStorageService _verificationCodeStorageService;
-  final HtEmailRepository _emailRepository;
-  final HtDataRepository<UserAppSettings> _userAppSettingsRepository;
-  final HtDataRepository<UserContentPreferences>
+  final EmailRepository _emailRepository;
+  final DataRepository<UserAppSettings> _userAppSettingsRepository;
+  final DataRepository<UserContentPreferences>
   _userContentPreferencesRepository;
   final PermissionService _permissionService;
   final Logger _log;
@@ -112,7 +112,7 @@ class AuthService {
         otpCode: code,
       );
       _log.info('Initiated email sign-in for $email, code sent.');
-    } on HtHttpException {
+    } on HttpException {
       // Propagate known exceptions from dependencies or from this method's logic.
       // This ensures that specific errors like ForbiddenException are not
       // masked as a generic server error.
@@ -301,7 +301,7 @@ class AuthService {
         // Ensure default documents are created for the new user.
         await _ensureUserDataExists(user);
       }
-    } on HtHttpException {
+    } on HttpException {
       // Propagate known exceptions from dependencies or from this method's logic.
       // This ensures that specific errors like ForbiddenException are not
       // masked as a generic server error.
@@ -358,7 +358,7 @@ class AuthService {
 
       // Ensure default documents are created for the new anonymous user.
       await _ensureUserDataExists(user);
-    } on HtHttpException catch (e) {
+    } on HttpException catch (e) {
       _log.severe('Error creating anonymous user: $e');
       throw const OperationFailedException('Failed to create anonymous user.');
     } catch (e) {
@@ -413,7 +413,7 @@ class AuthService {
       // Invalidate the token using the AuthTokenService
       await _authTokenService.invalidateToken(token);
       _log.info('Token invalidation logic executed for user $userId.');
-    } on HtHttpException catch (_) {
+    } on HttpException catch (_) {
       // Propagate known exceptions from the token service
       rethrow;
     } catch (e) {
@@ -477,7 +477,7 @@ class AuthService {
     } on NotFoundException {
       // Propagate NotFoundException if user doesn't exist
       rethrow;
-    } on HtHttpException catch (_) {
+    } on HttpException catch (_) {
       // Propagate other known exceptions from dependencies
       rethrow;
     } catch (e) {
@@ -490,7 +490,7 @@ class AuthService {
   /// Finds a user by their email address.
   ///
   /// Returns the [User] if found, otherwise `null`.
-  /// Re-throws any [HtHttpException] from the repository.
+  /// Re-throws any [HttpException] from the repository.
   Future<User?> _findUserByEmail(String email) async {
     try {
       final response = await _userRepository.readAll(filter: {'email': email});
@@ -498,7 +498,7 @@ class AuthService {
         return response.items.first;
       }
       return null;
-    } on HtHttpException {
+    } on HttpException {
       rethrow;
     }
   }

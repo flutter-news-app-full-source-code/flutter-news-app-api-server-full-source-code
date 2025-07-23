@@ -1,4 +1,4 @@
-import 'package:ht_shared/ht_shared.dart';
+import 'package:core/core.dart';
 
 /// {@template auth_token_service}
 /// Service responsible for generating and validating authentication tokens.

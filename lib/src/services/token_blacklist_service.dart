@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:ht_shared/ht_shared.dart';
+import 'package:core/core.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 

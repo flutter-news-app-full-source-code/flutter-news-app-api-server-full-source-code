@@ -1,4 +1,4 @@
-import 'package:ht_shared/ht_shared.dart';
+import 'package:core/core.dart';
 
 /// {@template user_preference_limit_service}
 /// Service responsible for enforcing user preference limits based on user role.
