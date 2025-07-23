@@ -1,8 +1,8 @@
+import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:ht_api/src/rbac/permission_service.dart';
-import 'package:ht_api/src/registry/model_registry.dart';
-import 'package:ht_data_repository/ht_data_repository.dart';
-import 'package:ht_shared/ht_shared.dart';
+import 'package:data_repository/data_repository.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_registry.dart';
 
 /// A wrapper class to provide a fetched item into the request context.
 ///
@@ -72,13 +72,13 @@ Middleware ownershipCheckMiddleware() {
 
       switch (modelName) {
         case 'user':
-          final repo = context.read<HtDataRepository<User>>();
+          final repo = context.read<DataRepository<User>>();
           item = await repo.read(id: id, userId: userIdForRepoCall);
         case 'user_app_settings':
-          final repo = context.read<HtDataRepository<UserAppSettings>>();
+          final repo = context.read<DataRepository<UserAppSettings>>();
           item = await repo.read(id: id, userId: userIdForRepoCall);
         case 'user_content_preferences':
-          final repo = context.read<HtDataRepository<UserContentPreferences>>();
+          final repo = context.read<DataRepository<UserContentPreferences>>();
           item = await repo.read(id: id, userId: userIdForRepoCall);
         default:
           throw OperationFailedException(
