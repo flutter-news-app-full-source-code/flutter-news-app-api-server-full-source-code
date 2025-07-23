@@ -1,9 +1,9 @@
+import 'package:core/core.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
-import 'package:ht_api/src/config/environment_config.dart';
-import 'package:ht_api/src/services/auth_token_service.dart';
-import 'package:ht_api/src/services/token_blacklist_service.dart';
-import 'package:ht_data_repository/ht_data_repository.dart';
-import 'package:ht_shared/ht_shared.dart';
+import 'package:data_repository/data_repository.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 
@@ -21,14 +21,14 @@ class JwtAuthTokenService implements AuthTokenService {
   ///   subject claim.
   /// - [blacklistService]: To manage the blacklist of invalidated tokens.
   const JwtAuthTokenService({
-    required HtDataRepository<User> userRepository,
+    required DataRepository<User> userRepository,
     required TokenBlacklistService blacklistService,
     required Logger log,
   }) : _userRepository = userRepository,
        _blacklistService = blacklistService,
        _log = log;
 
-  final HtDataRepository<User> _userRepository;
+  final DataRepository<User> _userRepository;
   final TokenBlacklistService _blacklistService;
   final Logger _log;
 
@@ -179,11 +179,11 @@ class JwtAuthTokenService implements AuthTokenService {
       );
       // Treat other JWT exceptions as invalid tokens
       throw UnauthorizedException('Invalid token: ${e.message}');
-    } on HtHttpException catch (e, s) {
+    } on HttpException catch (e, s) {
       // Handle errors from the user repository (e.g., user not found)
-      // or blacklist check (if it threw HtHttpException)
+      // or blacklist check (if it threw HttpException)
       _log.warning(
-        '[validateToken] CATCH HtHttpException: Error during validation. '
+        '[validateToken] CATCH HttpException: Error during validation. '
         'Type: ${e.runtimeType}, Message: $e\n$s',
       );
       // Re-throw repository/blacklist exceptions directly
@@ -253,10 +253,10 @@ class JwtAuthTokenService implements AuthTokenService {
       );
       // Treat as invalid input for invalidation purposes
       throw InvalidInputException('Invalid token format: ${e.message}');
-    } on HtHttpException catch (e, s) {
+    } on HttpException catch (e, s) {
       // Catch errors from the blacklist service itself
       _log.warning(
-        '[invalidateToken] CATCH HtHttpException: Error during blacklisting. '
+        '[invalidateToken] CATCH HttpException: Error during blacklisting. '
         'Type: ${e.runtimeType}, Message: $e\n$s',
       );
       // Re-throw blacklist service exceptions

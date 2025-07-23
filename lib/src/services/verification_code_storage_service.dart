@@ -2,7 +2,7 @@
 
 import 'dart:async';
 
-import 'package:ht_shared/ht_shared.dart';
+import 'package:core/core.dart';
 
 /// {@template verification_code_storage_service}
 /// Defines the interface for a service that manages verification codes

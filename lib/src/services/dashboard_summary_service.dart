@@ -1,5 +1,5 @@
-import 'package:ht_data_repository/ht_data_repository.dart';
-import 'package:ht_shared/ht_shared.dart';
+import 'package:core/core.dart';
+import 'package:data_repository/data_repository.dart';
 
 /// {@template dashboard_summary_service}
 /// A service responsible for calculating the dashboard summary data on demand.
@@ -10,16 +10,16 @@ import 'package:ht_shared/ht_shared.dart';
 class DashboardSummaryService {
   /// {@macro dashboard_summary_service}
   const DashboardSummaryService({
-    required HtDataRepository<Headline> headlineRepository,
-    required HtDataRepository<Topic> topicRepository,
-    required HtDataRepository<Source> sourceRepository,
+    required DataRepository<Headline> headlineRepository,
+    required DataRepository<Topic> topicRepository,
+    required DataRepository<Source> sourceRepository,
   }) : _headlineRepository = headlineRepository,
        _topicRepository = topicRepository,
        _sourceRepository = sourceRepository;
 
-  final HtDataRepository<Headline> _headlineRepository;
-  final HtDataRepository<Topic> _topicRepository;
-  final HtDataRepository<Source> _sourceRepository;
+  final DataRepository<Headline> _headlineRepository;
+  final DataRepository<Topic> _topicRepository;
+  final DataRepository<Source> _sourceRepository;
 
   /// Calculates and returns the current dashboard summary.
   ///

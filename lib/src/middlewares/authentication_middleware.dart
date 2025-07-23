@@ -1,6 +1,6 @@
+import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:ht_api/src/services/auth_token_service.dart';
-import 'package:ht_shared/ht_shared.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
 import 'package:logging/logging.dart';
 
 final _log = Logger('AuthMiddleware');
@@ -58,12 +58,12 @@ Middleware authenticationProvider() {
             // using this middleware strictly require a valid token.
             // However, providing null allows routes to handle optional auth.
           }
-        } on HtHttpException catch (e) {
+        } on HttpException catch (e) {
           // Log token validation errors from the service
           _log.warning('Token validation failed.', e);
           // Let the error propagate if needed, or handle specific cases.
           // For now, we treat validation errors as resulting in no user.
-          user = null; // Keep user null if HtHttpException occurred
+          user = null; // Keep user null if HttpException occurred
         } catch (e, s) {
           // Catch unexpected errors during validation
           _log.severe('Unexpected error during token validation.', e, s);

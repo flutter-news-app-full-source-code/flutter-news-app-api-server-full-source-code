@@ -1,39 +1,39 @@
-name: ht_api
-description: ht_api is the backend API component of the Headlines Toolkit (HT) project.
-repository: https://github.com/headlines-toolkit/ht-api
+name: flutter_news_app_api_server_full_source_code
+description: The complete backend API server for the Flutter News App Toolkit, built with Dart Frog. Powers authentication, data management, user settings, and more.
+repository: https://github.com/flutter-news-app-full-source-code/flutter-news-app-api-server-full-source-code
 publish_to: none
 
 environment:
   sdk: ^3.8.0
 
 dependencies:
+  core:
+    git:
+      url: https://github.com/flutter-news-app-full-source-code/core.git
   dart_frog: ^1.1.0
   dart_jsonwebtoken: ^3.2.0
+  data_client:
+    git:
+      url: https://github.com/flutter-news-app-full-source-code/data-client.git
+  data_mongodb:
+    git:
+      url: https://github.com/flutter-news-app-full-source-code/data-mongodb.git
+  data_repository:
+    git:
+      url: https://github.com/flutter-news-app-full-source-code/data-repository.git
   dotenv: ^4.2.0
-  ht_data_client:
+  email_client:
     git:
-      url: https://github.com/headlines-toolkit/ht-data-client.git
-  ht_data_mongodb:
+      url: https://github.com/flutter-news-app-full-source-code/email-client.git
+  email_repository:
     git:
-      url: https://github.com/headlines-toolkit/ht-data-mongodb.git
-  ht_data_repository:
+      url: https://github.com/flutter-news-app-full-source-code/email-repository.git
+  email_sendgrid:
     git:
-      url: https://github.com/headlines-toolkit/ht-data-repository.git
-  ht_email_client:
+      url: https://github.com/flutter-news-app-full-source-code/email-sendgrid.git
+  http_client:
     git:
-      url: https://github.com/headlines-toolkit/ht-email-client.git
-  ht_email_repository:
-    git:
-      url: https://github.com/headlines-toolkit/ht-email-repository.git
-  ht_email_sendgrid:
-    git:
-      url: https://github.com/headlines-toolkit/ht-email-sendgrid.git  
-  ht_http_client:
-    git:
-      url: https://github.com/headlines-toolkit/ht-http-client.git
-  ht_shared:
-    git:
-      url: https://github.com/headlines-toolkit/ht-shared.git
+      url: https://github.com/flutter-news-app-full-source-code/http-client.git
   json_annotation: ^4.9.0
   logging: ^1.3.0
   meta: ^1.16.0
@@ -43,4 +43,4 @@ dependencies:
 dev_dependencies:
   mocktail: ^1.0.3
   test: ^1.25.5
-  very_good_analysis: ^7.0.0
+  very_good_analysis: ^9.0.0

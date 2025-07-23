@@ -1,13 +1,13 @@
 import 'dart:io';
 
+import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:ht_api/src/helpers/response_helper.dart';
-import 'package:ht_api/src/rbac/permission_service.dart';
-import 'package:ht_api/src/registry/model_registry.dart';
-import 'package:ht_api/src/services/dashboard_summary_service.dart';
-import 'package:ht_api/src/services/user_preference_limit_service.dart'; // Import UserPreferenceLimitService
-import 'package:ht_data_repository/ht_data_repository.dart';
-import 'package:ht_shared/ht_shared.dart';
+import 'package:data_repository/data_repository.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/helpers/response_helper.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_registry.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/user_preference_limit_service.dart'; // Import UserPreferenceLimitService
 import 'package:logging/logging.dart';
 
 // Create a logger for this file.
@@ -96,28 +96,28 @@ Future<Response> _handleGet(
   // main onRequest try/catch (which is now removed, so they go to errorHandler).
   switch (modelName) {
     case 'headline':
-      final repo = context.read<HtDataRepository<Headline>>();
+      final repo = context.read<DataRepository<Headline>>();
       item = await repo.read(id: id, userId: userIdForRepoCall);
     case 'topic':
-      final repo = context.read<HtDataRepository<Topic>>();
+      final repo = context.read<DataRepository<Topic>>();
       item = await repo.read(id: id, userId: userIdForRepoCall);
     case 'source':
-      final repo = context.read<HtDataRepository<Source>>();
+      final repo = context.read<DataRepository<Source>>();
       item = await repo.read(id: id, userId: userIdForRepoCall);
     case 'country':
-      final repo = context.read<HtDataRepository<Country>>();
+      final repo = context.read<DataRepository<Country>>();
       item = await repo.read(id: id, userId: userIdForRepoCall);
     case 'user': // Handle User model specifically if needed, or rely on generic
-      final repo = context.read<HtDataRepository<User>>();
+      final repo = context.read<DataRepository<User>>();
       item = await repo.read(id: id, userId: userIdForRepoCall);
     case 'user_app_settings': // New case for UserAppSettings
-      final repo = context.read<HtDataRepository<UserAppSettings>>();
+      final repo = context.read<DataRepository<UserAppSettings>>();
       item = await repo.read(id: id, userId: userIdForRepoCall);
     case 'user_content_preferences': // New case for UserContentPreferences
-      final repo = context.read<HtDataRepository<UserContentPreferences>>();
+      final repo = context.read<DataRepository<UserContentPreferences>>();
       item = await repo.read(id: id, userId: userIdForRepoCall);
     case 'remote_config': // New case for RemoteConfig (read by admin)
-      final repo = context.read<HtDataRepository<RemoteConfig>>();
+      final repo = context.read<DataRepository<RemoteConfig>>();
       item = await repo.read(
         id: id,
         userId: userIdForRepoCall,
@@ -240,7 +240,7 @@ Future<Response> _handlePut(
         authenticatedUser,
         itemToUpdate,
       );
-    } on HtHttpException {
+    } on HttpException {
       // Propagate known exceptions from the limit service (e.g., ForbiddenException)
       rethrow;
     } catch (e, s) {
@@ -275,7 +275,7 @@ Future<Response> _handlePut(
   switch (modelName) {
     case 'headline':
       {
-        final repo = context.read<HtDataRepository<Headline>>();
+        final repo = context.read<DataRepository<Headline>>();
         updatedItem = await repo.update(
           id: id,
           item: itemToUpdate as Headline,
@@ -284,7 +284,7 @@ Future<Response> _handlePut(
       }
     case 'topic':
       {
-        final repo = context.read<HtDataRepository<Topic>>();
+        final repo = context.read<DataRepository<Topic>>();
         updatedItem = await repo.update(
           id: id,
           item: itemToUpdate as Topic,
@@ -293,7 +293,7 @@ Future<Response> _handlePut(
       }
     case 'source':
       {
-        final repo = context.read<HtDataRepository<Source>>();
+        final repo = context.read<DataRepository<Source>>();
         updatedItem = await repo.update(
           id: id,
           item: itemToUpdate as Source,
@@ -302,7 +302,7 @@ Future<Response> _handlePut(
       }
     case 'country':
       {
-        final repo = context.read<HtDataRepository<Country>>();
+        final repo = context.read<DataRepository<Country>>();
         updatedItem = await repo.update(
           id: id,
           item: itemToUpdate as Country,
@@ -311,7 +311,7 @@ Future<Response> _handlePut(
       }
     case 'user':
       {
-        final repo = context.read<HtDataRepository<User>>();
+        final repo = context.read<DataRepository<User>>();
         updatedItem = await repo.update(
           id: id,
           item: itemToUpdate as User,
@@ -320,7 +320,7 @@ Future<Response> _handlePut(
       }
     case 'user_app_settings': // New case for UserAppSettings
       {
-        final repo = context.read<HtDataRepository<UserAppSettings>>();
+        final repo = context.read<DataRepository<UserAppSettings>>();
         updatedItem = await repo.update(
           id: id,
           item: itemToUpdate as UserAppSettings,
@@ -329,7 +329,7 @@ Future<Response> _handlePut(
       }
     case 'user_content_preferences': // New case for UserContentPreferences
       {
-        final repo = context.read<HtDataRepository<UserContentPreferences>>();
+        final repo = context.read<DataRepository<UserContentPreferences>>();
         updatedItem = await repo.update(
           id: id,
           item: itemToUpdate as UserContentPreferences,
@@ -338,7 +338,7 @@ Future<Response> _handlePut(
       }
     case 'remote_config': // New case for RemoteConfig (update by admin)
       {
-        final repo = context.read<HtDataRepository<RemoteConfig>>();
+        final repo = context.read<DataRepository<RemoteConfig>>();
         updatedItem = await repo.update(
           id: id,
           item: itemToUpdate as RemoteConfig,
@@ -443,28 +443,28 @@ Future<Response> _handleDelete(
     // Repository exceptions (like NotFoundException) will propagate up to the errorHandler.
     switch (modelName) {
       case 'headline':
-        final repo = context.read<HtDataRepository<Headline>>();
+        final repo = context.read<DataRepository<Headline>>();
         itemToDelete = await repo.read(id: id, userId: userIdForRepoCall);
       case 'topic':
-        final repo = context.read<HtDataRepository<Topic>>();
+        final repo = context.read<DataRepository<Topic>>();
         itemToDelete = await repo.read(id: id, userId: userIdForRepoCall);
       case 'source':
-        final repo = context.read<HtDataRepository<Source>>();
+        final repo = context.read<DataRepository<Source>>();
         itemToDelete = await repo.read(id: id, userId: userIdForRepoCall);
       case 'country':
-        final repo = context.read<HtDataRepository<Country>>();
+        final repo = context.read<DataRepository<Country>>();
         itemToDelete = await repo.read(id: id, userId: userIdForRepoCall);
       case 'user':
-        final repo = context.read<HtDataRepository<User>>();
+        final repo = context.read<DataRepository<User>>();
         itemToDelete = await repo.read(id: id, userId: userIdForRepoCall);
       case 'user_app_settings': // New case for UserAppSettings
-        final repo = context.read<HtDataRepository<UserAppSettings>>();
+        final repo = context.read<DataRepository<UserAppSettings>>();
         itemToDelete = await repo.read(id: id, userId: userIdForRepoCall);
       case 'user_content_preferences': // New case for UserContentPreferences
-        final repo = context.read<HtDataRepository<UserContentPreferences>>();
+        final repo = context.read<DataRepository<UserContentPreferences>>();
         itemToDelete = await repo.read(id: id, userId: userIdForRepoCall);
       case 'remote_config': // New case for RemoteConfig (delete by admin)
-        final repo = context.read<HtDataRepository<RemoteConfig>>();
+        final repo = context.read<DataRepository<RemoteConfig>>();
         itemToDelete = await repo.read(
           id: id,
           userId: userIdForRepoCall,
@@ -498,42 +498,42 @@ Future<Response> _handleDelete(
   // upwards to be handled by the standard error handling mechanism.
   switch (modelName) {
     case 'headline':
-      await context.read<HtDataRepository<Headline>>().delete(
+      await context.read<DataRepository<Headline>>().delete(
         id: id,
         userId: userIdForRepoCall,
       );
     case 'topic':
-      await context.read<HtDataRepository<Topic>>().delete(
+      await context.read<DataRepository<Topic>>().delete(
         id: id,
         userId: userIdForRepoCall,
       );
     case 'source':
-      await context.read<HtDataRepository<Source>>().delete(
+      await context.read<DataRepository<Source>>().delete(
         id: id,
         userId: userIdForRepoCall,
       );
     case 'country':
-      await context.read<HtDataRepository<Country>>().delete(
+      await context.read<DataRepository<Country>>().delete(
         id: id,
         userId: userIdForRepoCall,
       );
     case 'user':
-      await context.read<HtDataRepository<User>>().delete(
+      await context.read<DataRepository<User>>().delete(
         id: id,
         userId: userIdForRepoCall,
       );
     case 'user_app_settings': // New case for UserAppSettings
-      await context.read<HtDataRepository<UserAppSettings>>().delete(
+      await context.read<DataRepository<UserAppSettings>>().delete(
         id: id,
         userId: userIdForRepoCall,
       );
     case 'user_content_preferences': // New case for UserContentPreferences
-      await context.read<HtDataRepository<UserContentPreferences>>().delete(
+      await context.read<DataRepository<UserContentPreferences>>().delete(
         id: id,
         userId: userIdForRepoCall,
       );
     case 'remote_config': // New case for RemoteConfig (delete by admin)
-      await context.read<HtDataRepository<RemoteConfig>>().delete(
+      await context.read<DataRepository<RemoteConfig>>().delete(
         id: id,
         userId: userIdForRepoCall,
       ); // userId should be null for AppConfig

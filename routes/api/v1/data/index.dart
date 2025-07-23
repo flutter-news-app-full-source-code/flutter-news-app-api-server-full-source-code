@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:ht_api/src/helpers/response_helper.dart';
-import 'package:ht_api/src/rbac/permission_service.dart';
-import 'package:ht_api/src/registry/model_registry.dart';
-import 'package:ht_data_repository/ht_data_repository.dart';
-import 'package:ht_shared/ht_shared.dart';
+import 'package:data_repository/data_repository.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/helpers/response_helper.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_registry.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 
 /// Handles requests for the /api/v1/data collection endpoint.
@@ -86,7 +86,7 @@ Future<Response> _handleGet(RequestContext context) async {
   // The query logic is handled by the repository/client.
   switch (modelName) {
     case 'headline':
-      final repo = context.read<HtDataRepository<Headline>>();
+      final repo = context.read<DataRepository<Headline>>();
       responseData = await repo.readAll(
         userId: userIdForRepoCall,
         filter: filter,
@@ -94,7 +94,7 @@ Future<Response> _handleGet(RequestContext context) async {
         pagination: pagination,
       );
     case 'topic':
-      final repo = context.read<HtDataRepository<Topic>>();
+      final repo = context.read<DataRepository<Topic>>();
       responseData = await repo.readAll(
         userId: userIdForRepoCall,
         filter: filter,
@@ -102,7 +102,7 @@ Future<Response> _handleGet(RequestContext context) async {
         pagination: pagination,
       );
     case 'source':
-      final repo = context.read<HtDataRepository<Source>>();
+      final repo = context.read<DataRepository<Source>>();
       responseData = await repo.readAll(
         userId: userIdForRepoCall,
         filter: filter,
@@ -110,7 +110,7 @@ Future<Response> _handleGet(RequestContext context) async {
         pagination: pagination,
       );
     case 'country':
-      final repo = context.read<HtDataRepository<Country>>();
+      final repo = context.read<DataRepository<Country>>();
       responseData = await repo.readAll(
         userId: userIdForRepoCall,
         filter: filter,
@@ -118,7 +118,7 @@ Future<Response> _handleGet(RequestContext context) async {
         pagination: pagination,
       );
     case 'user':
-      final repo = context.read<HtDataRepository<User>>();
+      final repo = context.read<DataRepository<User>>();
       responseData = await repo.readAll(
         userId: userIdForRepoCall,
         filter: filter,
@@ -178,31 +178,31 @@ Future<Response> _handlePost(RequestContext context) async {
   dynamic createdItem;
   switch (modelName) {
     case 'headline':
-      final repo = context.read<HtDataRepository<Headline>>();
+      final repo = context.read<DataRepository<Headline>>();
       createdItem = await repo.create(
         item: itemToCreate as Headline,
         userId: userIdForRepoCall,
       );
     case 'topic':
-      final repo = context.read<HtDataRepository<Topic>>();
+      final repo = context.read<DataRepository<Topic>>();
       createdItem = await repo.create(
         item: itemToCreate as Topic,
         userId: userIdForRepoCall,
       );
     case 'source':
-      final repo = context.read<HtDataRepository<Source>>();
+      final repo = context.read<DataRepository<Source>>();
       createdItem = await repo.create(
         item: itemToCreate as Source,
         userId: userIdForRepoCall,
       );
     case 'country':
-      final repo = context.read<HtDataRepository<Country>>();
+      final repo = context.read<DataRepository<Country>>();
       createdItem = await repo.create(
         item: itemToCreate as Country,
         userId: userIdForRepoCall,
       );
     case 'remote_config':
-      final repo = context.read<HtDataRepository<RemoteConfig>>();
+      final repo = context.read<DataRepository<RemoteConfig>>();
       createdItem = await repo.create(
         item: itemToCreate as RemoteConfig,
         userId: userIdForRepoCall,

@@ -1,8 +1,8 @@
 import 'dart:io';
 
+import 'package:core/core.dart'; // For User and exceptions
 import 'package:dart_frog/dart_frog.dart';
-import 'package:ht_api/src/services/auth_service.dart';
-import 'package:ht_shared/ht_shared.dart'; // For User and exceptions
+import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_service.dart';
 import 'package:logging/logging.dart';
 
 // Create a logger for this file.
@@ -39,7 +39,7 @@ Future<Response> onRequest(RequestContext context) async {
 
     // Return 204 No Content indicating successful deletion
     return Response(statusCode: HttpStatus.noContent);
-  } on HtHttpException catch (_) {
+  } on HttpException catch (_) {
     // Let the central errorHandler middleware handle known exceptions
     rethrow;
   } catch (e, s) {

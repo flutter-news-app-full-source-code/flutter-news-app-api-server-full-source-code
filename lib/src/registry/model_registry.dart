@@ -1,9 +1,9 @@
 // ignore_for_file: comment_references
 
+import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:ht_api/src/rbac/permissions.dart';
-import 'package:ht_data_client/ht_data_client.dart';
-import 'package:ht_shared/ht_shared.dart';
+import 'package:data_client/data_client.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 
 /// Defines the type of permission check required for a specific action.
 enum RequiredPermissionType {
@@ -113,7 +113,7 @@ class ModelConfig<T> {
 ///    (like `fromJson`, `getOwnerId`) and authorization metadata needed by the
 ///    generic route handlers (`index.dart`, `[id].dart`) and authorization middleware.
 ///
-/// While individual repositories (`HtDataRepository<Headline>`, etc.) are provided
+/// While individual repositories (`DataRepository<Headline>`, etc.) are provided
 /// directly in the main `routes/_middleware.dart`, this registry provides the
 /// *metadata* needed to work with those repositories generically based on the
 /// request's `model` parameter.

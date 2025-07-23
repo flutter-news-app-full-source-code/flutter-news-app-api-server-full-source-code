@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:ht_api/src/services/token_blacklist_service.dart';
-import 'package:ht_data_mongodb/ht_data_mongodb.dart';
-import 'package:ht_shared/ht_shared.dart';
+import 'package:core/core.dart';
+import 'package:data_mongodb/data_mongodb.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 

@@ -1,8 +1,8 @@
-import 'package:ht_api/src/rbac/permission_service.dart';
-import 'package:ht_api/src/rbac/permissions.dart';
-import 'package:ht_api/src/services/user_preference_limit_service.dart';
-import 'package:ht_data_repository/ht_data_repository.dart';
-import 'package:ht_shared/ht_shared.dart';
+import 'package:core/core.dart';
+import 'package:data_repository/data_repository.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/user_preference_limit_service.dart';
 import 'package:logging/logging.dart';
 
 /// {@template default_user_preference_limit_service}
@@ -12,14 +12,14 @@ import 'package:logging/logging.dart';
 class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
   /// {@macro default_user_preference_limit_service}
   const DefaultUserPreferenceLimitService({
-    required HtDataRepository<RemoteConfig> remoteConfigRepository,
+    required DataRepository<RemoteConfig> remoteConfigRepository,
     required PermissionService permissionService,
     required Logger log,
   }) : _remoteConfigRepository = remoteConfigRepository,
        _permissionService = permissionService,
        _log = log;
 
-  final HtDataRepository<RemoteConfig> _remoteConfigRepository;
+  final DataRepository<RemoteConfig> _remoteConfigRepository;
   final PermissionService _permissionService;
   final Logger _log;
 
@@ -76,7 +76,7 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
           'for your account type ($accountType).',
         );
       }
-    } on HtHttpException {
+    } on HttpException {
       // Propagate known exceptions from repositories
       rethrow;
     } catch (e) {
@@ -155,7 +155,7 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
           'for your account type ($accountType).',
         );
       }
-    } on HtHttpException {
+    } on HttpException {
       // Propagate known exceptions from repositories
       rethrow;
     } catch (e) {

@@ -3,9 +3,9 @@
 
 import 'dart:io';
 
+import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:ht_api/src/config/environment_config.dart';
-import 'package:ht_shared/ht_shared.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:logging/logging.dart';
 
@@ -20,10 +20,10 @@ Middleware errorHandler() {
         // Attempt to execute the request handler
         final response = await handler(context);
         return response;
-      } on HtHttpException catch (e, stackTrace) {
-        // Handle specific HtHttpExceptions from the client/repository layers
+      } on HttpException catch (e, stackTrace) {
+        // Handle specific HttpExceptions from the client/repository layers
         final statusCode = _mapExceptionToStatusCode(e);
-        _log.warning('HtHttpException Caught', e, stackTrace);
+        _log.warning('HttpException Caught', e, stackTrace);
         return _jsonErrorResponse(
           statusCode: statusCode,
           exception: e,
@@ -64,8 +64,8 @@ Middleware errorHandler() {
   };
 }
 
-/// Maps HtHttpException subtypes to appropriate HTTP status codes.
-int _mapExceptionToStatusCode(HtHttpException exception) {
+/// Maps HttpException subtypes to appropriate HTTP status codes.
+int _mapExceptionToStatusCode(HttpException exception) {
   return switch (exception) {
     InvalidInputException() => HttpStatus.badRequest, // 400
     AuthenticationException() => HttpStatus.unauthorized, // 401
@@ -82,8 +82,8 @@ int _mapExceptionToStatusCode(HtHttpException exception) {
   };
 }
 
-/// Maps HtHttpException subtypes to consistent error code strings.
-String _mapExceptionToCodeString(HtHttpException exception) {
+/// Maps HttpException subtypes to consistent error code strings.
+String _mapExceptionToCodeString(HttpException exception) {
   return switch (exception) {
     InvalidInputException() => 'invalidInput',
     AuthenticationException() => 'authenticationFailed',
@@ -107,7 +107,7 @@ String _mapExceptionToCodeString(HtHttpException exception) {
 /// application to read the error message body.
 Response _jsonErrorResponse({
   required int statusCode,
-  required HtHttpException exception,
+  required HttpException exception,
   required RequestContext context,
 }) {
   final errorCode = _mapExceptionToCodeString(exception);

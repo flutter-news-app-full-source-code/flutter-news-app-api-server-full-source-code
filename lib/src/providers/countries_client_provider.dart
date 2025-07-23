@@ -20,8 +20,8 @@
 // to support the generic `/api/v1/data` endpoint.
 //
 // Instead of individual provider middleware files here:
-// 1. Instances of the core data repositories (`HtDataRepository<Headline>`,
-//    `HtDataRepository<Category>`, etc.) are created and provided directly
+// 1. Instances of the core data repositories (`DataRepository<Headline>`,
+//    `DataRepository<Category>`, etc.) are created and provided directly
 //    within the top-level `routes/_middleware.dart` file.
 // 2. A `modelRegistry` (`lib/src/registry/model_registry.dart`) is used in
 //    conjunction with middleware at `routes/api/v1/data/_middleware.dart` to

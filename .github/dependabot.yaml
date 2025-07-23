@@ -10,4 +10,11 @@ updates:
     schedule:
       interval: "daily"
     ignore:
-      - dependency-name: 'ht_*'
+      - dependency-name: 'core'
+      - dependency-name: 'data_client'
+      - dependency-name: 'data_mongodb'
+      - dependency-name: 'data_repository'
+      - dependency-name: 'email_client'
+      - dependency-name: 'email_repository'
+      - dependency-name: 'email_sendgrid'
+      - dependency-name: 'http_client'

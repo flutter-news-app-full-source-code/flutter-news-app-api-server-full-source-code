@@ -1,13 +1,13 @@
-import 'package:ht_api/src/services/mongodb_token_blacklist_service.dart';
-import 'package:ht_api/src/services/mongodb_verification_code_storage_service.dart';
-import 'package:ht_shared/ht_shared.dart';
+import 'package:core/core.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_token_blacklist_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_verification_code_storage_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 
 /// {@template database_seeding_service}
 /// A service responsible for seeding the MongoDB database with initial data.
 ///
-/// This service reads data from predefined fixture lists in `ht_shared` and
+/// This service reads data from predefined fixture lists in `core` and
 /// uses `upsert` operations to ensure that the seeding process is idempotent.
 /// It can be run multiple times without creating duplicate documents.
 /// {@endtemplate}
