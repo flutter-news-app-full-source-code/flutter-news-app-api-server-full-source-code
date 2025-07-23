@@ -1,7 +1,7 @@
 import 'dart:io' show Platform; // To read environment variables
 
 import 'package:dart_frog/dart_frog.dart';
-import 'package:ht_api/src/middlewares/authentication_middleware.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/authentication_middleware.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf_cors_headers/shelf_cors_headers.dart' as shelf_cors;
 
