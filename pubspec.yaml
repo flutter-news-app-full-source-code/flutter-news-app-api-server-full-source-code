@@ -7,9 +7,11 @@ environment:
   sdk: ^3.8.0
 
 dependencies:
+  core:
+    git:
+      url: https://github.com/flutter-news-app-full-source-code/core.git
   dart_frog: ^1.1.0
   dart_jsonwebtoken: ^3.2.0
-  dotenv: ^4.2.0
   data_client:
     git:
       url: https://github.com/flutter-news-app-full-source-code/data-client.git
@@ -19,6 +21,7 @@ dependencies:
   data_repository:
     git:
       url: https://github.com/flutter-news-app-full-source-code/data-repository.git
+  dotenv: ^4.2.0
   email_client:
     git:
       url: https://github.com/flutter-news-app-full-source-code/email-client.git
@@ -27,13 +30,10 @@ dependencies:
       url: https://github.com/flutter-news-app-full-source-code/email-repository.git
   email_sendgrid:
     git:
-      url: https://github.com/flutter-news-app-full-source-code/email-sendgrid.git  
+      url: https://github.com/flutter-news-app-full-source-code/email-sendgrid.git
   http_client:
     git:
       url: https://github.com/flutter-news-app-full-source-code/http-client.git
-  core:
-    git:
-      url: https://github.com/flutter-news-app-full-source-code/core.git
   json_annotation: ^4.9.0
   logging: ^1.3.0
   meta: ^1.16.0
