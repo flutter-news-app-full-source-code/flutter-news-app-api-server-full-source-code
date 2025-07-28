@@ -1,4 +1,5 @@
 import 'package:core/core.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_verification_code_storage_service.dart';
 import 'package:logging/logging.dart';
@@ -25,6 +26,7 @@ class DatabaseSeedingService {
     _log.info('Starting database seeding process...');
 
     await _ensureIndexes();
+    await _seedInitialAdminUser();
 
     await _seedCollection<Country>(
       collectionName: 'countries',
@@ -71,6 +73,82 @@ class DatabaseSeedingService {
     );
 
     _log.info('Database seeding process completed.');
+  }
+
+  /// Seeds the initial administrator user from the environment variable.
+  Future<void> _seedInitialAdminUser() async {
+    _log.info('Checking for initial admin user...');
+    final adminEmail = EnvironmentConfig.initialAdminEmail;
+
+    if (adminEmail == null || adminEmail.isEmpty) {
+      _log.info('INITIAL_ADMIN_EMAIL not set. Skipping admin user seeding.');
+      return;
+    }
+
+    final usersCollection = _db.collection('users');
+    final existingAdmin = await usersCollection.findOne({'email': adminEmail});
+
+    if (existingAdmin != null) {
+      _log.info('Admin user with email $adminEmail already exists.');
+      return;
+    }
+
+    _log.info('Creating initial admin user for email: $adminEmail');
+    final adminId = ObjectId();
+    final adminUser = User(
+      id: adminId.oid,
+      email: adminEmail,
+      appRole: AppUserRole.standardUser, // Admins are standard app users
+      dashboardRole: DashboardUserRole.admin, // With admin dashboard role
+      createdAt: DateTime.now(),
+      feedActionStatus: Map.fromEntries(
+        FeedActionType.values.map(
+          (type) =>
+              MapEntry(type, const UserFeedActionStatus(isCompleted: false)),
+        ),
+      ),
+    );
+
+    await usersCollection.insertOne(
+      {'_id': adminId, ...adminUser.toJson()..remove('id')},
+    );
+
+    // Also create their default settings and preferences documents
+    final defaultAppSettings = UserAppSettings(
+      id: adminId.oid,
+      displaySettings: const DisplaySettings(
+        baseTheme: AppBaseTheme.system,
+        accentTheme: AppAccentTheme.defaultBlue,
+        fontFamily: 'SystemDefault',
+        textScaleFactor: AppTextScaleFactor.medium,
+        fontWeight: AppFontWeight.regular,
+      ),
+      language: 'en',
+      feedPreferences: const FeedDisplayPreferences(
+        headlineDensity: HeadlineDensity.standard,
+        headlineImageStyle: HeadlineImageStyle.largeThumbnail,
+        showSourceInHeadlineFeed: true,
+        showPublishDateInHeadlineFeed: true,
+      ),
+    );
+
+    await _db.collection('user_app_settings').insertOne(
+      {'_id': adminId, ...defaultAppSettings.toJson()..remove('id')},
+    );
+
+    final defaultUserPreferences = UserContentPreferences(
+      id: adminId.oid,
+      followedCountries: const [],
+      followedSources: const [],
+      followedTopics: const [],
+      savedHeadlines: const [],
+    );
+
+    await _db.collection('user_content_preferences').insertOne(
+      {'_id': adminId, ...defaultUserPreferences.toJson()..remove('id')},
+    );
+
+    _log.info('Successfully created initial admin user for $adminEmail.');
   }
 
   /// Seeds a specific collection from a given list of fixture data.
