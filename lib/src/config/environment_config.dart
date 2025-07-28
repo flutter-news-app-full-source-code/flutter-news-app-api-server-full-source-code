@@ -133,4 +133,10 @@ abstract final class EnvironmentConfig {
   ///
   /// Returns `null` if the `SENDGRID_API_URL` is not set.
   static String? get sendGridApiUrl => _env['SENDGRID_API_URL'];
+
+  /// Retrieves the override admin email from the environment, if provided.
+  ///
+  /// This is used to set or replace the single administrator account on startup.
+  /// Returns `null` if the `OVERRIDE_ADMIN_EMAIL` is not set.
+  static String? get overrideAdminEmail => _env['OVERRIDE_ADMIN_EMAIL'];
 }
