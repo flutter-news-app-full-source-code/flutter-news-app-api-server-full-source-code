@@ -133,4 +133,10 @@ abstract final class EnvironmentConfig {
   ///
   /// Returns `null` if the `SENDGRID_API_URL` is not set.
   static String? get sendGridApiUrl => _env['SENDGRID_API_URL'];
+
+  /// Retrieves the initial admin email from the environment, if provided.
+  ///
+  /// This is used for seeding the first administrator account on startup.
+  /// Returns `null` if the `INITIAL_ADMIN_EMAIL` is not set.
+  static String? get initialAdminEmail => _env['INITIAL_ADMIN_EMAIL'];
 }
