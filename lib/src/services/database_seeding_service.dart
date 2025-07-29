@@ -1,5 +1,6 @@
 import 'package:core/core.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_rate_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_verification_code_storage_service.dart';
 import 'package:logging/logging.dart';
@@ -296,6 +297,25 @@ class DatabaseSeedingService {
             'key': {'expiry': 1},
             'name': 'expiry_ttl_index',
             'expireAfterSeconds': 0,
+          },
+        ],
+      });
+
+      // Index for the rate limit attempts collection
+      await _db.runCommand({
+        'createIndexes': kRateLimitAttemptsCollection,
+        'indexes': [
+          {
+            // This is a TTL index. MongoDB will automatically delete request
+            // attempt documents 24 hours after they are created.
+            'key': {'createdAt': 1},
+            'name': 'createdAt_ttl_index',
+            'expireAfterSeconds': 86400, // 24 hours
+          },
+          {
+            // Index on the key field for faster lookups.
+            'key': {'key': 1},
+            'name': 'key_index',
           },
         ],
       });
