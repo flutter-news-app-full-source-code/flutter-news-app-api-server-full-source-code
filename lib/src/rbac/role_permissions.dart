@@ -39,7 +39,6 @@ final Set<String> _dashboardPublisherPermissions = {
 
 final Set<String> _dashboardAdminPermissions = {
   ..._dashboardPublisherPermissions,
-  Permissions.rateLimitingBypass,
   Permissions.topicCreate,
   Permissions.topicUpdate,
   Permissions.topicDelete,
