@@ -8,25 +8,6 @@ import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_registry.dart';
 
-/// Middleware specific to the generic `/api/v1/data` route path.
-///
-/// This middleware chain performs the following in order:
-/// 1.  **Authentication Check (`requireAuthentication`):** Ensures that the user
-///     is authenticated. If not, it aborts the request with a 401.
-/// 2.  **Data Rate Limiting (`_dataRateLimiterMiddleware`):** Applies a
-///     configurable, user-centric rate limit. Bypassed by admin/publisher roles.
-/// 3.  **Model Validation & Context Provision (`_modelValidationAndProviderMiddleware`):**
-///     - Validates the `model` query parameter.
-///     - Looks up the `ModelConfig` from the `ModelRegistryMap`.
-///     - Provides the `ModelConfig` and `modelName` into the request context.
-/// 4.  **Authorization Check (`authorizationMiddleware`):** Enforces role-based
-///     and model-specific permissions based on the `ModelConfig` metadata.
-///     If the user lacks permission, it throws a [ForbiddenException].
-///
-/// This setup ensures that data routes are protected, have the necessary
-/// model-specific configuration available, and access is authorized before
-/// reaching the final route handler.
-
 // Helper middleware for applying rate limiting to the data routes.
 Middleware _dataRateLimiterMiddleware() {
   return (handler) {
