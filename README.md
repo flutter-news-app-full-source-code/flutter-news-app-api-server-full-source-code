@@ -28,6 +28,12 @@ This API server comes packed with all the features you need to launch a professi
 *   Securely control access to API features and data management capabilities based on user roles.
 > **Your Advantage:** A powerful, built-in security model that protects your data and ensures users only access what they're supposed to. 🛡️
 
+#### 🛡️ **Built-in API Rate Limiting**
+*   Protects critical endpoints like email verification and data access from abuse and denial-of-service attacks.
+*   Features configurable, user-aware limits that distinguish between guests and authenticated users.
+*   Includes a bypass for trusted roles (admin, publisher) to ensure dashboard functionality is never impeded.
+> **Your Advantage:** Your API is protected from day one against common abuse vectors, ensuring stability and preventing costly overages on services like email providers. ✅
+
 #### ⚙️ **Centralized App & User Settings**
 *   Effortlessly sync user-specific settings like theme, language, and font styles across devices.
 *   Manage personalized content preferences, including saved headlines and followed topics/sources.

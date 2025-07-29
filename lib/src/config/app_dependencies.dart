@@ -13,8 +13,10 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/dashbo
 import 'package:flutter_news_app_api_server_full_source_code/src/services/database_seeding_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/default_user_preference_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/jwt_auth_token_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_rate_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_verification_code_storage_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_preference_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/verification_code_storage_service.dart';
@@ -65,6 +67,7 @@ class AppDependencies {
   late final DashboardSummaryService dashboardSummaryService;
   late final PermissionService permissionService;
   late final UserPreferenceLimitService userPreferenceLimitService;
+  late final RateLimitService rateLimitService;
 
   /// Initializes all application dependencies.
   ///
@@ -222,6 +225,10 @@ class AppDependencies {
         permissionService: permissionService,
         log: Logger('DefaultUserPreferenceLimitService'),
       );
+      rateLimitService = MongoDbRateLimitService(
+        connectionManager: _mongoDbConnectionManager,
+        log: Logger('MongoDbRateLimitService'),
+      );
 
       _isInitialized = true;
       _log.info('Application dependencies initialized successfully.');
@@ -238,6 +245,7 @@ class AppDependencies {
     if (!_isInitialized) return;
     await _mongoDbConnectionManager.close();
     tokenBlacklistService.dispose();
+    rateLimitService.dispose();
     _isInitialized = false;
     _log.info('Application dependencies disposed.');
   }

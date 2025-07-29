@@ -61,4 +61,7 @@ abstract class Permissions {
   // User Preference Permissions
   static const String userPreferenceBypassLimits =
       'user_preference.bypass_limits';
+
+  // General System Permissions
+  static const String rateLimitingBypass = 'rate_limiting.bypass';
 }

@@ -10,6 +10,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_preference_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/verification_code_storage_service.dart';
@@ -131,6 +132,7 @@ Handler middleware(Handler handler) {
                   (_) => deps.userPreferenceLimitService,
                 ),
               )
+              .use(provider<RateLimitService>((_) => deps.rateLimitService))
               .call(context);
         };
       });

@@ -109,7 +109,7 @@ abstract final class EnvironmentConfig {
   /// The value is read from the `JWT_EXPIRY_HOURS` environment variable.
   /// Defaults to 1 hour if not set or if parsing fails.
   static Duration get jwtExpiryDuration {
-    final hours = int.tryParse(_env['JWT_EXPIRY_HOURS'] ?? '1');
+    final hours = int.tryParse(_env['JWT_EXPIRY_HOURS'] ?? '720'); // 1 month
     return Duration(hours: hours ?? 1);
   }
 
@@ -139,4 +139,37 @@ abstract final class EnvironmentConfig {
   /// This is used to set or replace the single administrator account on startup.
   /// Returns `null` if the `OVERRIDE_ADMIN_EMAIL` is not set.
   static String? get overrideAdminEmail => _env['OVERRIDE_ADMIN_EMAIL'];
+
+  /// Retrieves the request limit for the request-code endpoint.
+  ///
+  /// Defaults to 3 if not set or if parsing fails.
+  static int get rateLimitRequestCodeLimit {
+    return int.tryParse(_env['RATE_LIMIT_REQUEST_CODE_LIMIT'] ?? '3') ?? 3;
+  }
+
+  /// Retrieves the time window for the request-code endpoint rate limit.
+  ///
+  /// Defaults to 24 hours if not set or if parsing fails.
+  static Duration get rateLimitRequestCodeWindow {
+    final hours =
+        int.tryParse(_env['RATE_LIMIT_REQUEST_CODE_WINDOW_HOURS'] ?? '24') ??
+            24;
+    return Duration(hours: hours);
+  }
+
+  /// Retrieves the request limit for the data API endpoints.
+  ///
+  /// Defaults to 1000 if not set or if parsing fails.
+  static int get rateLimitDataApiLimit {
+    return int.tryParse(_env['RATE_LIMIT_DATA_API_LIMIT'] ?? '1000') ?? 1000;
+  }
+
+  /// Retrieves the time window for the data API rate limit.
+  ///
+  /// Defaults to 60 minutes if not set or if parsing fails.
+  static Duration get rateLimitDataApiWindow {
+    final minutes =
+        int.tryParse(_env['RATE_LIMIT_DATA_API_WINDOW_MINUTES'] ?? '60') ?? 60;
+    return Duration(minutes: minutes);
+  }
 }
