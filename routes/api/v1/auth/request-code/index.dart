@@ -70,27 +70,25 @@ Future<Response> onRequest(RequestContext context) async {
   }
 
   try {
-  // Call the AuthService to handle the logic, passing the context flag.
-  await authService.initiateEmailSignIn(
-    email,
-    isDashboardLogin: isDashboardLogin,
-  );
+    // Call the AuthService to handle the logic, passing the context flag.
+    await authService.initiateEmailSignIn(
+      email,
+      isDashboardLogin: isDashboardLogin,
+    );
 
-  // Return 202 Accepted: The request is accepted for processing,
-  // but the processing (email sending) hasn't necessarily completed.
-  // 200 OK is also acceptable if you consider the API call itself complete.
-  return Response(statusCode: HttpStatus.accepted);
-} on HttpException catch (_) {
-  // Let the central errorHandler middleware handle known exceptions
-  rethrow;
-} catch (e, s) {
-  // Catch unexpected errors from the service layer
-  _logger.severe('Unexpected error in /request-code handler', e, s);
-  // Let the central errorHandler handle this as a 500
-  throw const OperationFailedException(
-    'An unexpected error occurred while requesting the sign-in code.',
-  );
+    // Return 202 Accepted: The request is accepted for processing,
+    // but the processing (email sending) hasn't necessarily completed.
+    // 200 OK is also acceptable if you consider the API call itself complete.
+    return Response(statusCode: HttpStatus.accepted);
+  } on HttpException catch (_) {
+    // Let the central errorHandler middleware handle known exceptions
+    rethrow;
+  } catch (e, s) {
+    // Catch unexpected errors from the service layer
+    _logger.severe('Unexpected error in /request-code handler', e, s);
+    // Let the central errorHandler handle this as a 500
+    throw const OperationFailedException(
+      'An unexpected error occurred while requesting the sign-in code.',
+    );
+  }
 }
-}
-
-
