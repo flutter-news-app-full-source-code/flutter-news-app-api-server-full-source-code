@@ -66,6 +66,12 @@ Middleware errorHandler() {
 
 /// Maps HttpException subtypes to appropriate HTTP status codes.
 int _mapExceptionToStatusCode(HttpException exception) {
+  // Special case for rate limiting
+  if (exception is ForbiddenException &&
+      exception.message.contains('too many requests')) {
+    return 429; // Too Many Requests
+  }
+
   return switch (exception) {
     InvalidInputException() => HttpStatus.badRequest, // 400
     AuthenticationException() => HttpStatus.unauthorized, // 401
