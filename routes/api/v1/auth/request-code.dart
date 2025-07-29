@@ -2,28 +2,14 @@ import 'dart:io';
 
 import 'package:core/core.dart'; // For exceptions
 import 'package:dart_frog/dart_frog.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/rate_limiter_middleware.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_service.dart';
 import 'package:logging/logging.dart';
 
 // Create a logger for this file.
 final _logger = Logger('request_code_handler');
 
-/// Handles POST requests to `/api/v1/auth/request-code`.
-///
-/// Initiates an email-based sign-in process. This endpoint is context-aware.
-///
-/// - For the user-facing app, it sends a verification code to the provided
-///   email, supporting both sign-in and sign-up.
-/// - For the dashboard, the request body must include `"isDashboardLogin": true`.
-///   In this mode, it first verifies the user exists and has 'admin' or
-///   'publisher' roles before sending a code, effectively acting as a
-///   login-only gate.
-Future<Response> onRequest(RequestContext context) async {
-  // Ensure this is a POST request
-  if (context.request.method != HttpMethod.post) {
-    return Response(statusCode: HttpStatus.methodNotAllowed);
-  }
-
+Future<Response> _onRequest(RequestContext context) async {
   // Read the AuthService provided by middleware
   final authService = context.read<AuthService>();
 
@@ -70,25 +56,53 @@ Future<Response> onRequest(RequestContext context) async {
   }
 
   try {
-    // Call the AuthService to handle the logic, passing the context flag.
-    await authService.initiateEmailSignIn(
-      email,
-      isDashboardLogin: isDashboardLogin,
-    );
+  // Call the AuthService to handle the logic, passing the context flag.
+  await authService.initiateEmailSignIn(
+    email,
+    isDashboardLogin: isDashboardLogin,
+  );
 
-    // Return 202 Accepted: The request is accepted for processing,
-    // but the processing (email sending) hasn't necessarily completed.
-    // 200 OK is also acceptable if you consider the API call itself complete.
-    return Response(statusCode: HttpStatus.accepted);
-  } on HttpException catch (_) {
-    // Let the central errorHandler middleware handle known exceptions
-    rethrow;
-  } catch (e, s) {
-    // Catch unexpected errors from the service layer
-    _logger.severe('Unexpected error in /request-code handler', e, s);
-    // Let the central errorHandler handle this as a 500
-    throw const OperationFailedException(
-      'An unexpected error occurred while requesting the sign-in code.',
-    );
+  // Return 202 Accepted: The request is accepted for processing,
+  // but the processing (email sending) hasn't necessarily completed.
+  // 200 OK is also acceptable if you consider the API call itself complete.
+  return Response(statusCode: HttpStatus.accepted);
+} on HttpException catch (_) {
+  // Let the central errorHandler middleware handle known exceptions
+  rethrow;
+} catch (e, s) {
+  // Catch unexpected errors from the service layer
+  _logger.severe('Unexpected error in /request-code handler', e, s);
+  // Let the central errorHandler handle this as a 500
+  throw const OperationFailedException(
+    'An unexpected error occurred while requesting the sign-in code.',
+  );
+}
+}
+
+/// Handles POST requests to `/api/v1/auth/request-code`.
+///
+/// Initiates an email-based sign-in process. This endpoint is context-aware.
+///
+/// - For the user-facing app, it sends a verification code to the provided
+///   email, supporting both sign-in and sign-up.
+/// - For the dashboard, the request body must include `"isDashboardLogin": true`.
+///   In this mode, it first verifies the user exists and has 'admin' or
+///   'publisher' roles before sending a code, effectively acting as a
+///   login-only gate.
+Future<Response> onRequest(RequestContext context) async {
+  // Ensure this is a POST request
+  if (context.request.method != HttpMethod.post) {
+    return Response(statusCode: HttpStatus.methodNotAllowed);
   }
+
+  // Apply the rate limiter middleware before calling the actual handler.
+  final handler = const Pipeline().addMiddleware(
+    rateLimiter(
+      limit: 3,
+      window: const Duration(hours: 24),
+      keyExtractor: ipKeyExtractor,
+    ),
+  ).addHandler(_onRequest);
+
+  return handler(context);
 }
