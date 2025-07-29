@@ -34,10 +34,12 @@ final Set<String> _dashboardPublisherPermissions = {
   Permissions.headlineUpdate,
   Permissions.headlineDelete,
   Permissions.dashboardLogin,
+  Permissions.rateLimitingBypass,
 };
 
 final Set<String> _dashboardAdminPermissions = {
   ..._dashboardPublisherPermissions,
+  Permissions.rateLimitingBypass,
   Permissions.topicCreate,
   Permissions.topicUpdate,
   Permissions.topicDelete,
