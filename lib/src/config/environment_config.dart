@@ -109,7 +109,7 @@ abstract final class EnvironmentConfig {
   /// The value is read from the `JWT_EXPIRY_HOURS` environment variable.
   /// Defaults to 1 hour if not set or if parsing fails.
   static Duration get jwtExpiryDuration {
-    final hours = int.tryParse(_env['JWT_EXPIRY_HOURS'] ?? '1');
+    final hours = int.tryParse(_env['JWT_EXPIRY_HOURS'] ?? '720'); // 1 month
     return Duration(hours: hours ?? 1);
   }
 
