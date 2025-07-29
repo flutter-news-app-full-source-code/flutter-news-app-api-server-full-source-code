@@ -16,7 +16,7 @@ String? _getIpAddress(RequestContext context) {
     return xff;
   }
   // Fallback to the direct connection IP if XFF is not available.
-  return context.request.connectionInfo?.remoteAddress.address;
+  return context.request.connectionInfo.remoteAddress.address;
 }
 
 /// Middleware to enforce rate limiting on a route.
@@ -59,7 +59,7 @@ Middleware rateLimiter({
   };
 }
 
-/// A specific implementation of the [keyExtractor] for IP-based rate limiting.
+/// A specific implementation of the keyExtractor for IP-based rate limiting.
 Future<String?> ipKeyExtractor(RequestContext context) async {
   return _getIpAddress(context);
 }

@@ -55,7 +55,7 @@ class MongoDbRateLimitService implements RateLimitService {
           'Rate limit exceeded for key "$key". '
           '($recentRequestsCount >= $limit)',
         );
-        throw ForbiddenException(
+        throw const ForbiddenException(
           'You have made too many requests. Please try again later.',
         );
       }
@@ -72,7 +72,7 @@ class MongoDbRateLimitService implements RateLimitService {
       rethrow;
     } catch (e, s) {
       _log.severe('Error during rate limit check for key "$key"', e, s);
-      throw OperationFailedException(
+      throw const OperationFailedException(
         'An unexpected error occurred while checking request rate limits.',
       );
     }
