@@ -29,50 +29,6 @@ class DatabaseSeedingService {
     await _ensureIndexes();
     await _seedOverrideAdminUser();
 
-    await _seedCollection<Country>(
-      collectionName: 'countries',
-      fixtureData: countriesFixturesData,
-      getId: (item) => item.id,
-      toJson: (item) => item.toJson(),
-    );
-    await _seedCollection<Source>(
-      collectionName: 'sources',
-      fixtureData: sourcesFixturesData,
-      getId: (item) => item.id,
-      toJson: (item) => item.toJson(),
-    );
-    await _seedCollection<Topic>(
-      collectionName: 'topics',
-      fixtureData: topicsFixturesData,
-      getId: (item) => item.id,
-      toJson: (item) => item.toJson(),
-    );
-    await _seedCollection<Headline>(
-      collectionName: 'headlines',
-      fixtureData: headlinesFixturesData,
-      getId: (item) => item.id,
-      toJson: (item) => item.toJson(),
-    );
-    await _seedCollection<User>(
-      collectionName: 'users',
-      fixtureData: usersFixturesData,
-      getId: (item) => item.id,
-      toJson: (item) => item.toJson(),
-    );
-    await _seedCollection<UserAppSettings>(
-      collectionName: 'user_app_settings',
-      fixtureData: userAppSettingsFixturesData,
-      getId: (item) => item.id,
-      toJson: (item) => item.toJson(),
-    );
-
-    await _seedCollection<RemoteConfig>(
-      collectionName: 'remote_configs',
-      fixtureData: remoteConfigsFixturesData,
-      getId: (item) => item.id,
-      toJson: (item) => item.toJson(),
-    );
-
     _log.info('Database seeding process completed.');
   }
 
@@ -188,53 +144,6 @@ class DatabaseSeedingService {
     await _db.collection('user_content_preferences').insertOne(
       {'_id': userId, ...defaultUserPreferences.toJson()..remove('id')},
     );
-  }
-
-  /// Seeds a specific collection from a given list of fixture data.
-  Future<void> _seedCollection<T>({
-    required String collectionName,
-    required List<T> fixtureData,
-    required String Function(T) getId,
-    required Map<String, dynamic> Function(T) toJson,
-  }) async {
-    _log.info('Seeding collection: "$collectionName"...');
-    try {
-      if (fixtureData.isEmpty) {
-        _log.info('No documents to seed for "$collectionName".');
-        return;
-      }
-
-      final collection = _db.collection(collectionName);
-      final operations = <Map<String, Object>>[];
-
-      for (final item in fixtureData) {
-        // Use the predefined hex string ID from the fixture to create a
-        // deterministic ObjectId. This is crucial for maintaining relationships
-        // between documents (e.g., a headline and its source).
-        final objectId = ObjectId.fromHexString(getId(item));
-        final document = toJson(item)..remove('id');
-
-        operations.add({
-          // Use updateOne with $set to be less destructive than replaceOne.
-          'updateOne': {
-            // Filter by the specific, deterministic _id.
-            'filter': {'_id': objectId},
-            // Set the fields of the document.
-            'update': {r'$set': document},
-            'upsert': true,
-          },
-        });
-      }
-
-      final result = await collection.bulkWrite(operations);
-      _log.info(
-        'Seeding for "$collectionName" complete. '
-        'Upserted: ${result.nUpserted}, Modified: ${result.nModified}.',
-      );
-    } on Exception catch (e, s) {
-      _log.severe('Failed to seed collection "$collectionName".', e, s);
-      rethrow;
-    }
   }
 
   /// Ensures that the necessary indexes exist on the collections.
