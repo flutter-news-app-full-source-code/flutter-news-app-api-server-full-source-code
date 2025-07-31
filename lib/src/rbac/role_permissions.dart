@@ -8,6 +8,7 @@ final Set<String> _appGuestUserPermissions = {
   Permissions.topicRead,
   Permissions.sourceRead,
   Permissions.countryRead,
+  Permissions.languageRead,
   Permissions.userAppSettingsReadOwned,
   Permissions.userAppSettingsUpdateOwned,
   Permissions.userContentPreferencesReadOwned,
@@ -30,9 +31,20 @@ final Set<String> _appPremiumUserPermissions = {
 // --- Dashboard Role Permissions ---
 
 final Set<String> _dashboardPublisherPermissions = {
+  // Publishers need to read all content types to manage them effectively.
+  Permissions.headlineRead,
+  Permissions.topicRead,
+  Permissions.sourceRead,
+  Permissions.countryRead,
+  Permissions.languageRead,
+  Permissions.remoteConfigRead,
+
+  // Publishers can manage headlines.
   Permissions.headlineCreate,
   Permissions.headlineUpdate,
   Permissions.headlineDelete,
+
+  // Core dashboard access and quality-of-life permissions.
   Permissions.dashboardLogin,
   Permissions.rateLimitingBypass,
 };
@@ -48,6 +60,9 @@ final Set<String> _dashboardAdminPermissions = {
   Permissions.countryCreate,
   Permissions.countryUpdate,
   Permissions.countryDelete,
+  Permissions.languageCreate,
+  Permissions.languageUpdate,
+  Permissions.languageDelete,
   Permissions.userRead, // Allows reading any user's profile
   Permissions.remoteConfigCreate,
   Permissions.remoteConfigUpdate,
