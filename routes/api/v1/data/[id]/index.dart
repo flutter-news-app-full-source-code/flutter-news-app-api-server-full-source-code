@@ -107,6 +107,9 @@ Future<Response> _handleGet(
     case 'country':
       final repo = context.read<DataRepository<Country>>();
       item = await repo.read(id: id, userId: userIdForRepoCall);
+    case 'language':
+      final repo = context.read<DataRepository<Language>>();
+      item = await repo.read(id: id, userId: userIdForRepoCall);
     case 'user': // Handle User model specifically if needed, or rely on generic
       final repo = context.read<DataRepository<User>>();
       item = await repo.read(id: id, userId: userIdForRepoCall);
@@ -309,6 +312,15 @@ Future<Response> _handlePut(
           userId: userIdForRepoCall,
         );
       }
+    case 'language':
+      {
+        final repo = context.read<DataRepository<Language>>();
+        updatedItem = await repo.update(
+          id: id,
+          item: itemToUpdate as Language,
+          userId: userIdForRepoCall,
+        );
+      }
     case 'user':
       {
         final repo = context.read<DataRepository<User>>();
@@ -454,6 +466,9 @@ Future<Response> _handleDelete(
       case 'country':
         final repo = context.read<DataRepository<Country>>();
         itemToDelete = await repo.read(id: id, userId: userIdForRepoCall);
+      case 'language':
+        final repo = context.read<DataRepository<Language>>();
+        itemToDelete = await repo.read(id: id, userId: userIdForRepoCall);
       case 'user':
         final repo = context.read<DataRepository<User>>();
         itemToDelete = await repo.read(id: id, userId: userIdForRepoCall);
@@ -514,6 +529,11 @@ Future<Response> _handleDelete(
       );
     case 'country':
       await context.read<DataRepository<Country>>().delete(
+        id: id,
+        userId: userIdForRepoCall,
+      );
+    case 'language':
+      await context.read<DataRepository<Language>>().delete(
         id: id,
         userId: userIdForRepoCall,
       );
