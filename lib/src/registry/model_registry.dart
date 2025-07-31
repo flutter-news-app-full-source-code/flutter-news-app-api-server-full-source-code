@@ -188,7 +188,9 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
   'country': ModelConfig<Country>(
     fromJson: Country.fromJson,
     getId: (c) => c.id,
-    // Countries: Admin-owned, read allowed by standard/guest users
+    // Countries: Static data, read-only for all authenticated users.
+    // Modification is not allowed via the API as this is real-world data
+    // managed by database seeding.
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.countryRead,
@@ -197,14 +199,32 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.countryRead,
     ),
+    postPermission: const ModelActionPermission(type: RequiredPermissionType.unsupported),
+    putPermission: const ModelActionPermission(type: RequiredPermissionType.unsupported),
+    deletePermission: const ModelActionPermission(type: RequiredPermissionType.unsupported),
+  ),
+  'language': ModelConfig<Language>(
+    fromJson: Language.fromJson,
+    getId: (l) => l.id,
+    // Languages: Static data, read-only for all authenticated users.
+    // Modification is not allowed via the API as this is real-world data
+    // managed by database seeding.
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.languageRead,
+    ),
+    getItemPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.languageRead,
+    ),
     postPermission: const ModelActionPermission(
-      type: RequiredPermissionType.adminOnly,
+      type: RequiredPermissionType.unsupported,
     ),
     putPermission: const ModelActionPermission(
-      type: RequiredPermissionType.adminOnly,
+      type: RequiredPermissionType.unsupported,
     ),
     deletePermission: const ModelActionPermission(
-      type: RequiredPermissionType.adminOnly,
+      type: RequiredPermissionType.unsupported,
     ),
   ),
   'user': ModelConfig<User>(
