@@ -117,6 +117,14 @@ Future<Response> _handleGet(RequestContext context) async {
         sort: sort,
         pagination: pagination,
       );
+    case 'language':
+      final repo = context.read<DataRepository<Language>>();
+      responseData = await repo.readAll(
+        userId: userIdForRepoCall,
+        filter: filter,
+        sort: sort,
+        pagination: pagination,
+      );
     case 'user':
       final repo = context.read<DataRepository<User>>();
       responseData = await repo.readAll(
@@ -199,6 +207,12 @@ Future<Response> _handlePost(RequestContext context) async {
       final repo = context.read<DataRepository<Country>>();
       createdItem = await repo.create(
         item: itemToCreate as Country,
+        userId: userIdForRepoCall,
+      );
+    case 'language':
+      final repo = context.read<DataRepository<Language>>();
+      createdItem = await repo.create(
+        item: itemToCreate as Language,
         userId: userIdForRepoCall,
       );
     case 'remote_config':

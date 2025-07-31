@@ -52,6 +52,7 @@ class AppDependencies {
   late final DataRepository<Topic> topicRepository;
   late final DataRepository<Source> sourceRepository;
   late final DataRepository<Country> countryRepository;
+  late final DataRepository<Language> languageRepository;
   late final DataRepository<User> userRepository;
   late final DataRepository<UserAppSettings> userAppSettingsRepository;
   late final DataRepository<UserContentPreferences>
@@ -128,6 +129,13 @@ class AppDependencies {
         toJson: (item) => item.toJson(),
         logger: Logger('DataMongodb<Country>'),
       );
+      final languageClient = DataMongodb<Language>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'languages',
+        fromJson: Language.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<Language>'),
+      );
       final userClient = DataMongodb<User>(
         connectionManager: _mongoDbConnectionManager,
         modelName: 'users',
@@ -162,6 +170,7 @@ class AppDependencies {
       topicRepository = DataRepository(dataClient: topicClient);
       sourceRepository = DataRepository(dataClient: sourceClient);
       countryRepository = DataRepository(dataClient: countryClient);
+      languageRepository = DataRepository(dataClient: languageClient);
       userRepository = DataRepository(dataClient: userClient);
       userAppSettingsRepository = DataRepository(
         dataClient: userAppSettingsClient,

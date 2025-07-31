@@ -1,6 +1,5 @@
 import 'package:core/core.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_rate_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_verification_code_storage_service.dart';
 import 'package:logging/logging.dart';
@@ -28,122 +27,73 @@ class DatabaseSeedingService {
 
     await _ensureIndexes();
     await _seedOverrideAdminUser();
+    await _seedCollection<Country>(
+      collectionName: 'countries',
+      fixtureData: countriesFixturesData,
+      getId: (item) => item.id,
+      toJson: (item) => item.toJson(),
+    );
+    await _seedCollection<Language>(
+      collectionName: 'languages',
+      fixtureData: languagesFixturesData,
+      getId: (item) => item.id,
+      toJson: (item) => item.toJson(),
+    );
+    await _seedCollection<RemoteConfig>(
+      collectionName: 'remote_configs',
+      fixtureData: remoteConfigsFixturesData,
+      getId: (item) => item.id,
+      toJson: (item) => item.toJson(),
+    );
 
     _log.info('Database seeding process completed.');
   }
 
-  /// Ensures the single administrator account is correctly configured based on
-  /// the `OVERRIDE_ADMIN_EMAIL` environment variable.
-  Future<void> _seedOverrideAdminUser() async {
-    _log.info('Checking for admin user override...');
-    final overrideEmail = EnvironmentConfig.overrideAdminEmail;
-
-    if (overrideEmail == null || overrideEmail.isEmpty) {
-      _log.info(
-        'OVERRIDE_ADMIN_EMAIL not set. Skipping admin user override.',
-      );
-      return;
-    }
-
-    final usersCollection = _db.collection('users');
-    final existingAdmin = await usersCollection.findOne(
-      where.eq('dashboardRole', DashboardUserRole.admin.name),
-    );
-
-    // Case 1: An admin exists.
-    if (existingAdmin != null) {
-      final existingAdminEmail = existingAdmin['email'] as String;
-      // If the existing admin's email is the same as the override, do nothing.
-      if (existingAdminEmail == overrideEmail) {
-        _log.info(
-          'Admin user with email $overrideEmail already exists and matches '
-          'override. No action needed.',
-        );
+  /// Seeds a specific collection from a given list of fixture data.
+  Future<void> _seedCollection<T>({
+    required String collectionName,
+    required List<T> fixtureData,
+    required String Function(T) getId,
+    required Map<String, dynamic> Function(T) toJson,
+  }) async {
+    _log.info('Seeding collection: "$collectionName"...');
+    try {
+      if (fixtureData.isEmpty) {
+        _log.info('No documents to seed for "$collectionName".');
         return;
       }
 
-      // If emails differ, delete the old admin and their data.
-      _log.warning(
-        'Found existing admin with email "$existingAdminEmail". It will be '
-        'replaced by the override email "$overrideEmail".',
+      final collection = _db.collection(collectionName);
+      final operations = <Map<String, Object>>[];
+
+      for (final item in fixtureData) {
+        // Use the predefined hex string ID from the fixture to create a
+        // deterministic ObjectId. This is crucial for maintaining relationships
+        // between documents (e.g., a headline and its source).
+        final objectId = ObjectId.fromHexString(getId(item));
+        final document = toJson(item)..remove('id');
+
+        operations.add({
+          // Use updateOne with $set to be less destructive than replaceOne.
+          'updateOne': {
+            // Filter by the specific, deterministic _id.
+            'filter': {'_id': objectId},
+            // Set the fields of the document.
+            'update': {r'$set': document},
+            'upsert': true,
+          },
+        });
+      }
+
+      final result = await collection.bulkWrite(operations);
+      _log.info(
+        'Seeding for "$collectionName" complete. '
+        'Upserted: ${result.nUpserted}, Modified: ${result.nModified}.',
       );
-      final oldAdminId = existingAdmin['_id'] as ObjectId;
-      await _deleteUserAndData(oldAdminId);
+    } on Exception catch (e, s) {
+      _log.severe('Failed to seed collection "$collectionName".', e, s);
+      rethrow;
     }
-
-    // Case 2: No admin exists, or the old one was just deleted.
-    // Create the new admin.
-    _log.info('Creating admin user for email: $overrideEmail');
-    final newAdminId = ObjectId();
-    final newAdminUser = User(
-      id: newAdminId.oid,
-      email: overrideEmail,
-      appRole: AppUserRole.standardUser,
-      dashboardRole: DashboardUserRole.admin,
-      createdAt: DateTime.now(),
-      feedActionStatus: Map.fromEntries(
-        FeedActionType.values.map(
-          (type) =>
-              MapEntry(type, const UserFeedActionStatus(isCompleted: false)),
-        ),
-      ),
-    );
-
-    await usersCollection.insertOne(
-      {'_id': newAdminId, ...newAdminUser.toJson()..remove('id')},
-    );
-
-    // Create default settings and preferences for the new admin.
-    await _createUserSubDocuments(newAdminId);
-
-    _log.info('Successfully created admin user for $overrideEmail.');
-  }
-
-  /// Deletes a user and their associated sub-documents.
-  Future<void> _deleteUserAndData(ObjectId userId) async {
-    await _db.collection('users').deleteOne(where.eq('_id', userId));
-    await _db
-        .collection('user_app_settings')
-        .deleteOne(where.eq('_id', userId));
-    await _db
-        .collection('user_content_preferences')
-        .deleteOne(where.eq('_id', userId));
-    _log.info('Deleted user and associated data for ID: ${userId.oid}');
-  }
-
-  /// Creates the default sub-documents (settings, preferences) for a new user.
-  Future<void> _createUserSubDocuments(ObjectId userId) async {
-    final defaultAppSettings = UserAppSettings(
-      id: userId.oid,
-      displaySettings: const DisplaySettings(
-        baseTheme: AppBaseTheme.system,
-        accentTheme: AppAccentTheme.defaultBlue,
-        fontFamily: 'SystemDefault',
-        textScaleFactor: AppTextScaleFactor.medium,
-        fontWeight: AppFontWeight.regular,
-      ),
-      language: 'en',
-      feedPreferences: const FeedDisplayPreferences(
-        headlineDensity: HeadlineDensity.standard,
-        headlineImageStyle: HeadlineImageStyle.largeThumbnail,
-        showSourceInHeadlineFeed: true,
-        showPublishDateInHeadlineFeed: true,
-      ),
-    );
-    await _db.collection('user_app_settings').insertOne(
-      {'_id': userId, ...defaultAppSettings.toJson()..remove('id')},
-    );
-
-    final defaultUserPreferences = UserContentPreferences(
-      id: userId.oid,
-      followedCountries: const [],
-      followedSources: const [],
-      followedTopics: const [],
-      savedHeadlines: const [],
-    );
-    await _db.collection('user_content_preferences').insertOne(
-      {'_id': userId, ...defaultUserPreferences.toJson()..remove('id')},
-    );
   }
 
   /// Ensures that the necessary indexes exist on the collections.
@@ -210,25 +160,6 @@ class DatabaseSeedingService {
         ],
       });
 
-      // Index for the rate limit attempts collection
-      await _db.runCommand({
-        'createIndexes': kRateLimitAttemptsCollection,
-        'indexes': [
-          {
-            // This is a TTL index. MongoDB will automatically delete request
-            // attempt documents 24 hours after they are created.
-            'key': {'createdAt': 1},
-            'name': 'createdAt_ttl_index',
-            'expireAfterSeconds': 86400, // 24 hours
-          },
-          {
-            // Index on the key field for faster lookups.
-            'key': {'key': 1},
-            'name': 'key_index',
-          },
-        ],
-      });
-
       _log.info('Database indexes are set up correctly.');
     } on Exception catch (e, s) {
       _log.severe('Failed to create database indexes.', e, s);
@@ -236,5 +167,120 @@ class DatabaseSeedingService {
       // critical features like search will fail.
       rethrow;
     }
+  }
+
+  /// Ensures the single administrator account is correctly configured based on
+  /// the `OVERRIDE_ADMIN_EMAIL` environment variable.
+  Future<void> _seedOverrideAdminUser() async {
+    _log.info('Checking for admin user override...');
+    final overrideEmail = EnvironmentConfig.overrideAdminEmail;
+
+    if (overrideEmail == null || overrideEmail.isEmpty) {
+      _log.info('OVERRIDE_ADMIN_EMAIL not set. Skipping admin user override.');
+      return;
+    }
+
+    final usersCollection = _db.collection('users');
+    final existingAdmin = await usersCollection.findOne(
+      where.eq('dashboardRole', DashboardUserRole.admin.name),
+    );
+
+    // Case 1: An admin exists.
+    if (existingAdmin != null) {
+      final existingAdminEmail = existingAdmin['email'] as String;
+      // If the existing admin's email is the same as the override, do nothing.
+      if (existingAdminEmail == overrideEmail) {
+        _log.info(
+          'Admin user with email $overrideEmail already exists and matches '
+          'override. No action needed.',
+        );
+        return;
+      }
+
+      // If emails differ, delete the old admin and their data.
+      _log.warning(
+        'Found existing admin with email "$existingAdminEmail". It will be '
+        'replaced by the override email "$overrideEmail".',
+      );
+      final oldAdminId = existingAdmin['_id'] as ObjectId;
+      await _deleteUserAndData(oldAdminId);
+    }
+
+    // Case 2: No admin exists, or the old one was just deleted.
+    // Create the new admin.
+    _log.info('Creating admin user for email: $overrideEmail');
+    final newAdminId = ObjectId();
+    final newAdminUser = User(
+      id: newAdminId.oid,
+      email: overrideEmail,
+      appRole: AppUserRole.standardUser,
+      dashboardRole: DashboardUserRole.admin,
+      createdAt: DateTime.now(),
+      feedActionStatus: Map.fromEntries(
+        FeedActionType.values.map(
+          (type) =>
+              MapEntry(type, const UserFeedActionStatus(isCompleted: false)),
+        ),
+      ),
+    );
+
+    await usersCollection.insertOne({
+      '_id': newAdminId,
+      ...newAdminUser.toJson()..remove('id'),
+    });
+
+    // Create default settings and preferences for the new admin.
+    await _createUserSubDocuments(newAdminId);
+
+    _log.info('Successfully created admin user for $overrideEmail.');
+  }
+
+  /// Deletes a user and their associated sub-documents.
+  Future<void> _deleteUserAndData(ObjectId userId) async {
+    await _db.collection('users').deleteOne(where.eq('_id', userId));
+    await _db
+        .collection('user_app_settings')
+        .deleteOne(where.eq('_id', userId));
+    await _db
+        .collection('user_content_preferences')
+        .deleteOne(where.eq('_id', userId));
+    _log.info('Deleted user and associated data for ID: ${userId.oid}');
+  }
+
+  /// Creates the default sub-documents (settings, preferences) for a new user.
+  Future<void> _createUserSubDocuments(ObjectId userId) async {
+    final defaultAppSettings = UserAppSettings(
+      id: userId.oid,
+      displaySettings: const DisplaySettings(
+        baseTheme: AppBaseTheme.system,
+        accentTheme: AppAccentTheme.defaultBlue,
+        fontFamily: 'SystemDefault',
+        textScaleFactor: AppTextScaleFactor.medium,
+        fontWeight: AppFontWeight.regular,
+      ),
+      language: 'en',
+      feedPreferences: const FeedDisplayPreferences(
+        headlineDensity: HeadlineDensity.standard,
+        headlineImageStyle: HeadlineImageStyle.largeThumbnail,
+        showSourceInHeadlineFeed: true,
+        showPublishDateInHeadlineFeed: true,
+      ),
+    );
+    await _db.collection('user_app_settings').insertOne({
+      '_id': userId,
+      ...defaultAppSettings.toJson()..remove('id'),
+    });
+
+    final defaultUserPreferences = UserContentPreferences(
+      id: userId.oid,
+      followedCountries: const [],
+      followedSources: const [],
+      followedTopics: const [],
+      savedHeadlines: const [],
+    );
+    await _db.collection('user_content_preferences').insertOne({
+      '_id': userId,
+      ...defaultUserPreferences.toJson()..remove('id'),
+    });
   }
 }

@@ -91,6 +91,11 @@ Handler middleware(Handler handler) {
                 ),
               ) //
               .use(
+                provider<DataRepository<Language>>(
+                  (_) => deps.languageRepository,
+                ),
+              ) //
+              .use(
                 provider<DataRepository<User>>((_) => deps.userRepository),
               ) //
               .use(
