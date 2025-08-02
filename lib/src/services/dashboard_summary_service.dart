@@ -26,11 +26,15 @@ class DashboardSummaryService {
   /// This method fetches the counts of all items from the required
   /// repositories and constructs a [DashboardSummary] object.
   Future<DashboardSummary> getSummary() async {
+    // Define a filter to count only documents with an 'active' status.
+    // Using the enum's `name` property ensures type safety and consistency.
+    final activeFilter = {'status': ContentStatus.active.name};
+
     // Use Future.wait to fetch all counts in parallel for efficiency.
     final results = await Future.wait([
-      _headlineRepository.count(),
-      _topicRepository.count(),
-      _sourceRepository.count(),
+      _headlineRepository.count(filter: activeFilter),
+      _topicRepository.count(filter: activeFilter),
+      _sourceRepository.count(filter: activeFilter),
     ]);
 
     // The results are integers.
@@ -39,7 +43,7 @@ class DashboardSummaryService {
     final sourceCount = results[2];
 
     return DashboardSummary(
-      id: 'dashboard_summary', // Fixed ID for the singleton summary
+      id: 'dashboard_summary',
       headlineCount: headlineCount,
       topicCount: topicCount,
       sourceCount: sourceCount,
