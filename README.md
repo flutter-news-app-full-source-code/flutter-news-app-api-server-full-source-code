@@ -76,34 +76,9 @@ Get started for free and purchase when you're ready to launch!
 
 ## 🚀 Getting Started & Running Locally
 
-1.  **Prerequisites:**
-    *   Dart SDK (`>=3.0.0`)
-    *   MongoDB (`>=5.0` recommended)
-    *   Dart Frog CLI (`dart pub global activate dart_frog_cli`)
+For a complete guide on setting up your local environment, running the server, and understanding the configuration, please see the **[Local Setup Guide](https://flutter-news-app-full-source-code.github.io/docs/api-server/local-setup/)** in our official documentation.
 
-2.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/flutter-news-app-full-source-code/flutter-news-app-api-server-full-source-code.git
-    cd flutter-news-app-api-server-full-source-code
-    ```
-
-3.  **Configure your environment:**
-    Copy the `.env.example` file to a new file named `.env`:
-    ```bash
-    cp .env.example .env
-    ```
-    Then, open the new `.env` file and update the variables with your actual configuration values (e.g., `DATABASE_URL`).
-
-4.  **Get dependencies:**
-    ```bash
-    dart pub get
-    ```
-
-5.  **Run the development server:**
-    ```bash
-    dart_frog dev
-    ```
-    The API will be available at `http://localhost:8080`. On startup, the server will connect to your MongoDB database and seed it with initial data. This process is idempotent, so it can be run multiple times without creating duplicates.
+Our documentation provides a detailed, step-by-step walkthrough to get you up and running smoothly.
 
 ---
 
