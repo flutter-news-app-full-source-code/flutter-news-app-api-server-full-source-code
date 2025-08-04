@@ -261,7 +261,7 @@ class DatabaseSeedingService {
       language: 'en',
       feedPreferences: const FeedDisplayPreferences(
         headlineDensity: HeadlineDensity.standard,
-        headlineImageStyle: HeadlineImageStyle.largeThumbnail,
+        headlineImageStyle: HeadlineImageStyle.smallThumbnail,
         showSourceInHeadlineFeed: true,
         showPublishDateInHeadlineFeed: true,
       ),
