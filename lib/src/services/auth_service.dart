@@ -109,6 +109,7 @@ class AuthService {
         senderEmail: EnvironmentConfig.defaultSenderEmail,
         recipientEmail: email,
         templateId: EnvironmentConfig.otpTemplateId,
+        subject: code,
         otpCode: code,
       );
       _log.info('Initiated email sign-in for $email, code sent.');
