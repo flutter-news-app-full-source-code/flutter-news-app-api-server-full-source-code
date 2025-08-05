@@ -1,11 +1,12 @@
 import 'package:dart_frog/dart_frog.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/authentication_middleware.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/authorization_middleware.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/configured_rate_limiter.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 
 /// Languages are static data, read-only for all authenticated users.
 /// Modification is not allowed via the API as this is real-world data
-/// managed by database seeding.
+/// managed by database seeding. This middleware also applies rate limiting.
 ///
 /// Middleware for the `/api/v1/languages` route.
 ///
@@ -21,19 +22,23 @@ Handler middleware(Handler handler) {
         (handler) => (context) {
           final request = context.request;
           final String permission;
-        
+          final Middleware rateLimiter;
+
           switch (request.method) {
             case HttpMethod.get:
-              // Both collection and item GET requests use the same permission.
               permission = Permissions.languageRead;
+              rateLimiter = createReadRateLimiter();
             default:
               // Return 405 Method Not Allowed for unsupported methods.
               return Response(statusCode: 405);
           }
-          // Provide the required permission to the authorization middleware.
-          return handler(
-            context.provide<String>(() => permission),
-          );
+
+          // Apply the selected rate limiter and then provide the permission.
+          return rateLimiter(
+            (context) => handler(
+              context.provide<String>(() => permission),
+            ),
+          )(context);
         },
       )
       .use(authorizationMiddleware())
