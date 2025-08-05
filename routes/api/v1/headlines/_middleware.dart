@@ -18,19 +18,15 @@ Handler middleware(Handler handler) {
             case HttpMethod.get:
               permission = Permissions.headlineRead;
               rateLimiter = createReadRateLimiter();
-              break;
             case HttpMethod.post:
               permission = Permissions.headlineCreate;
               rateLimiter = createWriteRateLimiter();
-              break;
             case HttpMethod.put:
               permission = Permissions.headlineUpdate;
               rateLimiter = createWriteRateLimiter();
-              break;
             case HttpMethod.delete:
               permission = Permissions.headlineDelete;
               rateLimiter = createWriteRateLimiter();
-              break;
             default:
               // Return 405 Method Not Allowed for unsupported methods.
               return Response(statusCode: 405);
