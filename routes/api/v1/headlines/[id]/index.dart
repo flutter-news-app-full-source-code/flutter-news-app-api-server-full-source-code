@@ -4,7 +4,6 @@ import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/helpers/response_helper.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:logging/logging.dart';
 
 final _logger = Logger('headlines_item_handler');
