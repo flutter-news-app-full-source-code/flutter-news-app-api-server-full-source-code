@@ -1,9 +1,11 @@
 import 'package:dart_frog/dart_frog.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/authentication_middleware.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/authorization_middleware.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/configured_rate_limiter.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 
 /// Topics are managed by admins, but are readable by all authenticated users.
+/// This middleware also applies rate limiting.
 ///
 /// Middleware for the `/api/v1/topics` route.
 ///
@@ -19,25 +21,32 @@ Handler middleware(Handler handler) {
         (handler) => (context) {
           final request = context.request;
           final String permission;
-        
+          final Middleware rateLimiter;
+
           switch (request.method) {
             case HttpMethod.get:
-              // Both collection and item GET requests use the same permission.
               permission = Permissions.topicRead;
+              rateLimiter = createReadRateLimiter();
             case HttpMethod.post:
               permission = Permissions.topicCreate;
+              rateLimiter = createWriteRateLimiter();
             case HttpMethod.put:
               permission = Permissions.topicUpdate;
+              rateLimiter = createWriteRateLimiter();
             case HttpMethod.delete:
               permission = Permissions.topicDelete;
+              rateLimiter = createWriteRateLimiter();
             default:
               // Return 405 Method Not Allowed for unsupported methods.
               return Response(statusCode: 405);
           }
-          // Provide the required permission to the authorization middleware.
-          return handler(
-            context.provide<String>(() => permission),
-          );
+
+          // Apply the selected rate limiter and then provide the permission.
+          return rateLimiter(
+            (context) => handler(
+              context.provide<String>(() => permission),
+            ),
+          )(context);
         },
       )
       .use(authorizationMiddleware())
