@@ -3,6 +3,10 @@ import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/aut
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/authorization_middleware.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 
+/// Languages are static data, read-only for all authenticated users.
+/// Modification is not allowed via the API as this is real-world data
+/// managed by database seeding.
+///
 /// Middleware for the `/api/v1/languages` route.
 ///
 /// This middleware chain performs the following actions:
