@@ -3,6 +3,8 @@ import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/aut
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/authorization_middleware.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 
+/// Sources are managed by admins, but are readable by all authenticated users.
+///
 /// Middleware for the `/api/v1/sources` route.
 ///
 /// This middleware chain performs the following actions:
