@@ -157,19 +157,35 @@ abstract final class EnvironmentConfig {
     return Duration(hours: hours);
   }
 
-  /// Retrieves the request limit for the data API endpoints.
+  /// Retrieves the request limit for READ operations.
   ///
-  /// Defaults to 1000 if not set or if parsing fails.
-  static int get rateLimitDataApiLimit {
-    return int.tryParse(_env['RATE_LIMIT_DATA_API_LIMIT'] ?? '1000') ?? 1000;
+  /// Defaults to 5000 if not set or if parsing fails.
+  static int get rateLimitReadLimit {
+    return int.tryParse(_env['RATE_LIMIT_READ_LIMIT'] ?? '500') ?? 500;
   }
 
-  /// Retrieves the time window for the data API rate limit.
+  /// Retrieves the time window for the READ operations rate limit.
   ///
   /// Defaults to 60 minutes if not set or if parsing fails.
-  static Duration get rateLimitDataApiWindow {
+  static Duration get rateLimitReadWindow {
     final minutes =
-        int.tryParse(_env['RATE_LIMIT_DATA_API_WINDOW_MINUTES'] ?? '60') ?? 60;
+        int.tryParse(_env['RATE_LIMIT_READ_WINDOW_MINUTES'] ?? '60') ?? 60;
+    return Duration(minutes: minutes);
+  }
+
+  /// Retrieves the request limit for WRITE operations.
+  ///
+  /// Defaults to 500 if not set or if parsing fails.
+  static int get rateLimitWriteLimit {
+    return int.tryParse(_env['RATE_LIMIT_WRITE_LIMIT'] ?? '50') ?? 50;
+  }
+
+  /// Retrieves the time window for the WRITE operations rate limit.
+  ///
+  /// Defaults to 60 minutes if not set or if parsing fails.
+  static Duration get rateLimitWriteWindow {
+    final minutes =
+        int.tryParse(_env['RATE_LIMIT_WRITE_WINDOW_MINUTES'] ?? '60') ?? 60;
     return Duration(minutes: minutes);
   }
 }
