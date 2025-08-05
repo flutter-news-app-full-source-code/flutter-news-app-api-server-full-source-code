@@ -1,11 +1,38 @@
 import 'package:dart_frog/dart_frog.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/authorization_middleware.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 
-/// Applies the ownership check to the user settings endpoint.
+/// Middleware for the user settings endpoint.
 ///
-/// This runs after the parent `users/_middleware.dart`, which handles
-/// authentication and permission checks. This middleware adds the final
-/// security layer, ensuring a user can only access their own settings.
+/// This chain ensures that:
+/// 1. The user is authenticated (handled by the parent `users` middleware).
+/// 2. The correct permission (`userAppSettings...`) is required.
+/// 3. The user has that permission.
+/// 4. The user is the owner of the settings resource.
 Handler middleware(Handler handler) {
-  return handler.use(userOwnershipMiddleware());
+  return handler
+      // Final check: ensure the authenticated user owns this resource.
+      .use(userOwnershipMiddleware())
+      // Check if the user has the required permission.
+      .use(authorizationMiddleware())
+      // Provide the specific permission required for this route.
+      .use(_permissionSetter());
+}
+
+Middleware _permissionSetter() {
+  return (handler) {
+    return (context) {
+      final String permission;
+      switch (context.request.method) {
+        case HttpMethod.get:
+          permission = Permissions.userAppSettingsReadOwned;
+        case HttpMethod.put:
+          permission = Permissions.userAppSettingsUpdateOwned;
+        default:
+          return Response(statusCode: 405);
+      }
+      return handler(context.provide<String>(() => permission));
+    };
+  };
 }
