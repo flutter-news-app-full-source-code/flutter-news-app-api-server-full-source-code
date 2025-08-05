@@ -19,10 +19,8 @@ Handler middleware(Handler handler) {
           switch (request.method) {
             case HttpMethod.get:
               permission = Permissions.remoteConfigRead;
-              break;
             case HttpMethod.put:
               permission = Permissions.remoteConfigUpdate;
-              break;
             default:
               // Return 405 Method Not Allowed for unsupported methods.
               return Response(statusCode: 405);

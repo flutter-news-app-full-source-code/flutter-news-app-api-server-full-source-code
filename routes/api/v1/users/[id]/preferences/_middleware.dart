@@ -11,7 +11,6 @@ import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission
 /// 3. The user has that permission.
 /// 4. The user is the owner of the preferences resource.
 Handler middleware(Handler handler) {
- 
   return handler
       // Final check: ensure the authenticated user owns this resource.
       .use(userOwnershipMiddleware())
@@ -37,4 +36,3 @@ Middleware _permissionSetter() {
     };
   };
 }
-
