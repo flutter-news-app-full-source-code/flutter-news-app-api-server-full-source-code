@@ -3,12 +3,12 @@ import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/aut
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/authorization_middleware.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 
-/// Middleware for the `/api/v1/remote-configs` route.
+/// Middleware for the singleton `/api/v1/remote-config` route.
 ///
 /// This middleware chain enforces the following access rules:
-/// - GET: Requires `remoteConfig.read` permission (all authenticated users).
+/// - GET: Requires `remoteConfig.read` permission.
 /// - PUT: Requires `remoteConfig.update` permission (admin-only).
-/// - Other methods (POST, DELETE) are disallowed.
+/// - Other methods (POST, DELETE, etc.) are disallowed.
 Handler middleware(Handler handler) {
   return handler
       .use(
@@ -19,10 +19,12 @@ Handler middleware(Handler handler) {
           switch (request.method) {
             case HttpMethod.get:
               permission = Permissions.remoteConfigRead;
+              break;
             case HttpMethod.put:
               permission = Permissions.remoteConfigUpdate;
+              break;
             default:
-              // Return 405 Method Not Allowed for unsupported methods like POST/DELETE.
+              // Return 405 Method Not Allowed for unsupported methods.
               return Response(statusCode: 405);
           }
           // Provide the required permission to the authorization middleware.
