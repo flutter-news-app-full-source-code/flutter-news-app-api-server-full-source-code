@@ -75,92 +75,63 @@ Future<Response> _handleGet(
   User authenticatedUser,
   PermissionService permissionService,
 ) async {
-  // Authorization check is handled by authorizationMiddleware before this.
-  // This handler only needs to perform the ownership check if required.
+  // Authorization and ownership checks are handled by middleware before this.
+  // This handler's job is to fetch and return the data.
 
   dynamic item;
 
-  // Determine userId for repository call based on ModelConfig (for data scoping)
-  String? userIdForRepoCall;
-  // If the model is user-owned, pass the authenticated user's ID to the repository
-  // for filtering. Otherwise, pass null.
-  // Note: This is for data *scoping* by the repository, not the permission check.
-  // We infer user-owned based on the presence of getOwnerId function.
-  if (modelConfig.getOwnerId != null &&
-      !permissionService.isAdmin(authenticatedUser)) {
-    userIdForRepoCall = authenticatedUser.id;
+  // Check if the ownership middleware already fetched the item for a check.
+  // This avoids a redundant database call.
+  final fetchedItem = context.read<FetchedItem<dynamic>?>();
+
+  if (fetchedItem != null) {
+    // If the item was pre-fetched by the middleware, use it directly.
+    item = fetchedItem.data;
   } else {
-    userIdForRepoCall = null;
-  }
+    // If no ownership check was required (e.g., for an admin or public
+    // resource), the item was not pre-fetched, so we fetch it now.
+    final userIdForRepoCall =
+        (modelConfig.getOwnerId != null &&
+            !permissionService.isAdmin(authenticatedUser))
+        ? authenticatedUser.id
+        : null;
 
-  // Repository exceptions (like NotFoundException) will propagate up to the
-  // main onRequest try/catch (which is now removed, so they go to errorHandler).
-  switch (modelName) {
-    case 'headline':
-      final repo = context.read<DataRepository<Headline>>();
-      item = await repo.read(id: id, userId: userIdForRepoCall);
-    case 'topic':
-      final repo = context.read<DataRepository<Topic>>();
-      item = await repo.read(id: id, userId: userIdForRepoCall);
-    case 'source':
-      final repo = context.read<DataRepository<Source>>();
-      item = await repo.read(id: id, userId: userIdForRepoCall);
-    case 'country':
-      final repo = context.read<DataRepository<Country>>();
-      item = await repo.read(id: id, userId: userIdForRepoCall);
-    case 'language':
-      final repo = context.read<DataRepository<Language>>();
-      item = await repo.read(id: id, userId: userIdForRepoCall);
-    case 'user': // Handle User model specifically if needed, or rely on generic
-      final repo = context.read<DataRepository<User>>();
-      item = await repo.read(id: id, userId: userIdForRepoCall);
-    case 'user_app_settings': // New case for UserAppSettings
-      final repo = context.read<DataRepository<UserAppSettings>>();
-      item = await repo.read(id: id, userId: userIdForRepoCall);
-    case 'user_content_preferences': // New case for UserContentPreferences
-      final repo = context.read<DataRepository<UserContentPreferences>>();
-      item = await repo.read(id: id, userId: userIdForRepoCall);
-    case 'remote_config': // New case for RemoteConfig (read by admin)
-      final repo = context.read<DataRepository<RemoteConfig>>();
-      item = await repo.read(
-        id: id,
-        userId: userIdForRepoCall,
-      ); // userId should be null for AppConfig
-    case 'dashboard_summary':
-      final service = context.read<DashboardSummaryService>();
-      item = await service.getSummary();
-    default:
-      // This case should ideally be caught by middleware, but added for safety
-      // Throw an exception to be caught by the errorHandler
-      throw OperationFailedException(
-        'Unsupported model type "$modelName" reached handler.',
-      );
-  }
-
-  // --- Handler-Level Ownership Check (for GET item) ---
-  // This check is needed if the ModelConfig for GET item requires ownership
-  // AND the user is NOT an admin (admins can bypass ownership checks).
-  if (modelConfig.getItemPermission.requiresOwnershipCheck &&
-      !permissionService.isAdmin(authenticatedUser)) {
-    // Ensure getOwnerId is provided for models requiring ownership check
-    if (modelConfig.getOwnerId == null) {
-      _logger.severe(
-        'Configuration Error: Model "$modelName" requires '
-        'ownership check for GET item but getOwnerId is not provided.',
-      );
-      // Throw an exception to be caught by the errorHandler
-      throw const OperationFailedException(
-        'Internal Server Error: Model configuration error.',
-      );
-    }
-
-    final itemOwnerId = modelConfig.getOwnerId!(item);
-    if (itemOwnerId != authenticatedUser.id) {
-      // If the authenticated user is not the owner, deny access.
-      // Throw ForbiddenException to be caught by the errorHandler
-      throw const ForbiddenException(
-        'You do not have permission to access this specific item.',
-      );
+    // Repository exceptions (like NotFoundException) will propagate up.
+    switch (modelName) {
+      case 'headline':
+        final repo = context.read<DataRepository<Headline>>();
+        item = await repo.read(id: id, userId: userIdForRepoCall);
+      case 'topic':
+        final repo = context.read<DataRepository<Topic>>();
+        item = await repo.read(id: id, userId: userIdForRepoCall);
+      case 'source':
+        final repo = context.read<DataRepository<Source>>();
+        item = await repo.read(id: id, userId: userIdForRepoCall);
+      case 'country':
+        final repo = context.read<DataRepository<Country>>();
+        item = await repo.read(id: id, userId: userIdForRepoCall);
+      case 'language':
+        final repo = context.read<DataRepository<Language>>();
+        item = await repo.read(id: id, userId: userIdForRepoCall);
+      case 'user':
+        final repo = context.read<DataRepository<User>>();
+        item = await repo.read(id: id, userId: userIdForRepoCall);
+      case 'user_app_settings':
+        final repo = context.read<DataRepository<UserAppSettings>>();
+        item = await repo.read(id: id, userId: userIdForRepoCall);
+      case 'user_content_preferences':
+        final repo = context.read<DataRepository<UserContentPreferences>>();
+        item = await repo.read(id: id, userId: userIdForRepoCall);
+      case 'remote_config':
+        final repo = context.read<DataRepository<RemoteConfig>>();
+        item = await repo.read(id: id, userId: userIdForRepoCall);
+      case 'dashboard_summary':
+        final service = context.read<DashboardSummaryService>();
+        item = await service.getSummary();
+      default:
+        throw OperationFailedException(
+          'Unsupported model type "$modelName" reached handler.',
+        );
     }
   }
 
@@ -455,94 +426,17 @@ Future<Response> _handleDelete(
   User authenticatedUser,
   PermissionService permissionService,
 ) async {
-  // Authorization check is handled by authorizationMiddleware before this.
-  // This handler only needs to perform the ownership check if required.
+  // Authorization and ownership checks are handled by the middleware.
+  // The `ownershipCheckMiddleware` has already verified that the user is
+  // the owner if required. This handler's only job is to perform the deletion.
 
-  // Determine userId for repository call based on ModelConfig (for data scoping/ownership enforcement)
-  String? userIdForRepoCall;
-  // If the model is user-owned, pass the authenticated user's ID to the repository
-  // for ownership enforcement. Otherwise, pass null.
-  if (modelConfig.getOwnerId != null &&
-      !permissionService.isAdmin(authenticatedUser)) {
-    userIdForRepoCall = authenticatedUser.id;
-  } else {
-    userIdForRepoCall = null;
-  }
-
-  // --- Handler-Level Ownership Check (for DELETE) ---
-  // For DELETE, we need to fetch the item *before* attempting deletion
-  // to perform the ownership check if required.
-  dynamic itemToDelete;
-  if (modelConfig.deletePermission.requiresOwnershipCheck &&
-      !permissionService.isAdmin(authenticatedUser)) {
-    // Ensure getOwnerId is provided for models requiring ownership check
-    if (modelConfig.getOwnerId == null) {
-      _logger.severe(
-        'Configuration Error: Model "$modelName" requires '
-        'ownership check for DELETE but getOwnerId is not provided.',
-      );
-      // Throw an exception to be caught by the errorHandler
-      throw const OperationFailedException(
-        'Internal Server Error: Model configuration error.',
-      );
-    }
-    // Fetch the item to check ownership. Use userIdForRepoCall for scoping.
-    // Repository exceptions (like NotFoundException) will propagate up to the errorHandler.
-    switch (modelName) {
-      case 'headline':
-        final repo = context.read<DataRepository<Headline>>();
-        itemToDelete = await repo.read(id: id, userId: userIdForRepoCall);
-      case 'topic':
-        final repo = context.read<DataRepository<Topic>>();
-        itemToDelete = await repo.read(id: id, userId: userIdForRepoCall);
-      case 'source':
-        final repo = context.read<DataRepository<Source>>();
-        itemToDelete = await repo.read(id: id, userId: userIdForRepoCall);
-      case 'country':
-        final repo = context.read<DataRepository<Country>>();
-        itemToDelete = await repo.read(id: id, userId: userIdForRepoCall);
-      case 'language':
-        final repo = context.read<DataRepository<Language>>();
-        itemToDelete = await repo.read(id: id, userId: userIdForRepoCall);
-      case 'user':
-        final repo = context.read<DataRepository<User>>();
-        itemToDelete = await repo.read(id: id, userId: userIdForRepoCall);
-      case 'user_app_settings': // New case for UserAppSettings
-        final repo = context.read<DataRepository<UserAppSettings>>();
-        itemToDelete = await repo.read(id: id, userId: userIdForRepoCall);
-      case 'user_content_preferences': // New case for UserContentPreferences
-        final repo = context.read<DataRepository<UserContentPreferences>>();
-        itemToDelete = await repo.read(id: id, userId: userIdForRepoCall);
-      case 'remote_config': // New case for RemoteConfig (delete by admin)
-        final repo = context.read<DataRepository<RemoteConfig>>();
-        itemToDelete = await repo.read(
-          id: id,
-          userId: userIdForRepoCall,
-        ); // userId should be null for AppConfig
-      default:
-        _logger.severe(
-          'Unsupported model type "$modelName" reached _handleDelete ownership check.',
-        );
-        // Throw an exception to be caught by the errorHandler
-        throw OperationFailedException(
-          'Unsupported model type "$modelName" reached handler.',
-        );
-    }
-
-    // Perform the ownership check if the item was found
-    if (itemToDelete != null) {
-      final itemOwnerId = modelConfig.getOwnerId!(itemToDelete);
-      if (itemOwnerId != authenticatedUser.id) {
-        // If the authenticated user is not the owner, deny access.
-        // Throw ForbiddenException to be caught by the errorHandler
-        throw const ForbiddenException(
-          'You do not have permission to delete this specific item.',
-        );
-      }
-    }
-    // If itemToDelete is null here, it means the item wasn't found during the read.
-    // The subsequent delete call will likely throw NotFoundException, which is correct.
-  }
+  // Determine the userId for the repository call. For non-admins, this
+  // provides an additional layer of security at the database level.
+  final userIdForRepoCall =
+      (modelConfig.getOwnerId != null &&
+          !permissionService.isAdmin(authenticatedUser))
+      ? authenticatedUser.id
+      : null;
 
   // Allow repository exceptions (e.g., NotFoundException) to propagate
   // upwards to be handled by the standard error handling mechanism.
