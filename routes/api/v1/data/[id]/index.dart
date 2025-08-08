@@ -7,7 +7,6 @@ import 'package:flutter_news_app_api_server_full_source_code/src/helpers/respons
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_registry.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_preference_limit_service.dart';
 import 'package:logging/logging.dart';
 
@@ -31,38 +30,20 @@ Future<Response> onRequest(RequestContext context, String id) async {
 
 // --- GET Handler ---
 /// Handles GET requests: Retrieves a single item by its ID.
+///
+/// This handler can safely assume that the requested item has already been
+/// fetched, validated, and provided in the context by the upstream
+/// `dataFetchMiddleware`. Its primary role is to construct the success
+/// response.
 Future<Response> _handleGet(RequestContext context, String id) async {
   final modelName = context.read<String>();
-  final modelConfig = context.read<ModelConfig<dynamic>>();
-  final authenticatedUser = context.read<User>();
-  final permissionService = context.read<PermissionService>();
-
   _logger.info(
     'Handling GET request for model "$modelName", id "$id".',
   );
 
-  dynamic item;
-  final fetchedItem = context.read<FetchedItem<dynamic>?>();
-
-  if (fetchedItem != null) {
-    _logger.finer('Item was pre-fetched by middleware.');
-    item = fetchedItem.data;
-  } else {
-    _logger.finer('Item not pre-fetched, calling _readItem helper.');
-    final userIdForRepoCall = _getUserIdForRepoCall(
-      modelConfig: modelConfig,
-      permissionService: permissionService,
-      authenticatedUser: authenticatedUser,
-    );
-    item = await _readItem(context, modelName, id, userIdForRepoCall);
-  }
-
-  _logger.finer('Item fetch completed. Result: ${item == null ? "null" : "found"}.');
-
-  // This check is now crucial for preventing the NoSuchMethodError on null.
-  if (item == null) {
-    throw NotFoundException('Item with id "$id" not found.');
-  }
+  // The item is guaranteed to be present by the dataFetchMiddleware.
+  final item = context.read<FetchedItem<dynamic>>().data;
+  _logger.finer('Item was pre-fetched by middleware. Preparing response.');
 
   return ResponseHelper.success(
     context: context,
@@ -190,83 +171,6 @@ String? _getUserIdForRepoCall({
           !permissionService.isAdmin(authenticatedUser))
       ? authenticatedUser.id
       : null;
-}
-
-/// Encapsulates the logic for reading a single item by its type.
-Future<dynamic> _readItem(
-  RequestContext context,
-  String modelName,
-  String id,
-  String? userId,
-) async {
-  _logger.finer(
-    'Executing _readItem for model "$modelName", id "$id", userId: $userId.',
-  );
-  try {
-    switch (modelName) {
-      case 'headline':
-        return await context.read<DataRepository<Headline>>().read(
-              id: id,
-              userId: userId,
-            );
-      case 'topic':
-        return await context
-            .read<DataRepository<Topic>>()
-            .read(id: id, userId: userId);
-      case 'source':
-        return await context.read<DataRepository<Source>>().read(
-              id: id,
-              userId: userId,
-            );
-      case 'country':
-        return await context.read<DataRepository<Country>>().read(
-              id: id,
-              userId: userId,
-            );
-      case 'language':
-        return await context.read<DataRepository<Language>>().read(
-              id: id,
-              userId: userId,
-            );
-      case 'user':
-        return await context
-            .read<DataRepository<User>>()
-            .read(id: id, userId: userId);
-      case 'user_app_settings':
-        return await context.read<DataRepository<UserAppSettings>>().read(
-              id: id,
-              userId: userId,
-            );
-      case 'user_content_preferences':
-        return await context.read<DataRepository<UserContentPreferences>>().read(
-              id: id,
-              userId: userId,
-            );
-      case 'remote_config':
-        return await context.read<DataRepository<RemoteConfig>>().read(
-              id: id,
-              userId: userId,
-            );
-      case 'dashboard_summary':
-        return await context.read<DashboardSummaryService>().getSummary();
-      default:
-        _logger.warning('Unsupported model type "$modelName" for read operation.');
-        throw OperationFailedException(
-          'Unsupported model type "$modelName" for read operation.',
-        );
-    }
-  } catch (e, s) {
-    _logger.severe(
-      'Unhandled exception in _readItem for model "$modelName", id "$id".',
-      e,
-      s,
-    );
-    // Re-throw as a standard exception type that the main error handler
-    // can process into a 500 error, while preserving the original cause.
-    throw OperationFailedException(
-      'An internal error occurred while reading the item: $e',
-    );
-  }
 }
 
 /// Encapsulates the logic for updating an item by its type.
