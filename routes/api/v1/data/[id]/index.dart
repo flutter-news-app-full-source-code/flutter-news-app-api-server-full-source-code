@@ -84,18 +84,33 @@ Future<Response> _handlePut(RequestContext context, String id) async {
     );
   }
 
-  final bodyItemId = modelConfig.getId(itemToUpdate);
-  if (bodyItemId != id) {
-    throw BadRequestException(
-      'Bad Request: ID in request body ("$bodyItemId") does not match ID in path ("$id").',
-    );
+  try {
+    final bodyItemId = modelConfig.getId(itemToUpdate);
+    if (bodyItemId != id) {
+      throw BadRequestException(
+        'Bad Request: ID in request body ("$bodyItemId") does not match ID in path ("$id").',
+      );
+    }
+  } catch (e) {
+    // Ignore if getId throws, as the ID might not be in the body,
+    // which can be acceptable for some models.
+    _logger.info('Could not get ID from PUT body: $e');
   }
 
   if (modelName == 'user_content_preferences') {
-    await userPreferenceLimitService.checkUpdatePreferences(
-      authenticatedUser,
-      itemToUpdate as UserContentPreferences,
-    );
+    if (itemToUpdate is UserContentPreferences) {
+      await userPreferenceLimitService.checkUpdatePreferences(
+        authenticatedUser,
+        itemToUpdate,
+      );
+    } else {
+      _logger.severe(
+        'Type Error: Expected UserContentPreferences for limit check, but got ${itemToUpdate.runtimeType}.',
+      );
+      throw const OperationFailedException(
+        'Internal Server Error: Model type mismatch for limit check.',
+      );
+    }
   }
 
   final userIdForRepoCall = _getUserIdForRepoCall(

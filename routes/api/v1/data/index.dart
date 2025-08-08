@@ -28,20 +28,34 @@ Future<Response> _handleGet(RequestContext context) async {
   final authenticatedUser = context.read<User>();
   final params = context.request.uri.queryParameters;
 
-  final filter = params.containsKey('filter')
-      ? jsonDecode(params['filter']!) as Map<String, dynamic>
-      : null;
+  Map<String, dynamic>? filter;
+  if (params.containsKey('filter')) {
+    try {
+      filter = jsonDecode(params['filter']!) as Map<String, dynamic>;
+    } on FormatException catch (e) {
+      throw BadRequestException(
+        'Invalid "filter" parameter: Not valid JSON. $e',
+      );
+    }
+  }
 
-  final sort = params.containsKey('sort')
-      ? (params['sort']!.split(',').map((s) {
-          final parts = s.split(':');
-          final field = parts[0];
-          final order = (parts.length > 1 && parts[1] == 'desc')
-              ? SortOrder.desc
-              : SortOrder.asc;
-          return SortOption(field, order);
-        }).toList())
-      : null;
+  List<SortOption>? sort;
+  if (params.containsKey('sort')) {
+    try {
+      sort = params['sort']!.split(',').map((s) {
+        final parts = s.split(':');
+        final field = parts[0];
+        final order = (parts.length > 1 && parts[1] == 'desc')
+            ? SortOrder.desc
+            : SortOrder.asc;
+        return SortOption(field, order);
+      }).toList();
+    } catch (e) {
+      throw const BadRequestException(
+        'Invalid "sort" parameter format. Use "field:order,field2:order".',
+      );
+    }
+  }
 
   final pagination =
       (params.containsKey('limit') || params.containsKey('cursor'))
@@ -91,7 +105,14 @@ Future<Response> _handlePost(RequestContext context) async {
   requestBody['createdAt'] = now;
   requestBody['updatedAt'] = now;
 
-  final itemToCreate = modelConfig.fromJson(requestBody);
+  dynamic itemToCreate;
+  try {
+    itemToCreate = modelConfig.fromJson(requestBody);
+  } on TypeError catch (e) {
+    throw BadRequestException(
+      'Invalid request body: Missing or invalid required field(s). $e',
+    );
+  }
 
   final userIdForRepoCall =
       (modelConfig.getOwnerId != null &&
