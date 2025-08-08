@@ -7,7 +7,6 @@ import 'package:flutter_news_app_api_server_full_source_code/src/helpers/respons
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_registry.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_preference_limit_service.dart';
 import 'package:logging/logging.dart';
 
@@ -31,25 +30,20 @@ Future<Response> onRequest(RequestContext context, String id) async {
 
 // --- GET Handler ---
 /// Handles GET requests: Retrieves a single item by its ID.
+///
+/// This handler can safely assume that the requested item has already been
+/// fetched, validated, and provided in the context by the upstream
+/// `dataFetchMiddleware`. Its primary role is to construct the success
+/// response.
 Future<Response> _handleGet(RequestContext context, String id) async {
   final modelName = context.read<String>();
-  final modelConfig = context.read<ModelConfig<dynamic>>();
-  final authenticatedUser = context.read<User>();
-  final permissionService = context.read<PermissionService>();
+  _logger.info(
+    'Handling GET request for model "$modelName", id "$id".',
+  );
 
-  dynamic item;
-  final fetchedItem = context.read<FetchedItem<dynamic>?>();
-
-  if (fetchedItem != null) {
-    item = fetchedItem.data;
-  } else {
-    final userIdForRepoCall = _getUserIdForRepoCall(
-      modelConfig: modelConfig,
-      permissionService: permissionService,
-      authenticatedUser: authenticatedUser,
-    );
-    item = await _readItem(context, modelName, id, userIdForRepoCall);
-  }
+  // The item is guaranteed to be present by the dataFetchMiddleware.
+  final item = context.read<FetchedItem<dynamic>>().data;
+  _logger.finer('Item was pre-fetched by middleware. Preparing response.');
 
   return ResponseHelper.success(
     context: context,
@@ -65,7 +59,12 @@ Future<Response> _handlePut(RequestContext context, String id) async {
   final modelConfig = context.read<ModelConfig<dynamic>>();
   final authenticatedUser = context.read<User>();
   final permissionService = context.read<PermissionService>();
-  final userPreferenceLimitService = context.read<UserPreferenceLimitService>();
+  final userPreferenceLimitService =
+      context.read<UserPreferenceLimitService>();
+
+  _logger.info(
+    'Handling PUT request for model "$modelName", id "$id".',
+  );
 
   final requestBody = await context.request.json() as Map<String, dynamic>?;
   if (requestBody == null) {
@@ -142,6 +141,10 @@ Future<Response> _handleDelete(RequestContext context, String id) async {
   final authenticatedUser = context.read<User>();
   final permissionService = context.read<PermissionService>();
 
+  _logger.info(
+    'Handling DELETE request for model "$modelName", id "$id".',
+  );
+
   final userIdForRepoCall = _getUserIdForRepoCall(
     modelConfig: modelConfig,
     permissionService: permissionService,
@@ -170,62 +173,6 @@ String? _getUserIdForRepoCall({
       : null;
 }
 
-/// Encapsulates the logic for reading a single item by its type.
-Future<dynamic> _readItem(
-  RequestContext context,
-  String modelName,
-  String id,
-  String? userId,
-) {
-  switch (modelName) {
-    case 'headline':
-      return context.read<DataRepository<Headline>>().read(
-        id: id,
-        userId: userId,
-      );
-    case 'topic':
-      return context.read<DataRepository<Topic>>().read(id: id, userId: userId);
-    case 'source':
-      return context.read<DataRepository<Source>>().read(
-        id: id,
-        userId: userId,
-      );
-    case 'country':
-      return context.read<DataRepository<Country>>().read(
-        id: id,
-        userId: userId,
-      );
-    case 'language':
-      return context.read<DataRepository<Language>>().read(
-        id: id,
-        userId: userId,
-      );
-    case 'user':
-      return context.read<DataRepository<User>>().read(id: id, userId: userId);
-    case 'user_app_settings':
-      return context.read<DataRepository<UserAppSettings>>().read(
-        id: id,
-        userId: userId,
-      );
-    case 'user_content_preferences':
-      return context.read<DataRepository<UserContentPreferences>>().read(
-        id: id,
-        userId: userId,
-      );
-    case 'remote_config':
-      return context.read<DataRepository<RemoteConfig>>().read(
-        id: id,
-        userId: userId,
-      );
-    case 'dashboard_summary':
-      return context.read<DashboardSummaryService>().getSummary();
-    default:
-      throw OperationFailedException(
-        'Unsupported model type "$modelName" for read operation.',
-      );
-  }
-}
-
 /// Encapsulates the logic for updating an item by its type.
 Future<dynamic> _updateItem(
   RequestContext context,
@@ -233,67 +180,84 @@ Future<dynamic> _updateItem(
   String id,
   dynamic itemToUpdate,
   String? userId,
-) {
-  switch (modelName) {
-    case 'headline':
-      return context.read<DataRepository<Headline>>().update(
-        id: id,
-        item: itemToUpdate as Headline,
-        userId: userId,
-      );
-    case 'topic':
-      return context.read<DataRepository<Topic>>().update(
-        id: id,
-        item: itemToUpdate as Topic,
-        userId: userId,
-      );
-    case 'source':
-      return context.read<DataRepository<Source>>().update(
-        id: id,
-        item: itemToUpdate as Source,
-        userId: userId,
-      );
-    case 'country':
-      return context.read<DataRepository<Country>>().update(
-        id: id,
-        item: itemToUpdate as Country,
-        userId: userId,
-      );
-    case 'language':
-      return context.read<DataRepository<Language>>().update(
-        id: id,
-        item: itemToUpdate as Language,
-        userId: userId,
-      );
-    case 'user':
-      final repo = context.read<DataRepository<User>>();
-      final existingUser = context.read<FetchedItem<dynamic>>().data as User;
-      final updatedUser = existingUser.copyWith(
-        feedActionStatus: (itemToUpdate as User).feedActionStatus,
-      );
-      return repo.update(id: id, item: updatedUser, userId: userId);
-    case 'user_app_settings':
-      return context.read<DataRepository<UserAppSettings>>().update(
-        id: id,
-        item: itemToUpdate as UserAppSettings,
-        userId: userId,
-      );
-    case 'user_content_preferences':
-      return context.read<DataRepository<UserContentPreferences>>().update(
-        id: id,
-        item: itemToUpdate as UserContentPreferences,
-        userId: userId,
-      );
-    case 'remote_config':
-      return context.read<DataRepository<RemoteConfig>>().update(
-        id: id,
-        item: itemToUpdate as RemoteConfig,
-        userId: userId,
-      );
-    default:
-      throw OperationFailedException(
-        'Unsupported model type "$modelName" for update operation.',
-      );
+) async {
+  _logger.finer(
+    'Executing _updateItem for model "$modelName", id "$id", userId: $userId.',
+  );
+  try {
+    switch (modelName) {
+      case 'headline':
+        return await context.read<DataRepository<Headline>>().update(
+              id: id,
+              item: itemToUpdate as Headline,
+              userId: userId,
+            );
+      case 'topic':
+        return await context.read<DataRepository<Topic>>().update(
+              id: id,
+              item: itemToUpdate as Topic,
+              userId: userId,
+            );
+      case 'source':
+        return await context.read<DataRepository<Source>>().update(
+              id: id,
+              item: itemToUpdate as Source,
+              userId: userId,
+            );
+      case 'country':
+        return await context.read<DataRepository<Country>>().update(
+              id: id,
+              item: itemToUpdate as Country,
+              userId: userId,
+            );
+      case 'language':
+        return await context.read<DataRepository<Language>>().update(
+              id: id,
+              item: itemToUpdate as Language,
+              userId: userId,
+            );
+      case 'user':
+        final repo = context.read<DataRepository<User>>();
+        final existingUser = context.read<FetchedItem<dynamic>>().data as User;
+        final updatedUser = existingUser.copyWith(
+          feedActionStatus: (itemToUpdate as User).feedActionStatus,
+        );
+        return await repo.update(id: id, item: updatedUser, userId: userId);
+      case 'user_app_settings':
+        return await context.read<DataRepository<UserAppSettings>>().update(
+              id: id,
+              item: itemToUpdate as UserAppSettings,
+              userId: userId,
+            );
+      case 'user_content_preferences':
+        return await context
+            .read<DataRepository<UserContentPreferences>>()
+            .update(
+              id: id,
+              item: itemToUpdate as UserContentPreferences,
+              userId: userId,
+            );
+      case 'remote_config':
+        return await context.read<DataRepository<RemoteConfig>>().update(
+              id: id,
+              item: itemToUpdate as RemoteConfig,
+              userId: userId,
+            );
+      default:
+        _logger.warning('Unsupported model type "$modelName" for update operation.');
+        throw OperationFailedException(
+          'Unsupported model type "$modelName" for update operation.',
+        );
+    }
+  } catch (e, s) {
+    _logger.severe(
+      'Unhandled exception in _updateItem for model "$modelName", id "$id".',
+      e,
+      s,
+    );
+    throw OperationFailedException(
+      'An internal error occurred while updating the item: $e',
+    );
   }
 }
 
@@ -303,56 +267,71 @@ Future<void> _deleteItem(
   String modelName,
   String id,
   String? userId,
-) {
-  switch (modelName) {
-    case 'headline':
-      return context.read<DataRepository<Headline>>().delete(
-        id: id,
-        userId: userId,
-      );
-    case 'topic':
-      return context.read<DataRepository<Topic>>().delete(
-        id: id,
-        userId: userId,
-      );
-    case 'source':
-      return context.read<DataRepository<Source>>().delete(
-        id: id,
-        userId: userId,
-      );
-    case 'country':
-      return context.read<DataRepository<Country>>().delete(
-        id: id,
-        userId: userId,
-      );
-    case 'language':
-      return context.read<DataRepository<Language>>().delete(
-        id: id,
-        userId: userId,
-      );
-    case 'user':
-      return context.read<DataRepository<User>>().delete(
-        id: id,
-        userId: userId,
-      );
-    case 'user_app_settings':
-      return context.read<DataRepository<UserAppSettings>>().delete(
-        id: id,
-        userId: userId,
-      );
-    case 'user_content_preferences':
-      return context.read<DataRepository<UserContentPreferences>>().delete(
-        id: id,
-        userId: userId,
-      );
-    case 'remote_config':
-      return context.read<DataRepository<RemoteConfig>>().delete(
-        id: id,
-        userId: userId,
-      );
-    default:
-      throw OperationFailedException(
-        'Unsupported model type "$modelName" for delete operation.',
-      );
+) async {
+  _logger.finer(
+    'Executing _deleteItem for model "$modelName", id "$id", userId: $userId.',
+  );
+  try {
+    switch (modelName) {
+      case 'headline':
+        return await context.read<DataRepository<Headline>>().delete(
+              id: id,
+              userId: userId,
+            );
+      case 'topic':
+        return await context.read<DataRepository<Topic>>().delete(
+              id: id,
+              userId: userId,
+            );
+      case 'source':
+        return await context.read<DataRepository<Source>>().delete(
+              id: id,
+              userId: userId,
+            );
+      case 'country':
+        return await context.read<DataRepository<Country>>().delete(
+              id: id,
+              userId: userId,
+            );
+      case 'language':
+        return await context.read<DataRepository<Language>>().delete(
+              id: id,
+              userId: userId,
+            );
+      case 'user':
+        return await context.read<DataRepository<User>>().delete(
+              id: id,
+              userId: userId,
+            );
+      case 'user_app_settings':
+        return await context.read<DataRepository<UserAppSettings>>().delete(
+              id: id,
+              userId: userId,
+            );
+      case 'user_content_preferences':
+        return await context.read<DataRepository<UserContentPreferences>>().delete(
+              id: id,
+              userId: userId,
+            );
+      case 'remote_config':
+        return await context.read<DataRepository<RemoteConfig>>().delete(
+              id: id,
+              userId: userId,
+            );
+      default:
+        _logger.warning('Unsupported model type "$modelName" for delete operation.');
+        throw OperationFailedException(
+          'Unsupported model type "$modelName" for delete operation.',
+        );
+    }
+  } catch (e, s) {
+    _logger.severe(
+      'Unhandled exception in _deleteItem for model "$modelName", id "$id".',
+      e,
+      s,
+    );
+    throw OperationFailedException(
+      'An internal error occurred while deleting the item: $e',
+    );
   }
 }

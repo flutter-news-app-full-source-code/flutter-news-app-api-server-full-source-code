@@ -34,11 +34,20 @@ Handler middleware(Handler handler) {
   if (!_loggerConfigured) {
     Logger.root.level = Level.ALL;
     Logger.root.onRecord.listen((record) {
+      // A more detailed logger that includes the error and stack trace.
       // ignore: avoid_print
       print(
         '${record.level.name}: ${record.time}: ${record.loggerName}: '
         '${record.message}',
       );
+      if (record.error != null) {
+        // ignore: avoid_print
+        print('  ERROR: ${record.error}');
+      }
+      if (record.stackTrace != null) {
+        // ignore: avoid_print
+        print('  STACK TRACE: ${record.stackTrace}');
+      }
     });
     _loggerConfigured = true;
   }

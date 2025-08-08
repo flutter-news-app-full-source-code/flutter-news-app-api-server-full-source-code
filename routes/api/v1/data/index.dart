@@ -7,7 +7,11 @@ import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/helpers/response_helper.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_registry.dart';
+import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
+
+// Create a logger for this file.
+final _logger = Logger('data_collection_handler');
 
 /// Handles requests for the /api/v1/data collection endpoint.
 Future<Response> onRequest(RequestContext context) async {
@@ -27,6 +31,11 @@ Future<Response> _handleGet(RequestContext context) async {
   final modelConfig = context.read<ModelConfig<dynamic>>();
   final authenticatedUser = context.read<User>();
   final params = context.request.uri.queryParameters;
+
+  _logger..info(
+    'Handling GET collection request for model "$modelName".',
+  )
+  ..finer('Query parameters: $params');
 
   Map<String, dynamic>? filter;
   if (params.containsKey('filter')) {
@@ -59,11 +68,11 @@ Future<Response> _handleGet(RequestContext context) async {
 
   final pagination =
       (params.containsKey('limit') || params.containsKey('cursor'))
-      ? PaginationOptions(
-          cursor: params['cursor'],
-          limit: int.tryParse(params['limit'] ?? ''),
-        )
-      : null;
+          ? PaginationOptions(
+              cursor: params['cursor'],
+              limit: int.tryParse(params['limit'] ?? ''),
+            )
+          : null;
 
   final userIdForRepoCall =
       (modelConfig.getOwnerId != null &&
@@ -94,6 +103,10 @@ Future<Response> _handlePost(RequestContext context) async {
   final modelName = context.read<String>();
   final modelConfig = context.read<ModelConfig<dynamic>>();
   final authenticatedUser = context.read<User>();
+
+  _logger.info(
+    'Handling POST request for model "$modelName".',
+  );
 
   final requestBody = await context.request.json() as Map<String, dynamic>?;
   if (requestBody == null) {
@@ -147,54 +160,69 @@ Future<PaginatedResponse<dynamic>> _readAllItems(
   Map<String, dynamic>? filter,
   List<SortOption>? sort,
   PaginationOptions? pagination,
-) {
-  switch (modelName) {
-    case 'headline':
-      return context.read<DataRepository<Headline>>().readAll(
-        userId: userId,
-        filter: filter,
-        sort: sort,
-        pagination: pagination,
-      );
-    case 'topic':
-      return context.read<DataRepository<Topic>>().readAll(
-        userId: userId,
-        filter: filter,
-        sort: sort,
-        pagination: pagination,
-      );
-    case 'source':
-      return context.read<DataRepository<Source>>().readAll(
-        userId: userId,
-        filter: filter,
-        sort: sort,
-        pagination: pagination,
-      );
-    case 'country':
-      return context.read<DataRepository<Country>>().readAll(
-        userId: userId,
-        filter: filter,
-        sort: sort,
-        pagination: pagination,
-      );
-    case 'language':
-      return context.read<DataRepository<Language>>().readAll(
-        userId: userId,
-        filter: filter,
-        sort: sort,
-        pagination: pagination,
-      );
-    case 'user':
-      return context.read<DataRepository<User>>().readAll(
-        userId: userId,
-        filter: filter,
-        sort: sort,
-        pagination: pagination,
-      );
-    default:
-      throw OperationFailedException(
-        'Unsupported model type "$modelName" for GET all.',
-      );
+) async {
+  _logger.finer(
+    'Executing _readAllItems for model "$modelName", userId: $userId.',
+  );
+  try {
+    switch (modelName) {
+      case 'headline':
+        return await context.read<DataRepository<Headline>>().readAll(
+              userId: userId,
+              filter: filter,
+              sort: sort,
+              pagination: pagination,
+            );
+      case 'topic':
+        return await context.read<DataRepository<Topic>>().readAll(
+              userId: userId,
+              filter: filter,
+              sort: sort,
+              pagination: pagination,
+            );
+      case 'source':
+        return await context.read<DataRepository<Source>>().readAll(
+              userId: userId,
+              filter: filter,
+              sort: sort,
+              pagination: pagination,
+            );
+      case 'country':
+        return await context.read<DataRepository<Country>>().readAll(
+              userId: userId,
+              filter: filter,
+              sort: sort,
+              pagination: pagination,
+            );
+      case 'language':
+        return await context.read<DataRepository<Language>>().readAll(
+              userId: userId,
+              filter: filter,
+              sort: sort,
+              pagination: pagination,
+            );
+      case 'user':
+        return await context.read<DataRepository<User>>().readAll(
+              userId: userId,
+              filter: filter,
+              sort: sort,
+              pagination: pagination,
+            );
+      default:
+        _logger.warning('Unsupported model type "$modelName" for GET all.');
+        throw OperationFailedException(
+          'Unsupported model type "$modelName" for GET all.',
+        );
+    }
+  } catch (e, s) {
+    _logger.severe(
+      'Unhandled exception in _readAllItems for model "$modelName".',
+      e,
+      s,
+    );
+    throw OperationFailedException(
+      'An internal error occurred while reading the collection: $e',
+    );
   }
 }
 
@@ -204,41 +232,56 @@ Future<dynamic> _createItem(
   String modelName,
   dynamic itemToCreate,
   String? userId,
-) {
-  switch (modelName) {
-    case 'headline':
-      return context.read<DataRepository<Headline>>().create(
-        item: itemToCreate as Headline,
-        userId: userId,
-      );
-    case 'topic':
-      return context.read<DataRepository<Topic>>().create(
-        item: itemToCreate as Topic,
-        userId: userId,
-      );
-    case 'source':
-      return context.read<DataRepository<Source>>().create(
-        item: itemToCreate as Source,
-        userId: userId,
-      );
-    case 'country':
-      return context.read<DataRepository<Country>>().create(
-        item: itemToCreate as Country,
-        userId: userId,
-      );
-    case 'language':
-      return context.read<DataRepository<Language>>().create(
-        item: itemToCreate as Language,
-        userId: userId,
-      );
-    case 'remote_config':
-      return context.read<DataRepository<RemoteConfig>>().create(
-        item: itemToCreate as RemoteConfig,
-        userId: userId,
-      );
-    default:
-      throw OperationFailedException(
-        'Unsupported model type "$modelName" for POST.',
-      );
+) async {
+  _logger.finer(
+    'Executing _createItem for model "$modelName", userId: $userId.',
+  );
+  try {
+    switch (modelName) {
+      case 'headline':
+        return await context.read<DataRepository<Headline>>().create(
+              item: itemToCreate as Headline,
+              userId: userId,
+            );
+      case 'topic':
+        return await context.read<DataRepository<Topic>>().create(
+              item: itemToCreate as Topic,
+              userId: userId,
+            );
+      case 'source':
+        return await context.read<DataRepository<Source>>().create(
+              item: itemToCreate as Source,
+              userId: userId,
+            );
+      case 'country':
+        return await context.read<DataRepository<Country>>().create(
+              item: itemToCreate as Country,
+              userId: userId,
+            );
+      case 'language':
+        return await context.read<DataRepository<Language>>().create(
+              item: itemToCreate as Language,
+              userId: userId,
+            );
+      case 'remote_config':
+        return await context.read<DataRepository<RemoteConfig>>().create(
+              item: itemToCreate as RemoteConfig,
+              userId: userId,
+            );
+      default:
+        _logger.warning('Unsupported model type "$modelName" for POST.');
+        throw OperationFailedException(
+          'Unsupported model type "$modelName" for POST.',
+        );
+    }
+  } catch (e, s) {
+    _logger.severe(
+      'Unhandled exception in _createItem for model "$modelName".',
+      e,
+      s,
+    );
+    throw OperationFailedException(
+      'An internal error occurred while creating the item: $e',
+    );
   }
 }
