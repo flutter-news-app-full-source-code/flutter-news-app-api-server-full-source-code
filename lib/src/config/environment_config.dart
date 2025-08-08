@@ -153,7 +153,7 @@ abstract final class EnvironmentConfig {
   static Duration get rateLimitRequestCodeWindow {
     final hours =
         int.tryParse(_env['RATE_LIMIT_REQUEST_CODE_WINDOW_HOURS'] ?? '24') ??
-            24;
+        24;
     return Duration(hours: hours);
   }
 

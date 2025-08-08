@@ -8,7 +8,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/own
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_registry.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/user_preference_limit_service.dart'; // Import UserPreferenceLimitService
+import 'package:flutter_news_app_api_server_full_source_code/src/services/user_preference_limit_service.dart';
 import 'package:logging/logging.dart';
 
 // Create a logger for this file.
@@ -17,122 +17,38 @@ final _logger = Logger('data_item_handler');
 /// Handles requests for the /api/v1/data/[id] endpoint.
 /// Dispatches requests to specific handlers based on the HTTP method.
 Future<Response> onRequest(RequestContext context, String id) async {
-  // Read dependencies provided by middleware
-  final modelName = context.read<String>();
-  final modelConfig = context.read<ModelConfig<dynamic>>();
-  // User is guaranteed non-null by requireAuthentication() middleware
-  final authenticatedUser = context.read<User>();
-  final permissionService = context
-      .read<PermissionService>(); // Read PermissionService
-  // Read the UserPreferenceLimitService (only needed for UserContentPreferences PUT)
-  final userPreferenceLimitService = context.read<UserPreferenceLimitService>();
-
-  // The main try/catch block here is removed to let the errorHandler middleware
-  // handle all exceptions thrown by the handlers below.
   switch (context.request.method) {
     case HttpMethod.get:
-      return _handleGet(
-        context,
-        id,
-        modelName,
-        modelConfig,
-        authenticatedUser,
-        permissionService, // Pass PermissionService
-      );
+      return _handleGet(context, id);
     case HttpMethod.put:
-      return _handlePut(
-        context,
-        id,
-        modelName,
-        modelConfig,
-        authenticatedUser,
-        permissionService, // Pass PermissionService
-        userPreferenceLimitService, // Pass the limit service
-      );
+      return _handlePut(context, id);
     case HttpMethod.delete:
-      return _handleDelete(
-        context,
-        id,
-        modelName,
-        modelConfig,
-        authenticatedUser,
-        permissionService, // Pass PermissionService
-      );
+      return _handleDelete(context, id);
     default:
-      // Methods not allowed on the item endpoint
       return Response(statusCode: HttpStatus.methodNotAllowed);
   }
 }
 
 // --- GET Handler ---
 /// Handles GET requests: Retrieves a single item by its ID.
-/// Includes request metadata in response.
-Future<Response> _handleGet(
-  RequestContext context,
-  String id,
-  String modelName,
-  ModelConfig<dynamic> modelConfig,
-  User authenticatedUser,
-  PermissionService permissionService,
-) async {
-  // Authorization and ownership checks are handled by middleware before this.
-  // This handler's job is to fetch and return the data.
+Future<Response> _handleGet(RequestContext context, String id) async {
+  final modelName = context.read<String>();
+  final modelConfig = context.read<ModelConfig<dynamic>>();
+  final authenticatedUser = context.read<User>();
+  final permissionService = context.read<PermissionService>();
 
   dynamic item;
-
-  // Check if the ownership middleware already fetched the item for a check.
-  // This avoids a redundant database call.
   final fetchedItem = context.read<FetchedItem<dynamic>?>();
 
   if (fetchedItem != null) {
-    // If the item was pre-fetched by the middleware, use it directly.
     item = fetchedItem.data;
   } else {
-    // If no ownership check was required (e.g., for an admin or public
-    // resource), the item was not pre-fetched, so we fetch it now.
-    final userIdForRepoCall =
-        (modelConfig.getOwnerId != null &&
-            !permissionService.isAdmin(authenticatedUser))
-        ? authenticatedUser.id
-        : null;
-
-    // Repository exceptions (like NotFoundException) will propagate up.
-    switch (modelName) {
-      case 'headline':
-        final repo = context.read<DataRepository<Headline>>();
-        item = await repo.read(id: id, userId: userIdForRepoCall);
-      case 'topic':
-        final repo = context.read<DataRepository<Topic>>();
-        item = await repo.read(id: id, userId: userIdForRepoCall);
-      case 'source':
-        final repo = context.read<DataRepository<Source>>();
-        item = await repo.read(id: id, userId: userIdForRepoCall);
-      case 'country':
-        final repo = context.read<DataRepository<Country>>();
-        item = await repo.read(id: id, userId: userIdForRepoCall);
-      case 'language':
-        final repo = context.read<DataRepository<Language>>();
-        item = await repo.read(id: id, userId: userIdForRepoCall);
-      case 'user':
-        final repo = context.read<DataRepository<User>>();
-        item = await repo.read(id: id, userId: userIdForRepoCall);
-      case 'user_app_settings':
-        final repo = context.read<DataRepository<UserAppSettings>>();
-        item = await repo.read(id: id, userId: userIdForRepoCall);
-      case 'user_content_preferences':
-        final repo = context.read<DataRepository<UserContentPreferences>>();
-        item = await repo.read(id: id, userId: userIdForRepoCall);
-      case 'remote_config':
-        final repo = context.read<DataRepository<RemoteConfig>>();
-        item = await repo.read(id: id, userId: userIdForRepoCall);
-      case 'dashboard_summary':
-        final service = context.read<DashboardSummaryService>();
-        item = await service.getSummary();
-      default:
-        throw OperationFailedException(
-          'Unsupported model type "$modelName" reached handler.',
-        );
-    }
+    final userIdForRepoCall = _getUserIdForRepoCall(
+      modelConfig: modelConfig,
+      permissionService: permissionService,
+      authenticatedUser: authenticatedUser,
+    );
+    item = await _readItem(context, modelName, id, userIdForRepoCall);
   }
 
   return ResponseHelper.success(
@@ -144,270 +60,57 @@ Future<Response> _handleGet(
 
 // --- PUT Handler ---
 /// Handles PUT requests: Updates an existing item by its ID.
-/// Includes request metadata in response.
-Future<Response> _handlePut(
-  RequestContext context,
-  String id,
-  String modelName,
-  ModelConfig<dynamic> modelConfig,
-  User authenticatedUser,
-  PermissionService permissionService, // Receive PermissionService
-  UserPreferenceLimitService
-  userPreferenceLimitService, // Receive Limit Service
-) async {
-  // Authorization check is handled by authorizationMiddleware before this.
-  // This handler only needs to perform the ownership check if required.
+Future<Response> _handlePut(RequestContext context, String id) async {
+  final modelName = context.read<String>();
+  final modelConfig = context.read<ModelConfig<dynamic>>();
+  final authenticatedUser = context.read<User>();
+  final permissionService = context.read<PermissionService>();
+  final userPreferenceLimitService = context.read<UserPreferenceLimitService>();
 
   final requestBody = await context.request.json() as Map<String, dynamic>?;
   if (requestBody == null) {
-    // Throw BadRequestException to be caught by the errorHandler
     throw const BadRequestException('Missing or invalid request body.');
   }
 
-  // Standardize timestamp before model creation
   requestBody['updatedAt'] = DateTime.now().toUtc().toIso8601String();
 
-  // Deserialize using ModelConfig's fromJson, catching TypeErrors locally
   dynamic itemToUpdate;
   try {
     itemToUpdate = modelConfig.fromJson(requestBody);
   } on TypeError catch (e, s) {
-    // Catch errors during deserialization (e.g., missing required fields)
     _logger.warning('Deserialization TypeError in PUT /data/[id]', e, s);
-    // Throw BadRequestException to be caught by the errorHandler
     throw const BadRequestException(
       'Invalid request body: Missing or invalid required field(s).',
     );
   }
 
-  // Ensure the ID in the path matches the ID in the request body (if present)
-  // This is a data integrity check, not an authorization check.
-  try {
-    final bodyItemId = modelConfig.getId(itemToUpdate);
-    if (bodyItemId != id) {
-      // Throw BadRequestException to be caught by the errorHandler
-      throw BadRequestException(
-        'Bad Request: ID in request body ("$bodyItemId") does not match ID in path ("$id").',
-      );
-    }
-  } catch (e) {
-    // Ignore if getId throws, means ID might not be in the body,
-    // which is acceptable depending on the model/client.
-    _logger.info('Could not get ID from PUT body: $e');
+  final bodyItemId = modelConfig.getId(itemToUpdate);
+  if (bodyItemId != id) {
+    throw BadRequestException(
+      'Bad Request: ID in request body ("$bodyItemId") does not match ID in path ("$id").',
+    );
   }
 
-  // --- Handler-Level Limit Check (for UserContentPreferences PUT) ---
-  // If the model is UserContentPreferences, check if the proposed update
-  // exceeds the user's limits before attempting the repository update.
   if (modelName == 'user_content_preferences') {
-    try {
-      // Ensure the itemToUpdate is the correct type for the limit service
-      if (itemToUpdate is! UserContentPreferences) {
-        _logger.severe(
-          'Type Error: Expected UserContentPreferences '
-          'for limit check, but got ${itemToUpdate.runtimeType}.',
-        );
-        throw const OperationFailedException(
-          'Internal Server Error: Model type mismatch for limit check.',
-        );
-      }
-      await userPreferenceLimitService.checkUpdatePreferences(
-        authenticatedUser,
-        itemToUpdate,
-      );
-    } on HttpException {
-      // Propagate known exceptions from the limit service (e.g., ForbiddenException)
-      rethrow;
-    } catch (e, s) {
-      // Catch unexpected errors from the limit service
-      _logger.severe(
-        'Unexpected error during limit check for '
-        'UserContentPreferences PUT',
-        e,
-        s,
-      );
-      throw const OperationFailedException(
-        'An unexpected error occurred during limit check.',
-      );
-    }
+    await userPreferenceLimitService.checkUpdatePreferences(
+      authenticatedUser,
+      itemToUpdate as UserContentPreferences,
+    );
   }
 
-  // Determine userId for repository call based on ModelConfig (for data scoping/ownership enforcement)
-  String? userIdForRepoCall;
-  // If the model is user-owned, pass the authenticated user's ID to the repository
-  // for ownership enforcement. Otherwise, pass null.
-  if (modelConfig.getOwnerId != null &&
-      !permissionService.isAdmin(authenticatedUser)) {
-    userIdForRepoCall = authenticatedUser.id;
-  } else {
-    userIdForRepoCall = null;
-  }
+  final userIdForRepoCall = _getUserIdForRepoCall(
+    modelConfig: modelConfig,
+    permissionService: permissionService,
+    authenticatedUser: authenticatedUser,
+  );
 
-  dynamic updatedItem;
-
-  // Repository exceptions (like NotFoundException, BadRequestException)
-  // will propagate up to the errorHandler.
-  switch (modelName) {
-    case 'headline':
-      {
-        final repo = context.read<DataRepository<Headline>>();
-        updatedItem = await repo.update(
-          id: id,
-          item: itemToUpdate as Headline,
-          userId: userIdForRepoCall,
-        );
-      }
-    case 'topic':
-      {
-        final repo = context.read<DataRepository<Topic>>();
-        updatedItem = await repo.update(
-          id: id,
-          item: itemToUpdate as Topic,
-          userId: userIdForRepoCall,
-        );
-      }
-    case 'source':
-      {
-        final repo = context.read<DataRepository<Source>>();
-        updatedItem = await repo.update(
-          id: id,
-          item: itemToUpdate as Source,
-          userId: userIdForRepoCall,
-        );
-      }
-    case 'country':
-      {
-        final repo = context.read<DataRepository<Country>>();
-        updatedItem = await repo.update(
-          id: id,
-          item: itemToUpdate as Country,
-          userId: userIdForRepoCall,
-        );
-      }
-    case 'language':
-      {
-        final repo = context.read<DataRepository<Language>>();
-        updatedItem = await repo.update(
-          id: id,
-          item: itemToUpdate as Language,
-          userId: userIdForRepoCall,
-        );
-      }
-    case 'user':
-      {
-        final repo = context.read<DataRepository<User>>();
-
-        // --- Safe User Update Logic ---
-        // To prevent security vulnerabilities like privilege escalation, we do not
-        // simply save the entire request body. Instead, we perform a safe,
-        // partial update.
-
-        // 1. The existing, trusted user object is already fetched by the
-        // `ownershipCheckMiddleware` to prevent duplicate database calls.
-        // This ensures we have the current, authoritative state of the user,
-        // including their correct roles and ID, without hitting the DB again.
-        final existingUser = context.read<FetchedItem<dynamic>>().data as User;
-
-        // 2. Create a new User object by merging only the allowed, safe-to-update
-        // fields from the incoming request (`itemToUpdate`) into the
-        // existing user data.
-        // This is the most critical step. It guarantees that a user cannot
-        // change their own `appRole`, `dashboardRole`, `id`, or `createdAt`
-        // fields, even if they include them in the request payload.
-        // The `email` field is also protected here, as changing it requires a
-        // separate, secure verification flow (e.g., via a dedicated endpoint)
-        // and should not be done through this generic data endpoint.
-        final updatedUser = existingUser.copyWith(
-          // `feedActionStatus` is considered safe for a user to update as it
-          // only tracks their interaction with UI elements.
-          feedActionStatus: (itemToUpdate as User).feedActionStatus,
-
-          // FUTURE: If a `displayName` field were added to the User model,
-          // it would also be considered safe and could be updated here:
-          // displayName: itemToUpdate.displayName,
-        );
-
-        // 3. Save the securely merged user object back to the database.
-        // The repository will now update the user record with our safely
-        // constructed `updatedUser` object.
-        updatedItem = await repo.update(
-          id: id,
-          item: updatedUser,
-          userId: userIdForRepoCall,
-        );
-      }
-    case 'user_app_settings': // New case for UserAppSettings
-      {
-        final repo = context.read<DataRepository<UserAppSettings>>();
-        updatedItem = await repo.update(
-          id: id,
-          item: itemToUpdate as UserAppSettings,
-          userId: userIdForRepoCall,
-        );
-      }
-    case 'user_content_preferences': // New case for UserContentPreferences
-      {
-        final repo = context.read<DataRepository<UserContentPreferences>>();
-        updatedItem = await repo.update(
-          id: id,
-          item: itemToUpdate as UserContentPreferences,
-          userId: userIdForRepoCall,
-        );
-      }
-    case 'remote_config': // New case for RemoteConfig (update by admin)
-      {
-        final repo = context.read<DataRepository<RemoteConfig>>();
-        updatedItem = await repo.update(
-          id: id,
-          item: itemToUpdate as RemoteConfig,
-          userId: userIdForRepoCall, // userId should be null for AppConfig
-        );
-      }
-    default:
-      // This case should ideally be caught by middleware, but added for safety
-      // Throw an exception to be caught by the errorHandler
-      throw OperationFailedException(
-        'Unsupported model type "$modelName" reached handler.',
-      );
-  }
-
-  // --- Handler-Level Ownership Check (for PUT) ---
-  // This check is needed if the ModelConfig for PUT requires ownership
-  // AND the user is NOT an admin (admins can bypass ownership checks).
-  // Note: The repository *might* have already enforced ownership if userId was passed.
-  // This handler-level check provides a second layer of defense and is necessary
-  // if the repository doesn't fully enforce ownership based on userId alone
-  // (e.g., if the repo update method allows admins to update any item even if userId is passed).
-  if (modelConfig.putPermission.requiresOwnershipCheck &&
-      !permissionService.isAdmin(authenticatedUser)) {
-    // Ensure getOwnerId is provided for models requiring ownership check
-    if (modelConfig.getOwnerId == null) {
-      _logger.severe(
-        'Configuration Error: Model "$modelName" requires '
-        'ownership check for PUT but getOwnerId is not provided.',
-      );
-      // Throw an exception to be caught by the errorHandler
-      throw const OperationFailedException(
-        'Internal Server Error: Model configuration error.',
-      );
-    }
-    // Re-fetch the item to ensure we have the owner ID from the source of truth
-    // after the update, or ideally, the update method returns the item with owner ID.
-    // Assuming the updatedItem returned by the repo has the owner ID:
-    final itemOwnerId = modelConfig.getOwnerId!(updatedItem);
-    if (itemOwnerId != authenticatedUser.id) {
-      // This scenario should ideally not happen if the repository correctly
-      // enforced ownership during the update call when userId was passed.
-      _logger.warning(
-        'Ownership check failed AFTER PUT for item $id. '
-        'Item owner: $itemOwnerId, User: ${authenticatedUser.id}',
-      );
-      // Throw ForbiddenException to be caught by the errorHandler
-      throw const ForbiddenException(
-        'You do not have permission to update this specific item.',
-      );
-    }
-  }
+  final updatedItem = await _updateItem(
+    context,
+    modelName,
+    id,
+    itemToUpdate,
+    userIdForRepoCall,
+  );
 
   return ResponseHelper.success(
     context: context,
@@ -418,86 +121,223 @@ Future<Response> _handlePut(
 
 // --- DELETE Handler ---
 /// Handles DELETE requests: Deletes an item by its ID.
-Future<Response> _handleDelete(
-  RequestContext context,
-  String id,
-  String modelName,
-  ModelConfig<dynamic> modelConfig,
-  User authenticatedUser,
-  PermissionService permissionService,
-) async {
-  // Authorization and ownership checks are handled by the middleware.
-  // The `ownershipCheckMiddleware` has already verified that the user is
-  // the owner if required. This handler's only job is to perform the deletion.
+Future<Response> _handleDelete(RequestContext context, String id) async {
+  final modelName = context.read<String>();
+  final modelConfig = context.read<ModelConfig<dynamic>>();
+  final authenticatedUser = context.read<User>();
+  final permissionService = context.read<PermissionService>();
 
-  // Determine the userId for the repository call. For non-admins, this
-  // provides an additional layer of security at the database level.
-  final userIdForRepoCall =
-      (modelConfig.getOwnerId != null &&
+  final userIdForRepoCall = _getUserIdForRepoCall(
+    modelConfig: modelConfig,
+    permissionService: permissionService,
+    authenticatedUser: authenticatedUser,
+  );
+
+  await _deleteItem(context, modelName, id, userIdForRepoCall);
+
+  return Response(statusCode: HttpStatus.noContent);
+}
+
+// =============================================================================
+// --- Helper Functions ---
+// =============================================================================
+
+/// Determines the `userId` to be used for a repository call based on user
+/// role and model configuration.
+String? _getUserIdForRepoCall({
+  required ModelConfig<dynamic> modelConfig,
+  required PermissionService permissionService,
+  required User authenticatedUser,
+}) {
+  return (modelConfig.getOwnerId != null &&
           !permissionService.isAdmin(authenticatedUser))
       ? authenticatedUser.id
       : null;
+}
 
-  // Allow repository exceptions (e.g., NotFoundException) to propagate
-  // upwards to be handled by the standard error handling mechanism.
+/// Encapsulates the logic for reading a single item by its type.
+Future<dynamic> _readItem(
+  RequestContext context,
+  String modelName,
+  String id,
+  String? userId,
+) {
   switch (modelName) {
     case 'headline':
-      await context.read<DataRepository<Headline>>().delete(
+      return context.read<DataRepository<Headline>>().read(
         id: id,
-        userId: userIdForRepoCall,
+        userId: userId,
       );
     case 'topic':
-      await context.read<DataRepository<Topic>>().delete(
-        id: id,
-        userId: userIdForRepoCall,
-      );
+      return context.read<DataRepository<Topic>>().read(id: id, userId: userId);
     case 'source':
-      await context.read<DataRepository<Source>>().delete(
+      return context.read<DataRepository<Source>>().read(
         id: id,
-        userId: userIdForRepoCall,
+        userId: userId,
       );
     case 'country':
-      await context.read<DataRepository<Country>>().delete(
+      return context.read<DataRepository<Country>>().read(
         id: id,
-        userId: userIdForRepoCall,
+        userId: userId,
       );
     case 'language':
-      await context.read<DataRepository<Language>>().delete(
+      return context.read<DataRepository<Language>>().read(
         id: id,
-        userId: userIdForRepoCall,
+        userId: userId,
       );
     case 'user':
-      await context.read<DataRepository<User>>().delete(
+      return context.read<DataRepository<User>>().read(id: id, userId: userId);
+    case 'user_app_settings':
+      return context.read<DataRepository<UserAppSettings>>().read(
         id: id,
-        userId: userIdForRepoCall,
+        userId: userId,
       );
-    case 'user_app_settings': // New case for UserAppSettings
-      await context.read<DataRepository<UserAppSettings>>().delete(
+    case 'user_content_preferences':
+      return context.read<DataRepository<UserContentPreferences>>().read(
         id: id,
-        userId: userIdForRepoCall,
+        userId: userId,
       );
-    case 'user_content_preferences': // New case for UserContentPreferences
-      await context.read<DataRepository<UserContentPreferences>>().delete(
+    case 'remote_config':
+      return context.read<DataRepository<RemoteConfig>>().read(
         id: id,
-        userId: userIdForRepoCall,
+        userId: userId,
       );
-    case 'remote_config': // New case for RemoteConfig (delete by admin)
-      await context.read<DataRepository<RemoteConfig>>().delete(
-        id: id,
-        userId: userIdForRepoCall,
-      ); // userId should be null for AppConfig
+    case 'dashboard_summary':
+      return context.read<DashboardSummaryService>().getSummary();
     default:
-      // This case should ideally be caught by the data/_middleware.dart,
-      // but added for safety.
-      _logger.severe(
-        'Unsupported model type "$modelName" reached _handleDelete.',
-      );
-      // Throw an exception to be caught by the errorHandler
       throw OperationFailedException(
-        'Unsupported model type "$modelName" reached handler.',
+        'Unsupported model type "$modelName" for read operation.',
       );
   }
+}
 
-  // Return 204 No Content for successful deletion (no body, no metadata)
-  return Response(statusCode: HttpStatus.noContent);
+/// Encapsulates the logic for updating an item by its type.
+Future<dynamic> _updateItem(
+  RequestContext context,
+  String modelName,
+  String id,
+  dynamic itemToUpdate,
+  String? userId,
+) {
+  switch (modelName) {
+    case 'headline':
+      return context.read<DataRepository<Headline>>().update(
+        id: id,
+        item: itemToUpdate as Headline,
+        userId: userId,
+      );
+    case 'topic':
+      return context.read<DataRepository<Topic>>().update(
+        id: id,
+        item: itemToUpdate as Topic,
+        userId: userId,
+      );
+    case 'source':
+      return context.read<DataRepository<Source>>().update(
+        id: id,
+        item: itemToUpdate as Source,
+        userId: userId,
+      );
+    case 'country':
+      return context.read<DataRepository<Country>>().update(
+        id: id,
+        item: itemToUpdate as Country,
+        userId: userId,
+      );
+    case 'language':
+      return context.read<DataRepository<Language>>().update(
+        id: id,
+        item: itemToUpdate as Language,
+        userId: userId,
+      );
+    case 'user':
+      final repo = context.read<DataRepository<User>>();
+      final existingUser = context.read<FetchedItem<dynamic>>().data as User;
+      final updatedUser = existingUser.copyWith(
+        feedActionStatus: (itemToUpdate as User).feedActionStatus,
+      );
+      return repo.update(id: id, item: updatedUser, userId: userId);
+    case 'user_app_settings':
+      return context.read<DataRepository<UserAppSettings>>().update(
+        id: id,
+        item: itemToUpdate as UserAppSettings,
+        userId: userId,
+      );
+    case 'user_content_preferences':
+      return context.read<DataRepository<UserContentPreferences>>().update(
+        id: id,
+        item: itemToUpdate as UserContentPreferences,
+        userId: userId,
+      );
+    case 'remote_config':
+      return context.read<DataRepository<RemoteConfig>>().update(
+        id: id,
+        item: itemToUpdate as RemoteConfig,
+        userId: userId,
+      );
+    default:
+      throw OperationFailedException(
+        'Unsupported model type "$modelName" for update operation.',
+      );
+  }
+}
+
+/// Encapsulates the logic for deleting an item by its type.
+Future<void> _deleteItem(
+  RequestContext context,
+  String modelName,
+  String id,
+  String? userId,
+) {
+  switch (modelName) {
+    case 'headline':
+      return context.read<DataRepository<Headline>>().delete(
+        id: id,
+        userId: userId,
+      );
+    case 'topic':
+      return context.read<DataRepository<Topic>>().delete(
+        id: id,
+        userId: userId,
+      );
+    case 'source':
+      return context.read<DataRepository<Source>>().delete(
+        id: id,
+        userId: userId,
+      );
+    case 'country':
+      return context.read<DataRepository<Country>>().delete(
+        id: id,
+        userId: userId,
+      );
+    case 'language':
+      return context.read<DataRepository<Language>>().delete(
+        id: id,
+        userId: userId,
+      );
+    case 'user':
+      return context.read<DataRepository<User>>().delete(
+        id: id,
+        userId: userId,
+      );
+    case 'user_app_settings':
+      return context.read<DataRepository<UserAppSettings>>().delete(
+        id: id,
+        userId: userId,
+      );
+    case 'user_content_preferences':
+      return context.read<DataRepository<UserContentPreferences>>().delete(
+        id: id,
+        userId: userId,
+      );
+    case 'remote_config':
+      return context.read<DataRepository<RemoteConfig>>().delete(
+        id: id,
+        userId: userId,
+      );
+    default:
+      throw OperationFailedException(
+        'Unsupported model type "$modelName" for delete operation.',
+      );
+  }
 }
