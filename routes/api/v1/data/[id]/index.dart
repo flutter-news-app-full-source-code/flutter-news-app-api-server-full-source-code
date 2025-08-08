@@ -65,8 +65,7 @@ Future<Response> _handlePut(RequestContext context, String id) async {
   final modelConfig = context.read<ModelConfig<dynamic>>();
   final authenticatedUser = context.read<User>();
   final permissionService = context.read<PermissionService>();
-  final userPreferenceLimitService =
-      context.read<UserPreferenceLimitService>();
+  final userPreferenceLimitService = context.read<UserPreferenceLimitService>();
 
   final requestBody = await context.request.json() as Map<String, dynamic>?;
   if (requestBody == null) {
@@ -165,23 +164,44 @@ Future<dynamic> _readItem(
 ) {
   switch (modelName) {
     case 'headline':
-      return context.read<DataRepository<Headline>>().read(id: id, userId: userId);
+      return context.read<DataRepository<Headline>>().read(
+        id: id,
+        userId: userId,
+      );
     case 'topic':
       return context.read<DataRepository<Topic>>().read(id: id, userId: userId);
     case 'source':
-      return context.read<DataRepository<Source>>().read(id: id, userId: userId);
+      return context.read<DataRepository<Source>>().read(
+        id: id,
+        userId: userId,
+      );
     case 'country':
-      return context.read<DataRepository<Country>>().read(id: id, userId: userId);
+      return context.read<DataRepository<Country>>().read(
+        id: id,
+        userId: userId,
+      );
     case 'language':
-      return context.read<DataRepository<Language>>().read(id: id, userId: userId);
+      return context.read<DataRepository<Language>>().read(
+        id: id,
+        userId: userId,
+      );
     case 'user':
       return context.read<DataRepository<User>>().read(id: id, userId: userId);
     case 'user_app_settings':
-      return context.read<DataRepository<UserAppSettings>>().read(id: id, userId: userId);
+      return context.read<DataRepository<UserAppSettings>>().read(
+        id: id,
+        userId: userId,
+      );
     case 'user_content_preferences':
-      return context.read<DataRepository<UserContentPreferences>>().read(id: id, userId: userId);
+      return context.read<DataRepository<UserContentPreferences>>().read(
+        id: id,
+        userId: userId,
+      );
     case 'remote_config':
-      return context.read<DataRepository<RemoteConfig>>().read(id: id, userId: userId);
+      return context.read<DataRepository<RemoteConfig>>().read(
+        id: id,
+        userId: userId,
+      );
     case 'dashboard_summary':
       return context.read<DashboardSummaryService>().getSummary();
     default:
@@ -201,15 +221,35 @@ Future<dynamic> _updateItem(
 ) {
   switch (modelName) {
     case 'headline':
-      return context.read<DataRepository<Headline>>().update(id: id, item: itemToUpdate as Headline, userId: userId);
+      return context.read<DataRepository<Headline>>().update(
+        id: id,
+        item: itemToUpdate as Headline,
+        userId: userId,
+      );
     case 'topic':
-      return context.read<DataRepository<Topic>>().update(id: id, item: itemToUpdate as Topic, userId: userId);
+      return context.read<DataRepository<Topic>>().update(
+        id: id,
+        item: itemToUpdate as Topic,
+        userId: userId,
+      );
     case 'source':
-      return context.read<DataRepository<Source>>().update(id: id, item: itemToUpdate as Source, userId: userId);
+      return context.read<DataRepository<Source>>().update(
+        id: id,
+        item: itemToUpdate as Source,
+        userId: userId,
+      );
     case 'country':
-      return context.read<DataRepository<Country>>().update(id: id, item: itemToUpdate as Country, userId: userId);
+      return context.read<DataRepository<Country>>().update(
+        id: id,
+        item: itemToUpdate as Country,
+        userId: userId,
+      );
     case 'language':
-      return context.read<DataRepository<Language>>().update(id: id, item: itemToUpdate as Language, userId: userId);
+      return context.read<DataRepository<Language>>().update(
+        id: id,
+        item: itemToUpdate as Language,
+        userId: userId,
+      );
     case 'user':
       final repo = context.read<DataRepository<User>>();
       final existingUser = context.read<FetchedItem<dynamic>>().data as User;
@@ -218,11 +258,23 @@ Future<dynamic> _updateItem(
       );
       return repo.update(id: id, item: updatedUser, userId: userId);
     case 'user_app_settings':
-      return context.read<DataRepository<UserAppSettings>>().update(id: id, item: itemToUpdate as UserAppSettings, userId: userId);
+      return context.read<DataRepository<UserAppSettings>>().update(
+        id: id,
+        item: itemToUpdate as UserAppSettings,
+        userId: userId,
+      );
     case 'user_content_preferences':
-      return context.read<DataRepository<UserContentPreferences>>().update(id: id, item: itemToUpdate as UserContentPreferences, userId: userId);
+      return context.read<DataRepository<UserContentPreferences>>().update(
+        id: id,
+        item: itemToUpdate as UserContentPreferences,
+        userId: userId,
+      );
     case 'remote_config':
-      return context.read<DataRepository<RemoteConfig>>().update(id: id, item: itemToUpdate as RemoteConfig, userId: userId);
+      return context.read<DataRepository<RemoteConfig>>().update(
+        id: id,
+        item: itemToUpdate as RemoteConfig,
+        userId: userId,
+      );
     default:
       throw OperationFailedException(
         'Unsupported model type "$modelName" for update operation.',
@@ -239,23 +291,50 @@ Future<void> _deleteItem(
 ) {
   switch (modelName) {
     case 'headline':
-      return context.read<DataRepository<Headline>>().delete(id: id, userId: userId);
+      return context.read<DataRepository<Headline>>().delete(
+        id: id,
+        userId: userId,
+      );
     case 'topic':
-      return context.read<DataRepository<Topic>>().delete(id: id, userId: userId);
+      return context.read<DataRepository<Topic>>().delete(
+        id: id,
+        userId: userId,
+      );
     case 'source':
-      return context.read<DataRepository<Source>>().delete(id: id, userId: userId);
+      return context.read<DataRepository<Source>>().delete(
+        id: id,
+        userId: userId,
+      );
     case 'country':
-      return context.read<DataRepository<Country>>().delete(id: id, userId: userId);
+      return context.read<DataRepository<Country>>().delete(
+        id: id,
+        userId: userId,
+      );
     case 'language':
-      return context.read<DataRepository<Language>>().delete(id: id, userId: userId);
+      return context.read<DataRepository<Language>>().delete(
+        id: id,
+        userId: userId,
+      );
     case 'user':
-      return context.read<DataRepository<User>>().delete(id: id, userId: userId);
+      return context.read<DataRepository<User>>().delete(
+        id: id,
+        userId: userId,
+      );
     case 'user_app_settings':
-      return context.read<DataRepository<UserAppSettings>>().delete(id: id, userId: userId);
+      return context.read<DataRepository<UserAppSettings>>().delete(
+        id: id,
+        userId: userId,
+      );
     case 'user_content_preferences':
-      return context.read<DataRepository<UserContentPreferences>>().delete(id: id, userId: userId);
+      return context.read<DataRepository<UserContentPreferences>>().delete(
+        id: id,
+        userId: userId,
+      );
     case 'remote_config':
-      return context.read<DataRepository<RemoteConfig>>().delete(id: id, userId: userId);
+      return context.read<DataRepository<RemoteConfig>>().delete(
+        id: id,
+        userId: userId,
+      );
     default:
       throw OperationFailedException(
         'Unsupported model type "$modelName" for delete operation.',

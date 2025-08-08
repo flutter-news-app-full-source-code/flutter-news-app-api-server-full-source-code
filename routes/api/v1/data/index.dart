@@ -45,17 +45,17 @@ Future<Response> _handleGet(RequestContext context) async {
 
   final pagination =
       (params.containsKey('limit') || params.containsKey('cursor'))
-          ? PaginationOptions(
-              cursor: params['cursor'],
-              limit: int.tryParse(params['limit'] ?? ''),
-            )
-          : null;
+      ? PaginationOptions(
+          cursor: params['cursor'],
+          limit: int.tryParse(params['limit'] ?? ''),
+        )
+      : null;
 
   final userIdForRepoCall =
       (modelConfig.getOwnerId != null &&
-              !context.read<PermissionService>().isAdmin(authenticatedUser))
-          ? authenticatedUser.id
-          : null;
+          !context.read<PermissionService>().isAdmin(authenticatedUser))
+      ? authenticatedUser.id
+      : null;
 
   final responseData = await _readAllItems(
     context,
@@ -69,8 +69,9 @@ Future<Response> _handleGet(RequestContext context) async {
   return ResponseHelper.success(
     context: context,
     data: responseData,
-    toJsonT: (paginated) => (paginated as PaginatedResponse<dynamic>)
-        .toJson((item) => (item as dynamic).toJson() as Map<String, dynamic>),
+    toJsonT: (paginated) => paginated.toJson(
+      (item) => (item as dynamic).toJson() as Map<String, dynamic>,
+    ),
   );
 }
 
@@ -94,9 +95,9 @@ Future<Response> _handlePost(RequestContext context) async {
 
   final userIdForRepoCall =
       (modelConfig.getOwnerId != null &&
-              !context.read<PermissionService>().isAdmin(authenticatedUser))
-          ? authenticatedUser.id
-          : null;
+          !context.read<PermissionService>().isAdmin(authenticatedUser))
+      ? authenticatedUser.id
+      : null;
 
   final createdItem = await _createItem(
     context,
@@ -129,22 +130,46 @@ Future<PaginatedResponse<dynamic>> _readAllItems(
   switch (modelName) {
     case 'headline':
       return context.read<DataRepository<Headline>>().readAll(
-          userId: userId, filter: filter, sort: sort, pagination: pagination);
+        userId: userId,
+        filter: filter,
+        sort: sort,
+        pagination: pagination,
+      );
     case 'topic':
       return context.read<DataRepository<Topic>>().readAll(
-          userId: userId, filter: filter, sort: sort, pagination: pagination);
+        userId: userId,
+        filter: filter,
+        sort: sort,
+        pagination: pagination,
+      );
     case 'source':
       return context.read<DataRepository<Source>>().readAll(
-          userId: userId, filter: filter, sort: sort, pagination: pagination);
+        userId: userId,
+        filter: filter,
+        sort: sort,
+        pagination: pagination,
+      );
     case 'country':
       return context.read<DataRepository<Country>>().readAll(
-          userId: userId, filter: filter, sort: sort, pagination: pagination);
+        userId: userId,
+        filter: filter,
+        sort: sort,
+        pagination: pagination,
+      );
     case 'language':
       return context.read<DataRepository<Language>>().readAll(
-          userId: userId, filter: filter, sort: sort, pagination: pagination);
+        userId: userId,
+        filter: filter,
+        sort: sort,
+        pagination: pagination,
+      );
     case 'user':
       return context.read<DataRepository<User>>().readAll(
-          userId: userId, filter: filter, sort: sort, pagination: pagination);
+        userId: userId,
+        filter: filter,
+        sort: sort,
+        pagination: pagination,
+      );
     default:
       throw OperationFailedException(
         'Unsupported model type "$modelName" for GET all.',
@@ -161,29 +186,35 @@ Future<dynamic> _createItem(
 ) {
   switch (modelName) {
     case 'headline':
-      return context
-          .read<DataRepository<Headline>>()
-          .create(item: itemToCreate as Headline, userId: userId);
+      return context.read<DataRepository<Headline>>().create(
+        item: itemToCreate as Headline,
+        userId: userId,
+      );
     case 'topic':
-      return context
-          .read<DataRepository<Topic>>()
-          .create(item: itemToCreate as Topic, userId: userId);
+      return context.read<DataRepository<Topic>>().create(
+        item: itemToCreate as Topic,
+        userId: userId,
+      );
     case 'source':
-      return context
-          .read<DataRepository<Source>>()
-          .create(item: itemToCreate as Source, userId: userId);
+      return context.read<DataRepository<Source>>().create(
+        item: itemToCreate as Source,
+        userId: userId,
+      );
     case 'country':
-      return context
-          .read<DataRepository<Country>>()
-          .create(item: itemToCreate as Country, userId: userId);
+      return context.read<DataRepository<Country>>().create(
+        item: itemToCreate as Country,
+        userId: userId,
+      );
     case 'language':
-      return context
-          .read<DataRepository<Language>>()
-          .create(item: itemToCreate as Language, userId: userId);
+      return context.read<DataRepository<Language>>().create(
+        item: itemToCreate as Language,
+        userId: userId,
+      );
     case 'remote_config':
-      return context
-          .read<DataRepository<RemoteConfig>>()
-          .create(item: itemToCreate as RemoteConfig, userId: userId);
+      return context.read<DataRepository<RemoteConfig>>().create(
+        item: itemToCreate as RemoteConfig,
+        userId: userId,
+      );
     default:
       throw OperationFailedException(
         'Unsupported model type "$modelName" for POST.',

@@ -20,8 +20,8 @@ class MongoDbRateLimitService implements RateLimitService {
   MongoDbRateLimitService({
     required MongoDbConnectionManager connectionManager,
     required Logger log,
-  })  : _connectionManager = connectionManager,
-        _log = log;
+  }) : _connectionManager = connectionManager,
+       _log = log;
 
   final MongoDbConnectionManager _connectionManager;
   final Logger _log;

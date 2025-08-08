@@ -199,9 +199,15 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.countryRead,
     ),
-    postPermission: const ModelActionPermission(type: RequiredPermissionType.unsupported),
-    putPermission: const ModelActionPermission(type: RequiredPermissionType.unsupported),
-    deletePermission: const ModelActionPermission(type: RequiredPermissionType.unsupported),
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
   ),
   'language': ModelConfig<Language>(
     fromJson: Language.fromJson,
