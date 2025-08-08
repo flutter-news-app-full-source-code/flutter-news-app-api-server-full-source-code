@@ -14,12 +14,16 @@ final Set<String> _appGuestUserPermissions = {
   Permissions.userContentPreferencesReadOwned,
   Permissions.userContentPreferencesUpdateOwned,
   Permissions.remoteConfigRead,
+  // Allows a user to update their own User object. This is essential for
+  // features like updating the `feedActionStatus` (e.g., when a user
+  // dismisses an in-feed prompt, etc). The endpoint handler ensures only
+  // non-sensitive fields can be modified.
+  Permissions.userUpdateOwned,
 };
 
 final Set<String> _appStandardUserPermissions = {
   ..._appGuestUserPermissions,
   Permissions.userReadOwned,
-  Permissions.userUpdateOwned,
   Permissions.userDeleteOwned,
 };
 
