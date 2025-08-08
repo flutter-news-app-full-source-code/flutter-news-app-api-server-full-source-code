@@ -1,6 +1,5 @@
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_registry.dart';
 
@@ -19,28 +18,27 @@ class FetchedItem<T> {
 /// Middleware to check if the authenticated user is the owner of the requested
 /// item.
 ///
-/// This middleware is designed to run on item-specific routes (e.g., `/[id]`).
-/// It performs the following steps:
+/// This middleware runs *after* the `dataFetchMiddleware`, which means it can
+/// safely assume that the requested item has already been fetched and is
+/// available in the context.
 ///
-/// 1.  Determines if an ownership check is required for the current action
-///     (GET, PUT, DELETE) based on the `ModelConfig`.
-/// 2.  If a check is required and the user is not an admin, it fetches the
-///     item from the database.
-/// 3.  It then compares the item's owner ID with the authenticated user's ID.
-/// 4.  If the check fails, it throws a [ForbiddenException].
-/// 5.  If the check passes, it provides the fetched item into the request
-///     context via `context.provide<FetchedItem<dynamic>>`. This prevents the
-///     downstream route handler from needing to fetch the item again.
+/// It performs the following steps:
+/// 1. Determines if an ownership check is required for the current action
+///    based on the `ModelConfig`.
+/// 2. If a check is required and the user is not an admin, it reads the
+///    pre-fetched item from the context.
+/// 3. It then compares the item's owner ID with the authenticated user's ID.
+/// 4. If the IDs do not match, it throws a [ForbiddenException].
+/// 5. If the check is not required or passes, it calls the next handler.
 Middleware ownershipCheckMiddleware() {
   return (handler) {
     return (context) async {
-      final modelName = context.read<String>();
       final modelConfig = context.read<ModelConfig<dynamic>>();
       final user = context.read<User>();
       final permissionService = context.read<PermissionService>();
       final method = context.request.method;
-      final id = context.request.uri.pathSegments.last;
 
+      // Determine the required permission configuration for the current method.
       ModelActionPermission permission;
       switch (method) {
         case HttpMethod.get:
@@ -50,42 +48,32 @@ Middleware ownershipCheckMiddleware() {
         case HttpMethod.delete:
           permission = modelConfig.deletePermission;
         default:
-          // For other methods, no ownership check is performed here.
+          // For any other methods, no ownership check is performed.
           return handler(context);
       }
 
-      // If no ownership check is required or if the user is an admin,
-      // proceed to the next handler without fetching the item.
+      // If no ownership check is required for this action, or if the user is
+      // an admin (who bypasses ownership checks), proceed immediately.
       if (!permission.requiresOwnershipCheck ||
           permissionService.isAdmin(user)) {
         return handler(context);
       }
 
+      // At this point, an ownership check is required for a non-admin user.
+
+      // Ensure the model is configured to support ownership checks.
       if (modelConfig.getOwnerId == null) {
         throw const OperationFailedException(
           'Internal Server Error: Model configuration error for ownership check.',
         );
       }
 
-      final userIdForRepoCall = user.id;
-      dynamic item;
+      // Read the item that was pre-fetched by the dataFetchMiddleware.
+      // This is guaranteed to exist because dataFetchMiddleware would have
+      // thrown a NotFoundException if the item did not exist.
+      final item = context.read<FetchedItem<dynamic>>().data;
 
-      switch (modelName) {
-        case 'user':
-          final repo = context.read<DataRepository<User>>();
-          item = await repo.read(id: id, userId: userIdForRepoCall);
-        case 'user_app_settings':
-          final repo = context.read<DataRepository<UserAppSettings>>();
-          item = await repo.read(id: id, userId: userIdForRepoCall);
-        case 'user_content_preferences':
-          final repo = context.read<DataRepository<UserContentPreferences>>();
-          item = await repo.read(id: id, userId: userIdForRepoCall);
-        default:
-          throw OperationFailedException(
-            'Ownership check not implemented for model "$modelName".',
-          );
-      }
-
+      // Compare the item's owner ID with the authenticated user's ID.
       final itemOwnerId = modelConfig.getOwnerId!(item);
       if (itemOwnerId != user.id) {
         throw const ForbiddenException(
@@ -93,11 +81,8 @@ Middleware ownershipCheckMiddleware() {
         );
       }
 
-      final updatedContext = context.provide<FetchedItem<dynamic>>(
-        () => FetchedItem(item),
-      );
-
-      return handler(updatedContext);
+      // If the ownership check passes, proceed to the final route handler.
+      return handler(context);
     };
   };
 }
