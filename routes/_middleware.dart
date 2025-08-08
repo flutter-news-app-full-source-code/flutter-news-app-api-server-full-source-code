@@ -6,6 +6,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/config/app_depe
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/error_handler.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/request_id.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/registry/data_operation_registry.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_registry.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
@@ -84,6 +85,9 @@ Handler middleware(Handler handler) {
           // 2. Provide all dependencies to the inner handler.
           final deps = AppDependencies.instance;
           return handler
+              .use(
+                provider<DataOperationRegistry>((_) => DataOperationRegistry()),
+              )
               .use(provider<ModelRegistryMap>((_) => modelRegistry))
               .use(
                 provider<DataRepository<Headline>>(
