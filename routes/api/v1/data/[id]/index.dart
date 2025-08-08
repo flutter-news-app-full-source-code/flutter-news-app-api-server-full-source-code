@@ -4,6 +4,7 @@ import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/helpers/response_helper.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_registry.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
@@ -330,13 +331,11 @@ Future<Response> _handlePut(
         // simply save the entire request body. Instead, we perform a safe,
         // partial update.
 
-        // 1. Fetch the existing, trusted user object from the database.
+        // 1. The existing, trusted user object is already fetched by the
+        // `ownershipCheckMiddleware` to prevent duplicate database calls.
         // This ensures we have the current, authoritative state of the user,
-        // including their correct roles and ID.
-        final existingUser = await repo.read(
-          id: id,
-          userId: userIdForRepoCall,
-        );
+        // including their correct roles and ID, without hitting the DB again.
+        final existingUser = context.read<FetchedItem<dynamic>>().data as User;
 
         // 2. Create a new User object by merging only the allowed, safe-to-update
         // fields from the incoming request (`itemToUpdate`) into the
