@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/helpers/response_helper.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
@@ -38,9 +37,7 @@ Future<Response> onRequest(RequestContext context, String id) async {
 /// response.
 Future<Response> _handleGet(RequestContext context, String id) async {
   final modelName = context.read<String>();
-  _logger.info(
-    'Handling GET request for model "$modelName", id "$id".',
-  );
+  _logger.info('Handling GET request for model "$modelName", id "$id".');
 
   // The item is guaranteed to be present by the dataFetchMiddleware.
   final item = context.read<FetchedItem<dynamic>>().data;
@@ -60,12 +57,9 @@ Future<Response> _handlePut(RequestContext context, String id) async {
   final modelConfig = context.read<ModelConfig<dynamic>>();
   final authenticatedUser = context.read<User>();
   final permissionService = context.read<PermissionService>();
-  final userPreferenceLimitService =
-      context.read<UserPreferenceLimitService>();
+  final userPreferenceLimitService = context.read<UserPreferenceLimitService>();
 
-  _logger.info(
-    'Handling PUT request for model "$modelName", id "$id".',
-  );
+  _logger.info('Handling PUT request for model "$modelName", id "$id".');
 
   final requestBody = await context.request.json() as Map<String, dynamic>?;
   if (requestBody == null) {
@@ -142,9 +136,7 @@ Future<Response> _handleDelete(RequestContext context, String id) async {
   final authenticatedUser = context.read<User>();
   final permissionService = context.read<PermissionService>();
 
-  _logger.info(
-    'Handling DELETE request for model "$modelName", id "$id".',
-  );
+  _logger.info('Handling DELETE request for model "$modelName", id "$id".');
 
   final userIdForRepoCall = _getUserIdForRepoCall(
     modelConfig: modelConfig,
@@ -190,7 +182,9 @@ Future<dynamic> _updateItem(
     final updater = registry.itemUpdaters[modelName];
 
     if (updater == null) {
-      _logger.warning('Unsupported model type "$modelName" for update operation.');
+      _logger.warning(
+        'Unsupported model type "$modelName" for update operation.',
+      );
       throw OperationFailedException(
         'Unsupported model type "$modelName" for update operation.',
       );
@@ -223,7 +217,9 @@ Future<void> _deleteItem(
     final deleter = registry.itemDeleters[modelName];
 
     if (deleter == null) {
-      _logger.warning('Unsupported model type "$modelName" for delete operation.');
+      _logger.warning(
+        'Unsupported model type "$modelName" for delete operation.',
+      );
       throw OperationFailedException(
         'Unsupported model type "$modelName" for delete operation.',
       );

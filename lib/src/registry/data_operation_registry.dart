@@ -1,47 +1,45 @@
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
 
 // --- Typedefs for Data Operations ---
 
 /// A function that fetches a single item by its ID.
-typedef ItemFetcher = Future<dynamic> Function(
-  RequestContext context,
-  String id,
-);
+typedef ItemFetcher =
+    Future<dynamic> Function(RequestContext context, String id);
 
 /// A function that fetches a paginated list of items.
-typedef AllItemsReader = Future<PaginatedResponse<dynamic>> Function(
-  RequestContext context,
-  String? userId,
-  Map<String, dynamic>? filter,
-  List<SortOption>? sort,
-  PaginationOptions? pagination,
-);
+typedef AllItemsReader =
+    Future<PaginatedResponse<dynamic>> Function(
+      RequestContext context,
+      String? userId,
+      Map<String, dynamic>? filter,
+      List<SortOption>? sort,
+      PaginationOptions? pagination,
+    );
 
 /// A function that creates a new item.
-typedef ItemCreator = Future<dynamic> Function(
-  RequestContext context,
-  dynamic item,
-  String? userId,
-);
+typedef ItemCreator =
+    Future<dynamic> Function(
+      RequestContext context,
+      dynamic item,
+      String? userId,
+    );
 
 /// A function that updates an existing item.
-typedef ItemUpdater = Future<dynamic> Function(
-  RequestContext context,
-  String id,
-  dynamic item,
-  String? userId,
-);
+typedef ItemUpdater =
+    Future<dynamic> Function(
+      RequestContext context,
+      String id,
+      dynamic item,
+      String? userId,
+    );
 
 /// A function that deletes an item by its ID.
-typedef ItemDeleter = Future<void> Function(
-  RequestContext context,
-  String id,
-  String? userId,
-);
+typedef ItemDeleter =
+    Future<void> Function(RequestContext context, String id, String? userId);
 
 /// {@template data_operation_registry}
 /// A centralized registry for all data handling functions (CRUD operations).
@@ -102,9 +100,8 @@ class DataOperationRegistry {
           c.read<DataRepository<Language>>().read(id: id, userId: null),
       'user': (c, id) =>
           c.read<DataRepository<User>>().read(id: id, userId: null),
-      'user_app_settings': (c, id) => c
-          .read<DataRepository<UserAppSettings>>()
-          .read(id: id, userId: null),
+      'user_app_settings': (c, id) =>
+          c.read<DataRepository<UserAppSettings>>().read(id: id, userId: null),
       'user_content_preferences': (c, id) => c
           .read<DataRepository<UserContentPreferences>>()
           .read(id: id, userId: null),
@@ -119,40 +116,57 @@ class DataOperationRegistry {
       'headline': (c, uid, f, s, p) => c
           .read<DataRepository<Headline>>()
           .readAll(userId: uid, filter: f, sort: s, pagination: p),
-      'topic': (c, uid, f, s, p) => c
-          .read<DataRepository<Topic>>()
-          .readAll(userId: uid, filter: f, sort: s, pagination: p),
-      'source': (c, uid, f, s, p) => c
-          .read<DataRepository<Source>>()
-          .readAll(userId: uid, filter: f, sort: s, pagination: p),
-      'country': (c, uid, f, s, p) => c
-          .read<DataRepository<Country>>()
-          .readAll(userId: uid, filter: f, sort: s, pagination: p),
+      'topic': (c, uid, f, s, p) => c.read<DataRepository<Topic>>().readAll(
+        userId: uid,
+        filter: f,
+        sort: s,
+        pagination: p,
+      ),
+      'source': (c, uid, f, s, p) => c.read<DataRepository<Source>>().readAll(
+        userId: uid,
+        filter: f,
+        sort: s,
+        pagination: p,
+      ),
+      'country': (c, uid, f, s, p) => c.read<DataRepository<Country>>().readAll(
+        userId: uid,
+        filter: f,
+        sort: s,
+        pagination: p,
+      ),
       'language': (c, uid, f, s, p) => c
           .read<DataRepository<Language>>()
           .readAll(userId: uid, filter: f, sort: s, pagination: p),
-      'user': (c, uid, f, s, p) => c
-          .read<DataRepository<User>>()
-          .readAll(userId: uid, filter: f, sort: s, pagination: p),
+      'user': (c, uid, f, s, p) => c.read<DataRepository<User>>().readAll(
+        userId: uid,
+        filter: f,
+        sort: s,
+        pagination: p,
+      ),
     });
 
     // --- Register Item Creators ---
     _itemCreators.addAll({
-      'headline': (c, item, uid) => c
-          .read<DataRepository<Headline>>()
-          .create(item: item as Headline, userId: uid),
-      'topic': (c, item, uid) => c
-          .read<DataRepository<Topic>>()
-          .create(item: item as Topic, userId: uid),
-      'source': (c, item, uid) => c
-          .read<DataRepository<Source>>()
-          .create(item: item as Source, userId: uid),
-      'country': (c, item, uid) => c
-          .read<DataRepository<Country>>()
-          .create(item: item as Country, userId: uid),
-      'language': (c, item, uid) => c
-          .read<DataRepository<Language>>()
-          .create(item: item as Language, userId: uid),
+      'headline': (c, item, uid) => c.read<DataRepository<Headline>>().create(
+        item: item as Headline,
+        userId: uid,
+      ),
+      'topic': (c, item, uid) => c.read<DataRepository<Topic>>().create(
+        item: item as Topic,
+        userId: uid,
+      ),
+      'source': (c, item, uid) => c.read<DataRepository<Source>>().create(
+        item: item as Source,
+        userId: uid,
+      ),
+      'country': (c, item, uid) => c.read<DataRepository<Country>>().create(
+        item: item as Country,
+        userId: uid,
+      ),
+      'language': (c, item, uid) => c.read<DataRepository<Language>>().create(
+        item: item as Language,
+        userId: uid,
+      ),
       'remote_config': (c, item, uid) => c
           .read<DataRepository<RemoteConfig>>()
           .create(item: item as RemoteConfig, userId: uid),
@@ -163,15 +177,21 @@ class DataOperationRegistry {
       'headline': (c, id, item, uid) => c
           .read<DataRepository<Headline>>()
           .update(id: id, item: item as Headline, userId: uid),
-      'topic': (c, id, item, uid) => c
-          .read<DataRepository<Topic>>()
-          .update(id: id, item: item as Topic, userId: uid),
-      'source': (c, id, item, uid) => c
-          .read<DataRepository<Source>>()
-          .update(id: id, item: item as Source, userId: uid),
-      'country': (c, id, item, uid) => c
-          .read<DataRepository<Country>>()
-          .update(id: id, item: item as Country, userId: uid),
+      'topic': (c, id, item, uid) => c.read<DataRepository<Topic>>().update(
+        id: id,
+        item: item as Topic,
+        userId: uid,
+      ),
+      'source': (c, id, item, uid) => c.read<DataRepository<Source>>().update(
+        id: id,
+        item: item as Source,
+        userId: uid,
+      ),
+      'country': (c, id, item, uid) => c.read<DataRepository<Country>>().update(
+        id: id,
+        item: item as Country,
+        userId: uid,
+      ),
       'language': (c, id, item, uid) => c
           .read<DataRepository<Language>>()
           .update(id: id, item: item as Language, userId: uid),
@@ -208,9 +228,8 @@ class DataOperationRegistry {
           c.read<DataRepository<Language>>().delete(id: id, userId: uid),
       'user': (c, id, uid) =>
           c.read<DataRepository<User>>().delete(id: id, userId: uid),
-      'user_app_settings': (c, id, uid) => c
-          .read<DataRepository<UserAppSettings>>()
-          .delete(id: id, userId: uid),
+      'user_app_settings': (c, id, uid) =>
+          c.read<DataRepository<UserAppSettings>>().delete(id: id, userId: uid),
       'user_content_preferences': (c, id, uid) => c
           .read<DataRepository<UserContentPreferences>>()
           .delete(id: id, userId: uid),

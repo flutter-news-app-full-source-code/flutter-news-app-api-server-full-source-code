@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/helpers/response_helper.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/registry/data_operation_registry.dart';
@@ -33,10 +32,9 @@ Future<Response> _handleGet(RequestContext context) async {
   final authenticatedUser = context.read<User>();
   final params = context.request.uri.queryParameters;
 
-  _logger..info(
-    'Handling GET collection request for model "$modelName".',
-  )
-  ..finer('Query parameters: $params');
+  _logger
+    ..info('Handling GET collection request for model "$modelName".')
+    ..finer('Query parameters: $params');
 
   Map<String, dynamic>? filter;
   if (params.containsKey('filter')) {
@@ -69,11 +67,11 @@ Future<Response> _handleGet(RequestContext context) async {
 
   final pagination =
       (params.containsKey('limit') || params.containsKey('cursor'))
-          ? PaginationOptions(
-              cursor: params['cursor'],
-              limit: int.tryParse(params['limit'] ?? ''),
-            )
-          : null;
+      ? PaginationOptions(
+          cursor: params['cursor'],
+          limit: int.tryParse(params['limit'] ?? ''),
+        )
+      : null;
 
   final userIdForRepoCall =
       (modelConfig.getOwnerId != null &&
@@ -105,9 +103,7 @@ Future<Response> _handlePost(RequestContext context) async {
   final modelConfig = context.read<ModelConfig<dynamic>>();
   final authenticatedUser = context.read<User>();
 
-  _logger.info(
-    'Handling POST request for model "$modelName".',
-  );
+  _logger.info('Handling POST request for model "$modelName".');
 
   final requestBody = await context.request.json() as Map<String, dynamic>?;
   if (requestBody == null) {

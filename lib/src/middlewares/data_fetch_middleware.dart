@@ -30,9 +30,7 @@ Middleware dataFetchMiddleware() {
       final item = await _fetchItem(context, modelName, id);
 
       if (item == null) {
-        _log.warning(
-          'Item not found for model "$modelName", id "$id".',
-        );
+        _log.warning('Item not found for model "$modelName", id "$id".');
         throw NotFoundException(
           'The requested item of type "$modelName" with id "$id" was not found.',
         );

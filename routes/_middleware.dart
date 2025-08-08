@@ -85,7 +85,9 @@ Handler middleware(Handler handler) {
           // 2. Provide all dependencies to the inner handler.
           final deps = AppDependencies.instance;
           return handler
-              .use(provider<DataOperationRegistry>((_) => DataOperationRegistry()))
+              .use(
+                provider<DataOperationRegistry>((_) => DataOperationRegistry()),
+              )
               .use(provider<ModelRegistryMap>((_) => modelRegistry))
               .use(
                 provider<DataRepository<Headline>>(
