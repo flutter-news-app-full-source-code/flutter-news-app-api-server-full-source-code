@@ -6,6 +6,7 @@ import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/helpers/response_helper.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/registry/data_operation_registry.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_registry.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_preference_limit_service.dart';
 import 'package:logging/logging.dart';
@@ -185,70 +186,16 @@ Future<dynamic> _updateItem(
     'Executing _updateItem for model "$modelName", id "$id", userId: $userId.',
   );
   try {
-    switch (modelName) {
-      case 'headline':
-        return await context.read<DataRepository<Headline>>().update(
-              id: id,
-              item: itemToUpdate as Headline,
-              userId: userId,
-            );
-      case 'topic':
-        return await context.read<DataRepository<Topic>>().update(
-              id: id,
-              item: itemToUpdate as Topic,
-              userId: userId,
-            );
-      case 'source':
-        return await context.read<DataRepository<Source>>().update(
-              id: id,
-              item: itemToUpdate as Source,
-              userId: userId,
-            );
-      case 'country':
-        return await context.read<DataRepository<Country>>().update(
-              id: id,
-              item: itemToUpdate as Country,
-              userId: userId,
-            );
-      case 'language':
-        return await context.read<DataRepository<Language>>().update(
-              id: id,
-              item: itemToUpdate as Language,
-              userId: userId,
-            );
-      case 'user':
-        final repo = context.read<DataRepository<User>>();
-        final existingUser = context.read<FetchedItem<dynamic>>().data as User;
-        final updatedUser = existingUser.copyWith(
-          feedActionStatus: (itemToUpdate as User).feedActionStatus,
-        );
-        return await repo.update(id: id, item: updatedUser, userId: userId);
-      case 'user_app_settings':
-        return await context.read<DataRepository<UserAppSettings>>().update(
-              id: id,
-              item: itemToUpdate as UserAppSettings,
-              userId: userId,
-            );
-      case 'user_content_preferences':
-        return await context
-            .read<DataRepository<UserContentPreferences>>()
-            .update(
-              id: id,
-              item: itemToUpdate as UserContentPreferences,
-              userId: userId,
-            );
-      case 'remote_config':
-        return await context.read<DataRepository<RemoteConfig>>().update(
-              id: id,
-              item: itemToUpdate as RemoteConfig,
-              userId: userId,
-            );
-      default:
-        _logger.warning('Unsupported model type "$modelName" for update operation.');
-        throw OperationFailedException(
-          'Unsupported model type "$modelName" for update operation.',
-        );
+    final registry = context.read<DataOperationRegistry>();
+    final updater = registry.itemUpdaters[modelName];
+
+    if (updater == null) {
+      _logger.warning('Unsupported model type "$modelName" for update operation.');
+      throw OperationFailedException(
+        'Unsupported model type "$modelName" for update operation.',
+      );
     }
+    return await updater(context, id, itemToUpdate, userId);
   } catch (e, s) {
     _logger.severe(
       'Unhandled exception in _updateItem for model "$modelName", id "$id".',
@@ -272,58 +219,16 @@ Future<void> _deleteItem(
     'Executing _deleteItem for model "$modelName", id "$id", userId: $userId.',
   );
   try {
-    switch (modelName) {
-      case 'headline':
-        return await context.read<DataRepository<Headline>>().delete(
-              id: id,
-              userId: userId,
-            );
-      case 'topic':
-        return await context.read<DataRepository<Topic>>().delete(
-              id: id,
-              userId: userId,
-            );
-      case 'source':
-        return await context.read<DataRepository<Source>>().delete(
-              id: id,
-              userId: userId,
-            );
-      case 'country':
-        return await context.read<DataRepository<Country>>().delete(
-              id: id,
-              userId: userId,
-            );
-      case 'language':
-        return await context.read<DataRepository<Language>>().delete(
-              id: id,
-              userId: userId,
-            );
-      case 'user':
-        return await context.read<DataRepository<User>>().delete(
-              id: id,
-              userId: userId,
-            );
-      case 'user_app_settings':
-        return await context.read<DataRepository<UserAppSettings>>().delete(
-              id: id,
-              userId: userId,
-            );
-      case 'user_content_preferences':
-        return await context.read<DataRepository<UserContentPreferences>>().delete(
-              id: id,
-              userId: userId,
-            );
-      case 'remote_config':
-        return await context.read<DataRepository<RemoteConfig>>().delete(
-              id: id,
-              userId: userId,
-            );
-      default:
-        _logger.warning('Unsupported model type "$modelName" for delete operation.');
-        throw OperationFailedException(
-          'Unsupported model type "$modelName" for delete operation.',
-        );
+    final registry = context.read<DataOperationRegistry>();
+    final deleter = registry.itemDeleters[modelName];
+
+    if (deleter == null) {
+      _logger.warning('Unsupported model type "$modelName" for delete operation.');
+      throw OperationFailedException(
+        'Unsupported model type "$modelName" for delete operation.',
+      );
     }
+    return await deleter(context, id, userId);
   } catch (e, s) {
     _logger.severe(
       'Unhandled exception in _deleteItem for model "$modelName", id "$id".',
