@@ -1,8 +1,7 @@
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/registry/data_operation_registry.dart';
 import 'package:logging/logging.dart';
 
 final _log = Logger('DataFetchMiddleware');
@@ -50,10 +49,11 @@ Middleware dataFetchMiddleware() {
 }
 
 /// Helper function to fetch an item from the correct repository based on the
-/// model name.
+/// model name by using the [DataOperationRegistry].
 ///
-/// This function contains the switch statement that maps a `modelName` string
-/// to a specific `DataRepository` call.
+/// This function looks up the appropriate fetcher function from the registry
+/// and invokes it. This avoids a large `switch` statement and makes the
+/// system easily extensible.
 ///
 /// Throws [OperationFailedException] for unsupported model types.
 Future<dynamic> _fetchItem(
@@ -61,68 +61,18 @@ Future<dynamic> _fetchItem(
   String modelName,
   String id,
 ) async {
-  // The `userId` is not needed here because this middleware's purpose is to
-  // fetch the item regardless of ownership. Ownership is checked in a
-  // subsequent middleware. We pass `null` for `userId` to ensure we are
-  // performing a global lookup for the item.
-  const String? userId = null;
-
   try {
-    switch (modelName) {
-      case 'headline':
-        return await context.read<DataRepository<Headline>>().read(
-              id: id,
-              userId: userId,
-            );
-      case 'topic':
-        return await context
-            .read<DataRepository<Topic>>()
-            .read(id: id, userId: userId);
-      case 'source':
-        return await context.read<DataRepository<Source>>().read(
-              id: id,
-              userId: userId,
-            );
-      case 'country':
-        return await context.read<DataRepository<Country>>().read(
-              id: id,
-              userId: userId,
-            );
-      case 'language':
-        return await context.read<DataRepository<Language>>().read(
-              id: id,
-              userId: userId,
-            );
-      case 'user':
-        return await context
-            .read<DataRepository<User>>()
-            .read(id: id, userId: userId);
-      case 'user_app_settings':
-        return await context.read<DataRepository<UserAppSettings>>().read(
-              id: id,
-              userId: userId,
-            );
-      case 'user_content_preferences':
-        return await context
-            .read<DataRepository<UserContentPreferences>>()
-            .read(
-              id: id,
-              userId: userId,
-            );
-      case 'remote_config':
-        return await context.read<DataRepository<RemoteConfig>>().read(
-              id: id,
-              userId: userId,
-            );
-      case 'dashboard_summary':
-        // This is a special case that doesn't use a standard repository.
-        return await context.read<DashboardSummaryService>().getSummary();
-      default:
-        _log.warning('Unsupported model type "$modelName" for fetch operation.');
-        throw OperationFailedException(
-          'Unsupported model type "$modelName" for fetch operation.',
-        );
+    final registry = context.read<DataOperationRegistry>();
+    final fetcher = registry.itemFetchers[modelName];
+
+    if (fetcher == null) {
+      _log.warning('Unsupported model type "$modelName" for fetch operation.');
+      throw OperationFailedException(
+        'Unsupported model type "$modelName" for fetch operation.',
+      );
     }
+
+    return await fetcher(context, id);
   } on NotFoundException {
     // The repository will throw this if the item doesn't exist.
     // We return null to let the main middleware handler throw a more
