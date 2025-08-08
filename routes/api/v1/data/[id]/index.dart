@@ -324,9 +324,45 @@ Future<Response> _handlePut(
     case 'user':
       {
         final repo = context.read<DataRepository<User>>();
+
+        // --- Safe User Update Logic ---
+        // To prevent security vulnerabilities like privilege escalation, we do not
+        // simply save the entire request body. Instead, we perform a safe,
+        // partial update.
+
+        // 1. Fetch the existing, trusted user object from the database.
+        // This ensures we have the current, authoritative state of the user,
+        // including their correct roles and ID.
+        final existingUser = await repo.read(
+          id: id,
+          userId: userIdForRepoCall,
+        );
+
+        // 2. Create a new User object by merging only the allowed, safe-to-update
+        // fields from the incoming request (`itemToUpdate`) into the
+        // existing user data.
+        // This is the most critical step. It guarantees that a user cannot
+        // change their own `appRole`, `dashboardRole`, `id`, or `createdAt`
+        // fields, even if they include them in the request payload.
+        // The `email` field is also protected here, as changing it requires a
+        // separate, secure verification flow (e.g., via a dedicated endpoint)
+        // and should not be done through this generic data endpoint.
+        final updatedUser = existingUser.copyWith(
+          // `feedActionStatus` is considered safe for a user to update as it
+          // only tracks their interaction with UI elements.
+          feedActionStatus: (itemToUpdate as User).feedActionStatus,
+
+          // FUTURE: If a `displayName` field were added to the User model,
+          // it would also be considered safe and could be updated here:
+          // displayName: itemToUpdate.displayName,
+        );
+
+        // 3. Save the securely merged user object back to the database.
+        // The repository will now update the user record with our safely
+        // constructed `updatedUser` object.
         updatedItem = await repo.update(
           id: id,
-          item: itemToUpdate as User,
+          item: updatedUser,
           userId: userIdForRepoCall,
         );
       }
