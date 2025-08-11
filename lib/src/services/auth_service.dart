@@ -529,7 +529,15 @@ class AuthService {
           textScaleFactor: AppTextScaleFactor.medium,
           fontWeight: AppFontWeight.regular,
         ),
-        language: languagesFixturesData.firstWhere((l) => l.code == 'en'),
+        language: Language(
+          id: '6633b7ac1892f06e6914d0b3',
+          code: 'en',
+          name: 'English',
+          nativeName: 'English',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          status: ContentStatus.active,
+        ),
         feedPreferences: const FeedDisplayPreferences(
           headlineDensity: HeadlineDensity.standard,
           headlineImageStyle: HeadlineImageStyle.smallThumbnail,
