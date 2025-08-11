@@ -199,7 +199,7 @@ class DataOperationRegistry {
         final repo = c.read<DataRepository<User>>();
         final existingUser = c.read<FetchedItem<dynamic>>().data as User;
         final updatedUser = existingUser.copyWith(
-          feedActionStatus: (item as User).feedActionStatus,
+          feedDecoratorStatus: (item as User).feedDecoratorStatus,
         );
         return repo.update(id: id, item: updatedUser, userId: uid);
       },
