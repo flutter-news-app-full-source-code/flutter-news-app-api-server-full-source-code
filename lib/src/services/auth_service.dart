@@ -287,11 +287,11 @@ class AuthService {
           appRole: AppUserRole.standardUser,
           dashboardRole: DashboardUserRole.none,
           createdAt: DateTime.now(),
-          feedActionStatus: Map.fromEntries(
-            FeedActionType.values.map(
+          feedDecoratorStatus: Map.fromEntries(
+            FeedDecoratorType.values.map(
               (type) => MapEntry(
                 type,
-                const UserFeedActionStatus(isCompleted: false),
+                const UserFeedDecoratorStatus(isCompleted: false),
               ),
             ),
           ),
@@ -347,10 +347,12 @@ class AuthService {
         appRole: AppUserRole.guestUser,
         dashboardRole: DashboardUserRole.none,
         createdAt: DateTime.now(),
-        feedActionStatus: Map.fromEntries(
-          FeedActionType.values.map(
-            (type) =>
-                MapEntry(type, const UserFeedActionStatus(isCompleted: false)),
+        feedDecoratorStatus: Map.fromEntries(
+          FeedDecoratorType.values.map(
+            (type) => MapEntry(
+              type,
+              const UserFeedDecoratorStatus(isCompleted: false),
+            ),
           ),
         ),
       );
@@ -527,7 +529,7 @@ class AuthService {
           textScaleFactor: AppTextScaleFactor.medium,
           fontWeight: AppFontWeight.regular,
         ),
-        language: 'en',
+        language: languagesFixturesData.firstWhere((l) => l.code == 'en'),
         feedPreferences: const FeedDisplayPreferences(
           headlineDensity: HeadlineDensity.standard,
           headlineImageStyle: HeadlineImageStyle.smallThumbnail,

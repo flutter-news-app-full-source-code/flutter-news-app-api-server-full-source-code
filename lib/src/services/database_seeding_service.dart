@@ -216,10 +216,10 @@ class DatabaseSeedingService {
       appRole: AppUserRole.standardUser,
       dashboardRole: DashboardUserRole.admin,
       createdAt: DateTime.now(),
-      feedActionStatus: Map.fromEntries(
-        FeedActionType.values.map(
+      feedDecoratorStatus: Map.fromEntries(
+        FeedDecoratorType.values.map(
           (type) =>
-              MapEntry(type, const UserFeedActionStatus(isCompleted: false)),
+              MapEntry(type, const UserFeedDecoratorStatus(isCompleted: false)),
         ),
       ),
     );
@@ -258,7 +258,7 @@ class DatabaseSeedingService {
         textScaleFactor: AppTextScaleFactor.medium,
         fontWeight: AppFontWeight.regular,
       ),
-      language: 'en',
+      language: languagesFixturesData.firstWhere((l) => l.code == 'en'),
       feedPreferences: const FeedDisplayPreferences(
         headlineDensity: HeadlineDensity.standard,
         headlineImageStyle: HeadlineImageStyle.smallThumbnail,
