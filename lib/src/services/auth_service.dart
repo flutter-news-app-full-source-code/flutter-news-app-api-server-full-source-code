@@ -349,8 +349,10 @@ class AuthService {
         createdAt: DateTime.now(),
         feedDecoratorStatus: Map.fromEntries(
           FeedDecoratorType.values.map(
-            (type) =>
-                MapEntry(type, const UserFeedDecoratorStatus(isCompleted: false)),
+            (type) => MapEntry(
+              type,
+              const UserFeedDecoratorStatus(isCompleted: false),
+            ),
           ),
         ),
       );
