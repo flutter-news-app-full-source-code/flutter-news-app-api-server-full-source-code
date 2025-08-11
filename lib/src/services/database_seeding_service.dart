@@ -266,7 +266,7 @@ class DatabaseSeedingService {
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
           status: ContentStatus.active,
-        ),,
+        ),
       feedPreferences: const FeedDisplayPreferences(
         headlineDensity: HeadlineDensity.standard,
         headlineImageStyle: HeadlineImageStyle.smallThumbnail,
