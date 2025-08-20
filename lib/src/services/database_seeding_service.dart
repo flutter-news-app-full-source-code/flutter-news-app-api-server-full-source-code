@@ -119,13 +119,17 @@ class DatabaseSeedingService {
           .createIndex(keys: {'name': 'text'}, name: 'sources_text_index');
 
       // Indexes for country aggregation queries
-      await _db.collection('headlines').createIndex(
-            keys: {'eventCountry.id': 1, 'status': 1},
-            name: 'eventCountry_status_index',
+      await _db
+          .collection('headlines')
+          .createIndex(
+            keys: {'status': 1, 'eventCountry.id': 1},
+            name: 'status_eventCountry_index',
           );
-      await _db.collection('sources').createIndex(
-            keys: {'headquarters.id': 1, 'status': 1},
-            name: 'headquarters_status_index',
+      await _db
+          .collection('sources')
+          .createIndex(
+            keys: {'status': 1, 'headquarters.id': 1},
+            name: 'status_headquarters_index',
           );
 
       // --- TTL and Unique Indexes via runCommand ---
