@@ -115,46 +115,20 @@ class CountryService {
     }
 
     _log.finer('Fetching distinct event countries via aggregation.');
-    try {
-      final pipeline = [
-        {
-          r'$match': {
-            'status': ContentStatus.active.name,
-            'eventCountry.id': {r'$exists': true},
-          },
-        },
-        {
-          r'$group': {
-            '_id': r'$eventCountry.id',
-            'country': {r'$first': r'$eventCountry'},
-          },
-        },
-        {
-          r'$replaceRoot': {'newRoot': r'$country'},
-        },
-      ];
+    final distinctCountries = await _getDistinctCountriesFromAggregation(
+      repository: _headlineRepository,
+      fieldName: 'eventCountry',
+    );
 
-      final distinctCountriesJson = await _headlineRepository.aggregate(
-        pipeline: pipeline,
-      );
-
-      final distinctCountries = distinctCountriesJson
-          .map(Country.fromJson)
-          .toList();
-
-      _cachedEventCountries = _CacheEntry(
-        distinctCountries,
-        DateTime.now().add(_cacheDuration),
-      );
-      _log.info(
-        'Successfully fetched and cached ${distinctCountries.length} '
-        'event countries.',
-      );
-      return distinctCountries;
-    } catch (e, s) {
-      _log.severe('Failed to fetch event countries via aggregation.', e, s);
-      throw OperationFailedException('Failed to retrieve event countries: $e');
-    }
+    _cachedEventCountries = _CacheEntry(
+      distinctCountries,
+      DateTime.now().add(_cacheDuration),
+    );
+    _log.info(
+      'Successfully fetched and cached ${distinctCountries.length} '
+      'event countries.',
+    );
+    return distinctCountries;
   }
 
   /// Fetches a distinct list of countries that are referenced as
@@ -170,18 +144,47 @@ class CountryService {
     }
 
     _log.finer('Fetching distinct headquarter countries via aggregation.');
+    final distinctCountries = await _getDistinctCountriesFromAggregation(
+      repository: _sourceRepository,
+      fieldName: 'headquarters',
+    );
+
+    _cachedHeadquarterCountries = _CacheEntry(
+      distinctCountries,
+      DateTime.now().add(_cacheDuration),
+    );
+    _log.info(
+      'Successfully fetched and cached ${distinctCountries.length} '
+      'headquarter countries.',
+    );
+    return distinctCountries;
+  }
+
+  /// Helper method to fetch a distinct list of countries from a given
+  /// repository and field name using MongoDB aggregation.
+  ///
+  /// - [repository]: The [DataRepository] to perform the aggregation on.
+  /// - [fieldName]: The name of the field within the documents that contains
+  ///   the country object (e.g., 'eventCountry', 'headquarters').
+  ///
+  /// Throws [OperationFailedException] for internal errors during data fetch.
+  Future<List<Country>> _getDistinctCountriesFromAggregation({
+    required DataRepository<dynamic> repository,
+    required String fieldName,
+  }) async {
+    _log.finer('Fetching distinct countries for field "$fieldName" via aggregation.');
     try {
       final pipeline = [
         {
           r'$match': {
             'status': ContentStatus.active.name,
-            'headquarters.id': {r'$exists': true},
+            '$fieldName.id': {r'$exists': true},
           },
         },
         {
           r'$group': {
-            '_id': r'$headquarters.id',
-            'country': {r'$first': r'$headquarters'},
+            '_id': '\$$fieldName.id',
+            'country': {r'$first': '\$$fieldName'},
           },
         },
         {
@@ -189,7 +192,7 @@ class CountryService {
         },
       ];
 
-      final distinctCountriesJson = await _sourceRepository.aggregate(
+      final distinctCountriesJson = await repository.aggregate(
         pipeline: pipeline,
       );
 
@@ -197,23 +200,19 @@ class CountryService {
           .map(Country.fromJson)
           .toList();
 
-      _cachedHeadquarterCountries = _CacheEntry(
-        distinctCountries,
-        DateTime.now().add(_cacheDuration),
-      );
       _log.info(
-        'Successfully fetched and cached ${distinctCountries.length} '
-        'headquarter countries.',
+        'Successfully fetched ${distinctCountries.length} distinct countries '
+        'for field "$fieldName".',
       );
       return distinctCountries;
     } catch (e, s) {
       _log.severe(
-        'Failed to fetch headquarter countries via aggregation.',
+        'Failed to fetch distinct countries for field "$fieldName".',
         e,
         s,
       );
       throw OperationFailedException(
-        'Failed to retrieve headquarter countries: $e',
+        'Failed to retrieve distinct countries for field "$fieldName": $e',
       );
     }
   }
