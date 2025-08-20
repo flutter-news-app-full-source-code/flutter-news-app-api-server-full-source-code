@@ -2,13 +2,30 @@ import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:logging/logging.dart';
 
+/// {@template _cache_entry}
+/// A simple class to hold cached data along with its expiration time.
+/// {@endtemplate}
+class _CacheEntry<T> {
+  /// {@macro _cache_entry}
+  const _CacheEntry(this.data, this.expiry);
+
+  /// The cached data.
+  final T data;
+
+  /// The time at which the cached data expires.
+  final DateTime expiry;
+
+  /// Checks if the cache entry is still valid (not expired).
+  bool isValid() => DateTime.now().isBefore(expiry);
+}
+
 /// {@template country_service}
 /// A service responsible for retrieving country data, including specialized
 /// lists like countries associated with headlines or sources.
 ///
 /// This service leverages database aggregation for efficient data retrieval
-/// and includes basic in-memory caching to optimize performance for frequently
-/// requested lists.
+/// and includes time-based in-memory caching to optimize performance for
+/// frequently requested lists.
 /// {@endtemplate}
 class CountryService {
   /// {@macro country_service}
@@ -27,11 +44,12 @@ class CountryService {
   final DataRepository<Source> _sourceRepository;
   final Logger _log;
 
-  // In-memory caches for frequently accessed lists.
-  // These should be cleared periodically in a real-world application
-  // or invalidated upon data changes. For this scope, simple caching is used.
-  List<Country>? _cachedEventCountries;
-  List<Country>? _cachedHeadquarterCountries;
+  // Cache duration for aggregated country lists (e.g., 1 hour).
+  static const Duration _cacheDuration = Duration(hours: 1);
+
+  // In-memory caches for frequently accessed lists with time-based invalidation.
+  _CacheEntry<List<Country>>? _cachedEventCountries;
+  _CacheEntry<List<Country>>? _cachedHeadquarterCountries;
 
   /// Retrieves a list of countries based on the provided filter.
   ///
