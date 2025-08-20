@@ -117,8 +117,10 @@ class CountryService {
       _log.finer('Returning cached event countries.');
       return _cachedEventCountries!.data;
     }
-    // Atomically assign the future if no fetch is in progress.
-    _eventCountriesFuture ??= _fetchAndCacheEventCountries();
+    // Atomically assign the future if no fetch is in progress,
+    // and clear it when the future completes.
+    _eventCountriesFuture ??= _fetchAndCacheEventCountries()
+        .whenComplete(() => _eventCountriesFuture = null);
     return _eventCountriesFuture!;
   }
 
@@ -133,8 +135,10 @@ class CountryService {
       _log.finer('Returning cached headquarter countries.');
       return _cachedHeadquarterCountries!.data;
     }
-    // Atomically assign the future if no fetch is in progress.
-    _headquarterCountriesFuture ??= _fetchAndCacheHeadquarterCountries();
+    // Atomically assign the future if no fetch is in progress,
+    // and clear it when the future completes.
+    _headquarterCountriesFuture ??= _fetchAndCacheHeadquarterCountries()
+        .whenComplete(() => _headquarterCountriesFuture = null);
     return _headquarterCountriesFuture!;
   }
 
@@ -155,9 +159,13 @@ class CountryService {
         'event countries.',
       );
       return distinctCountries;
-    } finally {
-      // Clear the future once the operation is complete (success or error).
-      _eventCountriesFuture = null;
+    } catch (e, s) {
+      _log.severe(
+        'Failed to fetch distinct event countries via aggregation.',
+        e,
+        s,
+      );
+      rethrow; // Re-throw the original exception
     }
   }
 
@@ -178,9 +186,13 @@ class CountryService {
         'headquarter countries.',
       );
       return distinctCountries;
-    } finally {
-      // Clear the future once the operation is complete (success or error).
-      _headquarterCountriesFuture = null;
+    } catch (e, s) {
+      _log.severe(
+        'Failed to fetch distinct headquarter countries via aggregation.',
+        e,
+        s,
+      );
+      rethrow; // Re-throw the original exception
     }
   }
 
