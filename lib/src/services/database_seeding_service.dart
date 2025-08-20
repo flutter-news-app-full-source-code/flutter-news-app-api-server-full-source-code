@@ -118,6 +118,20 @@ class DatabaseSeedingService {
           .collection('sources')
           .createIndex(keys: {'name': 'text'}, name: 'sources_text_index');
 
+      // Indexes for country aggregation queries
+      await _db
+          .collection('headlines')
+          .createIndex(
+            keys: {'status': 1, 'eventCountry.id': 1},
+            name: 'status_eventCountry_index',
+          );
+      await _db
+          .collection('sources')
+          .createIndex(
+            keys: {'status': 1, 'headquarters.id': 1},
+            name: 'status_headquarters_index',
+          );
+
       // --- TTL and Unique Indexes via runCommand ---
       // The following indexes are created using the generic `runCommand` because
       // they require specific options not exposed by the simpler `createIndex`
