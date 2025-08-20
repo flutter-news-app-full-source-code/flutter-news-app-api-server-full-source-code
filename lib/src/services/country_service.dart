@@ -109,9 +109,9 @@ class CountryService {
   /// Uses MongoDB aggregation to efficiently get distinct country IDs
   /// and then fetches the full Country objects. Results are cached.
   Future<List<Country>> _getEventCountries() async {
-    if (_cachedEventCountries != null) {
+    if (_cachedEventCountries != null && _cachedEventCountries!.isValid()) {
       _log.finer('Returning cached event countries.');
-      return _cachedEventCountries!;
+      return _cachedEventCountries!.data;
     }
 
     _log.finer('Fetching distinct event countries via aggregation.');
@@ -142,7 +142,10 @@ class CountryService {
           .map(Country.fromJson)
           .toList();
 
-      _cachedEventCountries = distinctCountries;
+      _cachedEventCountries = _CacheEntry(
+        distinctCountries,
+        DateTime.now().add(_cacheDuration),
+      );
       _log.info(
         'Successfully fetched and cached ${distinctCountries.length} '
         'event countries.',
@@ -160,9 +163,10 @@ class CountryService {
   /// Uses MongoDB aggregation to efficiently get distinct country IDs
   /// and then fetches the full Country objects. Results are cached.
   Future<List<Country>> _getHeadquarterCountries() async {
-    if (_cachedHeadquarterCountries != null) {
+    if (_cachedHeadquarterCountries != null &&
+        _cachedHeadquarterCountries!.isValid()) {
       _log.finer('Returning cached headquarter countries.');
-      return _cachedHeadquarterCountries!;
+      return _cachedHeadquarterCountries!.data;
     }
 
     _log.finer('Fetching distinct headquarter countries via aggregation.');
@@ -193,7 +197,10 @@ class CountryService {
           .map(Country.fromJson)
           .toList();
 
-      _cachedHeadquarterCountries = distinctCountries;
+      _cachedHeadquarterCountries = _CacheEntry(
+        distinctCountries,
+        DateTime.now().add(_cacheDuration),
+      );
       _log.info(
         'Successfully fetched and cached ${distinctCountries.length} '
         'headquarter countries.',
