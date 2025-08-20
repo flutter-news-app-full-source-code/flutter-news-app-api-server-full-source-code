@@ -9,6 +9,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/config/environm
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/country_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/database_seeding_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/default_user_preference_limit_service.dart';
@@ -61,6 +62,7 @@ class AppDependencies {
   late final EmailRepository emailRepository;
 
   // Services
+  late final CountryService countryService;
   late final TokenBlacklistService tokenBlacklistService;
   late final AuthTokenService authTokenService;
   late final VerificationCodeStorageService verificationCodeStorageService;
@@ -179,7 +181,6 @@ class AppDependencies {
         dataClient: userContentPreferencesClient,
       );
       remoteConfigRepository = DataRepository(dataClient: remoteConfigClient);
-
       // Configure the HTTP client for SendGrid.
       // The HttpClient's AuthInterceptor will use the tokenProvider to add
       // the 'Authorization: Bearer <SENDGRID_API_KEY>' header.
@@ -237,6 +238,12 @@ class AppDependencies {
       rateLimitService = MongoDbRateLimitService(
         connectionManager: _mongoDbConnectionManager,
         log: Logger('MongoDbRateLimitService'),
+      );
+      countryService = CountryService(
+        countryRepository: countryRepository,
+        headlineRepository: headlineRepository,
+        sourceRepository: sourceRepository,
+        logger: Logger('CountryService'),
       );
 
       _isInitialized = true;

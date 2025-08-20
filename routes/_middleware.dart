@@ -10,6 +10,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/registry/data_o
 import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_registry.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/country_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
@@ -151,6 +152,7 @@ Handler middleware(Handler handler) {
                 ),
               )
               .use(provider<RateLimitService>((_) => deps.rateLimitService))
+              .use(provider<CountryService>((_) => deps.countryService))
               .call(context);
         };
       });
