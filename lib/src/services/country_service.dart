@@ -82,7 +82,7 @@ class CountryService {
     } catch (e, s) {
       _log.severe('Failed to fetch all countries.', e, s);
       throw OperationFailedException(
-        'Failed to retrieve all countries: ${e.toString()}',
+        'Failed to retrieve all countries: $e',
       );
     }
   }
@@ -120,7 +120,7 @@ class CountryService {
           await _headlineRepository.aggregate(pipeline: pipeline);
 
       final distinctCountries = distinctCountriesJson
-          .map((json) => Country.fromJson(json))
+          .map(Country.fromJson)
           .toList();
 
       _cachedEventCountries = distinctCountries;
@@ -130,7 +130,7 @@ class CountryService {
     } catch (e, s) {
       _log.severe('Failed to fetch event countries via aggregation.', e, s);
       throw OperationFailedException(
-        'Failed to retrieve event countries: ${e.toString()}',
+        'Failed to retrieve event countries: $e',
       );
     }
   }
@@ -168,7 +168,7 @@ class CountryService {
           await _sourceRepository.aggregate(pipeline: pipeline);
 
       final distinctCountries = distinctCountriesJson
-          .map((json) => Country.fromJson(json))
+          .map(Country.fromJson)
           .toList();
 
       _cachedHeadquarterCountries = distinctCountries;
@@ -178,7 +178,7 @@ class CountryService {
     } catch (e, s) {
       _log.severe('Failed to fetch headquarter countries via aggregation.', e, s);
       throw OperationFailedException(
-        'Failed to retrieve headquarter countries: ${e.toString()}',
+        'Failed to retrieve headquarter countries: $e',
       );
     }
   }
