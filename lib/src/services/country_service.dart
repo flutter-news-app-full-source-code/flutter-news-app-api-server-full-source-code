@@ -117,22 +117,35 @@ class CountryService {
       _log.finer('Returning cached event countries.');
       return _cachedEventCountries!.data;
     }
+    // Atomically assign the future if no fetch is in progress.
+    _eventCountriesFuture ??= _fetchAndCacheEventCountries();
+    return _eventCountriesFuture!;
+  }
 
-    // If a fetch is already in progress, await it to prevent cache stampede.
-    if (_eventCountriesFuture != null) {
-      _log.finer('Awaiting in-flight event countries fetch.');
-      return _eventCountriesFuture!;
+  /// Fetches a distinct list of countries that are referenced as
+  /// `headquarters` in sources.
+  ///
+  /// Uses MongoDB aggregation to efficiently get distinct country IDs
+  /// and then fetches the full Country objects. Results are cached.
+  Future<List<Country>> _getHeadquarterCountries() async {
+    if (_cachedHeadquarterCountries != null &&
+        _cachedHeadquarterCountries!.isValid()) {
+      _log.finer('Returning cached headquarter countries.');
+      return _cachedHeadquarterCountries!.data;
     }
+    // Atomically assign the future if no fetch is in progress.
+    _headquarterCountriesFuture ??= _fetchAndCacheHeadquarterCountries();
+    return _headquarterCountriesFuture!;
+  }
 
+  /// Helper method to fetch and cache distinct event countries.
+  Future<List<Country>> _fetchAndCacheEventCountries() async {
     _log.finer('Fetching distinct event countries via aggregation.');
-    // Start a new fetch and store the future.
-    _eventCountriesFuture = _getDistinctCountriesFromAggregation(
-      repository: _headlineRepository,
-      fieldName: 'eventCountry',
-    );
-
     try {
-      final distinctCountries = await _eventCountriesFuture!;
+      final distinctCountries = await _getDistinctCountriesFromAggregation(
+        repository: _headlineRepository,
+        fieldName: 'eventCountry',
+      );
       _cachedEventCountries = _CacheEntry(
         distinctCountries,
         DateTime.now().add(_cacheDuration),
@@ -148,33 +161,14 @@ class CountryService {
     }
   }
 
-  /// Fetches a distinct list of countries that are referenced as
-  /// `headquarters` in sources.
-  ///
-  /// Uses MongoDB aggregation to efficiently get distinct country IDs
-  /// and then fetches the full Country objects. Results are cached.
-  Future<List<Country>> _getHeadquarterCountries() async {
-    if (_cachedHeadquarterCountries != null &&
-        _cachedHeadquarterCountries!.isValid()) {
-      _log.finer('Returning cached headquarter countries.');
-      return _cachedHeadquarterCountries!.data;
-    }
-
-    // If a fetch is already in progress, await it to prevent cache stampede.
-    if (_headquarterCountriesFuture != null) {
-      _log.finer('Awaiting in-flight headquarter countries fetch.');
-      return _headquarterCountriesFuture!;
-    }
-
+  /// Helper method to fetch and cache distinct headquarter countries.
+  Future<List<Country>> _fetchAndCacheHeadquarterCountries() async {
     _log.finer('Fetching distinct headquarter countries via aggregation.');
-    // Start a new fetch and store the future.
-    _headquarterCountriesFuture = _getDistinctCountriesFromAggregation(
-      repository: _sourceRepository,
-      fieldName: 'headquarters',
-    );
-
     try {
-      final distinctCountries = await _headquarterCountriesFuture!;
+      final distinctCountries = await _getDistinctCountriesFromAggregation(
+        repository: _sourceRepository,
+        fieldName: 'headquarters',
+      );
       _cachedHeadquarterCountries = _CacheEntry(
         distinctCountries,
         DateTime.now().add(_cacheDuration),
