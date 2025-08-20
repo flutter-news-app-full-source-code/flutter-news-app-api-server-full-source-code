@@ -239,7 +239,7 @@ class AppDependencies {
         connectionManager: _mongoDbConnectionManager,
         log: Logger('MongoDbRateLimitService'),
       );
-       countryService = CountryService(
+      countryService = CountryService(
         countryRepository: countryRepository,
         headlineRepository: headlineRepository,
         sourceRepository: sourceRepository,
