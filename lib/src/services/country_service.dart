@@ -51,6 +51,10 @@ class CountryService {
   _CacheEntry<List<Country>>? _cachedEventCountries;
   _CacheEntry<List<Country>>? _cachedHeadquarterCountries;
 
+  // Futures to hold in-flight aggregation requests to prevent cache stampedes.
+  Future<List<Country>>? _eventCountriesFuture;
+  Future<List<Country>>? _headquarterCountriesFuture;
+
   /// Retrieves a list of countries based on the provided filter.
   ///
   /// Supports filtering by 'usage' to get countries that are either
@@ -114,21 +118,34 @@ class CountryService {
       return _cachedEventCountries!.data;
     }
 
+    // If a fetch is already in progress, await it to prevent cache stampede.
+    if (_eventCountriesFuture != null) {
+      _log.finer('Awaiting in-flight event countries fetch.');
+      return _eventCountriesFuture!;
+    }
+
     _log.finer('Fetching distinct event countries via aggregation.');
-    final distinctCountries = await _getDistinctCountriesFromAggregation(
+    // Start a new fetch and store the future.
+    _eventCountriesFuture = _getDistinctCountriesFromAggregation(
       repository: _headlineRepository,
       fieldName: 'eventCountry',
     );
 
-    _cachedEventCountries = _CacheEntry(
-      distinctCountries,
-      DateTime.now().add(_cacheDuration),
-    );
-    _log.info(
-      'Successfully fetched and cached ${distinctCountries.length} '
-      'event countries.',
-    );
-    return distinctCountries;
+    try {
+      final distinctCountries = await _eventCountriesFuture!;
+      _cachedEventCountries = _CacheEntry(
+        distinctCountries,
+        DateTime.now().add(_cacheDuration),
+      );
+      _log.info(
+        'Successfully fetched and cached ${distinctCountries.length} '
+        'event countries.',
+      );
+      return distinctCountries;
+    } finally {
+      // Clear the future once the operation is complete (success or error).
+      _eventCountriesFuture = null;
+    }
   }
 
   /// Fetches a distinct list of countries that are referenced as
@@ -143,21 +160,34 @@ class CountryService {
       return _cachedHeadquarterCountries!.data;
     }
 
+    // If a fetch is already in progress, await it to prevent cache stampede.
+    if (_headquarterCountriesFuture != null) {
+      _log.finer('Awaiting in-flight headquarter countries fetch.');
+      return _headquarterCountriesFuture!;
+    }
+
     _log.finer('Fetching distinct headquarter countries via aggregation.');
-    final distinctCountries = await _getDistinctCountriesFromAggregation(
+    // Start a new fetch and store the future.
+    _headquarterCountriesFuture = _getDistinctCountriesFromAggregation(
       repository: _sourceRepository,
       fieldName: 'headquarters',
     );
 
-    _cachedHeadquarterCountries = _CacheEntry(
-      distinctCountries,
-      DateTime.now().add(_cacheDuration),
-    );
-    _log.info(
-      'Successfully fetched and cached ${distinctCountries.length} '
-      'headquarter countries.',
-    );
-    return distinctCountries;
+    try {
+      final distinctCountries = await _headquarterCountriesFuture!;
+      _cachedHeadquarterCountries = _CacheEntry(
+        distinctCountries,
+        DateTime.now().add(_cacheDuration),
+      );
+      _log.info(
+        'Successfully fetched and cached ${distinctCountries.length} '
+        'headquarter countries.',
+      );
+      return distinctCountries;
+    } finally {
+      // Clear the future once the operation is complete (success or error).
+      _headquarterCountriesFuture = null;
+    }
   }
 
   /// Helper method to fetch a distinct list of countries from a given
@@ -168,8 +198,8 @@ class CountryService {
   ///   the country object (e.g., 'eventCountry', 'headquarters').
   ///
   /// Throws [OperationFailedException] for internal errors during data fetch.
-  Future<List<Country>> _getDistinctCountriesFromAggregation({
-    required DataRepository<dynamic> repository,
+  Future<List<Country>> _getDistinctCountriesFromAggregation<T extends FeedItem>({
+    required DataRepository<T> repository,
     required String fieldName,
   }) async {
     _log.finer('Fetching distinct countries for field "$fieldName" via aggregation.');
