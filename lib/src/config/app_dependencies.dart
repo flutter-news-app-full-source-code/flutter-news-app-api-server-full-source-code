@@ -243,7 +243,7 @@ class AppDependencies {
       countryQueryService = CountryQueryService(
         countryRepository: countryRepository,
         log: Logger('CountryQueryService'),
-        cacheDuration: const Duration(minutes: 15), // Default cache duration
+        cacheDuration: EnvironmentConfig.countryServiceCacheDuration,
       );
 
       _isInitialized = true;
