@@ -202,21 +202,38 @@ class CountryService {
   /// - [repository]: The [DataRepository] to perform the aggregation on.
   /// - [fieldName]: The name of the field within the documents that contains
   ///   the country object (e.g., 'eventCountry', 'headquarters').
+  /// - [nameFilter]: An optional map containing a regex filter for the country name.
   ///
   /// Throws [OperationFailedException] for internal errors during data fetch.
   Future<List<Country>> _getDistinctCountriesFromAggregation<T extends FeedItem>({
     required DataRepository<T> repository,
     required String fieldName,
+    Map<String, dynamic>? nameFilter,
   }) async {
-    _log.finer('Fetching distinct countries for field "$fieldName" via aggregation.');
+    _log.finer(
+      'Fetching distinct countries for field "$fieldName" via aggregation '
+      'with nameFilter: $nameFilter.',
+    );
     try {
-      final pipeline = [
+      final pipeline = <Map<String, dynamic>>[
         {
           r'$match': {
             'status': ContentStatus.active.name,
             '$fieldName.id': {r'$exists': true},
           },
         },
+      ];
+
+      // Add name filter if provided
+      if (nameFilter != null && nameFilter.isNotEmpty) {
+        pipeline.add({
+          r'$match': {
+            '$fieldName.name': nameFilter,
+          },
+        });
+      }
+
+      pipeline.addAll([
         {
           r'$group': {
             '_id': '\$$fieldName.id',
@@ -226,7 +243,7 @@ class CountryService {
         {
           r'$replaceRoot': {'newRoot': r'$country'},
         },
-      ];
+      ]);
 
       final distinctCountriesJson = await repository.aggregate(
         pipeline: pipeline,
@@ -238,12 +255,13 @@ class CountryService {
 
       _log.info(
         'Successfully fetched ${distinctCountries.length} distinct countries '
-        'for field "$fieldName".',
+        'for field "$fieldName" with nameFilter: $nameFilter.',
       );
       return distinctCountries;
     } catch (e, s) {
       _log.severe(
-        'Failed to fetch distinct countries for field "$fieldName".',
+        'Failed to fetch distinct countries for field "$fieldName" '
+        'with nameFilter: $nameFilter.',
         e,
         s,
       );
