@@ -131,9 +131,12 @@ class DataOperationRegistry {
       ),
       'country': (c, uid, f, s, p) async {
         final usage = f?['usage'] as String?;
-        if (usage != null && usage.isNotEmpty) {
-          // For 'country' model with 'usage' filter, delegate to CountryService.
-          // Sorting and pagination are not supported for this specialized query.
+        final name = f?['name'] as String?;
+
+        // If either 'usage' or 'name' filter is present, delegate to CountryService.
+        // Sorting and pagination are handled by CountryService for these specialized queries.
+        if ((usage != null && usage.isNotEmpty) ||
+            (name != null && name.isNotEmpty)) {
           final countryService = c.read<CountryService>();
           final countries = await countryService.getCountries(f);
           return PaginatedResponse<Country>(
@@ -142,13 +145,14 @@ class DataOperationRegistry {
             hasMore: false, // No more items as it's a complete filtered set
           );
         } else {
-          // For standard requests, use the repository which supports pagination/sorting.
+          // For standard requests without specialized filters, use the repository
+          // which supports pagination/sorting.
           return c.read<DataRepository<Country>>().readAll(
-                userId: uid,
-                filter: f,
-                sort: s,
-                pagination: p,
-              );
+            userId: uid,
+            filter: f,
+            sort: s,
+            pagination: p,
+          );
         }
       },
       'language': (c, uid, f, s, p) => c
