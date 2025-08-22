@@ -129,40 +129,52 @@ class CountryQueryService {
 
     // --- Stage 2: Handle `hasActiveSources` filter ---
     if (filter['hasActiveSources'] == true) {
+      // This lookup uses a sub-pipeline to filter for active sources *before*
+      // joining, which is more efficient than a post-join match.
       pipeline.add({
         r'$lookup': {
           'from': 'sources',
-          'localField': '_id',
-          'foreignField': 'headquarters._id',
+          'let': {'countryId': r'$_id'},
+          'pipeline': [
+            {
+              r'$match': {
+                r'$expr': {r'$eq': [r'$headquarters._id', r'$$countryId']},
+                'status': ContentStatus.active.name,
+              }
+            }
+          ],
           'as': 'matchingSources',
         },
       });
       pipeline.add({
         r'$match': {
-          'matchingSources': {
-            r'$ne': <dynamic>[],
-          }, // Ensure there's at least one source
-          'matchingSources.status': ContentStatus.active.name,
+          'matchingSources': {r'$ne': <dynamic>[]},
         },
       });
     }
 
     // --- Stage 3: Handle `hasActiveHeadlines` filter ---
     if (filter['hasActiveHeadlines'] == true) {
+      // This lookup uses a sub-pipeline to filter for active headlines *before*
+      // joining, which is more efficient than a post-join match.
       pipeline.add({
         r'$lookup': {
           'from': 'headlines',
-          'localField': '_id',
-          'foreignField': 'eventCountry._id',
+          'let': {'countryId': r'$_id'},
+          'pipeline': [
+            {
+              r'$match': {
+                r'$expr': {r'$eq': [r'$eventCountry._id', r'$$countryId']},
+                'status': ContentStatus.active.name,
+              }
+            }
+          ],
           'as': 'matchingHeadlines',
         },
       });
       pipeline.add({
         r'$match': {
-          'matchingHeadlines': {
-            r'$ne': <dynamic>[],
-          }, // Ensure there's at least one headline
-          'matchingHeadlines.status': ContentStatus.active.name,
+          'matchingHeadlines': {r'$ne': <dynamic>[]},
         },
       });
     }
@@ -250,7 +262,20 @@ class CountryQueryService {
     return pipeline;
   }
 
-  /// Generates a unique cache key from the query parameters.
+  /// Generates a unique, canonical cache key from the query parameters.
+  ///
+  /// A canonical key is essential for effective caching. If two different
+  /// sets of parameters represent the same logical query (e.g., filters in a
+  /// different order), they must produce the exact same cache key.
+  ///
+  /// This implementation achieves this by:
+  /// 1. Using a [SplayTreeMap] for the `filter` map, which automatically
+  ///    sorts the filters by their keys.
+  /// 2. Sorting the `sort` options by their field names.
+  /// 3. Combining these sorted structures with pagination details into a
+  ///    standard map.
+  /// 4. Encoding the final map into a JSON string, which serves as the
+  ///    reliable and unique cache key.
   String _generateCacheKey(
     Map<String, dynamic> filter,
     PaginationOptions? pagination,
