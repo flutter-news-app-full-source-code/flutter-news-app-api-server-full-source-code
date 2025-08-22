@@ -131,7 +131,10 @@ class CountryQueryService {
     final qValue = filter['q'];
     if (qValue is String && qValue.isNotEmpty) {
       compoundMatchStages.add({
-        r'$text': {r'$search': qValue},
+        'name': {
+          r'$regex': qValue,
+          r'$options': 'i', // Case-insensitive
+        },
       });
     }
 
