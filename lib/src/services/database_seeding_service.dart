@@ -131,7 +131,6 @@ class DatabaseSeedingService {
           .collection('countries')
           .createIndex(keys: {'name': 1}, name: 'countries_name_index');
 
-
       // --- TTL and Unique Indexes via runCommand ---
       // The following indexes are created using the generic `runCommand` because
       // they require specific options not exposed by the simpler `createIndex`
