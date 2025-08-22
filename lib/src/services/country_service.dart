@@ -53,8 +53,8 @@ class CountryService {
       {};
 
   // Futures to hold in-flight aggregation requests to prevent cache stampedes.
-  Future<List<Country>>? _eventCountriesFuture;
-  Future<List<Country>>? _headquarterCountriesFuture;
+  final Map<String, Future<List<Country>>> _eventCountriesFutures = {};
+  final Map<String, Future<List<Country>>> _headquarterCountriesFutures = {};
 
   /// Retrieves a list of countries based on the provided filter.
   ///
@@ -156,12 +156,14 @@ class CountryService {
       _log.finer('Returning cached event countries for key: $cacheKey.');
       return _cachedEventCountries[cacheKey]!.data;
     }
-    // Atomically assign the future if no fetch is in progress,
-    // and clear it when the future completes.
-    _eventCountriesFuture ??= _fetchAndCacheEventCountries(
-      nameFilter: nameFilter,
-    ).whenComplete(() => _eventCountriesFuture = null);
-    return _eventCountriesFuture!;
+    // Atomically retrieve or create the future for the specific cache key.
+    var future = _eventCountriesFutures[cacheKey];
+    if (future == null) {
+      future = _fetchAndCacheEventCountries(nameFilter: nameFilter)
+          .whenComplete(() => _eventCountriesFutures.remove(cacheKey));
+      _eventCountriesFutures[cacheKey] = future;
+    }
+    return future!;
   }
 
   /// Fetches a distinct list of countries that are referenced as
@@ -180,12 +182,14 @@ class CountryService {
       _log.finer('Returning cached headquarter countries for key: $cacheKey.');
       return _cachedHeadquarterCountries[cacheKey]!.data;
     }
-    // Atomically assign the future if no fetch is in progress,
-    // and clear it when the future completes.
-    _headquarterCountriesFuture ??= _fetchAndCacheHeadquarterCountries(
-      nameFilter: nameFilter,
-    ).whenComplete(() => _headquarterCountriesFuture = null);
-    return _headquarterCountriesFuture!;
+    // Atomically retrieve or create the future for the specific cache key.
+    var future = _headquarterCountriesFutures[cacheKey];
+    if (future == null) {
+      future = _fetchAndCacheHeadquarterCountries(nameFilter: nameFilter)
+          .whenComplete(() => _headquarterCountriesFutures.remove(cacheKey));
+      _headquarterCountriesFutures[cacheKey] = future;
+    }
+    return future!;
   }
 
   /// Helper method to fetch and cache distinct event countries.
@@ -280,23 +284,20 @@ class CountryService {
       'with nameFilter: $nameFilter.',
     );
     try {
-      final pipeline = <Map<String, Object>>[
-        <String, Object>{
-          r'$match': <String, Object>{
-            'status': ContentStatus.active.name,
-            '$fieldName.id': <String, Object>{r'$exists': true},
-          },
-        },
-      ];
+      final matchStage = <String, Object>{
+        'status': ContentStatus.active.name,
+        '$fieldName.id': <String, Object>{r'$exists': true},
+      };
 
       // Add name filter if provided
       if (nameFilter != null && nameFilter.isNotEmpty) {
-        pipeline.add(<String, Object>{
-          r'$match': <String, Object>{'$fieldName.name': nameFilter},
-        });
+        matchStage['$fieldName.name'] = nameFilter;
       }
 
-      pipeline.addAll([
+      final pipeline = <Map<String, Object>>[
+        <String, Object>{
+          r'$match': matchStage,
+        },
         <String, Object>{
           r'$group': <String, Object>{
             '_id': '\$$fieldName.id',
@@ -306,7 +307,7 @@ class CountryService {
         <String, Object>{
           r'$replaceRoot': <String, Object>{'newRoot': r'$country'},
         },
-      ]);
+      ];
 
       final distinctCountriesJson = await repository.aggregate(
         pipeline: pipeline,
