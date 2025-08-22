@@ -207,22 +207,7 @@ class CountryQueryService {
       });
     }
 
-    // --- Stage 4: Project to original Country structure and ensure uniqueness ---
-    // After lookups and matches, we might have duplicate countries if they
-    // matched multiple sources/headlines. We need to group them back to unique countries.
-    pipeline.add({
-      r'$group': {
-        '_id': r'$_id', // Group by the original country ID
-        'doc': {r'$first': r'$$ROOT'}, // Take the first full document
-      },
-    });
-    pipeline.add({
-      r'$replaceRoot': {
-        'newRoot': r'$doc', // Replace root with the original document
-      },
-    });
-
-    // --- Stage 5: Sorting ---
+    // --- Stage 4: Sorting ---
     if (sort != null && sort.isNotEmpty) {
       final sortStage = <String, dynamic>{};
       for (final option in sort) {
@@ -231,7 +216,7 @@ class CountryQueryService {
       pipeline.add({r'$sort': sortStage});
     }
 
-    // --- Stage 6: Pagination (Skip and Limit) ---
+    // --- Stage 5: Pagination (Skip and Limit) ---
     if (pagination?.cursor != null) {
       // For cursor-based pagination, we'd typically need a more complex
       // aggregation that sorts by the cursor field and then skips.
@@ -247,9 +232,11 @@ class CountryQueryService {
       pipeline.add({r'$limit': pagination!.limit! + 1});
     }
 
-    // --- Stage 7: Final Projection ---
-    // Project to match the Country model's JSON structure if necessary
-    // (e.g., if _id was used, map it back to id)
+    // --- Stage 6: Final Projection ---
+    // Project to match the Country model's JSON structure.
+    // The $lookup stages add fields ('matchingSources', 'matchingHeadlines')
+    // that are not part of the Country model, so we project only the fields
+    // that are part of the model to ensure clean deserialization.
     pipeline.add({
       r'$project': {
         '_id': 0, // Exclude _id
@@ -260,7 +247,6 @@ class CountryQueryService {
         'createdAt': r'$createdAt',
         'updatedAt': r'$updatedAt',
         'status': r'$status',
-        // Ensure other fields are projected if they were modified or needed
       },
     });
 
