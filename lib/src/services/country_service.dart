@@ -159,11 +159,12 @@ class CountryService {
     // Atomically retrieve or create the future for the specific cache key.
     var future = _eventCountriesFutures[cacheKey];
     if (future == null) {
-      future = _fetchAndCacheEventCountries(nameFilter: nameFilter)
-          .whenComplete(() => _eventCountriesFutures.remove(cacheKey));
+      future = _fetchAndCacheEventCountries(
+        nameFilter: nameFilter,
+      ).whenComplete(() => _eventCountriesFutures.remove(cacheKey));
       _eventCountriesFutures[cacheKey] = future;
     }
-    return future!;
+    return future;
   }
 
   /// Fetches a distinct list of countries that are referenced as
@@ -185,11 +186,12 @@ class CountryService {
     // Atomically retrieve or create the future for the specific cache key.
     var future = _headquarterCountriesFutures[cacheKey];
     if (future == null) {
-      future = _fetchAndCacheHeadquarterCountries(nameFilter: nameFilter)
-          .whenComplete(() => _headquarterCountriesFutures.remove(cacheKey));
+      future = _fetchAndCacheHeadquarterCountries(
+        nameFilter: nameFilter,
+      ).whenComplete(() => _headquarterCountriesFutures.remove(cacheKey));
       _headquarterCountriesFutures[cacheKey] = future;
     }
-    return future!;
+    return future;
   }
 
   /// Helper method to fetch and cache distinct event countries.
@@ -295,9 +297,7 @@ class CountryService {
       }
 
       final pipeline = <Map<String, Object>>[
-        <String, Object>{
-          r'$match': matchStage,
-        },
+        <String, Object>{r'$match': matchStage},
         <String, Object>{
           r'$group': <String, Object>{
             '_id': '\$$fieldName.id',
