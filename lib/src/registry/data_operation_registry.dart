@@ -2,7 +2,6 @@ import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/country_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
 
 // --- Typedefs for Data Operations ---
@@ -129,32 +128,12 @@ class DataOperationRegistry {
         sort: s,
         pagination: p,
       ),
-      'country': (c, uid, f, s, p) async {
-        final usage = f?['usage'] as String?;
-        final name = f?['name'] as String?;
-
-        // If either 'usage' or 'name' filter is present, delegate to CountryService.
-        // Sorting and pagination are handled by CountryService for these specialized queries.
-        if ((usage != null && usage.isNotEmpty) ||
-            (name != null && name.isNotEmpty)) {
-          final countryService = c.read<CountryService>();
-          final countries = await countryService.getCountries(f);
-          return PaginatedResponse<Country>(
-            items: countries,
-            cursor: null, // No cursor for this type of filtered list
-            hasMore: false, // No more items as it's a complete filtered set
-          );
-        } else {
-          // For standard requests without specialized filters, use the repository
-          // which supports pagination/sorting.
-          return c.read<DataRepository<Country>>().readAll(
-            userId: uid,
-            filter: f,
-            sort: s,
-            pagination: p,
-          );
-        }
-      },
+      'country': (c, uid, f, s, p) => c.read<DataRepository<Country>>().readAll(
+        userId: uid,
+        filter: f,
+        sort: s,
+        pagination: p,
+      ),
       'language': (c, uid, f, s, p) => c
           .read<DataRepository<Language>>()
           .readAll(userId: uid, filter: f, sort: s, pagination: p),
