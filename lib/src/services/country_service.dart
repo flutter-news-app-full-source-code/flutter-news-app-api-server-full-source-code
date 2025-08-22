@@ -73,12 +73,12 @@ class CountryService {
     _log.info('Fetching countries with filter: $filter');
 
     final usage = filter?['usage'] as String?;
-    final name = filter?['name'] as String?;
+    final q = filter?['q'] as String?; 
 
     Map<String, dynamic>? nameFilter;
-    if (name != null && name.isNotEmpty) {
+    if (q != null && q.isNotEmpty) {
       // Create a case-insensitive regex filter for the name.
-      nameFilter = {r'$regex': name, r'$options': 'i'};
+      nameFilter = {r'$regex': q, r'$options': 'i'};
     }
 
     if (usage == null || usage.isEmpty) {

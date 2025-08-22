@@ -103,33 +103,54 @@ class DatabaseSeedingService {
   Future<void> _ensureIndexes() async {
     _log.info('Ensuring database indexes exist...');
     try {
-      // Text index for searching headlines by title
+      /// Text index for searching headlines by title.
+      /// This index supports efficient full-text search queries on the 'title' field
+      /// of headline documents, crucial for the main search functionality.
       await _db
           .collection('headlines')
           .createIndex(keys: {'title': 'text'}, name: 'headlines_text_index');
 
-      // Text index for searching topics by name
+      /// Text index for searching topics by name.
+      /// This index enables efficient full-text search on the 'name' field of
+      /// topic documents, used for searching topics.
       await _db
           .collection('topics')
           .createIndex(keys: {'name': 'text'}, name: 'topics_text_index');
 
-      // Text index for searching sources by name
+      /// Text index for searching sources by name.
+      /// This index facilitates efficient full-text search on the 'name' field of
+      /// source documents, used for searching sources.
       await _db
           .collection('sources')
           .createIndex(keys: {'name': 'text'}, name: 'sources_text_index');
 
-      // Index for searching countries by name (case-insensitive friendly)
+      /// Index for searching countries by name.
+      /// This index supports efficient queries and sorting on the 'name' field
+      /// of country documents, particularly for direct country searches.
       await _db
           .collection('countries')
           .createIndex(keys: {'name': 1}, name: 'countries_name_index');
 
-      // Indexes for country aggregation queries
+      /// Indexes for country aggregation queries.
+      /// This compound index optimizes queries that filter by 'status' and
+      /// group by 'eventCountry.id' in the headlines collection.
       await _db
           .collection('headlines')
           .createIndex(
             keys: {'status': 1, 'eventCountry.id': 1},
             name: 'status_eventCountry_index',
           );
+      /// Index for efficient filtering of headlines by the name of the
+      /// associated event country. This is crucial for the country search
+      /// functionality when filtering by 'eventCountry' usage.
+      await _db
+          .collection('headlines')
+          .createIndex(
+            keys: {'eventCountry.name': 1},
+            name: 'eventCountry_name_index',
+          );
+      /// This compound index optimizes queries that filter by 'status' and
+      /// group by 'headquarters.id' in the sources collection.
       await _db
           .collection('sources')
           .createIndex(
