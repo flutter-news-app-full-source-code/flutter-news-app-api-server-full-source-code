@@ -115,12 +115,12 @@ class CountryQueryService {
   }
 
   /// Builds the MongoDB aggregation pipeline based on the provided filters.
-  List<Map<String, dynamic>> _buildAggregationPipeline(
+  List<Map<String, Object>> _buildAggregationPipeline(
     Map<String, dynamic> filter,
     PaginationOptions? pagination,
     List<SortOption>? sort,
   ) {
-    final pipeline = <Map<String, dynamic>>[];
+    final pipeline = <Map<String, Object>>[];
     final compoundMatchStages = <Map<String, dynamic>>[];
 
     // --- Stage 1: Initial Match for active status, text search, and other filters ---
@@ -131,7 +131,10 @@ class CountryQueryService {
     final qValue = filter['q'];
     if (qValue is String && qValue.isNotEmpty) {
       compoundMatchStages.add({
-        r'$text': {r'$search': qValue},
+        'name': {
+          r'$regex': qValue,
+          r'$options': 'i', // Case-insensitive
+        },
       });
     }
 
@@ -163,7 +166,10 @@ class CountryQueryService {
             {
               r'$match': {
                 r'$expr': {
-                  r'$eq': [r'$headquarters._id', r'$$countryId'],
+                  r'$eq': [
+                    r'$headquarters.id',
+                    {r'$toString': r'$$countryId'},
+                  ],
                 },
                 'status': ContentStatus.active.name,
               },
@@ -174,7 +180,7 @@ class CountryQueryService {
       });
       pipeline.add({
         r'$match': {
-          'matchingSources': {r'$ne': <dynamic>[]},
+          'matchingSources': {r'$ne': <Object>[]},
         },
       });
     }
@@ -191,7 +197,10 @@ class CountryQueryService {
             {
               r'$match': {
                 r'$expr': {
-                  r'$eq': [r'$eventCountry._id', r'$$countryId'],
+                  r'$eq': [
+                    r'$eventCountry.id',
+                    {r'$toString': r'$$countryId'},
+                  ],
                 },
                 'status': ContentStatus.active.name,
               },
@@ -202,14 +211,14 @@ class CountryQueryService {
       });
       pipeline.add({
         r'$match': {
-          'matchingHeadlines': {r'$ne': <dynamic>[]},
+          'matchingHeadlines': {r'$ne': <Object>[]},
         },
       });
     }
 
     // --- Stage 4: Sorting ---
     if (sort != null && sort.isNotEmpty) {
-      final sortStage = <String, dynamic>{};
+      final sortStage = <String, Object>{};
       for (final option in sort) {
         sortStage[option.field] = option.order == SortOrder.asc ? 1 : -1;
       }
