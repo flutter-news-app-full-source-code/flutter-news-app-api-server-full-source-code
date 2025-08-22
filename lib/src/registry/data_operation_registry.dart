@@ -1,7 +1,9 @@
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:data_repository/data_repository.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/config/app_dependencies.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
 
 // --- Typedefs for Data Operations ---
@@ -128,12 +130,26 @@ class DataOperationRegistry {
         sort: s,
         pagination: p,
       ),
-      'country': (c, uid, f, s, p) => c.read<DataRepository<Country>>().readAll(
-        userId: uid,
-        filter: f,
-        sort: s,
-        pagination: p,
-      ),
+      'country': (c, uid, f, s, p) async {
+        final countryQueryService = AppDependencies.instance.countryQueryService;
+        // Check for special filters that require aggregation
+        if (f != null &&
+            (f.containsKey('hasActiveSources') ||
+                f.containsKey('hasActiveHeadlines'))) {
+          return countryQueryService.getFilteredCountries(
+            filter: f,
+            pagination: p,
+            sort: s,
+          );
+        }
+        // Fallback to standard readAll if no special filters are present
+        return c.read<DataRepository<Country>>().readAll(
+          userId: uid,
+          filter: f,
+          sort: s,
+          pagination: p,
+        );
+      },
       'language': (c, uid, f, s, p) => c
           .read<DataRepository<Language>>()
           .readAll(userId: uid, filter: f, sort: s, pagination: p),
