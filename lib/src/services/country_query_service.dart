@@ -2,11 +2,9 @@ import 'dart:async';
 import 'dart:collection'; // Added for SplayTreeMap
 import 'dart:convert';
 
-import 'package:collection/collection.dart';
 import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:logging/logging.dart';
-import 'package:mongo_dart/mongo_dart.dart';
 
 /// {@template country_query_service}
 /// A service responsible for executing complex queries on country data,
@@ -19,30 +17,25 @@ import 'package:mongo_dart/mongo_dart.dart';
 class CountryQueryService {
   /// {@macro country_query_service}
   CountryQueryService({
-    required DataRepository<Headline> headlineRepository,
-    required DataRepository<Source> sourceRepository,
     required DataRepository<Country> countryRepository,
     required Logger log,
     Duration cacheDuration = const Duration(minutes: 15),
-  })  : _headlineRepository = headlineRepository,
-        _sourceRepository = sourceRepository,
-        _countryRepository = countryRepository,
-        _log = log,
-        _cacheDuration = cacheDuration {
+  }) : _countryRepository = countryRepository,
+       _log = log,
+       _cacheDuration = cacheDuration {
     _cleanupTimer = Timer.periodic(const Duration(minutes: 5), (_) {
       _cleanupCache();
     });
-    _log.info('CountryQueryService initialized with cache duration: $cacheDuration');
+    _log.info(
+      'CountryQueryService initialized with cache duration: $cacheDuration',
+    );
   }
-
-  final DataRepository<Headline> _headlineRepository;
-  final DataRepository<Source> _sourceRepository;
   final DataRepository<Country> _countryRepository;
   final Logger _log;
   final Duration _cacheDuration;
 
   final Map<String, ({PaginatedResponse<Country> data, DateTime expiry})>
-      _cache = {};
+  _cache = {};
   Timer? _cleanupTimer;
   bool _isDisposed = false;
 
@@ -88,18 +81,15 @@ class CountryQueryService {
 
       // MongoDB aggregation returns a list of maps. We need to convert these
       // back into Country objects.
-      final List<Country> countries = aggregationResult
-          .map((json) => Country.fromJson(json))
-          .toList();
+      final countries = aggregationResult.map(Country.fromJson).toList();
 
       // For aggregation queries, pagination and hasMore need to be handled
       // manually if not directly supported by the aggregation stages.
       // For simplicity, we'll assume the aggregation pipeline handles limit/skip
       // and we'll determine hasMore based on if we fetched more than the limit.
-      final int limit = pagination?.limit ?? countries.length;
-      final bool hasMore = countries.length > limit;
-      final List<Country> paginatedCountries =
-          countries.take(limit).toList();
+      final limit = pagination?.limit ?? countries.length;
+      final hasMore = countries.length > limit;
+      final paginatedCountries = countries.take(limit).toList();
 
       final response = PaginatedResponse<Country>(
         items: paginatedCountries,
@@ -107,7 +97,10 @@ class CountryQueryService {
         hasMore: hasMore,
       );
 
-      _cache[cacheKey] = (data: response, expiry: DateTime.now().add(_cacheDuration));
+      _cache[cacheKey] = (
+        data: response,
+        expiry: DateTime.now().add(_cacheDuration),
+      );
       _log.finer('Cached new result for key: $cacheKey');
 
       return response;
@@ -132,9 +125,7 @@ class CountryQueryService {
 
     // --- Stage 1: Initial Match for active status (if applicable) ---
     // All countries should be active by default for these queries
-    compoundMatchStages.add({
-      'status': ContentStatus.active.name,
-    });
+    compoundMatchStages.add({'status': ContentStatus.active.name});
 
     // --- Stage 2: Handle `hasActiveSources` filter ---
     if (filter['hasActiveSources'] == true) {
@@ -148,7 +139,9 @@ class CountryQueryService {
       });
       pipeline.add({
         r'$match': {
-          'matchingSources': {r'$ne': []}, // Ensure there's at least one source
+          'matchingSources': {
+            r'$ne': <dynamic>[],
+          }, // Ensure there's at least one source
           'matchingSources.status': ContentStatus.active.name,
         },
       });
@@ -159,14 +152,16 @@ class CountryQueryService {
       pipeline.add({
         r'$lookup': {
           'from': 'headlines',
-          'localField': r'_id',
-          'foreignField': r'eventCountry._id',
+          'localField': '_id',
+          'foreignField': 'eventCountry._id',
           'as': 'matchingHeadlines',
         },
       });
       pipeline.add({
         r'$match': {
-          'matchingHeadlines': {r'$ne': []}, // Ensure there's at least one headline
+          'matchingHeadlines': {
+            r'$ne': <dynamic>[],
+          }, // Ensure there's at least one headline
           'matchingHeadlines.status': ContentStatus.active.name,
         },
       });
@@ -182,14 +177,18 @@ class CountryQueryService {
 
     // --- Stage 5: Handle other standard filters ---
     filter.forEach((key, value) {
-      if (key != 'q' && key != 'hasActiveSources' && key != 'hasActiveHeadlines') {
+      if (key != 'q' &&
+          key != 'hasActiveSources' &&
+          key != 'hasActiveHeadlines') {
         compoundMatchStages.add({key: value});
       }
     });
 
     // Combine all compound match stages
     if (compoundMatchStages.isNotEmpty) {
-      pipeline.add({r'$match': {r'$and': compoundMatchStages}});
+      pipeline.add({
+        r'$match': {r'$and': compoundMatchStages},
+      });
     }
 
     // --- Stage 6: Project to original Country structure and ensure uniqueness ---
@@ -197,7 +196,7 @@ class CountryQueryService {
     // matched multiple sources/headlines. We need to group them back to unique countries.
     pipeline.add({
       r'$group': {
-        r'_id': r'$_id', // Group by the original country ID
+        '_id': r'$_id', // Group by the original country ID
         'doc': {r'$first': r'$$ROOT'}, // Take the first full document
       },
     });
@@ -236,7 +235,7 @@ class CountryQueryService {
     // (e.g., if _id was used, map it back to id)
     pipeline.add({
       r'$project': {
-        r'_id': 0, // Exclude _id
+        '_id': 0, // Exclude _id
         'id': {r'$toString': r'$_id'}, // Map _id back to id
         'isoCode': r'$isoCode',
         'name': r'$name',
@@ -268,10 +267,7 @@ class CountryQueryService {
 
     final keyData = {
       'filter': sortedFilter,
-      'pagination': {
-        'cursor': pagination?.cursor,
-        'limit': pagination?.limit,
-      },
+      'pagination': {'cursor': pagination?.cursor, 'limit': pagination?.limit},
       'sort': sortedSort?.map((s) => '${s.field}:${s.order.name}').toList(),
     };
     return json.encode(keyData);
