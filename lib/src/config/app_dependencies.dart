@@ -9,6 +9,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/config/environm
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/database_seeding_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/default_user_preference_limit_service.dart';
@@ -69,6 +70,7 @@ class AppDependencies {
   late final PermissionService permissionService;
   late final UserPreferenceLimitService userPreferenceLimitService;
   late final RateLimitService rateLimitService;
+  late final CountryQueryService countryQueryService;
 
   /// Initializes all application dependencies.
   ///
@@ -238,6 +240,11 @@ class AppDependencies {
         connectionManager: _mongoDbConnectionManager,
         log: Logger('MongoDbRateLimitService'),
       );
+      countryQueryService = CountryQueryService(
+        countryRepository: countryRepository,
+        log: Logger('CountryQueryService'),
+        cacheDuration: EnvironmentConfig.countryServiceCacheDuration,
+      );
 
       _isInitialized = true;
       _log.info('Application dependencies initialized successfully.');
@@ -255,6 +262,7 @@ class AppDependencies {
     await _mongoDbConnectionManager.close();
     tokenBlacklistService.dispose();
     rateLimitService.dispose();
+    countryQueryService.dispose(); // Dispose the new service
     _isInitialized = false;
     _log.info('Application dependencies disposed.');
   }

@@ -10,6 +10,7 @@ analyzer:
     avoid_catching_errors: ignore
     document_ignores: ignore
     one_member_abstracts: ignore
+    cascade_invocations: ignore
   exclude:
     - build/**
 linter:

@@ -172,4 +172,14 @@ abstract final class EnvironmentConfig {
         int.tryParse(_env['RATE_LIMIT_DATA_API_WINDOW_MINUTES'] ?? '60') ?? 60;
     return Duration(minutes: minutes);
   }
+
+  /// Retrieves the cache duration in minutes for the CountryQueryService.
+  ///
+  /// The value is read from the `COUNTRY_SERVICE_CACHE_MINUTES` environment
+  /// variable. Defaults to 15 minutes if not set or if parsing fails.
+  static Duration get countryServiceCacheDuration {
+    final minutes =
+        int.tryParse(_env['COUNTRY_SERVICE_CACHE_MINUTES'] ?? '15') ?? 15;
+    return Duration(minutes: minutes);
+  }
 }
