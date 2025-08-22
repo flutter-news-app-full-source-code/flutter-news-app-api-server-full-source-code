@@ -115,12 +115,12 @@ class CountryQueryService {
   }
 
   /// Builds the MongoDB aggregation pipeline based on the provided filters.
-  List<Map<String, dynamic>> _buildAggregationPipeline(
+  List<Map<String, Object>> _buildAggregationPipeline(
     Map<String, dynamic> filter,
     PaginationOptions? pagination,
     List<SortOption>? sort,
   ) {
-    final pipeline = <Map<String, dynamic>>[];
+    final pipeline = <Map<String, Object>>[];
     final compoundMatchStages = <Map<String, dynamic>>[];
 
     // --- Stage 1: Initial Match for active status, text search, and other filters ---
@@ -209,7 +209,7 @@ class CountryQueryService {
 
     // --- Stage 4: Sorting ---
     if (sort != null && sort.isNotEmpty) {
-      final sortStage = <String, dynamic>{};
+      final sortStage = <String, Object>{};
       for (final option in sort) {
         sortStage[option.field] = option.order == SortOrder.asc ? 1 : -1;
       }
