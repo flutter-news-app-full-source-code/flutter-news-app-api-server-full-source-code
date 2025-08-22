@@ -174,7 +174,7 @@ class CountryQueryService {
       });
       pipeline.add({
         r'$match': {
-          'matchingSources': {r'$ne': <dynamic>[]},
+          'matchingSources': {r'$ne': <Object>[]},
         },
       });
     }
@@ -202,7 +202,7 @@ class CountryQueryService {
       });
       pipeline.add({
         r'$match': {
-          'matchingHeadlines': {r'$ne': <dynamic>[]},
+          'matchingHeadlines': {r'$ne': <Object>[]},
         },
       });
     }
