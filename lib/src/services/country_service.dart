@@ -49,7 +49,8 @@ class CountryService {
 
   // In-memory caches for frequently accessed lists with time-based invalidation.
   final Map<String, _CacheEntry<List<Country>>> _cachedEventCountries = {};
-  final Map<String, _CacheEntry<List<Country>>> _cachedHeadquarterCountries = {};
+  final Map<String, _CacheEntry<List<Country>>> _cachedHeadquarterCountries =
+      {};
 
   // Futures to hold in-flight aggregation requests to prevent cache stampedes.
   Future<List<Country>>? _eventCountriesFuture;
@@ -127,12 +128,14 @@ class CountryService {
         combinedFilter.addAll({'name': nameFilter});
       }
 
-      final response = await _countryRepository.readAll(
-        filter: combinedFilter,
-      );
+      final response = await _countryRepository.readAll(filter: combinedFilter);
       return response.items;
     } catch (e, s) {
-      _log.severe('Failed to fetch all countries with nameFilter: $nameFilter.', e, s);
+      _log.severe(
+        'Failed to fetch all countries with nameFilter: $nameFilter.',
+        e,
+        s,
+      );
       throw OperationFailedException('Failed to retrieve all countries: $e');
     }
   }
@@ -155,8 +158,9 @@ class CountryService {
     }
     // Atomically assign the future if no fetch is in progress,
     // and clear it when the future completes.
-    _eventCountriesFuture ??= _fetchAndCacheEventCountries(nameFilter: nameFilter)
-        .whenComplete(() => _eventCountriesFuture = null);
+    _eventCountriesFuture ??= _fetchAndCacheEventCountries(
+      nameFilter: nameFilter,
+    ).whenComplete(() => _eventCountriesFuture = null);
     return _eventCountriesFuture!;
   }
 
@@ -178,9 +182,9 @@ class CountryService {
     }
     // Atomically assign the future if no fetch is in progress,
     // and clear it when the future completes.
-    _headquarterCountriesFuture ??=
-        _fetchAndCacheHeadquarterCountries(nameFilter: nameFilter)
-            .whenComplete(() => _headquarterCountriesFuture = null);
+    _headquarterCountriesFuture ??= _fetchAndCacheHeadquarterCountries(
+      nameFilter: nameFilter,
+    ).whenComplete(() => _headquarterCountriesFuture = null);
     return _headquarterCountriesFuture!;
   }
 
@@ -287,11 +291,9 @@ class CountryService {
 
       // Add name filter if provided
       if (nameFilter != null && nameFilter.isNotEmpty) {
-        pipeline.add(
-          <String, Object>{
-            r'$match': <String, Object>{'$fieldName.name': nameFilter},
-          },
-        );
+        pipeline.add(<String, Object>{
+          r'$match': <String, Object>{'$fieldName.name': nameFilter},
+        });
       }
 
       pipeline.addAll([

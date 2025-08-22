@@ -135,7 +135,8 @@ class DataOperationRegistry {
 
         // If either 'usage' or 'name' filter is present, delegate to CountryService.
         // Sorting and pagination are handled by CountryService for these specialized queries.
-        if ((usage != null && usage.isNotEmpty) || (name != null && name.isNotEmpty)) {
+        if ((usage != null && usage.isNotEmpty) ||
+            (name != null && name.isNotEmpty)) {
           final countryService = c.read<CountryService>();
           final countries = await countryService.getCountries(f);
           return PaginatedResponse<Country>(
@@ -147,11 +148,11 @@ class DataOperationRegistry {
           // For standard requests without specialized filters, use the repository
           // which supports pagination/sorting.
           return c.read<DataRepository<Country>>().readAll(
-                userId: uid,
-                filter: f,
-                sort: s,
-                pagination: p,
-              );
+            userId: uid,
+            filter: f,
+            sort: s,
+            pagination: p,
+          );
         }
       },
       'language': (c, uid, f, s, p) => c
