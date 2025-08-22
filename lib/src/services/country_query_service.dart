@@ -163,7 +163,10 @@ class CountryQueryService {
             {
               r'$match': {
                 r'$expr': {
-                  r'$eq': [r'$headquarters._id', r'$$countryId'],
+                  r'$eq': [
+                    r'$headquarters.id',
+                    {r'$toString': r'$$countryId'},
+                  ],
                 },
                 'status': ContentStatus.active.name,
               },
@@ -191,7 +194,10 @@ class CountryQueryService {
             {
               r'$match': {
                 r'$expr': {
-                  r'$eq': [r'$eventCountry._id', r'$$countryId'],
+                  r'$eq': [
+                    r'$eventCountry.id',
+                    {r'$toString': r'$$countryId'},
+                  ],
                 },
                 'status': ContentStatus.active.name,
               },
