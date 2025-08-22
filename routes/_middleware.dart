@@ -153,9 +153,7 @@ Handler middleware(Handler handler) {
               )
               .use(provider<RateLimitService>((_) => deps.rateLimitService))
               .use(
-                provider<CountryQueryService>(
-                  (_) => deps.countryQueryService,
-                ),
+                provider<CountryQueryService>((_) => deps.countryQueryService),
               )
               .call(context);
         };

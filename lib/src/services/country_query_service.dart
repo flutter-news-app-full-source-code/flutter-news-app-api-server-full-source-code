@@ -138,10 +138,12 @@ class CountryQueryService {
           'pipeline': [
             {
               r'$match': {
-                r'$expr': {r'$eq': [r'$headquarters._id', r'$$countryId']},
+                r'$expr': {
+                  r'$eq': [r'$headquarters._id', r'$$countryId'],
+                },
                 'status': ContentStatus.active.name,
-              }
-            }
+              },
+            },
           ],
           'as': 'matchingSources',
         },
@@ -164,10 +166,12 @@ class CountryQueryService {
           'pipeline': [
             {
               r'$match': {
-                r'$expr': {r'$eq': [r'$eventCountry._id', r'$$countryId']},
+                r'$expr': {
+                  r'$eq': [r'$eventCountry._id', r'$$countryId'],
+                },
                 'status': ContentStatus.active.name,
-              }
-            }
+              },
+            },
           ],
           'as': 'matchingHeadlines',
         },

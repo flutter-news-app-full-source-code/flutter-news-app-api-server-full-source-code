@@ -144,11 +144,11 @@ class DataOperationRegistry {
         }
         // Fallback to standard readAll if no special filters are present.
         return c.read<DataRepository<Country>>().readAll(
-              userId: uid,
-              filter: f,
-              sort: s,
-              pagination: p,
-            );
+          userId: uid,
+          filter: f,
+          sort: s,
+          pagination: p,
+        );
       },
       'language': (c, uid, f, s, p) => c
           .read<DataRepository<Language>>()
