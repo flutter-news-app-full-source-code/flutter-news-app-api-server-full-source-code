@@ -118,6 +118,11 @@ class DatabaseSeedingService {
           .collection('sources')
           .createIndex(keys: {'name': 'text'}, name: 'sources_text_index');
 
+      // Text index for searching countries by name (case-insensitive)
+      await _db
+          .collection('countries')
+          .createIndex(keys: {'name': 'text'}, name: 'countries_text_index');
+
       // Indexes for country aggregation queries
       await _db
           .collection('headlines')
