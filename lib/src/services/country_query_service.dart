@@ -20,9 +20,9 @@ class CountryQueryService {
     required DataRepository<Country> countryRepository,
     required Logger log,
     Duration cacheDuration = const Duration(minutes: 15),
-  }) : _countryRepository = countryRepository,
-       _log = log,
-       _cacheDuration = cacheDuration {
+  })  : _countryRepository = countryRepository,
+        _log = log,
+        _cacheDuration = cacheDuration {
     _cleanupTimer = Timer.periodic(const Duration(minutes: 5), (_) {
       _cleanupCache();
     });
@@ -35,7 +35,7 @@ class CountryQueryService {
   final Duration _cacheDuration;
 
   final Map<String, ({PaginatedResponse<Country> data, DateTime expiry})>
-  _cache = {};
+      _cache = {};
   Timer? _cleanupTimer;
   bool _isDisposed = false;
 
@@ -123,9 +123,33 @@ class CountryQueryService {
     final pipeline = <Map<String, dynamic>>[];
     final compoundMatchStages = <Map<String, dynamic>>[];
 
-    // --- Stage 1: Initial Match for active status (if applicable) ---
+    // --- Stage 1: Initial Match for active status, text search, and other filters ---
     // All countries should be active by default for these queries
     compoundMatchStages.add({'status': ContentStatus.active.name});
+
+    // Handle `q` (text search) filter
+    final qValue = filter['q'];
+    if (qValue is String && qValue.isNotEmpty) {
+      compoundMatchStages.add({
+        r'$text': {r'$search': qValue},
+      });
+    }
+
+    // Handle other standard filters
+    filter.forEach((key, value) {
+      if (key != 'q' &&
+          key != 'hasActiveSources' &&
+          key != 'hasActiveHeadlines') {
+        compoundMatchStages.add({key: value});
+      }
+    });
+
+    // Combine all compound match stages and add to pipeline first for efficiency
+    if (compoundMatchStages.isNotEmpty) {
+      pipeline.add({
+        r'$match': {r'$and': compoundMatchStages},
+      });
+    }
 
     // --- Stage 2: Handle `hasActiveSources` filter ---
     if (filter['hasActiveSources'] == true) {
@@ -183,31 +207,7 @@ class CountryQueryService {
       });
     }
 
-    // --- Stage 4: Handle `q` (text search) filter ---
-    final qValue = filter['q'];
-    if (qValue is String && qValue.isNotEmpty) {
-      compoundMatchStages.add({
-        r'$text': {r'$search': qValue},
-      });
-    }
-
-    // --- Stage 5: Handle other standard filters ---
-    filter.forEach((key, value) {
-      if (key != 'q' &&
-          key != 'hasActiveSources' &&
-          key != 'hasActiveHeadlines') {
-        compoundMatchStages.add({key: value});
-      }
-    });
-
-    // Combine all compound match stages
-    if (compoundMatchStages.isNotEmpty) {
-      pipeline.add({
-        r'$match': {r'$and': compoundMatchStages},
-      });
-    }
-
-    // --- Stage 6: Project to original Country structure and ensure uniqueness ---
+    // --- Stage 4: Project to original Country structure and ensure uniqueness ---
     // After lookups and matches, we might have duplicate countries if they
     // matched multiple sources/headlines. We need to group them back to unique countries.
     pipeline.add({
@@ -222,7 +222,7 @@ class CountryQueryService {
       },
     });
 
-    // --- Stage 7: Sorting ---
+    // --- Stage 5: Sorting ---
     if (sort != null && sort.isNotEmpty) {
       final sortStage = <String, dynamic>{};
       for (final option in sort) {
@@ -231,7 +231,7 @@ class CountryQueryService {
       pipeline.add({r'$sort': sortStage});
     }
 
-    // --- Stage 8: Pagination (Skip and Limit) ---
+    // --- Stage 6: Pagination (Skip and Limit) ---
     if (pagination?.cursor != null) {
       // For cursor-based pagination, we'd typically need a more complex
       // aggregation that sorts by the cursor field and then skips.
@@ -247,6 +247,7 @@ class CountryQueryService {
       pipeline.add({r'$limit': pagination!.limit! + 1});
     }
 
+    // --- Stage 7: Final Projection ---
     // Project to match the Country model's JSON structure if necessary
     // (e.g., if _id was used, map it back to id)
     pipeline.add({
