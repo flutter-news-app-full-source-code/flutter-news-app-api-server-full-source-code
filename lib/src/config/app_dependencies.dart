@@ -127,6 +127,7 @@ class AppDependencies {
         modelName: 'countries',
         fromJson: Country.fromJson,
         toJson: (item) => item.toJson(),
+        searchableFields: ['name'],
         logger: Logger('DataMongodb<Country>'),
       );
       final languageClient = DataMongodb<Language>(
