@@ -276,31 +276,33 @@ class CountryService {
       'with nameFilter: $nameFilter.',
     );
     try {
-      final pipeline = <Map<String, dynamic>>[
-        {
-          r'$match': {
+      final pipeline = <Map<String, Object>>[
+        <String, Object>{
+          r'$match': <String, Object>{
             'status': ContentStatus.active.name,
-            '$fieldName.id': {r'$exists': true},
+            '$fieldName.id': <String, Object>{r'$exists': true},
           },
         },
       ];
 
       // Add name filter if provided
       if (nameFilter != null && nameFilter.isNotEmpty) {
-        pipeline.add({
-          r'$match': {'$fieldName.name': nameFilter},
-        });
+        pipeline.add(
+          <String, Object>{
+            r'$match': <String, Object>{'$fieldName.name': nameFilter},
+          },
+        );
       }
 
       pipeline.addAll([
-        {
-          r'$group': {
+        <String, Object>{
+          r'$group': <String, Object>{
             '_id': '\$$fieldName.id',
-            'country': {r'$first': '\$$fieldName'},
+            'country': <String, Object>{r'$first': '\$$fieldName'},
           },
         },
-        {
-          r'$replaceRoot': {'newRoot': r'$country'},
+        <String, Object>{
+          r'$replaceRoot': <String, Object>{'newRoot': r'$country'},
         },
       ]);
 
