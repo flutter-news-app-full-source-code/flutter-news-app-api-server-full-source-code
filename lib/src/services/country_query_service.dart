@@ -20,9 +20,9 @@ class CountryQueryService {
     required DataRepository<Country> countryRepository,
     required Logger log,
     Duration cacheDuration = const Duration(minutes: 15),
-  })  : _countryRepository = countryRepository,
-        _log = log,
-        _cacheDuration = cacheDuration {
+  }) : _countryRepository = countryRepository,
+       _log = log,
+       _cacheDuration = cacheDuration {
     _cleanupTimer = Timer.periodic(const Duration(minutes: 5), (_) {
       _cleanupCache();
     });
@@ -35,7 +35,7 @@ class CountryQueryService {
   final Duration _cacheDuration;
 
   final Map<String, ({PaginatedResponse<Country> data, DateTime expiry})>
-      _cache = {};
+  _cache = {};
   Timer? _cleanupTimer;
   bool _isDisposed = false;
 
@@ -132,7 +132,7 @@ class CountryQueryService {
     if (qValue is String && qValue.isNotEmpty) {
       compoundMatchStages.add({
         'name': {
-          r'$regex': qValue,
+          r'$regex': '^$qValue',
           r'$options': 'i', // Case-insensitive
         },
       });
