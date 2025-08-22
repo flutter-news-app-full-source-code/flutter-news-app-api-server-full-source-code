@@ -131,32 +131,6 @@ class DatabaseSeedingService {
           .collection('countries')
           .createIndex(keys: {'name': 1}, name: 'countries_name_index');
 
-      /// Indexes for country aggregation queries.
-      /// This compound index optimizes queries that filter by 'status' and
-      /// group by 'eventCountry.id' in the headlines collection.
-      await _db
-          .collection('headlines')
-          .createIndex(
-            keys: {'status': 1, 'eventCountry.id': 1},
-            name: 'status_eventCountry_index',
-          );
-      /// Index for efficient filtering of headlines by the name of the
-      /// associated event country. This is crucial for the country search
-      /// functionality when filtering by 'eventCountry' usage.
-      await _db
-          .collection('headlines')
-          .createIndex(
-            keys: {'eventCountry.name': 1},
-            name: 'eventCountry_name_index',
-          );
-      /// This compound index optimizes queries that filter by 'status' and
-      /// group by 'headquarters.id' in the sources collection.
-      await _db
-          .collection('sources')
-          .createIndex(
-            keys: {'status': 1, 'headquarters.id': 1},
-            name: 'status_headquarters_index',
-          );
 
       // --- TTL and Unique Indexes via runCommand ---
       // The following indexes are created using the generic `runCommand` because
