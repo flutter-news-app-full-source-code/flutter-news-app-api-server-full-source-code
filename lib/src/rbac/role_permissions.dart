@@ -14,6 +14,7 @@ final Set<String> _appGuestUserPermissions = {
   Permissions.userContentPreferencesReadOwned,
   Permissions.userContentPreferencesUpdateOwned,
   Permissions.remoteConfigRead,
+  Permissions.localAdRead,
   // Allows a user to update their own User object. This is essential for
   // features like updating the `feedActionStatus` (e.g., when a user
   // dismisses an in-feed prompt, etc). The endpoint handler ensures only
@@ -72,6 +73,11 @@ final Set<String> _dashboardAdminPermissions = {
   Permissions.remoteConfigUpdate,
   Permissions.remoteConfigDelete,
   Permissions.userPreferenceBypassLimits,
+  // Added localAd CRUD permissions for admins
+  Permissions.localAdCreate,
+  Permissions.localAdRead,
+  Permissions.localAdUpdate,
+  Permissions.localAdDelete,
 };
 
 /// Defines the mapping between user roles (both app and dashboard) and the
