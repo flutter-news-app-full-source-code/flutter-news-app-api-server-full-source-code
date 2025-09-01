@@ -364,7 +364,7 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
   ),
   'local_ad': ModelConfig<LocalAd>(
     fromJson: LocalAd.fromJson,
-    getId: (ad) => (ad as dynamic).id as String, // Corrected to access id
+    getId: (ad) => ad.id,
     getOwnerId: null, // LocalAd is a global resource, not user-owned
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,

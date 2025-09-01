@@ -48,7 +48,7 @@ class DatabaseSeedingService {
     await _seedCollection<LocalAd>(
       collectionName: 'local_ads',
       fixtureData: localAdsFixturesData,
-      getId: (item) => (item as dynamic).id as String,
+      getId: (ad) => ad.id,
       // ignore: unnecessary_lambdas
       toJson: (item) => LocalAd.toJson(item),
     );
