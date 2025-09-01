@@ -68,6 +68,12 @@ abstract class Permissions {
   static const String userPreferenceBypassLimits =
       'user_preference.bypass_limits';
 
+  // Local Ad Permissions
+  static const String localAdCreate = 'localAd.create';
+  static const String localAdRead = 'localAd.read';
+  static const String localAdUpdate = 'localAd.update';
+  static const String localAdDelete = 'localAd.delete';
+
   // General System Permissions
   static const String rateLimitingBypass = 'rate_limiting.bypass';
 }
