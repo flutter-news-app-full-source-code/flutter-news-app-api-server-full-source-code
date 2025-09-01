@@ -59,6 +59,7 @@ class AppDependencies {
   late final DataRepository<UserContentPreferences>
   userContentPreferencesRepository;
   late final DataRepository<RemoteConfig> remoteConfigRepository;
+  late final DataRepository<LocalAd> localAdRepository;
   late final EmailRepository emailRepository;
 
   // Services
@@ -200,6 +201,16 @@ class AppDependencies {
       );
 
       emailRepository = EmailRepository(emailClient: emailClient);
+
+      final localAdClient = DataMongodb<LocalAd>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'local_ads',
+        fromJson: LocalAd.fromJson,
+        toJson: LocalAd.toJson,
+        searchableFields: ['title'],
+        logger: Logger('DataMongodb<LocalAd>'),
+      );
+      localAdRepository = DataRepository(dataClient: localAdClient);
 
       // 5. Initialize Services
       tokenBlacklistService = MongoDbTokenBlacklistService(

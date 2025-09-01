@@ -362,6 +362,31 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       type: RequiredPermissionType.unsupported,
     ),
   ),
+  'local_ad': ModelConfig<LocalAd>(
+    fromJson: LocalAd.fromJson,
+    getId: (ad) => (ad as dynamic).id as String, // Corrected to access id
+    getOwnerId: null, // LocalAd is a global resource, not user-owned
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.localAdRead,
+    ),
+    getItemPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.localAdRead,
+    ),
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+      permission: Permissions.localAdCreate,
+    ),
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+      permission: Permissions.localAdUpdate,
+    ),
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+      permission: Permissions.localAdDelete,
+    ),
+  ),
 };
 
 /// Type alias for the ModelRegistry map for easier provider usage.
