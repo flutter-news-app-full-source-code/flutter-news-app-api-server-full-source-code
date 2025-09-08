@@ -1,7 +1,7 @@
 <div align="center">
 <img src="https://avatars.githubusercontent.com/u/202675624?s=400&u=2daf23e8872a3b666bcd4f792a21fe2633097e79&v=4" alt="Flutter News App Toolkit Logo" width="220">
 
-# Flutter News App - API Server Full Source Code
+# Flutter News App API Server Full Source Code
 
 <p>
 <img src="https://img.shields.io/badge/coverage-0%25-green?style=for-the-badge" alt="coverage: 0%">
