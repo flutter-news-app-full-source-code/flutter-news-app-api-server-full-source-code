@@ -27,6 +27,7 @@ class DatabaseSeedingService {
 
     await _ensureIndexes();
     await _seedOverrideAdminUser();
+    await _seedRemoteConfig();
     await _seedCollection<Country>(
       collectionName: 'countries',
       fixtureData: countriesFixturesData,
@@ -36,12 +37,6 @@ class DatabaseSeedingService {
     await _seedCollection<Language>(
       collectionName: 'languages',
       fixtureData: languagesFixturesData,
-      getId: (item) => item.id,
-      toJson: (item) => item.toJson(),
-    );
-    await _seedCollection<RemoteConfig>(
-      collectionName: 'remote_configs',
-      fixtureData: remoteConfigsFixturesData,
       getId: (item) => item.id,
       toJson: (item) => item.toJson(),
     );
@@ -86,7 +81,9 @@ class DatabaseSeedingService {
             // Filter by the specific, deterministic _id.
             'filter': {'_id': objectId},
             // Set the fields of the document.
-            'update': {r'$set': document},
+            // Use $setOnInsert to set fields ONLY if the document is newly inserted.
+            // This ensures existing documents are not overwritten by fixture data.
+            'update': {r'$setOnInsert': document},
             'upsert': true,
           },
         });
@@ -99,6 +96,53 @@ class DatabaseSeedingService {
       );
     } on Exception catch (e, s) {
       _log.severe('Failed to seed collection "$collectionName".', e, s);
+      rethrow;
+    }
+  }
+
+  /// Ensures the initial RemoteConfig document exists and has
+  /// a default for the primary ad platform, if not already set.
+  ///
+  /// This method only creates the document if it does not exist.
+  /// It does NOT overwrite existing configurations.
+  Future<void> _seedRemoteConfig() async {
+    _log.info('Seeding RemoteConfig...');
+    try {
+      final remoteConfigCollection = _db.collection('remote_configs');
+      final defaultRemoteConfigId = remoteConfigsFixturesData.first.id;
+      final objectId = ObjectId.fromHexString(defaultRemoteConfigId);
+
+      final existingConfig = await remoteConfigCollection.findOne(
+        where.id(objectId),
+      );
+
+      if (existingConfig == null) {
+        _log.info('No existing RemoteConfig found. Creating initial config.');
+        // Take the default from fixtures
+        final initialConfig = remoteConfigsFixturesData.first;
+
+        // Ensure primaryAdPlatform is not 'demo' for initial setup
+        // sic its not intended for any use outside teh mobile client code.
+        final productionReadyAdConfig = initialConfig.adConfig.copyWith(
+          primaryAdPlatform: AdPlatformType.local,
+        );
+
+        final productionReadyConfig = initialConfig.copyWith(
+          adConfig: productionReadyAdConfig,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+
+        await remoteConfigCollection.insertOne({
+          '_id': objectId,
+          ...productionReadyConfig.toJson()..remove('id'),
+        });
+        _log.info('Initial RemoteConfig created successfully.');
+      } else {
+        _log.info('RemoteConfig already exists. Skipping creation.');
+      }
+    } on Exception catch (e, s) {
+      _log.severe('Failed to seed RemoteConfig.', e, s);
       rethrow;
     }
   }
