@@ -109,6 +109,12 @@ class DatabaseSeedingService {
     _log.info('Seeding RemoteConfig...');
     try {
       final remoteConfigCollection = _db.collection('remote_configs');
+      if (remoteConfigsFixturesData.isEmpty) {
+        _log.warning(
+          'Remote config fixture data is empty. Skipping RemoteConfig seeding.',
+        );
+        return;
+      }
       final defaultRemoteConfigId = remoteConfigsFixturesData.first.id;
       final objectId = ObjectId.fromHexString(defaultRemoteConfigId);
 
