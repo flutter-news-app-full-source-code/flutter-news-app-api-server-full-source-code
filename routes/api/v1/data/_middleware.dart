@@ -11,24 +11,38 @@ import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_
 // Helper middleware for applying rate limiting to the data routes.
 Middleware _dataRateLimiterMiddleware() {
   return (handler) {
-    return (context) {
-      final user = context.read<User>();
+    return (context) async { // Made async because ipKeyExtractor is async
+      final user = context.read<User?>(); // Read nullable User
       final permissionService = context.read<PermissionService>();
 
       // Users with the bypass permission are not rate-limited.
-      if (permissionService.hasPermission(
+      if (user != null && permissionService.hasPermission(
         user,
         Permissions.rateLimitingBypass,
       )) {
         return handler(context);
       }
 
-      // For all other users, apply the configured rate limit.
-      // The key is the user's ID, ensuring the limit is per-user.
+      String? key;
+      // If user is null, it means it's a public route (as per _conditionalAuthenticationMiddleware)
+      // In this case, use IP-based rate limiting.
+      if (user == null) {
+        key = await ipKeyExtractor(context);
+      } else {
+        // Authenticated user: use user ID for rate limiting.
+        key = user.id;
+      }
+
+      // If a key cannot be extracted (e.g., no IP), bypass rate limiter.
+      if (key == null || key.isEmpty) {
+        return handler(context);
+      }
+
+      // For all other users (or IPs for public routes), apply the configured rate limit.
       final rateLimitHandler = rateLimiter(
         limit: EnvironmentConfig.rateLimitDataApiLimit,
         window: EnvironmentConfig.rateLimitDataApiWindow,
-        keyExtractor: (context) async => context.read<User>().id,
+        keyExtractor: (context) async => key, // Use the determined key
       )(handler);
 
       return rateLimitHandler(context);
@@ -120,7 +134,9 @@ Middleware _conditionalAuthenticationMiddleware() {
         return requireAuthentication()(handler)(context);
       } else {
         // If authentication is not required, simply pass the request through.
-        return handler(context);
+        // Also provide a null User to the context for consistency,
+        // so downstream middleware can always read User?
+        return handler(context.provide<User?>(() => null));
       }
     };
   };
@@ -134,28 +150,31 @@ Handler middleware(Handler handler) {
   // the last .use() call in the chain represents the outermost middleware layer.
   // Therefore, the execution order for an incoming request is:
   //
-  // 1. `_conditionalAuthenticationMiddleware()`:
-  //    - This runs first. It dynamically decides whether to apply
+  // 1. `_modelValidationAndProviderMiddleware()`:
+  //    - This runs first. It validates the `?model=` query parameter and
+  //      provides the `ModelConfig` and `modelName` into the context.
+  //    - If model validation fails, it throws a `BadRequestException`.
+  //
+  // 2. `_conditionalAuthenticationMiddleware()`:
+  //    - This runs second. It dynamically decides whether to apply
   //      `requireAuthentication()` based on the `ModelConfig` for the
   //      requested model and HTTP method.
   //    - If authentication is required and the user is not authenticated,
   //      it throws an `UnauthorizedException`.
+  //    - If authentication is NOT required, it provides `User?` as `null`
+  //      to the context.
   //
-  // 2. `_dataRateLimiterMiddleware()`:
-  //    - This runs if authentication (if required) passes.
-  //    - It checks if the user has a bypass permission. If not, it applies
-  //      the configured rate limit based on the user's ID.
+  // 3. `_dataRateLimiterMiddleware()`:
+  //    - This runs third. It checks if the user has a bypass permission.
+  //      If not, it applies the configured rate limit based on the user's ID
+  //      (if authenticated) or the client's IP address (if unauthenticated).
   //    - If the limit is exceeded, it throws a `ForbiddenException`.
   //
-  // 3. `_modelValidationAndProviderMiddleware()`:
-  //    - This runs if rate limiting passes.
-  //    - It validates the `?model=` query parameter and provides the
-  //      `ModelConfig` and `modelName` into the context.
-  //    - If model validation fails, it throws a `BadRequestException`.
-  //
   // 4. `authorizationMiddleware()`:
-  //    - This runs if `_modelValidationAndProviderMiddleware()` passes.
-  //    - It reads the `User`, `modelName`, and `ModelConfig` from the context.
+  //    - This runs fourth. It reads the `User` (which is guaranteed to be
+  //      non-null if authentication was required and passed) or `User?` (if
+  //      authentication was not required), `modelName`, and `ModelConfig`
+  //      from the context.
   //    - It checks if the user has permission to perform the requested HTTP
   //      method on the specified model based on the `ModelConfig` metadata.
   //    - If authorization fails, it throws a ForbiddenException, caught by
@@ -172,7 +191,7 @@ Handler middleware(Handler handler) {
   //
   return handler
       .use(authorizationMiddleware()) // Applied fourth (inner-most)
-      .use(_modelValidationAndProviderMiddleware()) // Applied third
-      .use(_dataRateLimiterMiddleware()) // Applied second
-      .use(_conditionalAuthenticationMiddleware()); // Applied first (outermost)
+      .use(_dataRateLimiterMiddleware()) // Applied third
+      .use(_conditionalAuthenticationMiddleware()) // Applied second
+      .use(_modelValidationAndProviderMiddleware()); // Applied first (outermost)
 }
