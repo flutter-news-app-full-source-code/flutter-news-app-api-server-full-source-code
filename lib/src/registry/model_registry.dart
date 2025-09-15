@@ -31,6 +31,7 @@ class ModelActionPermission {
     required this.type,
     this.permission,
     this.requiresOwnershipCheck = false,
+    this.requiresAuthentication = true,
   }) : assert(
          type != RequiredPermissionType.specificPermission ||
              permission != null,
@@ -48,6 +49,13 @@ class ModelActionPermission {
   /// is the owner of the specific data item being accessed (for item-specific
   /// methods like GET, PUT, DELETE on `/[id]`).
   final bool requiresOwnershipCheck;
+
+  /// Whether this action requires an authenticated user.
+  ///
+  /// If `true` (default), the `authenticationProvider` middleware will ensure
+  /// a valid [User] is present in the context. If `false`, the action can
+  /// be performed by unauthenticated clients.
+  final bool requiresAuthentication;
 }
 
 /// {@template model_config}
@@ -126,19 +134,24 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.headlineRead,
+      requiresAuthentication: true,
     ),
     getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.headlineRead,
+      requiresAuthentication: true,
     ),
     postPermission: const ModelActionPermission(
       type: RequiredPermissionType.adminOnly,
+      requiresAuthentication: true,
     ),
     putPermission: const ModelActionPermission(
       type: RequiredPermissionType.adminOnly,
+      requiresAuthentication: true,
     ),
     deletePermission: const ModelActionPermission(
       type: RequiredPermissionType.adminOnly,
+      requiresAuthentication: true,
     ),
   ),
   'topic': ModelConfig<Topic>(
@@ -148,19 +161,24 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.topicRead,
+      requiresAuthentication: true,
     ),
     getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.topicRead,
+      requiresAuthentication: true,
     ),
     postPermission: const ModelActionPermission(
       type: RequiredPermissionType.adminOnly,
+      requiresAuthentication: true,
     ),
     putPermission: const ModelActionPermission(
       type: RequiredPermissionType.adminOnly,
+      requiresAuthentication: true,
     ),
     deletePermission: const ModelActionPermission(
       type: RequiredPermissionType.adminOnly,
+      requiresAuthentication: true,
     ),
   ),
   'source': ModelConfig<Source>(
@@ -170,19 +188,24 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.sourceRead,
+      requiresAuthentication: true,
     ),
     getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.sourceRead,
+      requiresAuthentication: true,
     ),
     postPermission: const ModelActionPermission(
       type: RequiredPermissionType.adminOnly,
+      requiresAuthentication: true,
     ),
     putPermission: const ModelActionPermission(
       type: RequiredPermissionType.adminOnly,
+      requiresAuthentication: true,
     ),
     deletePermission: const ModelActionPermission(
       type: RequiredPermissionType.adminOnly,
+      requiresAuthentication: true,
     ),
   ),
   'country': ModelConfig<Country>(
@@ -194,19 +217,24 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.countryRead,
+      requiresAuthentication: true,
     ),
     getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.countryRead,
+      requiresAuthentication: true,
     ),
     postPermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported,
+      requiresAuthentication: true,
     ),
     putPermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported,
+      requiresAuthentication: true,
     ),
     deletePermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported,
+      requiresAuthentication: true,
     ),
   ),
   'language': ModelConfig<Language>(
@@ -218,19 +246,24 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.languageRead,
+      requiresAuthentication: true,
     ),
     getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.languageRead,
+      requiresAuthentication: true,
     ),
     postPermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported,
+      requiresAuthentication: true,
     ),
     putPermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported,
+      requiresAuthentication: true,
     ),
     deletePermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported,
+      requiresAuthentication: true,
     ),
   ),
   'user': ModelConfig<User>(
@@ -240,25 +273,30 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
         (item as User).id as String?, // User is the owner of their profile
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.adminOnly, // Only admin can list all users
+      requiresAuthentication: true,
     ),
     getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.userReadOwned, // User can read their own
       requiresOwnershipCheck: true, // Must be the owner
+      requiresAuthentication: true,
     ),
     postPermission: const ModelActionPermission(
       type: RequiredPermissionType
           .unsupported, // User creation handled by auth routes
+      requiresAuthentication: true,
     ),
     putPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.userUpdateOwned, // User can update their own
       requiresOwnershipCheck: true, // Must be the owner
+      requiresAuthentication: true,
     ),
     deletePermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.userDeleteOwned, // User can delete their own
       requiresOwnershipCheck: true, // Must be the owner
+      requiresAuthentication: true,
     ),
   ),
   'user_app_settings': ModelConfig<UserAppSettings>(
@@ -268,14 +306,17 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
         (item as UserAppSettings).id as String?, // User ID is the owner ID
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported, // Not accessible via collection
+      requiresAuthentication: true,
     ),
     getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.userAppSettingsReadOwned,
       requiresOwnershipCheck: true,
+      requiresAuthentication: true,
     ),
     postPermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported,
+      requiresAuthentication: true,
       // Creation of UserAppSettings is handled by the authentication service
       // during user creation, not via a direct POST to /api/v1/data.
     ),
@@ -283,9 +324,11 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.userAppSettingsUpdateOwned,
       requiresOwnershipCheck: true,
+      requiresAuthentication: true,
     ),
     deletePermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported,
+      requiresAuthentication: true,
       // Deletion of UserAppSettings is handled by the authentication service
       // during account deletion, not via a direct DELETE to /api/v1/data.
     ),
@@ -298,14 +341,17 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
             as String?, // User ID is the owner ID
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported, // Not accessible via collection
+      requiresAuthentication: true,
     ),
     getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.userContentPreferencesReadOwned,
       requiresOwnershipCheck: true,
+      requiresAuthentication: true,
     ),
     postPermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported,
+      requiresAuthentication: true,
       // Creation of UserContentPreferences is handled by the authentication
       // service during user creation, not via a direct POST to /api/v1/data.
     ),
@@ -313,9 +359,11 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.userContentPreferencesUpdateOwned,
       requiresOwnershipCheck: true,
+      requiresAuthentication: true,
     ),
     deletePermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported,
+      requiresAuthentication: true,
       // Deletion of UserContentPreferences is handled by the authentication
       // service during account deletion, not via a direct DELETE to /api/v1/data.
     ),
@@ -326,19 +374,23 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     getOwnerId: null, // RemoteConfig is a global resource, not user-owned
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported, // Not accessible via collection
+      requiresAuthentication: true,
     ),
     getItemPermission: const ModelActionPermission(
-      type: RequiredPermissionType.specificPermission,
-      permission: Permissions.remoteConfigRead,
+      type: RequiredPermissionType.none,
+      requiresAuthentication: false, // Make remote_config GET public
     ),
     postPermission: const ModelActionPermission(
       type: RequiredPermissionType.adminOnly, // Only administrators can create
+      requiresAuthentication: true,
     ),
     putPermission: const ModelActionPermission(
       type: RequiredPermissionType.adminOnly, // Only administrators can update
+      requiresAuthentication: true,
     ),
     deletePermission: const ModelActionPermission(
       type: RequiredPermissionType.adminOnly, // Only administrators can delete
+      requiresAuthentication: true,
     ),
   ),
   'dashboard_summary': ModelConfig<DashboardSummary>(
@@ -348,18 +400,23 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     // Permissions: Read-only for admins, all other actions unsupported.
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported,
+      requiresAuthentication: true,
     ),
     getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.adminOnly,
+      requiresAuthentication: true,
     ),
     postPermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported,
+      requiresAuthentication: true,
     ),
     putPermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported,
+      requiresAuthentication: true,
     ),
     deletePermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported,
+      requiresAuthentication: true,
     ),
   ),
   'local_ad': ModelConfig<LocalAd>(
@@ -369,22 +426,27 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.localAdRead,
+      requiresAuthentication: true,
     ),
     getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.localAdRead,
+      requiresAuthentication: true,
     ),
     postPermission: const ModelActionPermission(
       type: RequiredPermissionType.adminOnly,
       permission: Permissions.localAdCreate,
+      requiresAuthentication: true,
     ),
     putPermission: const ModelActionPermission(
       type: RequiredPermissionType.adminOnly,
       permission: Permissions.localAdUpdate,
+      requiresAuthentication: true,
     ),
     deletePermission: const ModelActionPermission(
       type: RequiredPermissionType.adminOnly,
       permission: Permissions.localAdDelete,
+      requiresAuthentication: true,
     ),
   ),
 };

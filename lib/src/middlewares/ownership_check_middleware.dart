@@ -2,6 +2,9 @@ import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_registry.dart';
+import 'package:logging/logging.dart';
+
+final _log = Logger('OwnershipCheckMiddleware');
 
 /// A wrapper class to provide a fetched item into the request context.
 ///
@@ -33,8 +36,9 @@ class FetchedItem<T> {
 Middleware ownershipCheckMiddleware() {
   return (handler) {
     return (context) async {
+      _log.finer('Entering ownershipCheckMiddleware.');
       final modelConfig = context.read<ModelConfig<dynamic>>();
-      final user = context.read<User>();
+      final user = context.read<User?>();
       final permissionService = context.read<PermissionService>();
       final method = context.request.method;
 
@@ -49,20 +53,47 @@ Middleware ownershipCheckMiddleware() {
           permission = modelConfig.deletePermission;
         default:
           // For any other methods, no ownership check is performed.
+          _log.finer(
+            'Method "$method" does not require ownership check. Skipping.',
+          );
           return handler(context);
       }
 
       // If no ownership check is required for this action, or if the user is
       // an admin (who bypasses ownership checks), proceed immediately.
       if (!permission.requiresOwnershipCheck ||
-          permissionService.isAdmin(user)) {
+          (user != null && permissionService.isAdmin(user))) {
+        _log.finer(
+          'Ownership check not required or user is admin. Skipping ownership check.',
+        );
         return handler(context);
       }
 
       // At this point, an ownership check is required for a non-admin user.
+      _log.finer(
+        'Ownership check required for model "${context.read<String>()}", '
+        'method "$method". User is not admin.',
+      );
+
+      // If an ownership check IS required, we must have an authenticated user.
+      // If user is null here, it means a public route is configured to require
+      // an ownership check, which is a misconfiguration.
+      if (user == null) {
+        _log.warning(
+          'Ownership check required but no authenticated user found. '
+          'This indicates a configuration error.',
+        );
+        throw const OperationFailedException(
+          'Internal Server Error: Ownership check required for unauthenticated access.',
+        );
+      }
 
       // Ensure the model is configured to support ownership checks.
       if (modelConfig.getOwnerId == null) {
+        _log.severe(
+          'Configuration Error: Model "${context.read<String>()}" requires '
+          'ownership check but getOwnerId is null.',
+        );
         throw const OperationFailedException(
           'Internal Server Error: Model configuration error for ownership check.',
         );
@@ -76,10 +107,15 @@ Middleware ownershipCheckMiddleware() {
       // Compare the item's owner ID with the authenticated user's ID.
       final itemOwnerId = modelConfig.getOwnerId!(item);
       if (itemOwnerId != user.id) {
+        _log.warning(
+          'Ownership check failed for user ${user.id} on item with owner ID '
+          '$itemOwnerId. Denying access.',
+        );
         throw const ForbiddenException(
           'You do not have permission to access this item.',
         );
       }
+      _log.finer('Ownership check passed for user ${user.id}.');
 
       // If the ownership check passes, proceed to the final route handler.
       return handler(context);

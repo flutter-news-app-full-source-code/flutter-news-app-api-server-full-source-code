@@ -29,7 +29,8 @@ Future<Response> onRequest(RequestContext context) async {
 Future<Response> _handleGet(RequestContext context) async {
   final modelName = context.read<String>();
   final modelConfig = context.read<ModelConfig<dynamic>>();
-  final authenticatedUser = context.read<User>();
+  // Read authenticatedUser as nullable, as per configurable authentication.
+  final authenticatedUser = context.read<User?>();
   final params = context.request.uri.queryParameters;
 
   _logger
@@ -73,8 +74,13 @@ Future<Response> _handleGet(RequestContext context) async {
         )
       : null;
 
+  // Determine userId for repository call.
+  // If the model is user-owned and the user is authenticated and not an admin,
+  // then the operation should be scoped to the authenticated user's ID.
+  // Otherwise, it's a global operation or an admin bypass.
   final userIdForRepoCall =
       (modelConfig.getOwnerId != null &&
+          authenticatedUser != null &&
           !context.read<PermissionService>().isAdmin(authenticatedUser))
       ? authenticatedUser.id
       : null;
@@ -101,7 +107,8 @@ Future<Response> _handleGet(RequestContext context) async {
 Future<Response> _handlePost(RequestContext context) async {
   final modelName = context.read<String>();
   final modelConfig = context.read<ModelConfig<dynamic>>();
-  final authenticatedUser = context.read<User>();
+  // Read authenticatedUser as nullable, as per configurable authentication.
+  final authenticatedUser = context.read<User?>();
 
   _logger.info('Handling POST request for model "$modelName".');
 
@@ -124,8 +131,13 @@ Future<Response> _handlePost(RequestContext context) async {
     );
   }
 
+  // Determine userId for repository call.
+  // If the model is user-owned and the user is authenticated and not an admin,
+  // then the operation should be scoped to the authenticated user's ID.
+  // Otherwise, it's a global operation or an admin bypass.
   final userIdForRepoCall =
       (modelConfig.getOwnerId != null &&
+          authenticatedUser != null &&
           !context.read<PermissionService>().isAdmin(authenticatedUser))
       ? authenticatedUser.id
       : null;
