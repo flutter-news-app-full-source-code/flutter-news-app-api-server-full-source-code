@@ -9,14 +9,16 @@ final _log = Logger('AuthorizationMiddleware');
 /// {@template authorization_middleware}
 /// Middleware to enforce role-based permissions and model-specific access rules.
 ///
-/// This middleware reads the authenticated [User], the requested `modelName`,
-/// the `HttpMethod`, and the `ModelConfig` from the request context. It then
-/// determines the required permission based on the `ModelConfig` metadata for
-/// the specific HTTP method and checks if the authenticated user has that
-/// permission using the [PermissionService].
+/// This middleware reads the authenticated [User] (which may be null for
+/// public routes), the requested `modelName`, the `HttpMethod`, and the
+/// `ModelConfig` from the request context. It then determines the required
+/// permission based on the `ModelConfig` metadata for the specific HTTP method
+/// and checks if the authenticated user has that permission using the
+/// [PermissionService].
 ///
-/// If the user does not have the required permission, it throws a
-/// [ForbiddenException], which should be caught by the 'errorHandler' middleware.
+/// If the user does not have the required permission, or if authentication is
+/// required but no user is present, it throws a [ForbiddenException] or
+/// [UnauthorizedException], which should be caught by the 'errorHandler' middleware.
 ///
 /// This middleware runs *after* authentication and model validation.
 /// It does NOT perform instance-level ownership checks; those are handled
@@ -27,8 +29,9 @@ Middleware authorizationMiddleware() {
   return (handler) {
     return (context) async {
       // Read dependencies from the context.
-      // User is guaranteed non-null by requireAuthentication() middleware.
-      final user = context.read<User>();
+      // User is now read as nullable, as _conditionalAuthenticationMiddleware
+      // might provide null for public routes.
+      final user = context.read<User?>();
       final permissionService = context.read<PermissionService>();
       final modelName = context.read<String>(); // Provided by data/_middleware
       final modelConfig = context
@@ -64,23 +67,33 @@ Middleware authorizationMiddleware() {
           );
       }
 
-      // Perform the permission check based on the configuration type
+      // Handle authentication requirement based on ModelConfig ---
+      if (requiredPermissionConfig.requiresAuthentication && user == null) {
+        _log.warning(
+          'Authorization required but no valid user found. Denying access.',
+        );
+        throw const UnauthorizedException('Authentication required.');
+      }
+
+      // If authentication is not required, or if user is present, proceed with permission checks.
+      // All subsequent checks must now handle a potentially null 'user' if 'requiresAuthentication' is false.
       switch (requiredPermissionConfig.type) {
         case RequiredPermissionType.none:
-          // No specific permission required (beyond authentication if applicable)
-          // This case is primarily for documentation/completeness if a route
-          // group didn't require authentication, but the /data route does.
-          // For the /data route, 'none' effectively means 'authenticated users allowed'.
+          // No specific permission required.
+          // If user is null, it's a public route. If user is not null, they are authenticated.
           break;
         case RequiredPermissionType.adminOnly:
-          // Requires the user to be an admin
-          if (!permissionService.isAdmin(user)) {
+          // Requires the user to be an admin.
+          // If user is null here, it means requiresAuthentication was false,
+          // but adminOnly implies authentication. This is a misconfiguration
+          // or an attempt to access an admin-only resource publicly.
+          if (user == null || !permissionService.isAdmin(user)) {
             throw const ForbiddenException(
               'Only administrators can perform this action.',
             );
           }
         case RequiredPermissionType.specificPermission:
-          // Requires a specific permission string
+          // Requires a specific permission string.
           final permission = requiredPermissionConfig.permission;
           if (permission == null) {
             // This indicates a configuration error in ModelRegistry
@@ -92,19 +105,20 @@ Middleware authorizationMiddleware() {
               'Internal Server Error: Authorization configuration error.',
             );
           }
-          if (!permissionService.hasPermission(user, permission)) {
+          // If user is null here, it means requiresAuthentication was false,
+          // but specificPermission implies authentication. This is a misconfiguration
+          // or an attempt to access a protected resource publicly.
+          if (user == null || !permissionService.hasPermission(user, permission)) {
             throw const ForbiddenException(
               'You do not have permission to perform this action.',
             );
           }
         case RequiredPermissionType.unsupported:
           // This action is explicitly marked as not supported via this generic route.
-          // Return Method Not Allowed.
           _log.warning(
             'Action for model "$modelName", method "$method" is marked as '
             'unsupported via generic route.',
           );
-          // Throw ForbiddenException to be caught by the errorHandler
           throw ForbiddenException(
             'Method "$method" is not supported for model "$modelName" '
             'via this generic data endpoint.',
