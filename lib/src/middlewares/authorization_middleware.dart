@@ -108,7 +108,8 @@ Middleware authorizationMiddleware() {
           // If user is null here, it means requiresAuthentication was false,
           // but specificPermission implies authentication. This is a misconfiguration
           // or an attempt to access a protected resource publicly.
-          if (user == null || !permissionService.hasPermission(user, permission)) {
+          if (user == null ||
+              !permissionService.hasPermission(user, permission)) {
             throw const ForbiddenException(
               'You do not have permission to perform this action.',
             );

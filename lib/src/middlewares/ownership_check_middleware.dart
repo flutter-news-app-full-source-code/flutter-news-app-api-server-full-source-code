@@ -53,7 +53,9 @@ Middleware ownershipCheckMiddleware() {
           permission = modelConfig.deletePermission;
         default:
           // For any other methods, no ownership check is performed.
-          _log.finer('Method "$method" does not require ownership check. Skipping.');
+          _log.finer(
+            'Method "$method" does not require ownership check. Skipping.',
+          );
           return handler(context);
       }
 

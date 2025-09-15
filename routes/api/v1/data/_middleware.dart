@@ -11,15 +11,17 @@ import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_
 // Helper middleware for applying rate limiting to the data routes.
 Middleware _dataRateLimiterMiddleware() {
   return (handler) {
-    return (context) async { // Made async because ipKeyExtractor is async
+    return (context) async {
+      // Made async because ipKeyExtractor is async
       final user = context.read<User?>(); // Read nullable User
       final permissionService = context.read<PermissionService>();
 
       // Users with the bypass permission are not rate-limited.
-      if (user != null && permissionService.hasPermission(
-        user,
-        Permissions.rateLimitingBypass,
-      )) {
+      if (user != null &&
+          permissionService.hasPermission(
+            user,
+            Permissions.rateLimitingBypass,
+          )) {
         return handler(context);
       }
 
@@ -193,5 +195,7 @@ Handler middleware(Handler handler) {
       .use(authorizationMiddleware()) // Applied fourth (inner-most)
       .use(_dataRateLimiterMiddleware()) // Applied third
       .use(_conditionalAuthenticationMiddleware()) // Applied second
-      .use(_modelValidationAndProviderMiddleware()); // Applied first (outermost)
+      .use(
+        _modelValidationAndProviderMiddleware(),
+      ); // Applied first (outermost)
 }

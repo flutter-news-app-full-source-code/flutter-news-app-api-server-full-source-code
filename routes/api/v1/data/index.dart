@@ -78,7 +78,8 @@ Future<Response> _handleGet(RequestContext context) async {
   // If the model is user-owned and the user is authenticated and not an admin,
   // then the operation should be scoped to the authenticated user's ID.
   // Otherwise, it's a global operation or an admin bypass.
-  final userIdForRepoCall = (modelConfig.getOwnerId != null &&
+  final userIdForRepoCall =
+      (modelConfig.getOwnerId != null &&
           authenticatedUser != null &&
           !context.read<PermissionService>().isAdmin(authenticatedUser))
       ? authenticatedUser.id
@@ -134,7 +135,8 @@ Future<Response> _handlePost(RequestContext context) async {
   // If the model is user-owned and the user is authenticated and not an admin,
   // then the operation should be scoped to the authenticated user's ID.
   // Otherwise, it's a global operation or an admin bypass.
-  final userIdForRepoCall = (modelConfig.getOwnerId != null &&
+  final userIdForRepoCall =
+      (modelConfig.getOwnerId != null &&
           authenticatedUser != null &&
           !context.read<PermissionService>().isAdmin(authenticatedUser))
       ? authenticatedUser.id
