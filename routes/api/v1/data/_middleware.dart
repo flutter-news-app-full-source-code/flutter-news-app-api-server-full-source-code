@@ -36,7 +36,7 @@ Middleware _dataRateLimiterMiddleware() {
   };
 }
 
-// Helper middleware for model validation and context provision.
+/// Helper middleware for model validation and context provision.
 Middleware _modelValidationAndProviderMiddleware() {
   return (handler) {
     // This 'handler' is the next handler in the chain,
@@ -76,6 +76,56 @@ Middleware _modelValidationAndProviderMiddleware() {
   };
 }
 
+/// Helper middleware to conditionally apply authentication based on
+/// `ModelConfig`.
+///
+/// This middleware checks the `requiresAuthentication` flag on the
+/// `ModelActionPermission` for the current model and HTTP method.
+/// If authentication is required, it calls `requireAuthentication()`.
+/// If not, it simply passes the request through, allowing public access.
+Middleware _conditionalAuthenticationMiddleware() {
+  return (handler) {
+    return (context) {
+      final modelConfig = context.read<ModelConfig<dynamic>>();
+      final method = context.request.method;
+
+      ModelActionPermission requiredPermissionConfig;
+      switch (method) {
+        case HttpMethod.get:
+          // Differentiate GET based on whether it's a collection or item request
+          final isCollectionRequest =
+              context.request.uri.path == '/api/v1/data';
+          if (isCollectionRequest) {
+            requiredPermissionConfig = modelConfig.getCollectionPermission;
+          } else {
+            requiredPermissionConfig = modelConfig.getItemPermission;
+          }
+        case HttpMethod.post:
+          requiredPermissionConfig = modelConfig.postPermission;
+        case HttpMethod.put:
+          requiredPermissionConfig = modelConfig.putPermission;
+        case HttpMethod.delete:
+          requiredPermissionConfig = modelConfig.deletePermission;
+        default:
+          // For unsupported methods, assume authentication is required
+          // or let subsequent middleware/route handler deal with it.
+          requiredPermissionConfig = const ModelActionPermission(
+            type: RequiredPermissionType.unsupported,
+            requiresAuthentication: true,
+          );
+      }
+
+      if (requiredPermissionConfig.requiresAuthentication) {
+        // If authentication is required, apply the requireAuthentication middleware.
+        return requireAuthentication()(handler)(context);
+      } else {
+        // If authentication is not required, simply pass the request through.
+        return handler(context);
+      }
+    };
+  };
+}
+
 // Main middleware exported for the /api/v1/data route group.
 Handler middleware(Handler handler) {
   // This 'handler' is the actual route handler from index.dart or [id].dart.
@@ -84,17 +134,15 @@ Handler middleware(Handler handler) {
   // the last .use() call in the chain represents the outermost middleware layer.
   // Therefore, the execution order for an incoming request is:
   //
-  // 1. `requireAuthentication()`:
-  //    - This runs first. It relies on `authenticationProvider()` (from the
-  //      parent `/api/v1/_middleware.dart`) having already attempted to
-  //      authenticate the user and provide `User?` into the context.
-  //    - If `User` is null (no valid authentication), `requireAuthentication()`
-  //      throws an `UnauthorizedException`, and the request is aborted (usually
-  //      resulting in a 401 response via the global `errorHandler`).
-  //    - If `User` is present, the request proceeds to the next middleware.
+  // 1. `_conditionalAuthenticationMiddleware()`:
+  //    - This runs first. It dynamically decides whether to apply
+  //      `requireAuthentication()` based on the `ModelConfig` for the
+  //      requested model and HTTP method.
+  //    - If authentication is required and the user is not authenticated,
+  //      it throws an `UnauthorizedException`.
   //
   // 2. `_dataRateLimiterMiddleware()`:
-  //    - This runs if `requireAuthentication()` passes.
+  //    - This runs if authentication (if required) passes.
   //    - It checks if the user has a bypass permission. If not, it applies
   //      the configured rate limit based on the user's ID.
   //    - If the limit is exceeded, it throws a `ForbiddenException`.
@@ -117,7 +165,8 @@ Handler middleware(Handler handler) {
   //
   // 5. Actual Route Handler (from `index.dart` or `[id].dart`):
   //    - This runs last, only if all preceding middlewares pass. It will have
-  //      access to a non-null `User`, `ModelConfig`, and `modelName` from the context.
+  //      access to a non-null `User` (if authenticated), `ModelConfig`, and
+  //      `modelName` from the context.
   //    - It performs the data operation and any necessary handler-level
   //      ownership checks (if flagged by `ModelActionPermission.requiresOwnershipCheck`).
   //
@@ -125,5 +174,5 @@ Handler middleware(Handler handler) {
       .use(authorizationMiddleware()) // Applied fourth (inner-most)
       .use(_modelValidationAndProviderMiddleware()) // Applied third
       .use(_dataRateLimiterMiddleware()) // Applied second
-      .use(requireAuthentication()); // Applied first (outermost)
+      .use(_conditionalAuthenticationMiddleware()); // Applied first (outermost)
 }
