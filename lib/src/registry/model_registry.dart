@@ -377,8 +377,7 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresAuthentication: true,
     ),
     getItemPermission: const ModelActionPermission(
-      type: RequiredPermissionType.specificPermission,
-      permission: Permissions.remoteConfigRead,
+      type: RequiredPermissionType.none,
       requiresAuthentication: false, // Make remote_config GET public
     ),
     postPermission: const ModelActionPermission(
