@@ -55,7 +55,7 @@ Future<Response> _handleGet(RequestContext context, String id) async {
 Future<Response> _handlePut(RequestContext context, String id) async {
   final modelName = context.read<String>();
   final modelConfig = context.read<ModelConfig<dynamic>>();
-  final authenticatedUser = context.read<User>();
+  final authenticatedUser = context.read<User?>();
   final permissionService = context.read<PermissionService>();
   final userPreferenceLimitService = context.read<UserPreferenceLimitService>();
 
@@ -92,6 +92,12 @@ Future<Response> _handlePut(RequestContext context, String id) async {
   }
 
   if (modelName == 'user_content_preferences') {
+    // User content preferences can only be updated by an authenticated user.
+    if (authenticatedUser == null) {
+      throw const UnauthorizedException(
+        'Authentication required to update user content preferences.',
+      );
+    }
     if (itemToUpdate is UserContentPreferences) {
       await userPreferenceLimitService.checkUpdatePreferences(
         authenticatedUser,
@@ -133,7 +139,7 @@ Future<Response> _handlePut(RequestContext context, String id) async {
 Future<Response> _handleDelete(RequestContext context, String id) async {
   final modelName = context.read<String>();
   final modelConfig = context.read<ModelConfig<dynamic>>();
-  final authenticatedUser = context.read<User>();
+  final authenticatedUser = context.read<User?>();
   final permissionService = context.read<PermissionService>();
 
   _logger.info('Handling DELETE request for model "$modelName", id "$id".');
@@ -155,12 +161,20 @@ Future<Response> _handleDelete(RequestContext context, String id) async {
 
 /// Determines the `userId` to be used for a repository call based on user
 /// role and model configuration.
+///
+/// If the model is user-owned and the authenticated user is not an admin,
+/// the authenticated user's ID is returned. Otherwise, `null` is returned,
+/// indicating a global operation or an admin-level bypass.
 String? _getUserIdForRepoCall({
   required ModelConfig<dynamic> modelConfig,
   required PermissionService permissionService,
-  required User authenticatedUser,
+  required User? authenticatedUser,
 }) {
+  // If the model is user-owned and the user is authenticated and not an admin,
+  // then the operation should be scoped to the authenticated user's ID.
+  // Otherwise, it's a global operation or an admin bypass.
   return (modelConfig.getOwnerId != null &&
+          authenticatedUser != null &&
           !permissionService.isAdmin(authenticatedUser))
       ? authenticatedUser.id
       : null;
