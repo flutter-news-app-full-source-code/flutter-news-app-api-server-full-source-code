@@ -1,91 +1,115 @@
 <div align="center">
-<img src="https://avatars.githubusercontent.com/u/202675624?s=400&u=2daf23e8872a3b666bcd4f792a21fe2633097e79&v=4" alt="Flutter News App Toolkit Logo" width="220">
+  <img src="https://avatars.githubusercontent.com/u/202675624?s=400&u=2daf23e8872a3b666bcd4f792a21fe2633097e79&v=4" alt="Flutter News App Toolkit Logo" width="220">
+  <h1>Flutter News App API Server</h1>
+  <p><strong>Complete, production-ready source code for a Flutter news app api server.</strong></p>
+</div>
 
-# Flutter News App API Server Full Source Code
-
-<p>
-<img src="https://img.shields.io/badge/coverage-0%25-green?style=for-the-badge" alt="coverage: 0%">
+<p align="center">
+<img src="https://img.shields.io/badge/coverage-_%25-green?style=for-the-badge" alt="coverage: 0%">
 <a href="https://flutter-news-app-full-source-code.github.io/docs/api-server/local-setup/"><img src="https://img.shields.io/badge/DOCUMENTATION-READ-slategray?style=for-the-badge" alt="Documentation: Read"></a>
+</p>
+<p align="center">
 <a href="LICENSE"><img src="https://img.shields.io/badge/TRIAL_LICENSE-VIEW_TERMS-blue?style=for-the-badge" alt="Trial License: View Terms"></a>
 <a href="https://github.com/sponsors/flutter-news-app-full-source-code"><img src="https://img.shields.io/badge/LIFETIME_LICENSE-PURCHASE-purple?style=for-the-badge" alt="Lifetime License: Purchase"></a>
 </p>
-</div>
 
-This repository contains the complete, production-ready source code for the backend API server that powers the entire Flutter News App ecosystem. Built with the high-performance Dart Frog framework, it gives you all the server-side features you need, right out of the box. It is the core component of the [**Flutter News App - Full Source Code Toolkit**](https://github.com/flutter-news-app-full-source-code), serving the Flutter [mobile app](https://github.com/flutter-news-app-full-source-code/flutter-news-app-mobile-client-full-source-code) and the web-based [content dashboard](https://github.com/flutter-news-app-full-source-code/flutter-news-app-web-dashboard-full-source-code).
+This repository contains the complete, production-ready source code for a high-performance Flutter news app api server that powers the entire Flutter News App toolkit. Built with the high-performance **Dart Frog** framework, it gives you all the server-side features you need, right out of the box. It is the core component of the [**Flutter News App Full Source Code Toolkit**](https://github.com/flutter-news-app-full-source-code), serving the Flutter [mobile app](https://github.com/flutter-news-app-full-source-code/flutter-news-app-mobile-client-full-source-code) and the web-based [content dashboard](https://github.com/flutter-news-app-full-source-code/flutter-news-app-web-dashboard-full-source-code).
 
-## ⭐ Everything You Get, Ready to Go
+## ⭐ Feature Showcase: Everything You Get, Ready to Go
 
-This API server comes packed with all the features you need to launch a professional, scalable news application.
+This API server comes packed with all the backend features you need to launch a professional and scalable news application.
 
-#### 🔐 **Robust & Flexible Authentication**
-*   Provides secure, modern authentication flows, including passwordless email sign-in and anonymous guest accounts.
-*   Intelligently handles converting guest users to permanent accounts, preserving all their settings and saved content.
-*   Includes a separate, role-aware login flow for privileged dashboard users.
-> **Your Advantage:** You get a complete, secure authentication system without the complexity. All the user management logic is done for you. ✅
+Click on any category to explore.
 
-#### ⚡️ **Granular Role-Based Access Control (RBAC)**
-*   Implement precise permissions with a dual-role system: `appRole` for mobile app features and `dashboardRole` for admin functions.
-*   Securely control access to API features and data management capabilities based on user roles.
-> **Your Advantage:** A powerful, built-in security model that protects your data and ensures users only access what they're supposed to. 🛡️
+<details>
+<summary><strong>🔐 Identity & Access Management</strong></summary>
 
-#### 🛡️ **Built-in API Rate Limiting**
-*   Protects critical endpoints like email verification and data access from abuse and denial-of-service attacks.
-*   Features configurable, user-aware limits that distinguish between guests and authenticated users.
-*   Includes a bypass for trusted roles (admin, publisher) to ensure dashboard functionality is never impeded.
-> **Your Advantage:** Your API is protected from day one against common abuse vectors, ensuring stability and preventing costly overages on services like email providers. ✅
-
-#### ⚙️ **Centralized App & User Settings**
-*   Effortlessly sync user-specific settings like theme, language, and font styles across devices.
-*   Manage personalized content preferences, including saved headlines and followed topics/sources.
-> **Your Advantage:** Deliver a seamless, personalized experience that keeps users' settings in sync, boosting engagement and retention. ❤️
-
-#### 💾 **Robust Data Management API**
-*   Securely manage all your core news data, including headlines, topics, sources, and countries.
-*   The API supports flexible querying, filtering, and sorting, allowing your app to display dynamic content feeds.
-> **Your Advantage:** A powerful and secure data backend that's ready to scale with your content needs. 📈
-
-#### 🌐 **Dynamic Remote Configuration**
-*   Centrally manage your app's behavior without shipping an update.
-*   Control ad frequency, feature flags, force-update prompts, and maintenance status directly from the server.
-> **Your Advantage:** Adapt your app on the fly, run experiments, and respond to issues instantly, giving you maximum operational control. 🕹️
-
-#### 📊 **Real-Time Dashboard Analytics**
-*   Access real-time, aggregated metrics on key data points like total headlines, topics, and sources.
-*   Provides an at-a-glance overview perfect for administrative dashboards.
-> **Your Advantage:** Instantly feed your content dashboard with the data it needs to provide valuable insights. 🎯
-
-#### 🏗️ **Clean & Modern Architecture**
-*   Built with Dart and the high-performance Dart Frog framework.
-*   Features a clean, layered architecture with standardized API responses and built-in dependency injection.
-> **Your Advantage:** A solid, maintainable codebase that's easy to understand, extend, and build upon. 🔧
+### 📧 Passwordless & Anonymous Authentication
+- **Modern Flows:** Implements secure, passwordless email + code sign-in and allows users to start with anonymous guest accounts.
+- **Seamless Account Linking:** Intelligently converts guest users to permanent accounts upon sign-up, migrating all their data (preferences, saved items) automatically.
+> **Your Advantage:** You get a modern, frictionless, and secure user onboarding experience that reduces user friction and encourages sign-ups.
 
 ---
+
+### 🛡️ Secure Session Management
+- **JWT-Powered:** Uses industry-standard JSON Web Tokens (JWTs) for robust and stateless session management.
+- **Instant Session Invalidation:** A token blacklisting service ensures that when a user signs out, their session is immediately and securely terminated.
+> **Your Advantage:** Deliver a highly secure authentication system that protects user data and gives you full control over sessions.
+
+---
+
+### 👮 Granular Role-Based Access Control (RBAC)
+- **Permission-Driven:** A flexible RBAC system controls what users can do based on their assigned roles (`AppUserRole`, `DashboardUserRole`).
+- **Ownership Verification:** Built-in middleware automatically checks if a user owns a piece of data before allowing them to modify or delete it.
+> **Your Advantage:** Easily enforce complex business rules and security policies, ensuring users can only access and manage the data they are supposed to.
+
+---
+
+### 🚦 API Abuse Prevention
+- **Smart Rate Limiting:** Protects critical endpoints like `request-code` and the main data API from brute-force attacks, spam, and denial-of-service attempts.
+- **IP & User-Based:** Applies rate limits based on IP for anonymous users and by user ID for authenticated users, providing fair and effective protection.
+> **Your Advantage:** Your API is shielded from common threats, ensuring high availability and stability for your legitimate users.
+
+</details>
+
+<details>
+<summary><strong>📦 Dynamic Content & Data API</strong></summary>
+
+### ⚙️ Generic & Extensible Data API
+- **Unified Data Gateway:** A single, powerful set of RESTful endpoints (`/api/v1/data`) serves as a central gateway for all data operations. It uses a simple `?model=` query parameter to dynamically handle CRUD requests for any data type in the system—Headlines, Topics, User Preferences, and more.
+- **Metadata-Driven Engine:** Instead of hardcoding routes for each data type, the API uses a central registry. This registry defines everything about a model—its permissions, validation rules, and how it connects to the database—in one place.
+> **Your Advantage:** This architecture is incredibly clean and scalable. Adding a completely new data type to your application, with its own unique permissions and logic, doesn't require writing new boilerplate API routes. You simply define its metadata in the central registry, and the generic endpoint handles the rest, dramatically speeding up development and reducing code duplication.
+
+---
+
+### 🔍 Advanced Querying & Pagination
+- **Rich Filtering:** Supports complex, MongoDB-style filtering directly through the API.
+- **Flexible Sorting & Pagination:** Allows for multi-field sorting and efficient cursor-based pagination to handle large datasets.
+> **Your Advantage:** Enable powerful, high-performance content discovery features in your client applications (like filtering, sorting, and infinite scrolling) with no extra backend work.
+
+</details>
+
+<details>
+<summary><strong>🏗️ Architecture & Infrastructure</strong></summary>
+
+### 🚀 High-Performance Dart Frog Core
+- **Modern & Fast:** Built on Dart Frog, a minimalist and extremely fast backend framework from the creators of Very Good Ventures, ensuring excellent performance and low latency.
+> **Your Advantage:** Your backend is built on a solid, modern foundation that is both powerful and easy to work with.
+
+---
+
+### 🧱 Clean, Layered Architecture
+- **Separation of Concerns:** Strictly follows a layered architecture (Data Clients, Repositories, Services) that is clean, maintainable, and scalable.
+- **Standardized Responses:** Consistent JSON response structures for both success and error scenarios make client-side handling predictable and simple.
+> **Your Advantage:** You get a codebase that is easy to understand, modify, and extend, saving you significant development and maintenance time.
+
+---
+
+### 🔌 Robust Dependency Injection
+- **Testable & Modular:** A centralized dependency injection system makes the entire application highly modular and easy to test.
+- **Swappable Implementations:** Easily swap out core components—like the database (MongoDB), email provider (SendGrid), or storage services—without rewriting your business logic.
+> **Your Advantage:** The architecture is not locked into specific services. You have the freedom to adapt and evolve your tech stack as your needs change.
+
+---
+
+### ⚙️ Secure Environment Configuration
+- **Secure & Flexible:** Manages all sensitive keys, API credentials, and environment-specific settings through a `.env` file, keeping your secrets out of the codebase.
+> **Your Advantage:** Deploy your application across different environments (local, staging, production) safely and efficiently.
+
+</details>
 
 ## 🔑 License: Source-Available with a Free Trial
 
 Get started for free and purchase when you're ready to launch!
 
-*   **TRY IT:** Download and explore the full source code under the PolyForm Free Trial [license](LICENSE). Perfect for evaluation.
-*   **BUY IT:** One-time payment for a lifetime license to publish unlimited commercial apps.
-*   **GET YOURS:** [**Purchase via GitHub Sponsors**](https://github.com/sponsors/flutter-news-app-full-source-code).
+- **TRY IT:** Download and explore the full source code under the PolyForm Free Trial [license](LICENSE). Perfect for evaluation.
+- **BUY IT:** One-time payment for a lifetime license to publish unlimited commercial apps.
+- **GET YOURS:** [**Purchase via GitHub Sponsors**](https://github.com/sponsors/flutter-news-app-full-source-code).
 
-> [!NOTE]
-> *A single purchase provides a commercial license for every repository within the [Flutter News App - Full Source Code Toolkit](https://github.com/flutter-news-app-full-source-code). No other purchases are needed..*
-
----
+> A single purchase provides a commercial license for every repository within the [Flutter News App Full Source Code Toolkit](https://github.com/flutter-news-app-full-source-code). No other purchases are needed.
 
 ## 🚀 Getting Started & Running Locally
 
 For a complete guide on setting up your local environment, running the server, and understanding the configuration, please see the **[Local Setup Guide](https://flutter-news-app-full-source-code.github.io/docs/api-server/local-setup/)** in our official documentation.
 
 Our documentation provides a detailed, step-by-step walkthrough to get you up and running smoothly.
-
----
-
-## ✅ Testing
-
-This project aims for high test coverage to ensure quality and reliability.
-
-*   Run tests with:
-    ```bash
-    very_good test --min-coverage 90
