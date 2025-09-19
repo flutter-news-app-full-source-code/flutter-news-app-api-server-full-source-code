@@ -5,13 +5,15 @@
 </div>
 
 <p align="center">
-<img src="https://img.shields.io/badge/coverage-0%25-green?style=for-the-badge" alt="coverage: 0%">
+<img src="https://img.shields.io/badge/coverage-_%25-green?style=for-the-badge" alt="coverage: 0%">
 <a href="https://flutter-news-app-full-source-code.github.io/docs/api-server/local-setup/"><img src="https://img.shields.io/badge/DOCUMENTATION-READ-slategray?style=for-the-badge" alt="Documentation: Read"></a>
+</p>
+<p align="center">
 <a href="LICENSE"><img src="https://img.shields.io/badge/TRIAL_LICENSE-VIEW_TERMS-blue?style=for-the-badge" alt="Trial License: View Terms"></a>
 <a href="https://github.com/sponsors/flutter-news-app-full-source-code"><img src="https://img.shields.io/badge/LIFETIME_LICENSE-PURCHASE-purple?style=for-the-badge" alt="Lifetime License: Purchase"></a>
 </p>
 
-This repository contains the complete, production-ready source code for a robust Flutter news app api server that powers the entire Flutter News App toolkit. Built with the high-performance **Dart Frog** framework, it gives you all the server-side features you need, right out of the box. It is the core component of the [**Flutter News App Full Source Code Toolkit**](https://github.com/flutter-news-app-full-source-code), serving the Flutter [mobile app](https://github.com/flutter-news-app-full-source-code/flutter-news-app-mobile-client-full-source-code) and the web-based [content dashboard](https://github.com/flutter-news-app-full-source-code/flutter-news-app-web-dashboard-full-source-code).
+This repository contains the complete, production-ready source code for a high-performance Flutter news app api server that powers the entire Flutter News App toolkit. Built with the high-performance **Dart Frog** framework, it gives you all the server-side features you need, right out of the box. It is the core component of the [**Flutter News App Full Source Code Toolkit**](https://github.com/flutter-news-app-full-source-code), serving the Flutter [mobile app](https://github.com/flutter-news-app-full-source-code/flutter-news-app-mobile-client-full-source-code) and the web-based [content dashboard](https://github.com/flutter-news-app-full-source-code/flutter-news-app-web-dashboard-full-source-code).
 
 ## ⭐ Feature Showcase: Everything You Get, Ready to Go
 
@@ -58,8 +60,7 @@ Click on any category to explore.
 - **Registry-Based Architecture:** The API's extensibility is powered by two core components:
     - **`ModelRegistry`**: Maps a model name (e.g., `"headline"`) to a `ModelConfig` that defines its metadata: how to deserialize it from JSON, how to extract its ID, and the specific authorization rules for every action (Create, Read, Update, Delete).
     - **`DataOperationRegistry`**: Maps the same model name to the concrete functions that perform the CRUD operations, connecting the generic route to the specific `DataRepository<T>` for that model.
-- **How to Add a New Model:** To add a new data type, you simply register its configuration in these two central registries. The generic middleware and route handlers automatically enforce its permissions and execute its data operations without requiring new routes or custom logic.
-> **Your Advantage:** This architecture is incredibly easy to maintain and extend. Adding new data types to your application is fast, consistent, and requires minimal code, dramatically speeding up development.
+> **Your Advantage:** This architecture is incredibly easy to maintain and extend. Adding new data types is as simple as updating two registry files, making development fast, consistent, and requiring minimal code.
 
 ---
 
