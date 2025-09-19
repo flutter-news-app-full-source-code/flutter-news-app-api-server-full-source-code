@@ -56,11 +56,9 @@ Click on any category to explore.
 <summary><strong>📦 Dynamic Content & Data API</strong></summary>
 
 ### ⚙️ Generic & Extensible Data API
-- **Unified Endpoint Design:** A single, powerful set of RESTful endpoints (`/api/v1/data`) handles all CRUD operations for every data model in the system, driven by a `?model=` query parameter.
-- **Registry-Based Architecture:** The API's extensibility is powered by two core components:
-    - **`ModelRegistry`**: Maps a model name (e.g., `"headline"`) to a `ModelConfig` that defines its metadata: how to deserialize it from JSON, how to extract its ID, and the specific authorization rules for every action (Create, Read, Update, Delete).
-    - **`DataOperationRegistry`**: Maps the same model name to the concrete functions that perform the CRUD operations, connecting the generic route to the specific `DataRepository<T>` for that model.
-> **Your Advantage:** This architecture is incredibly easy to maintain and extend. Adding new data types is as simple as updating two registry files, making development fast, consistent, and requiring minimal code.
+- **Unified Data Gateway:** A single, powerful set of RESTful endpoints (`/api/v1/data`) serves as a central gateway for all data operations. It uses a simple `?model=` query parameter to dynamically handle CRUD requests for any data type in the system—Headlines, Topics, User Preferences, and more.
+- **Metadata-Driven Engine:** Instead of hardcoding routes for each data type, the API uses a central registry. This registry defines everything about a model—its permissions, validation rules, and how it connects to the database—in one place.
+> **Your Advantage:** This architecture is incredibly clean and scalable. Adding a completely new data type to your application, with its own unique permissions and logic, doesn't require writing new boilerplate API routes. You simply define its metadata in the central registry, and the generic endpoint handles the rest, dramatically speeding up development and reducing code duplication.
 
 ---
 
