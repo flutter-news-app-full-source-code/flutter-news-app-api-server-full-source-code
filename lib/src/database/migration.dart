@@ -15,24 +15,30 @@ import 'package:mongo_dart/mongo_dart.dart';
 abstract class Migration {
   /// {@macro migration}
   const Migration({
-    required this.version,
-    required this.description,
-    this.gitHubPullRequest,
+    required this.prDate,
+    required this.prSummary,
+    required this.prId,
   });
 
-  /// A unique identifier for the migration, following the `YYYYMMDDHHMMSS`
-  /// format (e.g., '20250924083500'). This ensures chronological ordering.
-  final String version;
-
-  /// A human-readable description of the migration's purpose.
-  final String description;
-
-  /// An optional URL or identifier for the GitHub Pull Request that introduced
-  /// the schema changes addressed by this migration.
+  /// The merge date and time of the Pull Request that introduced this
+  /// migration, in `YYYYMMDDHHMMSS` format (e.g., '20250924083500').
   ///
-  /// This provides valuable context for future maintainers, linking the
-  /// database migration directly to the code changes that necessitated it.
-  final String? gitHubPullRequest;
+  /// This serves as the unique, chronological identifier for the migration,
+  /// ensuring that migrations are applied in the correct order.
+  final String prDate;
+
+  /// A concise summary of the changes introduced by the Pull Request that
+  /// this migration addresses.
+  ///
+  /// This provides a human-readable description of the migration's purpose.
+  final String prSummary;
+
+  /// The unique identifier of the GitHub Pull Request that introduced the
+  /// schema changes addressed by this migration (e.g., '50').
+  ///
+  /// This provides direct traceability, linking the database migration to the
+  /// specific code changes on GitHub.
+  final String prId;
 
   /// Applies the migration, performing necessary schema changes or data
   /// transformations.
