@@ -99,10 +99,10 @@ Click on any category to explore.
 ---
 
 ### 🔄 Automated Database Migrations
-- **Versioned Schema Evolution:** Implements a robust, versioned database migration system that automatically applies schema changes to MongoDB on application startup.
+- **PR-Driven Schema Evolution:** Implements a robust, versioned database migration system that automatically applies schema changes to MongoDB on application startup.
 - **Idempotent & Generic:** Each migration is idempotent and designed to handle schema evolution for *any* model in the database, ensuring data consistency across deployments.
-- **Date-Time Based Versioning:** Migrations are named using a `YYYYMMDDHHMMSS__<description>.dart` format, guaranteeing chronological execution and clear context.
-> **Your Advantage:** Say goodbye to manual database updates! Your application gracefully handles schema changes, providing a professional and reliable mechanism for evolving your data models without breaking existing data.
+- **Traceable Versioning:** Migrations are identified by their Pull Request merge date (`prDate` in `YYYYMMDDHHMMSS` format) for chronological execution, a concise `prSummary`, and a direct `prId` (GitHub PR ID) for full traceability.
+> **Your Advantage:** Say goodbye to manual database updates! Your application gracefully handles schema changes, providing a professional and reliable mechanism for evolving your data models without breaking existing data, with clear links to the originating code changes.
 
 </details>
 
