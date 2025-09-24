@@ -96,6 +96,14 @@ Click on any category to explore.
 - **Secure & Flexible:** Manages all sensitive keys, API credentials, and environment-specific settings through a `.env` file, keeping your secrets out of the codebase.
 > **Your Advantage:** Deploy your application across different environments (local, staging, production) safely and efficiently.
 
+---
+
+### 🔄 Automated Database Migrations
+- **Versioned Schema Evolution:** Implements a robust, versioned database migration system that automatically applies schema changes to MongoDB on application startup.
+- **Idempotent & Generic:** Each migration is idempotent and designed to handle schema evolution for *any* model in the database, ensuring data consistency across deployments.
+- **Date-Time Based Versioning:** Migrations are named using a `YYYYMMDDHHMMSS__<description>.dart` format, guaranteeing chronological execution and clear context.
+> **Your Advantage:** Say goodbye to manual database updates! Your application gracefully handles schema changes, providing a professional and reliable mechanism for evolving your data models without breaking existing data.
+
 </details>
 
 ## 🔑 Licensing
