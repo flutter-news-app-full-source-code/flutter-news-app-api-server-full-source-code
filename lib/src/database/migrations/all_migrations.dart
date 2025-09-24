@@ -3,9 +3,9 @@ import 'package:flutter_news_app_api_server_full_source_code/src/database/migrat
 
 /// A central list of all database migrations to be applied.
 ///
-/// New migration classes should be added to this list in the order they are
-/// created. The [DatabaseMigrationService] will automatically sort and apply
-/// them based on their version.
+/// New migration classes should be added to this list. The
+/// [DatabaseMigrationService] will automatically sort and apply them based on
+/// their `prDate` property.
 final List<Migration> allMigrations = [
   RefactorAdConfigToRoleBased(),
 ];
