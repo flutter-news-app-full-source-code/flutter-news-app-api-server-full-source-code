@@ -117,8 +117,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: HEAD
-      resolved-ref: d7d9afa3e0cf8fb211fdea3342db8831813abf7d
+      ref: "828b984517edec069266579c624c7af9fbe0e2ac"
+      resolved-ref: "828b984517edec069266579c624c7af9fbe0e2ac"
       url: "https://github.com/flutter-news-app-full-source-code/core.git"
     source: git
     version: "0.0.0"
@@ -158,8 +158,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: HEAD
-      resolved-ref: "2cbe263418a214838e2ac84d0db8911520d14a3e"
+      ref: "960a00882045ee252274d9d57bfca606c1fe5d64"
+      resolved-ref: "960a00882045ee252274d9d57bfca606c1fe5d64"
       url: "https://github.com/flutter-news-app-full-source-code/data-client.git"
     source: git
     version: "0.0.0"
@@ -167,8 +167,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: HEAD
-      resolved-ref: "113c1874dc7baa964d0c41640a09c8cac64a685a"
+      ref: ee2ace6243f1ad4710c192c36215d3ce9e91c7a3
+      resolved-ref: ee2ace6243f1ad4710c192c36215d3ce9e91c7a3
       url: "https://github.com/flutter-news-app-full-source-code/data-mongodb.git"
     source: git
     version: "0.0.0"
@@ -176,8 +176,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: HEAD
-      resolved-ref: d9fbbf33d8bb53724e2dd29d488a0c8eb9cbf6e8
+      ref: f8f01f1191286efbba41fa2bb369fb16eb652ccf
+      resolved-ref: f8f01f1191286efbba41fa2bb369fb16eb652ccf
       url: "https://github.com/flutter-news-app-full-source-code/data-repository.git"
     source: git
     version: "0.0.0"
@@ -225,8 +225,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: HEAD
-      resolved-ref: "422f8c6442be166b503ba1cdcb1a0170f3fbe71f"
+      ref: c5e36d06b58918056dde4a58d177a39fb66bfe24
+      resolved-ref: c5e36d06b58918056dde4a58d177a39fb66bfe24
       url: "https://github.com/flutter-news-app-full-source-code/email-client.git"
     source: git
     version: "0.0.0"
@@ -234,8 +234,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: HEAD
-      resolved-ref: f09f7868b9f0ffbe90f3c8e1c12655356a86dcfb
+      ref: a68acd99c37b844af4eb3ed9f2eb9fd494c57f73
+      resolved-ref: a68acd99c37b844af4eb3ed9f2eb9fd494c57f73
       url: "https://github.com/flutter-news-app-full-source-code/email-repository.git"
     source: git
     version: "0.0.0"
@@ -243,8 +243,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: HEAD
-      resolved-ref: "80606a93d3f1ab5ac57123cd89ed4a04a43203df"
+      ref: "4cd256b1a65a648db2519d8b26b4e9174d4d3a0c"
+      resolved-ref: "4cd256b1a65a648db2519d8b26b4e9174d4d3a0c"
       url: "https://github.com/flutter-news-app-full-source-code/email-sendgrid.git"
     source: git
     version: "0.0.0"
@@ -316,8 +316,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: HEAD
-      resolved-ref: be0149d0eebab781a5ffefe5c6475d3bd1be56a6
+      ref: "57f6bcfc0f209ecc135fdcb688194045ec87e6e8"
+      resolved-ref: "57f6bcfc0f209ecc135fdcb688194045ec87e6e8"
       url: "https://github.com/flutter-news-app-full-source-code/http-client.git"
     source: git
     version: "0.0.0"

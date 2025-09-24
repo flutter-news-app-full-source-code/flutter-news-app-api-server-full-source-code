@@ -15,7 +15,7 @@ abstract final class EnvironmentConfig {
 
   // The DotEnv instance is now loaded via a helper method to make it more
   // resilient to current working directory issues.
-  static final _env = _loadEnv();
+  static final DotEnv _env = _loadEnv();
 
   /// Helper method to load the .env file more robustly.
   ///
