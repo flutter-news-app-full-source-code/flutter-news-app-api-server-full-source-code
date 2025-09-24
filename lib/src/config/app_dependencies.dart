@@ -6,10 +6,10 @@ import 'package:data_repository/data_repository.dart';
 import 'package:email_repository/email_repository.dart';
 import 'package:email_sendgrid/email_sendgrid.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/database/migrations/all_migrations.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/database/migrations/all_migrations.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/database_migration_service.dart';
@@ -99,7 +99,8 @@ class AppDependencies {
       databaseMigrationService = DatabaseMigrationService(
         db: _mongoDbConnectionManager.db,
         log: Logger('DatabaseMigrationService'),
-        migrations: allMigrations, // From lib/src/database/migrations/all_migrations.dart
+        migrations:
+            allMigrations, // From lib/src/database/migrations/all_migrations.dart
       );
       await databaseMigrationService.init();
       _log.info('Database migrations applied.');

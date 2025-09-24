@@ -19,9 +19,9 @@ class DatabaseMigrationService {
     required Db db,
     required Logger log,
     required List<Migration> migrations,
-  })  : _db = db,
-        _log = log,
-        _migrations = migrations;
+  }) : _db = db,
+       _log = log,
+       _migrations = migrations;
 
   final Db _db;
   final Logger _log;
@@ -103,9 +103,7 @@ class DatabaseMigrationService {
   Future<Set<String>> _getAppliedMigrationPrDates() async {
     final collection = _db.collection(_migrationsCollectionName);
     final documents = await collection.find().toList();
-    return documents
-        .map((doc) => doc['prDate'] as String)
-        .toSet();
+    return documents.map((doc) => doc['prDate'] as String).toSet();
   }
 
   /// Records a successfully applied migration in the `pr_migrations_history`
