@@ -459,4 +459,4 @@ typedef ModelRegistryMap = Map<String, ModelConfig<dynamic>>;
 /// This makes the `modelRegistry` map available for injection into the
 /// request context via `context.read<ModelRegistryMap>()`. It's primarily
 /// used by the middleware in `routes/api/v1/data/_middleware.dart`.
-final modelRegistryProvider = provider<ModelRegistryMap>((_) => modelRegistry);
+final Middleware modelRegistryProvider = provider<ModelRegistryMap>((_) => modelRegistry);
