@@ -51,9 +51,10 @@ class DatabaseMigrationService {
     _log.fine('Applied migration PR dates: $appliedPrDates');
 
     // Sort migrations by prDate to ensure chronological application.
-    _migrations.sort((a, b) => a.prDate.compareTo(b.prDate));
+    final sortedMigrations = [..._migrations]
+      ..sort((a, b) => a.prDate.compareTo(b.prDate));
 
-    for (final migration in _migrations) {
+    for (final migration in sortedMigrations) {
       if (!appliedPrDates.contains(migration.prDate)) {
         _log.info(
           'Applying migration PR#${migration.prId} (Date: ${migration.prDate}): '
