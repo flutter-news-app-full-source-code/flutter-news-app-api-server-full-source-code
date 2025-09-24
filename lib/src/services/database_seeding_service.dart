@@ -128,7 +128,7 @@ class DatabaseSeedingService {
         final initialConfig = remoteConfigsFixturesData.first;
 
         // Ensure primaryAdPlatform is not 'demo' for initial setup
-        // sic its not intended for any use outside teh mobile client code.
+        // since its not intended for any use outside the mobile client.
         final productionReadyAdConfig = initialConfig.adConfig.copyWith(
           primaryAdPlatform: AdPlatformType.local,
         );
@@ -145,7 +145,10 @@ class DatabaseSeedingService {
         });
         _log.info('Initial RemoteConfig created successfully.');
       } else {
-        _log.info('RemoteConfig already exists. Skipping creation.');
+        _log.info(
+          'RemoteConfig already exists. Skipping creation. '
+          'Schema updates are handled by DatabaseMigrationService.',
+        );
       }
     } on Exception catch (e, s) {
       _log.severe('Failed to seed RemoteConfig.', e, s);
