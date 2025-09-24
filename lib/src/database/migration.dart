@@ -1,5 +1,3 @@
-// ignore_for_file: comment_references
-
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 
@@ -7,8 +5,8 @@ import 'package:mongo_dart/mongo_dart.dart';
 /// An abstract base class for defining database migration scripts.
 ///
 /// Each concrete migration must extend this class and implement the [up] and
-/// [down] methods. Migrations are identified by a unique [version] string
-/// (following the `YYYYMMDDHHMMSS` format) and a [description].
+/// [down] methods. Migrations are identified by a unique [prDate] string
+/// (following the `YYYYMMDDHHMMSS` format) and a [prSummary].
 ///
 /// Implementations of [up] and [down] must be **idempotent**, meaning they
 /// can be safely run multiple times without causing errors or incorrect data.
