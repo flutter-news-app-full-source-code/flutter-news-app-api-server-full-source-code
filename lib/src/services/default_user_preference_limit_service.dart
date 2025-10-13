@@ -50,18 +50,28 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
       // 2. Determine the limit based on the user's app role.
       int limit;
       String accountType;
+      final isFollowedItem =
+          itemType == 'country' || itemType == 'source' || itemType == 'topic';
 
       switch (user.appRole) {
         case AppUserRole.premiumUser:
           accountType = 'premium';
-          limit = (itemType == 'headline')
-              ? limits.premiumSavedHeadlinesLimit
-              : limits.premiumFollowedItemsLimit;
+          if (isFollowedItem) {
+            limit = limits.premiumFollowedItemsLimit;
+          } else if (itemType == 'headline') {
+            limit = limits.premiumSavedHeadlinesLimit;
+          } else {
+            limit = limits.premiumSavedFiltersLimit;
+          }
         case AppUserRole.standardUser:
           accountType = 'standard';
-          limit = (itemType == 'headline')
-              ? limits.authenticatedSavedHeadlinesLimit
-              : limits.authenticatedFollowedItemsLimit;
+          if (isFollowedItem) {
+            limit = limits.authenticatedFollowedItemsLimit;
+          } else if (itemType == 'headline') {
+            limit = limits.authenticatedSavedHeadlinesLimit;
+          } else {
+            limit = limits.authenticatedSavedFiltersLimit;
+          }
         case AppUserRole.guestUser:
           accountType = 'guest';
           limit = (itemType == 'headline')
@@ -113,6 +123,7 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
       // 2. Determine limits based on the user's app role.
       int followedItemsLimit;
       int savedHeadlinesLimit;
+      int savedFiltersLimit;
       String accountType;
 
       switch (user.appRole) {
@@ -120,14 +131,17 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
           accountType = 'premium';
           followedItemsLimit = limits.premiumFollowedItemsLimit;
           savedHeadlinesLimit = limits.premiumSavedHeadlinesLimit;
+          savedFiltersLimit = limits.premiumSavedFiltersLimit;
         case AppUserRole.standardUser:
           accountType = 'standard';
           followedItemsLimit = limits.authenticatedFollowedItemsLimit;
           savedHeadlinesLimit = limits.authenticatedSavedHeadlinesLimit;
+          savedFiltersLimit = limits.authenticatedSavedFiltersLimit;
         case AppUserRole.guestUser:
           accountType = 'guest';
           followedItemsLimit = limits.guestFollowedItemsLimit;
           savedHeadlinesLimit = limits.guestSavedHeadlinesLimit;
+          savedFiltersLimit = limits.guestSavedFiltersLimit;
       }
 
       // 3. Check if proposed preferences exceed limits
@@ -152,6 +166,12 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
       if (updatedPreferences.savedHeadlines.length > savedHeadlinesLimit) {
         throw ForbiddenException(
           'You have reached the maximum number of saved headlines allowed '
+          'for your account type ($accountType).',
+        );
+      }
+      if (updatedPreferences.savedFilters.length > savedFiltersLimit) {
+        throw ForbiddenException(
+          'You have reached the maximum number of saved filters allowed '
           'for your account type ($accountType).',
         );
       }

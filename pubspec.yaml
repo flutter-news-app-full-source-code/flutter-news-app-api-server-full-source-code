@@ -2,6 +2,7 @@ name: flutter_news_app_api_server_full_source_code
 description: The complete backend API server for the Flutter News App Toolkit, built with Dart Frog. Powers authentication, data management, user settings, and more.
 repository: https://github.com/flutter-news-app-full-source-code/flutter-news-app-api-server-full-source-code
 publish_to: none
+version: 1.0.0
 
 environment:
   sdk: ^3.9.0
@@ -11,38 +12,38 @@ dependencies:
   core:
     git:
       url: https://github.com/flutter-news-app-full-source-code/core.git
-      ref: 828b984517edec069266579c624c7af9fbe0e2ac
+      ref: v1.2.0
   dart_frog: ^1.1.0
   dart_jsonwebtoken: ^3.2.0
   data_client:
     git:
       url: https://github.com/flutter-news-app-full-source-code/data-client.git
-      ref: 960a00882045ee252274d9d57bfca606c1fe5d64
+      ref: v1.0.0
   data_mongodb:
     git:
       url: https://github.com/flutter-news-app-full-source-code/data-mongodb.git
-      ref: ee2ace6243f1ad4710c192c36215d3ce9e91c7a3
+      ref: v1.0.0
   data_repository:
     git:
       url: https://github.com/flutter-news-app-full-source-code/data-repository.git
-      ref: f8f01f1191286efbba41fa2bb369fb16eb652ccf
+      ref: v1.0.0
   dotenv: ^4.2.0
   email_client:
     git:
       url: https://github.com/flutter-news-app-full-source-code/email-client.git
-      ref: c5e36d06b58918056dde4a58d177a39fb66bfe24
+      ref: v1.0.0
   email_repository:
     git:
       url: https://github.com/flutter-news-app-full-source-code/email-repository.git
-      ref: a68acd99c37b844af4eb3ed9f2eb9fd494c57f73
+      ref: v1.0.0
   email_sendgrid:
     git:
       url: https://github.com/flutter-news-app-full-source-code/email-sendgrid.git
-      ref: 4cd256b1a65a648db2519d8b26b4e9174d4d3a0c
+      ref: v1.0.0
   http_client:
     git:
       url: https://github.com/flutter-news-app-full-source-code/http-client.git
-      ref: 57f6bcfc0f209ecc135fdcb688194045ec87e6e8
+      ref: v1.0.1
   json_annotation: ^4.9.0
   logging: ^1.3.0
   meta: ^1.16.0
