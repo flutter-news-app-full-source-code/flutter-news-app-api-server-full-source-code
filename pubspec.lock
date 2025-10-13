@@ -150,10 +150,10 @@ packages:
     dependency: "direct main"
     description:
       name: dart_jsonwebtoken
-      sha256: "21ce9f8a8712f741e8d6876a9c82c0f8a257fe928c4378a91d8527b92a3fd413"
+      sha256: "1e26ed01c9e1b4fce984a79a5ea80900e323524fa6227b1132430faa37668e65"
       url: "https://pub.dev"
     source: hosted
-    version: "3.2.0"
+    version: "3.3.0"
   data_client:
     dependency: "direct main"
     description:
