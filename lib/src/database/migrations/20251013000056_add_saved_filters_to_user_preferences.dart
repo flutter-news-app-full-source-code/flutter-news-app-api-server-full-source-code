@@ -10,7 +10,8 @@ class AddSavedFiltersToUserPreferences extends Migration {
     : super(
         prDate: '20251013000056',
         prId: '56',
-        prSummary: 'Add savedFilters field to user_content_preferences',
+        prSummary:
+            'This pull request introduces the ability for users to save and manage custom filter combinations for news headlines. It achieves this by adding a new SavedFilter data model, integrating it into the existing user content preferences, and implementing configurable limits for these saved filters based on user tiers',
       );
 
   @override
