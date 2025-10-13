@@ -362,6 +362,7 @@ class DatabaseSeedingService {
       followedSources: const [],
       followedTopics: const [],
       savedHeadlines: const [],
+      savedFilters: const [],
     );
     await _db.collection('user_content_preferences').insertOne({
       '_id': userId,
