@@ -1,8 +1,8 @@
 # Changelog
 
-## 1.1.0 - 2025-10-17
+## 1.0.1 - 2025-10-17
 
-- **feat**: add saved filters, update dependencies, and add changelog (#67)
+- **chore**: A new migration ensures that existing user preference documents are updated to include the savedFilters field, initialized as an empty array.
 
 ## 1.0.0 - 2025-10-13
 
