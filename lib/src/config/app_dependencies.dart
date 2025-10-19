@@ -81,7 +81,7 @@ class AppDependencies {
   /// Initializes all application dependencies.
   ///
   /// This method is idempotent; it will only run the initialization logic once.
-  Future<void> init() async {
+  Future<void> init() {
     // If _initCompleter is not null, it means initialization is either in
     // progress or has already completed. Return its future to allow callers
     // to await the single, shared initialization process.
