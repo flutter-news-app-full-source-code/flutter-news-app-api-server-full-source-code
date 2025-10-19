@@ -26,17 +26,14 @@ Future<void> main(List<String> args) async {
   Logger.root.level = Level.ALL;
   Logger.root.onRecord.listen((record) {
     // A more detailed logger that includes the error and stack trace.
-    // ignore: avoid_print
     print(
       '${record.level.name}: ${record.time}: ${record.loggerName}: '
       '${record.message}',
     );
     if (record.error != null) {
-      // ignore: avoid_print
       print('  ERROR: ${record.error}');
     }
     if (record.stackTrace != null) {
-      // ignore: avoid_print
       print('  STACK TRACE: ${record.stackTrace}');
     }
   });
@@ -53,7 +50,9 @@ Future<void> main(List<String> args) async {
     log.info('EAGER_INIT: Starting Dart Frog server...');
 
     // Only if initialization succeeds, start the Dart Frog server.
-    await server.main();
+    // This function is void and handles its own async logic internally,
+    // so it should be called without `await`.
+    server.main();
   } catch (e, s) {
     log.severe('EAGER_INIT: FATAL: Failed to start server.', e, s);
     exit(1); // Exit with a non-zero code to indicate failure.
