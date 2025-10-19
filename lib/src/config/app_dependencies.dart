@@ -40,9 +40,6 @@ class AppDependencies {
   /// Provides access to the singleton instance.
   static AppDependencies get instance => _instance;
 
-  bool _isInitialized = false;
-  Object? _initializationError;
-  StackTrace? _initializationStackTrace;
   final _log = Logger('AppDependencies');
 
   // --- Late-initialized fields for all dependencies ---
@@ -78,217 +75,203 @@ class AppDependencies {
 
   /// Initializes all application dependencies.
   ///
-  /// This method is idempotent; it will only run the initialization logic once.
+  /// This method is now designed to be called once at application startup
+  /// by the eager-loading entrypoint (`bin/main.dart`). It will throw an
+  /// exception if any part of the initialization fails, which will be caught
+  /// by the entrypoint to terminate the server process.
   Future<void> init() async {
-    // If initialization previously failed, re-throw the original error.
-    if (_initializationError != null) {
-      return Future.error(_initializationError!, _initializationStackTrace);
-    }
-
-    if (_isInitialized) return;
-
     _log.info('Initializing application dependencies...');
 
-    try {
-      // 1. Initialize Database Connection
-      _mongoDbConnectionManager = MongoDbConnectionManager();
-      await _mongoDbConnectionManager.init(EnvironmentConfig.databaseUrl);
-      _log.info('MongoDB connection established.');
+    // 1. Initialize Database Connection
+    _mongoDbConnectionManager = MongoDbConnectionManager();
+    await _mongoDbConnectionManager.init(EnvironmentConfig.databaseUrl);
+    _log.info('MongoDB connection established.');
 
-      // 2. Initialize and Run Database Migrations
-      databaseMigrationService = DatabaseMigrationService(
-        db: _mongoDbConnectionManager.db,
-        log: Logger('DatabaseMigrationService'),
-        migrations:
-            allMigrations, // From lib/src/database/migrations/all_migrations.dart
-      );
-      await databaseMigrationService.init();
-      _log.info('Database migrations applied.');
+    // 2. Initialize and Run Database Migrations
+    databaseMigrationService = DatabaseMigrationService(
+      db: _mongoDbConnectionManager.db,
+      log: Logger('DatabaseMigrationService'),
+      migrations:
+          allMigrations, // From lib/src/database/migrations/all_migrations.dart
+    );
+    await databaseMigrationService.init();
+    _log.info('Database migrations applied.');
 
-      // 3. Seed Database
-      // This runs AFTER migrations to ensure the schema is up-to-date.
-      final seedingService = DatabaseSeedingService(
-        db: _mongoDbConnectionManager.db,
-        log: Logger('DatabaseSeedingService'),
-      );
-      await seedingService.seedInitialData();
-      _log.info('Database seeding complete.');
+    // 3. Seed Database
+    // This runs AFTER migrations to ensure the schema is up-to-date.
+    final seedingService = DatabaseSeedingService(
+      db: _mongoDbConnectionManager.db,
+      log: Logger('DatabaseSeedingService'),
+    );
+    await seedingService.seedInitialData();
+    _log.info('Database seeding complete.');
 
-      // 4. Initialize Data Clients (MongoDB implementation)
-      final headlineClient = DataMongodb<Headline>(
-        connectionManager: _mongoDbConnectionManager,
-        modelName: 'headlines',
-        fromJson: Headline.fromJson,
-        toJson: (item) => item.toJson(),
-        searchableFields: ['title'],
-        logger: Logger('DataMongodb<Headline>'),
-      );
-      final topicClient = DataMongodb<Topic>(
-        connectionManager: _mongoDbConnectionManager,
-        modelName: 'topics',
-        fromJson: Topic.fromJson,
-        toJson: (item) => item.toJson(),
-        searchableFields: ['name'],
-        logger: Logger('DataMongodb<Topic>'),
-      );
-      final sourceClient = DataMongodb<Source>(
-        connectionManager: _mongoDbConnectionManager,
-        modelName: 'sources',
-        fromJson: Source.fromJson,
-        toJson: (item) => item.toJson(),
-        searchableFields: ['name'],
-        logger: Logger('DataMongodb<Source>'),
-      );
-      final countryClient = DataMongodb<Country>(
-        connectionManager: _mongoDbConnectionManager,
-        modelName: 'countries',
-        fromJson: Country.fromJson,
-        toJson: (item) => item.toJson(),
-        searchableFields: ['name'],
-        logger: Logger('DataMongodb<Country>'),
-      );
-      final languageClient = DataMongodb<Language>(
-        connectionManager: _mongoDbConnectionManager,
-        modelName: 'languages',
-        fromJson: Language.fromJson,
-        toJson: (item) => item.toJson(),
-        logger: Logger('DataMongodb<Language>'),
-      );
-      final userClient = DataMongodb<User>(
-        connectionManager: _mongoDbConnectionManager,
-        modelName: 'users',
-        fromJson: User.fromJson,
-        toJson: (item) => item.toJson(),
-        logger: Logger('DataMongodb<User>'),
-      );
-      final userAppSettingsClient = DataMongodb<UserAppSettings>(
-        connectionManager: _mongoDbConnectionManager,
-        modelName: 'user_app_settings',
-        fromJson: UserAppSettings.fromJson,
-        toJson: (item) => item.toJson(),
-        logger: Logger('DataMongodb<UserAppSettings>'),
-      );
-      final userContentPreferencesClient = DataMongodb<UserContentPreferences>(
-        connectionManager: _mongoDbConnectionManager,
-        modelName: 'user_content_preferences',
-        fromJson: UserContentPreferences.fromJson,
-        toJson: (item) => item.toJson(),
-        logger: Logger('DataMongodb<UserContentPreferences>'),
-      );
-      final remoteConfigClient = DataMongodb<RemoteConfig>(
-        connectionManager: _mongoDbConnectionManager,
-        modelName: 'remote_configs',
-        fromJson: RemoteConfig.fromJson,
-        toJson: (item) => item.toJson(),
-        logger: Logger('DataMongodb<RemoteConfig>'),
-      );
+    // 4. Initialize Data Clients (MongoDB implementation)
+    final headlineClient = DataMongodb<Headline>(
+      connectionManager: _mongoDbConnectionManager,
+      modelName: 'headlines',
+      fromJson: Headline.fromJson,
+      toJson: (item) => item.toJson(),
+      searchableFields: ['title'],
+      logger: Logger('DataMongodb<Headline>'),
+    );
+    final topicClient = DataMongodb<Topic>(
+      connectionManager: _mongoDbConnectionManager,
+      modelName: 'topics',
+      fromJson: Topic.fromJson,
+      toJson: (item) => item.toJson(),
+      searchableFields: ['name'],
+      logger: Logger('DataMongodb<Topic>'),
+    );
+    final sourceClient = DataMongodb<Source>(
+      connectionManager: _mongoDbConnectionManager,
+      modelName: 'sources',
+      fromJson: Source.fromJson,
+      toJson: (item) => item.toJson(),
+      searchableFields: ['name'],
+      logger: Logger('DataMongodb<Source>'),
+    );
+    final countryClient = DataMongodb<Country>(
+      connectionManager: _mongoDbConnectionManager,
+      modelName: 'countries',
+      fromJson: Country.fromJson,
+      toJson: (item) => item.toJson(),
+      searchableFields: ['name'],
+      logger: Logger('DataMongodb<Country>'),
+    );
+    final languageClient = DataMongodb<Language>(
+      connectionManager: _mongoDbConnectionManager,
+      modelName: 'languages',
+      fromJson: Language.fromJson,
+      toJson: (item) => item.toJson(),
+      logger: Logger('DataMongodb<Language>'),
+    );
+    final userClient = DataMongodb<User>(
+      connectionManager: _mongoDbConnectionManager,
+      modelName: 'users',
+      fromJson: User.fromJson,
+      toJson: (item) => item.toJson(),
+      logger: Logger('DataMongodb<User>'),
+    );
+    final userAppSettingsClient = DataMongodb<UserAppSettings>(
+      connectionManager: _mongoDbConnectionManager,
+      modelName: 'user_app_settings',
+      fromJson: UserAppSettings.fromJson,
+      toJson: (item) => item.toJson(),
+      logger: Logger('DataMongodb<UserAppSettings>'),
+    );
+    final userContentPreferencesClient = DataMongodb<UserContentPreferences>(
+      connectionManager: _mongoDbConnectionManager,
+      modelName: 'user_content_preferences',
+      fromJson: UserContentPreferences.fromJson,
+      toJson: (item) => item.toJson(),
+      logger: Logger('DataMongodb<UserContentPreferences>'),
+    );
+    final remoteConfigClient = DataMongodb<RemoteConfig>(
+      connectionManager: _mongoDbConnectionManager,
+      modelName: 'remote_configs',
+      fromJson: RemoteConfig.fromJson,
+      toJson: (item) => item.toJson(),
+      logger: Logger('DataMongodb<RemoteConfig>'),
+    );
 
-      // 4. Initialize Repositories
-      headlineRepository = DataRepository(dataClient: headlineClient);
-      topicRepository = DataRepository(dataClient: topicClient);
-      sourceRepository = DataRepository(dataClient: sourceClient);
-      countryRepository = DataRepository(dataClient: countryClient);
-      languageRepository = DataRepository(dataClient: languageClient);
-      userRepository = DataRepository(dataClient: userClient);
-      userAppSettingsRepository = DataRepository(
-        dataClient: userAppSettingsClient,
-      );
-      userContentPreferencesRepository = DataRepository(
-        dataClient: userContentPreferencesClient,
-      );
-      remoteConfigRepository = DataRepository(dataClient: remoteConfigClient);
-      // Configure the HTTP client for SendGrid.
-      // The HttpClient's AuthInterceptor will use the tokenProvider to add
-      // the 'Authorization: Bearer <SENDGRID_API_KEY>' header.
-      final sendGridApiBase =
-          EnvironmentConfig.sendGridApiUrl ?? 'https://api.sendgrid.com';
-      final sendGridHttpClient = HttpClient(
-        baseUrl: '$sendGridApiBase/v3',
-        tokenProvider: () async => EnvironmentConfig.sendGridApiKey,
-        logger: Logger('EmailSendgridClient'),
-      );
+    // 4. Initialize Repositories
+    headlineRepository = DataRepository(dataClient: headlineClient);
+    topicRepository = DataRepository(dataClient: topicClient);
+    sourceRepository = DataRepository(dataClient: sourceClient);
+    countryRepository = DataRepository(dataClient: countryClient);
+    languageRepository = DataRepository(dataClient: languageClient);
+    userRepository = DataRepository(dataClient: userClient);
+    userAppSettingsRepository = DataRepository(
+      dataClient: userAppSettingsClient,
+    );
+    userContentPreferencesRepository = DataRepository(
+      dataClient: userContentPreferencesClient,
+    );
+    remoteConfigRepository = DataRepository(dataClient: remoteConfigClient);
+    // Configure the HTTP client for SendGrid.
+    // The HttpClient's AuthInterceptor will use the tokenProvider to add
+    // the 'Authorization: Bearer <SENDGRID_API_KEY>' header.
+    final sendGridApiBase =
+        EnvironmentConfig.sendGridApiUrl ?? 'https://api.sendgrid.com';
+    final sendGridHttpClient = HttpClient(
+      baseUrl: '$sendGridApiBase/v3',
+      tokenProvider: () async => EnvironmentConfig.sendGridApiKey,
+      logger: Logger('EmailSendgridClient'),
+    );
 
-      // Initialize the SendGrid email client with the dedicated HTTP client.
-      final emailClient = EmailSendGrid(
-        httpClient: sendGridHttpClient,
-        log: Logger('EmailSendgrid'),
-      );
+    // Initialize the SendGrid email client with the dedicated HTTP client.
+    final emailClient = EmailSendGrid(
+      httpClient: sendGridHttpClient,
+      log: Logger('EmailSendgrid'),
+    );
 
-      emailRepository = EmailRepository(emailClient: emailClient);
+    emailRepository = EmailRepository(emailClient: emailClient);
 
-      final localAdClient = DataMongodb<LocalAd>(
-        connectionManager: _mongoDbConnectionManager,
-        modelName: 'local_ads',
-        fromJson: LocalAd.fromJson,
-        toJson: LocalAd.toJson,
-        searchableFields: ['title'],
-        logger: Logger('DataMongodb<LocalAd>'),
-      );
-      localAdRepository = DataRepository(dataClient: localAdClient);
+    final localAdClient = DataMongodb<LocalAd>(
+      connectionManager: _mongoDbConnectionManager,
+      modelName: 'local_ads',
+      fromJson: LocalAd.fromJson,
+      toJson: LocalAd.toJson,
+      searchableFields: ['title'],
+      logger: Logger('DataMongodb<LocalAd>'),
+    );
+    localAdRepository = DataRepository(dataClient: localAdClient);
 
-      // 5. Initialize Services
-      tokenBlacklistService = MongoDbTokenBlacklistService(
-        connectionManager: _mongoDbConnectionManager,
-        log: Logger('MongoDbTokenBlacklistService'),
-      );
-      authTokenService = JwtAuthTokenService(
-        userRepository: userRepository,
-        blacklistService: tokenBlacklistService,
-        log: Logger('JwtAuthTokenService'),
-      );
-      verificationCodeStorageService = MongoDbVerificationCodeStorageService(
-        connectionManager: _mongoDbConnectionManager,
-        log: Logger('MongoDbVerificationCodeStorageService'),
-      );
-      permissionService = const PermissionService();
-      authService = AuthService(
-        userRepository: userRepository,
-        authTokenService: authTokenService,
-        verificationCodeStorageService: verificationCodeStorageService,
-        permissionService: permissionService,
-        emailRepository: emailRepository,
-        userAppSettingsRepository: userAppSettingsRepository,
-        userContentPreferencesRepository: userContentPreferencesRepository,
-        log: Logger('AuthService'),
-      );
-      dashboardSummaryService = DashboardSummaryService(
-        headlineRepository: headlineRepository,
-        topicRepository: topicRepository,
-        sourceRepository: sourceRepository,
-      );
-      userPreferenceLimitService = DefaultUserPreferenceLimitService(
-        remoteConfigRepository: remoteConfigRepository,
-        permissionService: permissionService,
-        log: Logger('DefaultUserPreferenceLimitService'),
-      );
-      rateLimitService = MongoDbRateLimitService(
-        connectionManager: _mongoDbConnectionManager,
-        log: Logger('MongoDbRateLimitService'),
-      );
-      countryQueryService = CountryQueryService(
-        countryRepository: countryRepository,
-        log: Logger('CountryQueryService'),
-        cacheDuration: EnvironmentConfig.countryServiceCacheDuration,
-      );
+    // 5. Initialize Services
+    tokenBlacklistService = MongoDbTokenBlacklistService(
+      connectionManager: _mongoDbConnectionManager,
+      log: Logger('MongoDbTokenBlacklistService'),
+    );
+    authTokenService = JwtAuthTokenService(
+      userRepository: userRepository,
+      blacklistService: tokenBlacklistService,
+      log: Logger('JwtAuthTokenService'),
+    );
+    verificationCodeStorageService = MongoDbVerificationCodeStorageService(
+      connectionManager: _mongoDbConnectionManager,
+      log: Logger('MongoDbVerificationCodeStorageService'),
+    );
+    permissionService = const PermissionService();
+    authService = AuthService(
+      userRepository: userRepository,
+      authTokenService: authTokenService,
+      verificationCodeStorageService: verificationCodeStorageService,
+      permissionService: permissionService,
+      emailRepository: emailRepository,
+      userAppSettingsRepository: userAppSettingsRepository,
+      userContentPreferencesRepository: userContentPreferencesRepository,
+      log: Logger('AuthService'),
+    );
+    dashboardSummaryService = DashboardSummaryService(
+      headlineRepository: headlineRepository,
+      topicRepository: topicRepository,
+      sourceRepository: sourceRepository,
+    );
+    userPreferenceLimitService = DefaultUserPreferenceLimitService(
+      remoteConfigRepository: remoteConfigRepository,
+      permissionService: permissionService,
+      log: Logger('DefaultUserPreferenceLimitService'),
+    );
+    rateLimitService = MongoDbRateLimitService(
+      connectionManager: _mongoDbConnectionManager,
+      log: Logger('MongoDbRateLimitService'),
+    );
+    countryQueryService = CountryQueryService(
+      countryRepository: countryRepository,
+      log: Logger('CountryQueryService'),
+      cacheDuration: EnvironmentConfig.countryServiceCacheDuration,
+    );
 
-      _isInitialized = true;
-      _log.info('Application dependencies initialized successfully.');
-    } catch (e, s) {
-      _log.severe('Failed to initialize application dependencies', e, s);
-      _initializationError = e;
-      _initializationStackTrace = s;
-      rethrow;
-    }
+    _log.info('Application dependencies initialized successfully.');
   }
 
   /// Disposes of resources, such as closing the database connection.
   Future<void> dispose() async {
-    if (!_isInitialized) return;
     await _mongoDbConnectionManager.close();
     tokenBlacklistService.dispose();
     rateLimitService.dispose();
     countryQueryService.dispose(); // Dispose the new service
-    _isInitialized = false;
     _log.info('Application dependencies disposed.');
   }
 }
