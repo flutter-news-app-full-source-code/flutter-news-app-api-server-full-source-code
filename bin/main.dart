@@ -56,7 +56,10 @@ Future<void> main(List<String> args) async {
 
   // Listen for termination signals.
   ProcessSignal.sigint.watch().listen((_) => shutdown('SIGINT'));
-  ProcessSignal.sigterm.watch().listen((_) => shutdown('SIGTERM'));
+  // SIGTERM is not supported on Windows. Attempting to listen to it will throw.
+  if (!Platform.isWindows) {
+    ProcessSignal.sigterm.watch().listen((_) => shutdown('SIGTERM'));
+  }
 
   try {
     log.info('EAGER_INIT: Initializing application dependencies...');
