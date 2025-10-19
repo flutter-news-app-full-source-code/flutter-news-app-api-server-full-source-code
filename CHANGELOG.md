@@ -1,7 +1,7 @@
 # Changelog
 
 ## Upcoming Release
-- **refactor!**: shift from lazy to eager loading for robust, fail-fast startup.
+- **refactor!**: shift to eager loading for a robust, fail-fast startup that is fully compatible with Dart Frog's hot reload.
 
 ## 1.0.1 - 2025-10-17
 
