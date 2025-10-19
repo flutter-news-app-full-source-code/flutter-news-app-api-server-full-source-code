@@ -82,6 +82,10 @@ Future<void> main(List<String> args) async {
     );
   } catch (e, s) {
     log.severe('EAGER_INIT: FATAL: Failed to start server.', e, s);
+    // Log directly to stderr and flush to ensure the message is captured
+    // before the process exits, which is crucial for debugging startup errors.
+    stderr.writeln('EAGER_INIT: FATAL: Failed to start server. Error: $e\nStack Trace: $s');
+    await stderr.flush();
     // Exit the process if initialization fails.
     exit(1);
   }
