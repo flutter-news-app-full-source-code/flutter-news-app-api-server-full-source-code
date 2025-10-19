@@ -1,5 +1,6 @@
 // ignore_for_file: public_member_api_docs
 
+import 'dart:async';
 import 'package:core/core.dart';
 import 'package:data_mongodb/data_mongodb.dart';
 import 'package:data_repository/data_repository.dart';
@@ -40,10 +41,11 @@ class AppDependencies {
   /// Provides access to the singleton instance.
   static AppDependencies get instance => _instance;
 
-  bool _isInitialized = false;
-  Object? _initializationError;
-  StackTrace? _initializationStackTrace;
   final _log = Logger('AppDependencies');
+
+  // A Completer to manage the one-time asynchronous initialization.
+  // This ensures the initialization logic runs only once.
+  Completer<void>? _initCompleter;
 
   // --- Late-initialized fields for all dependencies ---
 
@@ -80,15 +82,27 @@ class AppDependencies {
   ///
   /// This method is idempotent; it will only run the initialization logic once.
   Future<void> init() async {
-    // If initialization previously failed, re-throw the original error.
-    if (_initializationError != null) {
-      return Future.error(_initializationError!, _initializationStackTrace);
+    // If _initCompleter is not null, it means initialization is either in
+    // progress or has already completed. Return its future to allow callers
+    // to await the single, shared initialization process.
+    if (_initCompleter != null) {
+      return _initCompleter!.future;
     }
 
-    if (_isInitialized) return;
+    // This is the first call to init(). Create the completer and start the
+    // initialization process.
+    _initCompleter = Completer<void>();
+    _log.info('Starting application dependency initialization...');
+    _initializeDependencies();
 
+    // Return the future from the completer.
+    return _initCompleter!.future;
+  }
+
+  /// The core logic for initializing all dependencies.
+  /// This method is private and should only be called once by [init].
+  Future<void> _initializeDependencies() async {
     _log.info('Initializing application dependencies...');
-
     try {
       // 1. Initialize Database Connection
       _mongoDbConnectionManager = MongoDbConnectionManager();
@@ -271,24 +285,33 @@ class AppDependencies {
         cacheDuration: EnvironmentConfig.countryServiceCacheDuration,
       );
 
-      _isInitialized = true;
       _log.info('Application dependencies initialized successfully.');
+      // Signal that initialization has completed successfully.
+      _initCompleter!.complete();
     } catch (e, s) {
       _log.severe('Failed to initialize application dependencies', e, s);
-      _initializationError = e;
-      _initializationStackTrace = s;
+      // Signal that initialization has failed.
+      _initCompleter!.completeError(e, s);
       rethrow;
     }
   }
 
   /// Disposes of resources, such as closing the database connection.
   Future<void> dispose() async {
-    if (!_isInitialized) return;
+    // Only attempt to dispose if initialization has been started.
+    if (_initCompleter == null) {
+      _log.info('Dispose called, but dependencies were never initialized.');
+      return;
+    }
+
+    _log.info('Disposing application dependencies...');
     await _mongoDbConnectionManager.close();
     tokenBlacklistService.dispose();
     rateLimitService.dispose();
     countryQueryService.dispose(); // Dispose the new service
-    _isInitialized = false;
-    _log.info('Application dependencies disposed.');
+
+    // Reset the completer to allow for re-initialization (e.g., in tests).
+    _initCompleter = null;
+    _log.info('Application dependencies disposed and state reset.');
   }
 }
