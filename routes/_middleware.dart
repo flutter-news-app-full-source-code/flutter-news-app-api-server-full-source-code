@@ -74,17 +74,17 @@ Handler middleware(Handler handler) {
       })
       // --- Dependency Provider ---
       // This is the outermost middleware. It runs once per request, before any
-      // other middleware. It's responsible for initializing and providing all
-      // dependencies for the request.
+      // other middleware. It's responsible for providing all dependencies,
+      // which are guaranteed to be pre-initialized by the eager-loading
+      // entrypoint (`bin/main.dart`), to the request context.
       .use((handler) {
         return (context) async {
-          // 1. Ensure all dependencies are initialized (idempotent).
-          _log.info('Ensuring all application dependencies are initialized...');
-          await AppDependencies.instance.init();
-          _log.info('Dependencies are ready.');
-
-          // 2. Provide all dependencies to the inner handler.
+          // Provide all dependencies to the inner handler.
+          // The AppDependencies instance is a singleton that has already been
+          // initialized at application startup.
           final deps = AppDependencies.instance;
+          _log.finer('Providing pre-initialized dependencies to context.');
+
           return handler
               .use(
                 provider<DataOperationRegistry>((_) => DataOperationRegistry()),
