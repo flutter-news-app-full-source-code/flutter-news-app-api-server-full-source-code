@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_print
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
@@ -7,7 +8,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/config/app_depe
 import 'package:logging/logging.dart';
 
 // Import the generated server entrypoint to access `buildRootHandler`.
-import '../.dart_frog/server.dart' as server;
+import '../.dart_frog/server.dart' as dart_frog;
 
 /// The main entrypoint for the application.
 ///
@@ -25,20 +26,37 @@ Future<void> main(List<String> args) async {
   // application, as it's guaranteed to run only once at startup.
   Logger.root.level = Level.ALL;
   Logger.root.onRecord.listen((record) {
-    // A more detailed logger that includes the error and stack trace.
-    print(
-      '${record.level.name}: ${record.time}: ${record.loggerName}: '
-      '${record.message}',
-    );
+    final message = StringBuffer()
+      ..write('${record.level.name}: ${record.time}: ${record.loggerName}: ')
+      ..writeln(record.message);
+
     if (record.error != null) {
-      print('  ERROR: ${record.error}');
+      message.writeln('  ERROR: ${record.error}');
     }
     if (record.stackTrace != null) {
-      print('  STACK TRACE: ${record.stackTrace}');
+      message.writeln('  STACK TRACE: ${record.stackTrace}');
     }
+
+    // Write the log message atomically to stdout.
+    stdout.write(message.toString());
   });
 
   final log = Logger('EagerEntrypoint');
+  HttpServer? server;
+
+  Future<void> shutdown([String? signal]) async {
+    log.info('Received ${signal ?? 'signal'}. Shutting down gracefully...');
+    // Stop accepting new connections.
+    await server?.close();
+    // Dispose all application dependencies.
+    await AppDependencies.instance.dispose();
+    log.info('Shutdown complete.');
+    exit(0);
+  }
+
+  // Listen for termination signals.
+  ProcessSignal.sigint.watch().listen((_) => shutdown('SIGINT'));
+  ProcessSignal.sigterm.watch().listen((_) => shutdown('SIGTERM'));
 
   try {
     log.info('EAGER_INIT: Initializing application dependencies...');
@@ -52,7 +70,10 @@ Future<void> main(List<String> args) async {
     // Start the server directly without the hot reload wrapper.
     final address = InternetAddress.anyIPv6;
     final port = int.tryParse(Platform.environment['PORT'] ?? '8080') ?? 8080;
-    await serve(server.buildRootHandler(), address, port);
+    server = await serve(dart_frog.buildRootHandler(), address, port);
+    log.info(
+      'Server listening on http://${server.address.host}:${server.port}',
+    );
   } catch (e, s) {
     log.severe('EAGER_INIT: FATAL: Failed to start server.', e, s);
     // Exit the process if initialization fails.

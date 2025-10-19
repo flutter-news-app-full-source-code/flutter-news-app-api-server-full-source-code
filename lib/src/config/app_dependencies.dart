@@ -42,6 +42,9 @@ class AppDependencies {
 
   final _log = Logger('AppDependencies');
 
+  // A flag to track if initialization has started, for safe disposal.
+  bool _initStarted = false;
+
   // --- Late-initialized fields for all dependencies ---
 
   // Database
@@ -80,6 +83,7 @@ class AppDependencies {
   /// exception if any part of the initialization fails, which will be caught
   /// by the entrypoint to terminate the server process.
   Future<void> init() async {
+    _initStarted = true;
     _log.info('Initializing application dependencies...');
 
     // 1. Initialize Database Connection
@@ -268,7 +272,9 @@ class AppDependencies {
 
   /// Disposes of resources, such as closing the database connection.
   Future<void> dispose() async {
-    await _mongoDbConnectionManager.close();
+    if (_initStarted) {
+      await _mongoDbConnectionManager.close();
+    }
     tokenBlacklistService.dispose();
     rateLimitService.dispose();
     countryQueryService.dispose(); // Dispose the new service
