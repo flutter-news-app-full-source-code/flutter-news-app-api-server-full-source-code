@@ -93,7 +93,9 @@ class AppDependencies {
     // initialization process.
     _initCompleter = Completer<void>();
     _log.info('Starting application dependency initialization...');
-    _initializeDependencies();
+    // We intentionally don't await this future here. The completer's future,
+    // which is returned below, is what callers will await.
+    unawaited(_initializeDependencies());
 
     // Return the future from the completer.
     return _initCompleter!.future;
