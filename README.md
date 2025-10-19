@@ -85,6 +85,13 @@ Click on any category to explore.
 
 ---
 
+### ✨ Eager Loading & Fail-Fast Startup
+- **Robust Initialization:** The server now initializes all critical dependencies (database connection, migrations, seeding) *before* it starts accepting any requests.
+- **Fail-Fast by Design:** If any part of the startup process fails (e.g., the database is down), the server will immediately exit with a clear error.
+> **Your Advantage:** This eliminates startup race conditions and ensures the server is either fully operational or not running at all. It provides a highly predictable and stable production environment, preventing the server from running in a broken state.
+
+---
+
 ### 🔌 Robust Dependency Injection
 - **Testable & Modular:** A centralized dependency injection system makes the entire application highly modular and easy to test.
 - **Swappable Implementations:** Easily swap out core components—like the database (MongoDB), email provider (SendGrid), or storage services—without rewriting your business logic.
