@@ -2,7 +2,7 @@
 
 ## Upcoming Release
 
-- fix: prevent race condition during concurrent dependency initialization.
+- **fix**: prevent race condition during concurrent dependency initialization.
 
 ## 1.0.1 - 2025-10-17
 
