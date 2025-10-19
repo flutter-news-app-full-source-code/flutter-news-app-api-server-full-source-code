@@ -73,7 +73,10 @@ Future<void> main(List<String> args) async {
     // Start the server directly without the hot reload wrapper.
     final address = InternetAddress.anyIPv6;
     final port = int.tryParse(Platform.environment['PORT'] ?? '8080') ?? 8080;
-    server = await serve(dart_frog.buildRootHandler(), address, port);
+    
+    // Explicitly cast the handler to resolve the type ambiguity.
+    final handler = dart_frog.buildRootHandler() as Handler;
+    server = await serve(handler, address, port);
     log.info(
       'Server listening on http://${server.address.host}:${server.port}',
     );
