@@ -1,10 +1,10 @@
 // ignore_for_file: avoid_print
 
 import 'dart:io';
-import 'package:dart_frog/dart_frog.dart';
-import 'package:logging/logging.dart';
 
+import 'package:dart_frog/dart_frog.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/app_dependencies.dart';
+import 'package:logging/logging.dart';
 
 // Import the generated server entrypoint to access `buildRootHandler`.
 import '../.dart_frog/server.dart' as server;
