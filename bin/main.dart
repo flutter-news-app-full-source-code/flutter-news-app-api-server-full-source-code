@@ -21,6 +21,26 @@ import '../.dart_frog/server.dart' as server;
 /// "fail-fast" approach suitable for production environments.
 Future<void> main(List<String> args) async {
   // Use a local logger for startup-specific messages.
+  // This is also the ideal place to configure the root logger for the entire
+  // application, as it's guaranteed to run only once at startup.
+  Logger.root.level = Level.ALL;
+  Logger.root.onRecord.listen((record) {
+    // A more detailed logger that includes the error and stack trace.
+    // ignore: avoid_print
+    print(
+      '${record.level.name}: ${record.time}: ${record.loggerName}: '
+      '${record.message}',
+    );
+    if (record.error != null) {
+      // ignore: avoid_print
+      print('  ERROR: ${record.error}');
+    }
+    if (record.stackTrace != null) {
+      // ignore: avoid_print
+      print('  STACK TRACE: ${record.stackTrace}');
+    }
+  });
+
   final log = Logger('EagerEntrypoint');
 
   try {
