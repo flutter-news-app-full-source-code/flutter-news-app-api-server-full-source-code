@@ -306,6 +306,18 @@ class AppDependencies {
       return;
     }
 
+    // Wait for initialization to complete before disposing resources.
+    // This prevents a race condition if dispose() is called during init().
+    try {
+      await _initCompleter!.future;
+    } catch (_) {
+      // Initialization may have failed, but we still proceed to dispose
+      // any partially initialized resources.
+      _log.warning(
+        'Disposing dependencies after a failed initialization attempt.',
+      );
+    }
+
     _log.info('Disposing application dependencies...');
     await _mongoDbConnectionManager.close();
     tokenBlacklistService.dispose();
