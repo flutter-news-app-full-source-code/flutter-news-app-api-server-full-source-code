@@ -2,13 +2,11 @@
 
 import 'dart:io';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/config/app_dependencies.dart';
 import 'package:logging/logging.dart';
-import 'package:shelf_hotreload/shelf_hotreload.dart';
 
-// Import the generated server entrypoint from the .dart_frog directory.
-// This file contains the `createServer` function we need.
-// We use a prefix to avoid a name collision with our own `main` function.
+import 'package:flutter_news_app_api_server_full_source_code/src/config/app_dependencies.dart';
+
+// Import the generated server entrypoint to access `buildRootHandler`.
 import '../.dart_frog/server.dart' as server;
 
 /// The main entrypoint for the application.
@@ -20,7 +18,7 @@ import '../.dart_frog/server.dart' as server;
 /// If any part of the dependency initialization fails (e.g., database
 /// connection, migrations), the process will log a fatal error and exit,
 /// preventing the server from running in a broken state. This is a robust,
-/// "fail-fast" approach that is compatible with Dart Frog's hot reload.
+/// "fail-fast" approach.
 Future<void> main(List<String> args) async {
   // Use a local logger for startup-specific messages.
   // This is also the ideal place to configure the root logger for the entire
@@ -42,30 +40,22 @@ Future<void> main(List<String> args) async {
 
   final log = Logger('EagerEntrypoint');
 
-  // This is our custom hot-reload-aware startup logic.
-  // The `withHotreload` function from `shelf_hotreload` (used by Dart Frog)
-  // takes a builder function that it calls whenever a reload is needed.
-  // We place our initialization logic inside this builder.
-  withHotreload(
-    () async {
-      try {
-        log.info('EAGER_INIT: Initializing application dependencies...');
+  try {
+    log.info('EAGER_INIT: Initializing application dependencies...');
 
-        // Eagerly initialize all dependencies. If this fails, it will throw.
-        await AppDependencies.instance.init();
+    // Eagerly initialize all dependencies. If this fails, it will throw.
+    await AppDependencies.instance.init();
 
-        log.info('EAGER_INIT: Dependencies initialized successfully.');
-        log.info('EAGER_INIT: Starting Dart Frog server...');
+    log.info('EAGER_INIT: Dependencies initialized successfully.');
+    log.info('EAGER_INIT: Starting Dart Frog server...');
 
-        // Use the generated `createServer` function from Dart Frog.
-        final address = InternetAddress.anyIPv6;
-        const port = 8080;
-        return serve(server.buildRootHandler(), address, port);
-      } catch (e, s) {
-        log.severe('EAGER_INIT: FATAL: Failed to start server.', e, s);
-        // Exit the process if initialization fails.
-        exit(1);
-      }
-    },
-  );
+    // Start the server directly without the hot reload wrapper.
+    final address = InternetAddress.anyIPv6;
+    final port = int.tryParse(Platform.environment['PORT'] ?? '8080') ?? 8080;
+    await serve(server.buildRootHandler(), address, port);
+  } catch (e, s) {
+    log.severe('EAGER_INIT: FATAL: Failed to start server.', e, s);
+    // Exit the process if initialization fails.
+    exit(1);
+  }
 }
