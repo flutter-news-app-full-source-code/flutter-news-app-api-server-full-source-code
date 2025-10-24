@@ -2,7 +2,7 @@ name: flutter_news_app_api_server_full_source_code
 description: The complete backend API server for the Flutter News App Toolkit, built with Dart Frog. Powers authentication, data management, user settings, and more.
 repository: https://github.com/flutter-news-app-full-source-code/flutter-news-app-api-server-full-source-code
 publish_to: none
-version: 1.0.1
+version: 1.1.0
 
 environment:
   sdk: ^3.9.0
@@ -12,7 +12,7 @@ dependencies:
   core:
     git:
       url: https://github.com/flutter-news-app-full-source-code/core.git
-      ref: v1.2.0
+      ref: v1.3.0
   dart_frog: ^1.1.0
   dart_jsonwebtoken: ^3.2.0
   data_client:
@@ -54,3 +54,9 @@ dev_dependencies:
   mocktail: ^1.0.3
   test: ^1.25.5
   very_good_analysis: ^9.0.0
+
+dependency_overrides:
+  core:
+    git:
+      url: https://github.com/flutter-news-app-full-source-code/core.git
+      ref: v1.3.0
