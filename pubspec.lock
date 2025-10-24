@@ -5,10 +5,10 @@ packages:
     dependency: transitive
     description:
       name: _fe_analyzer_shared
-      sha256: dd3d2ad434b9510001d089e8de7556d50c834481b9abc2891a0184a8493a19dc
+      sha256: c209688d9f5a5f26b2fb47a188131a6fb9e876ae9e47af3737c0b4f58a93470d
       url: "https://pub.dev"
     source: hosted
-    version: "89.0.0"
+    version: "91.0.0"
   adaptive_number:
     dependency: transitive
     description:
@@ -21,10 +21,10 @@ packages:
     dependency: transitive
     description:
       name: analyzer
-      sha256: c22b6e7726d1f9e5db58c7251606076a71ca0dbcf76116675edfadbec0c9e875
+      sha256: a40a0cee526a7e1f387c6847bd8a5ccbf510a75952ef8a28338e989558072cb0
       url: "https://pub.dev"
     source: hosted
-    version: "8.2.0"
+    version: "8.4.0"
   archive:
     dependency: transitive
     description:
@@ -117,11 +117,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "v1.3.0"
-      resolved-ref: ee2ad7de28baec04d64c0afd3e3a61d7e4ad6cb0
+      ref: "v1.3.1"
+      resolved-ref: a03efff11b7577974cb444a1a6a46fee8b05ea42
       url: "https://github.com/flutter-news-app-full-source-code/core.git"
     source: git
-    version: "1.3.0"
+    version: "1.3.1"
   coverage:
     dependency: transitive
     description:
@@ -142,45 +142,45 @@ packages:
     dependency: "direct main"
     description:
       name: dart_frog
-      sha256: "84b8f82413f622dfdcfba6982522f8752ece09b49fea9a35f8794a0b2bc357e4"
+      sha256: "0fc909d10ae79dd069e6a3a4769aeaa9839c93b7f6f1e71cfd37b276410875e7"
       url: "https://pub.dev"
     source: hosted
-    version: "1.2.3"
+    version: "1.2.4"
   dart_jsonwebtoken:
     dependency: "direct main"
     description:
       name: dart_jsonwebtoken
-      sha256: "21ce9f8a8712f741e8d6876a9c82c0f8a257fe928c4378a91d8527b92a3fd413"
+      sha256: "0de65691c1d736e9459f22f654ddd6fd8368a271d4e41aa07e53e6301eff5075"
       url: "https://pub.dev"
     source: hosted
-    version: "3.2.0"
+    version: "3.3.1"
   data_client:
     dependency: "direct main"
     description:
       path: "."
-      ref: "v1.0.0"
-      resolved-ref: b9a8a8c2c660928c22f2d38d657000bcae4c74d6
+      ref: "v1.0.1"
+      resolved-ref: "61e693e22e05c279a41304c98d68d96424b96df6"
       url: "https://github.com/flutter-news-app-full-source-code/data-client.git"
     source: git
-    version: "0.0.0"
+    version: "1.0.1"
   data_mongodb:
     dependency: "direct main"
     description:
       path: "."
-      ref: "v1.0.0"
-      resolved-ref: f55b686acdbc0af9c617df4833733a07f9208b57
+      ref: "v1.0.1"
+      resolved-ref: a353f46f48019b0fc8e9180cf4061623adcd2b99
       url: "https://github.com/flutter-news-app-full-source-code/data-mongodb.git"
     source: git
-    version: "0.0.0"
+    version: "1.0.1"
   data_repository:
     dependency: "direct main"
     description:
       path: "."
-      ref: "v1.0.0"
-      resolved-ref: "7f9242d810d60fefd2f883b19e1650e8e4eb41a3"
+      ref: "v1.0.1"
+      resolved-ref: "3e9115fc5229a6e84b81f44b74bc7df47824a00e"
       url: "https://github.com/flutter-news-app-full-source-code/data-repository.git"
     source: git
-    version: "0.0.0"
+    version: "1.0.1"
   decimal:
     dependency: transitive
     description:
@@ -225,29 +225,29 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "v1.0.0"
-      resolved-ref: "31faf0e429aeea519204dfdd26afdba36ea1d8dc"
+      ref: "v1.0.1"
+      resolved-ref: "2e4b468c96e60e7f899ec28c02389c5ce0b578fa"
       url: "https://github.com/flutter-news-app-full-source-code/email-client.git"
     source: git
-    version: "0.0.0"
+    version: "1.0.1"
   email_repository:
     dependency: "direct main"
     description:
       path: "."
-      ref: "v1.0.0"
-      resolved-ref: "2be152f3c48acd35d0a79a01d7258a4e8e8ab399"
+      ref: "v1.0.1"
+      resolved-ref: e0a04e22bce1e891e6c3b35f83a30c3a8800b044
       url: "https://github.com/flutter-news-app-full-source-code/email-repository.git"
     source: git
-    version: "0.0.0"
+    version: "1.0.1"
   email_sendgrid:
     dependency: "direct main"
     description:
       path: "."
-      ref: "v1.0.0"
-      resolved-ref: f28572a0c0598348391df7701a205249f2454031
+      ref: "v1.0.1"
+      resolved-ref: "9eb355fe901823cf9062472a545efc5302ba9168"
       url: "https://github.com/flutter-news-app-full-source-code/email-sendgrid.git"
     source: git
-    version: "0.0.0"
+    version: "1.0.1"
   equatable:
     dependency: transitive
     description:
@@ -317,10 +317,10 @@ packages:
     description:
       path: "."
       ref: "v1.0.1"
-      resolved-ref: ce550196f78ee2e95aa9e985759179265983689d
+      resolved-ref: "22a1531a279769ec472f698e9c727cd2c29a81b9"
       url: "https://github.com/flutter-news-app-full-source-code/http-client.git"
     source: git
-    version: "0.0.0"
+    version: "1.0.1"
   http_methods:
     dependency: transitive
     description:
@@ -549,10 +549,10 @@ packages:
     dependency: transitive
     description:
       name: shelf_hotreload
-      sha256: d7099618b18d3c63ba5272491c1812c306629495129ef9996115f0417902f963
+      sha256: "449f68ce2d087a030c2bfbb40e6925c63fac3dcb502a67388a7139ce72102e7a"
       url: "https://pub.dev"
     source: hosted
-    version: "1.5.0"
+    version: "1.6.0"
   shelf_packages_handler:
     dependency: transitive
     description:
@@ -685,10 +685,10 @@ packages:
     dependency: transitive
     description:
       name: unorm_dart
-      sha256: "8e3870a1caa60bde8352f9597dd3535d8068613269444f8e35ea8925ec84c1f5"
+      sha256: "0c69186b03ca6addab0774bcc0f4f17b88d4ce78d9d4d8f0619e30a99ead58e7"
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.1+1"
+    version: "0.3.2"
   uuid:
     dependency: transitive
     description:
@@ -725,10 +725,10 @@ packages:
     dependency: transitive
     description:
       name: watcher
-      sha256: "5bf046f41320ac97a469d506261797f35254fa61c641741ef32dacda98b7d39c"
+      sha256: "592ab6e2892f67760543fb712ff0177f4ec76c031f02f5b4ff8d3fc5eb9fb61a"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.3"
+    version: "1.1.4"
   web:
     dependency: transitive
     description:
