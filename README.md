@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://repository-images.githubusercontent.com/946589707/33b56f2c-76c3-4af0-a67f-8c08ca494b1b" alt="Flutter News App Toolkit Mockup" width="440">
+  <img src="https://repository-images.githubusercontent.com/946589707/1ee61062-ded3-44f9-bb6d-c35cd03b5d64" alt="Flutter News App Toolkit Mockup" width="440">
   <h1>Flutter News App API Server</h1>
   <p><strong>Complete, production-ready source code for a Flutter news app api server.</strong></p>
 </div>
