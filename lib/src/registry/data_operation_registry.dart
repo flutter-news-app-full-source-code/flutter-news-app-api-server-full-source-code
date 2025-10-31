@@ -238,16 +238,28 @@ class DataOperationRegistry {
 
         AppUserRole? newAppRole;
         if (requestBody.containsKey('appRole')) {
-          newAppRole = AppUserRole.values.byName(
-            requestBody['appRole'] as String,
-          );
+          try {
+            newAppRole = AppUserRole.values.byName(
+              requestBody['appRole'] as String,
+            );
+          } on ArgumentError {
+            throw BadRequestException(
+              'Invalid value for "appRole": "${requestBody['appRole']}".',
+            );
+          }
         }
 
         DashboardUserRole? newDashboardRole;
         if (requestBody.containsKey('dashboardRole')) {
-          newDashboardRole = DashboardUserRole.values.byName(
-            requestBody['dashboardRole'] as String,
-          );
+          try {
+            newDashboardRole = DashboardUserRole.values.byName(
+              requestBody['dashboardRole'] as String,
+            );
+          } on ArgumentError {
+            throw BadRequestException(
+              'Invalid value for "dashboardRole": "${requestBody['dashboardRole']}".',
+            );
+          }
         }
 
         Map<FeedDecoratorType, UserFeedDecoratorStatus>? newStatus;
