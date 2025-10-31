@@ -117,6 +117,14 @@ Future<Response> _handlePost(RequestContext context) async {
     throw const BadRequestException('Missing or invalid request body.');
   }
 
+  // For user creation, ensure the email field is present.
+  if (modelName == 'user') {
+    if (!requestBody.containsKey('email') ||
+        (requestBody['email'] as String).isEmpty) {
+      throw const BadRequestException('Missing required field: "email".');
+    }
+  }
+
   final now = DateTime.now().toUtc().toIso8601String();
   requestBody['id'] = ObjectId().oid;
   requestBody['createdAt'] = now;
