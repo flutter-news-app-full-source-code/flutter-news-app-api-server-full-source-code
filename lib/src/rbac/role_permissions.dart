@@ -68,7 +68,11 @@ final Set<String> _dashboardAdminPermissions = {
   Permissions.languageCreate,
   Permissions.languageUpdate,
   Permissions.languageDelete,
-  Permissions.userRead, // Allows reading any user's profile
+  Permissions.userRead, // Allows reading any user's profile.
+  // Allow full user account management for admins.
+  Permissions.userCreate,
+  Permissions.userUpdate,
+  Permissions.userDelete,
   Permissions.remoteConfigCreate,
   Permissions.remoteConfigUpdate,
   Permissions.remoteConfigDelete,

@@ -188,6 +188,11 @@ class DataOperationRegistry {
         item: item as Language,
         userId: uid,
       ),
+      // Handler for creating a new user.
+      'user': (c, item, uid) => c.read<DataRepository<User>>().create(
+        item: item as User,
+        userId: uid,
+      ),
       'remote_config': (c, item, uid) => c
           .read<DataRepository<RemoteConfig>>()
           .create(item: item as RemoteConfig, userId: uid),
@@ -220,13 +225,56 @@ class DataOperationRegistry {
       'language': (c, id, item, uid) => c
           .read<DataRepository<Language>>()
           .update(id: id, item: item as Language, userId: uid),
+      // Custom updater for the 'user' model.
+      // This updater handles two distinct use cases:
+      // 1. Admins updating user roles (`appRole`, `dashboardRole`).
+      // 2. Regular users updating their own `feedDecoratorStatus`.
+      // It accepts a raw Map<String, dynamic> as the `item` to prevent
+      // mass assignment vulnerabilities, only applying allowed fields.
       'user': (c, id, item, uid) {
         final repo = c.read<DataRepository<User>>();
         final existingUser = c.read<FetchedItem<dynamic>>().data as User;
-        final updatedUser = existingUser.copyWith(
-          feedDecoratorStatus: (item as User).feedDecoratorStatus,
+        final requestBody = item as Map<String, dynamic>;
+
+        AppUserRole? newAppRole;
+        if (requestBody.containsKey('appRole')) {
+          try {
+            newAppRole = AppUserRole.values.byName(
+              requestBody['appRole'] as String,
+            );
+          } on ArgumentError {
+            throw BadRequestException(
+              'Invalid value for "appRole": "${requestBody['appRole']}".',
+            );
+          }
+        }
+
+        DashboardUserRole? newDashboardRole;
+        if (requestBody.containsKey('dashboardRole')) {
+          try {
+            newDashboardRole = DashboardUserRole.values.byName(
+              requestBody['dashboardRole'] as String,
+            );
+          } on ArgumentError {
+            throw BadRequestException(
+              'Invalid value for "dashboardRole": "${requestBody['dashboardRole']}".',
+            );
+          }
+        }
+
+        Map<FeedDecoratorType, UserFeedDecoratorStatus>? newStatus;
+        if (requestBody.containsKey('feedDecoratorStatus')) {
+          newStatus = User.fromJson(
+            {'feedDecoratorStatus': requestBody['feedDecoratorStatus']},
+          ).feedDecoratorStatus;
+        }
+
+        final userWithUpdates = existingUser.copyWith(
+          appRole: newAppRole,
+          dashboardRole: newDashboardRole,
+          feedDecoratorStatus: newStatus,
         );
-        return repo.update(id: id, item: updatedUser, userId: uid);
+        return repo.update(id: id, item: userWithUpdates, userId: uid);
       },
       'user_app_settings': (c, id, item, uid) => c
           .read<DataRepository<UserAppSettings>>()

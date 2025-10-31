@@ -281,17 +281,28 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresOwnershipCheck: true, // Must be the owner
       requiresAuthentication: true,
     ),
+    // Admins can create users via the data endpoint.
+    // User creation via auth routes (e.g., sign-up) is separate.
     postPermission: const ModelActionPermission(
-      type: RequiredPermissionType
-          .unsupported, // User creation handled by auth routes
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.userCreate,
       requiresAuthentication: true,
     ),
+    // An admin can update any user's roles.
+    // A regular user can update specific fields on their own profile
+    // (e.g., feedDecoratorStatus), which is handled by the updater logic
+    // in DataOperationRegistry. The ownership check ensures they can only
+    // access their own user object to begin with.
     putPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.userUpdateOwned, // User can update their own
       requiresOwnershipCheck: true, // Must be the owner
       requiresAuthentication: true,
     ),
+    // An admin can delete any user.
+    // A regular user can delete their own account.
+    // The ownership check middleware is bypassed for admins, so this single
+    // config works for both roles.
     deletePermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.userDeleteOwned, // User can delete their own
