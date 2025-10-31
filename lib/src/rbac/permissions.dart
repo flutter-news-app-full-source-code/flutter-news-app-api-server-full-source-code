@@ -44,6 +44,13 @@ abstract class Permissions {
   // Allows deleting the authenticated user's own account
   static const String userDeleteOwned = 'user.delete_owned';
 
+  // Allows creating a new user (admin-only).
+  static const String userCreate = 'user.create';
+  // Allows updating any user's profile (admin-only).
+  static const String userUpdate = 'user.update';
+  // Allows deleting any user's account (admin-only).
+  static const String userDelete = 'user.delete';
+
   // User App Settings Permissions (User-owned)
   static const String userAppSettingsReadOwned = 'user_app_settings.read_owned';
   static const String userAppSettingsUpdateOwned =
