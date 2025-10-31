@@ -68,27 +68,41 @@ Future<Response> _handlePut(RequestContext context, String id) async {
 
   requestBody['updatedAt'] = DateTime.now().toUtc().toIso8601String();
 
+  // The item to be passed to the updater function.
+  // For 'user' updates, this will be the raw request body map to allow for
+  // secure, selective field merging in the DataOperationRegistry.
+  // For all other models, it's the deserialized object.
   dynamic itemToUpdate;
-  try {
-    itemToUpdate = modelConfig.fromJson(requestBody);
-  } on TypeError catch (e, s) {
-    _logger.warning('Deserialization TypeError in PUT /data/[id]', e, s);
-    throw const BadRequestException(
-      'Invalid request body: Missing or invalid required field(s).',
-    );
-  }
 
-  try {
-    final bodyItemId = modelConfig.getId(itemToUpdate);
-    if (bodyItemId != id) {
-      throw BadRequestException(
-        'Bad Request: ID in request body ("$bodyItemId") does not match ID in path ("$id").',
+  if (modelName == 'user') {
+    // For user updates, we pass the raw map to the updater.
+    // This allows the updater to selectively apply fields, preventing mass
+    // assignment vulnerabilities. The ID check is also skipped as the request
+    // body for a user role update will not contain an ID.
+    _logger.finer('User model update: using raw request body for updater.');
+    itemToUpdate = requestBody;
+  } else {
+    // For all other models, deserialize the body into a model instance.
+    try {
+      itemToUpdate = modelConfig.fromJson(requestBody);
+    } on TypeError catch (e, s) {
+      _logger.warning('Deserialization TypeError in PUT /data/[id]', e, s);
+      throw const BadRequestException(
+        'Invalid request body: Missing or invalid required field(s).',
       );
     }
-  } catch (e) {
-    // Ignore if getId throws, as the ID might not be in the body,
-    // which can be acceptable for some models.
-    _logger.info('Could not get ID from PUT body: $e');
+
+    // Validate that the ID in the body matches the ID in the path.
+    try {
+      final bodyItemId = modelConfig.getId(itemToUpdate);
+      if (bodyItemId != id) {
+        throw BadRequestException(
+          'Bad Request: ID in request body ("$bodyItemId") does not match ID in path ("$id").',
+        );
+      }
+    } catch (e) {
+      _logger.info('Could not get ID from PUT body: $e');
+    }
   }
 
   if (modelName == 'user_content_preferences') {
