@@ -231,82 +231,82 @@ class DataOperationRegistry {
       // It enforces the following rules:
       // 1. Admins can ONLY update a user's `appRole` and `dashboardRole`.
       // 2. Regular users can ONLY update their own `feedDecoratorStatus`.
-      // 3. Email updates are handled by the `AuthService`, not this generic
-      //    endpoint.
       //
-      // The updater receives a raw `Map<String, dynamic>` from the request
-      // body to prevent mass assignment vulnerabilities. It then reads the
-      // pre-fetched user object (guaranteed by `dataFetchMiddleware`) and
-      // selectively applies only the allowed fields using `copyWith`. This
-      // creates a complete, valid `User` object that is then passed to the
-      // repository's `update` method, satisfying the `DataRepository<T>`
-      // contract.
+      // This logic correctly handles a full `User` object in the request body,
+      // aligning with the DataRepository contract. It works by comparing the
+      // incoming `User` object from the request (`requestedUpdateUser`) with
+      // the current state of the user in the database (`userToUpdate`), which
+      // is pre-fetched by middleware. It then verifies that the *only* fields
+      // that have changed are ones the authenticated user is permitted to
+      // modify.
       'user': (context, id, item, uid) async {
         _log.info('Executing custom updater for user ID: $id.');
         final permissionService = context.read<PermissionService>();
         final authenticatedUser = context.read<User>();
         final userToUpdate = context.read<FetchedItem<dynamic>>().data as User;
         final requestBody = item as Map<String, dynamic>;
+        final requestedUpdateUser = User.fromJson(requestBody);
 
-        var userWithUpdates = userToUpdate;
-
+        // --- State Comparison Logic ---
         if (permissionService.isAdmin(authenticatedUser)) {
           _log.finer(
             'Admin user ${authenticatedUser.id} is updating user $id.',
           );
-          // Admin is only allowed to update roles.
-          if (requestBody.keys.any(
-            (k) => k != 'appRole' && k != 'dashboardRole',
-          )) {
+
+          // Create a version of the original user with only the fields an
+          // admin is allowed to change applied from the request.
+          final permissibleUpdate = userToUpdate.copyWith(
+            appRole: requestedUpdateUser.appRole,
+            dashboardRole: requestedUpdateUser.dashboardRole,
+          );
+
+          // If the user from the request is not identical to the one with
+          // only permissible changes, it means an unauthorized field was
+          // modified.
+          if (requestedUpdateUser != permissibleUpdate) {
             _log.warning(
-              'Admin ${authenticatedUser.id} attempted to update invalid fields for user $id.',
+              'Admin ${authenticatedUser.id} attempted to update unauthorized fields for user $id.',
             );
             throw const ForbiddenException(
               'Administrators can only update "appRole" and "dashboardRole" via this endpoint.',
             );
           }
-
-          final newAppRole = requestBody.containsKey('appRole')
-              ? AppUserRole.values.byName(requestBody['appRole'] as String)
-              : null;
-          final newDashboardRole = requestBody.containsKey('dashboardRole')
-              ? DashboardUserRole.values.byName(
-                  requestBody['dashboardRole'] as String,
-                )
-              : null;
-
-          userWithUpdates = userWithUpdates.copyWith(
-            appRole: newAppRole,
-            dashboardRole: newDashboardRole,
-          );
+          _log.finer('Admin update for user $id validation passed.');
         } else {
           _log.finer(
             'Regular user ${authenticatedUser.id} is updating their own profile.',
           );
-          // Regular user is only allowed to update feed decorator status.
-          if (requestBody.keys.any((k) => k != 'feedDecoratorStatus')) {
+
+          // Create a version of the original user with only the fields a
+          // regular user is allowed to change applied from the request.
+          final permissibleUpdate = userToUpdate.copyWith(
+            feedDecoratorStatus: requestedUpdateUser.feedDecoratorStatus,
+          );
+
+          // If the user from the request is not identical to the one with
+          // only permissible changes, it means an unauthorized field was
+          // modified.
+          if (requestedUpdateUser != permissibleUpdate) {
             _log.warning(
-              'User ${authenticatedUser.id} attempted to update invalid fields.',
+              'User ${authenticatedUser.id} attempted to update unauthorized fields.',
             );
             throw const ForbiddenException(
               'You can only update "feedDecoratorStatus" via this endpoint.',
             );
           }
-
-          if (requestBody.containsKey('feedDecoratorStatus')) {
-            final newStatus = User.fromJson(
-              {'feedDecoratorStatus': requestBody['feedDecoratorStatus']},
-            ).feedDecoratorStatus;
-            userWithUpdates = userWithUpdates.copyWith(
-              feedDecoratorStatus: newStatus,
-            );
-          }
+          _log.finer(
+            'Regular user update for user $id validation passed.',
+          );
         }
 
-        _log.info('User update validation passed. Calling repository.');
-        return context.read<DataRepository<User>>().update(
+        _log.info(
+          'User update validation passed. Calling repository with full object.',
+        );
+        // The validation passed, so we can now safely pass the full User
+        // object from the request to the repository, honoring the contract.
+        return await context.read<DataRepository<User>>().update(
           id: id,
-          item: userWithUpdates,
+          item: requestedUpdateUser,
           userId: uid,
         );
       },
