@@ -611,4 +611,111 @@ class AuthService {
 
     return (user: permanentUser, token: newToken);
   }
+
+  /// Initiates the process of updating a user's email address.
+  ///
+  /// This is the first step in a two-step verification process. It checks if
+  /// the new email is already in use, then generates and sends a verification
+  /// code to that new email address.
+  ///
+  /// - [user]: The currently authenticated user initiating the change.
+  /// - [newEmail]: The desired new email address.
+  ///
+  /// Throws [ConflictException] if the `newEmail` is already taken by another
+  /// user.
+  /// Throws [OperationFailedException] for other unexpected errors.
+  Future<void> initiateEmailUpdate({
+    required User user,
+    required String newEmail,
+  }) async {
+    _log.info(
+      'User ${user.id} is initiating an email update to "$newEmail".',
+    );
+
+    try {
+      // 1. Check if the new email address is already in use.
+      final existingUser = await _findUserByEmail(newEmail);
+      if (existingUser != null) {
+        _log.warning(
+          'Email update failed for user ${user.id}: new email "$newEmail" is already in use by user ${existingUser.id}.',
+        );
+        throw const ConflictException(
+          'This email address is already registered.',
+        );
+      }
+      _log.finer('New email "$newEmail" is available.');
+
+      // 2. Generate and send a verification code to the new email.
+      // We reuse the sign-in code mechanism for this verification step.
+      final code = await _verificationCodeStorageService
+          .generateAndStoreSignInCode(newEmail);
+      _log.finer('Generated verification code for "$newEmail".');
+
+      await _emailRepository.sendOtpEmail(
+        senderEmail: EnvironmentConfig.defaultSenderEmail,
+        recipientEmail: newEmail,
+        templateId: EnvironmentConfig.otpTemplateId,
+        subject: 'Verify your new email address',
+        otpCode: code,
+      );
+      _log.info('Sent email update verification code to "$newEmail".');
+    } on HttpException {
+      // Propagate known exceptions (like ConflictException).
+      rethrow;
+    } catch (e, s) {
+      _log.severe(
+        'Unexpected error during initiateEmailUpdate for user ${user.id}.',
+        e,
+        s,
+      );
+      throw const OperationFailedException(
+        'Failed to initiate email update process.',
+      );
+    }
+  }
+
+  /// Completes the email update process by verifying the code and updating
+  /// the user's record.
+  ///
+  /// - [user]: The currently authenticated user.
+  /// - [newEmail]: The new email address being verified.
+  /// - [code]: The verification code sent to the new email address.
+  ///
+  /// Returns the updated [User] object upon success.
+  ///
+  /// Throws [InvalidInputException] if the verification code is invalid.
+  /// Throws [OperationFailedException] for other unexpected errors.
+  Future<User> completeEmailUpdate({
+    required User user,
+    required String newEmail,
+    required String code,
+  }) async {
+    _log.info('User ${user.id} is completing email update to "$newEmail".');
+
+    // 1. Validate the verification code for the new email.
+    final isValid = await _verificationCodeStorageService.validateSignInCode(
+      newEmail,
+      code,
+    );
+    if (!isValid) {
+      _log.warning('Invalid verification code provided for "$newEmail".');
+      throw const InvalidInputException(
+        'Invalid or expired verification code.',
+      );
+    }
+    _log.finer('Verification code for "$newEmail" is valid.');
+
+    // 2. Clear the used code from storage.
+    await _verificationCodeStorageService.clearSignInCode(newEmail);
+
+    // 3. Update the user's email in the repository.
+    final updatedUser = user.copyWith(email: newEmail);
+    final finalUser = await _userRepository.update(
+      id: user.id,
+      item: updatedUser,
+    );
+    _log.info('Successfully updated email for user ${user.id} to "$newEmail".');
+
+    return finalUser;
+  }
 }

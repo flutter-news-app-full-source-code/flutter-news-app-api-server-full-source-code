@@ -281,33 +281,28 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresOwnershipCheck: true, // Must be the owner
       requiresAuthentication: true,
     ),
-    // Admins can create users via the data endpoint.
-    // User creation via auth routes (e.g., sign-up) is separate.
+    // User creation is handled exclusively by the authentication service
+    // (e.g., during sign-up) and is not supported via the generic data API.
     postPermission: const ModelActionPermission(
-      type: RequiredPermissionType.specificPermission,
-      permission: Permissions.userCreate,
-      requiresAuthentication: true,
+      type: RequiredPermissionType.unsupported,
     ),
-    // An admin can update any user's roles.
-    // A regular user can update specific fields on their own profile
-    // (e.g., feedDecoratorStatus), which is handled by the updater logic
-    // in DataOperationRegistry. The ownership check ensures they can only
-    // access their own user object to begin with.
+    // User updates are handled by a custom updater in DataOperationRegistry.
+    // - Admins can update roles (`appRole`, `dashboardRole`).
+    // - Users can update their own `feedDecoratorStatus` and `email`.
+    // The `userUpdateOwned` permission, combined with the ownership check,
+    // provides the entry point for both admins (who bypass ownership checks)
+    // and users to target a user object for an update.
     putPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.userUpdateOwned, // User can update their own
       requiresOwnershipCheck: true, // Must be the owner
       requiresAuthentication: true,
     ),
-    // An admin can delete any user.
-    // A regular user can delete their own account.
-    // The ownership check middleware is bypassed for admins, so this single
-    // config works for both roles.
+    // User deletion is handled exclusively by the authentication service
+    // (e.g., via a dedicated "delete account" endpoint) and is not
+    // supported via the generic data API.
     deletePermission: const ModelActionPermission(
-      type: RequiredPermissionType.specificPermission,
-      permission: Permissions.userDeleteOwned, // User can delete their own
-      requiresOwnershipCheck: true, // Must be the owner
-      requiresAuthentication: true,
+      type: RequiredPermissionType.unsupported,
     ),
   ),
   'user_app_settings': ModelConfig<UserAppSettings>(
