@@ -304,7 +304,7 @@ class DataOperationRegistry {
         );
         // The validation passed, so we can now safely pass the full User
         // object from the request to the repository, honoring the contract.
-        return await context.read<DataRepository<User>>().update(
+        return context.read<DataRepository<User>>().update(
           id: id,
           item: requestedUpdateUser,
           userId: uid,

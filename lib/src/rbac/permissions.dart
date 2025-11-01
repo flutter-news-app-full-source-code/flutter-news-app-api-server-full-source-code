@@ -44,7 +44,6 @@ abstract class Permissions {
   // Allows deleting the authenticated user's own account
   static const String userDeleteOwned = 'user.delete_owned';
 
-
   // Allows updating any user's profile (admin-only).
   // This is distinct from `userUpdateOwned`, which allows a user to update
   // their own record.
