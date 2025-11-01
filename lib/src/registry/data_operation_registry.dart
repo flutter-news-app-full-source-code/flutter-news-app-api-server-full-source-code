@@ -2,8 +2,10 @@ import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
+import 'package:logging/logging.dart';
 
 // --- Typedefs for Data Operations ---
 
@@ -54,6 +56,9 @@ typedef ItemDeleter =
 /// data operations are performed for each model, improving consistency across
 /// the API.
 /// {@endtemplate}
+
+final _log = Logger('DataOperationRegistry');
+
 class DataOperationRegistry {
   /// {@macro data_operation_registry}
   DataOperationRegistry() {
@@ -188,11 +193,6 @@ class DataOperationRegistry {
         item: item as Language,
         userId: uid,
       ),
-      // Handler for creating a new user.
-      'user': (c, item, uid) => c.read<DataRepository<User>>().create(
-        item: item as User,
-        userId: uid,
-      ),
       'remote_config': (c, item, uid) => c
           .read<DataRepository<RemoteConfig>>()
           .create(item: item as RemoteConfig, userId: uid),
@@ -225,56 +225,90 @@ class DataOperationRegistry {
       'language': (c, id, item, uid) => c
           .read<DataRepository<Language>>()
           .update(id: id, item: item as Language, userId: uid),
-      // Custom updater for the 'user' model.
-      // This updater handles two distinct use cases:
-      // 1. Admins updating user roles (`appRole`, `dashboardRole`).
-      // 2. Regular users updating their own `feedDecoratorStatus`.
-      // It accepts a raw Map<String, dynamic> as the `item` to prevent
-      // mass assignment vulnerabilities, only applying allowed fields.
-      'user': (c, id, item, uid) {
-        final repo = c.read<DataRepository<User>>();
-        final existingUser = c.read<FetchedItem<dynamic>>().data as User;
+      // Custom updater for the 'user' model. This logic is critical for
+      // security and architectural consistency.
+      //
+      // It enforces the following rules:
+      // 1. Admins can ONLY update a user's `appRole` and `dashboardRole`.
+      // 2. Regular users can ONLY update their own `feedDecoratorStatus`.
+      // 3. Email updates are handled by the `AuthService`, not this generic
+      //    endpoint.
+      //
+      // The updater receives a raw `Map<String, dynamic>` from the request
+      // body to prevent mass assignment vulnerabilities. It then reads the
+      // pre-fetched user object (guaranteed by `dataFetchMiddleware`) and
+      // selectively applies only the allowed fields using `copyWith`. This
+      // creates a complete, valid `User` object that is then passed to the
+      // repository's `update` method, satisfying the `DataRepository<T>`
+      // contract.
+      'user': (context, id, item, uid) async {
+        _log.info('Executing custom updater for user ID: $id.');
+        final permissionService = context.read<PermissionService>();
+        final authenticatedUser = context.read<User>();
+        final userToUpdate = context.read<FetchedItem<dynamic>>().data as User;
         final requestBody = item as Map<String, dynamic>;
 
-        AppUserRole? newAppRole;
-        if (requestBody.containsKey('appRole')) {
-          try {
-            newAppRole = AppUserRole.values.byName(
-              requestBody['appRole'] as String,
+        var userWithUpdates = userToUpdate;
+
+        if (permissionService.isAdmin(authenticatedUser)) {
+          _log.finer(
+            'Admin user ${authenticatedUser.id} is updating user $id.',
+          );
+          // Admin is only allowed to update roles.
+          if (requestBody.keys.any(
+            (k) => k != 'appRole' && k != 'dashboardRole',
+          )) {
+            _log.warning(
+              'Admin ${authenticatedUser.id} attempted to update invalid fields for user $id.',
             );
-          } on ArgumentError {
-            throw BadRequestException(
-              'Invalid value for "appRole": "${requestBody['appRole']}".',
+            throw const ForbiddenException(
+              'Administrators can only update "appRole" and "dashboardRole" via this endpoint.',
+            );
+          }
+
+          final newAppRole = requestBody.containsKey('appRole')
+              ? AppUserRole.values.byName(requestBody['appRole'] as String)
+              : null;
+          final newDashboardRole = requestBody.containsKey('dashboardRole')
+              ? DashboardUserRole.values.byName(
+                  requestBody['dashboardRole'] as String,
+                )
+              : null;
+
+          userWithUpdates = userWithUpdates.copyWith(
+            appRole: newAppRole,
+            dashboardRole: newDashboardRole,
+          );
+        } else {
+          _log.finer(
+            'Regular user ${authenticatedUser.id} is updating their own profile.',
+          );
+          // Regular user is only allowed to update feed decorator status.
+          if (requestBody.keys.any((k) => k != 'feedDecoratorStatus')) {
+            _log.warning(
+              'User ${authenticatedUser.id} attempted to update invalid fields.',
+            );
+            throw const ForbiddenException(
+              'You can only update "feedDecoratorStatus" via this endpoint.',
+            );
+          }
+
+          if (requestBody.containsKey('feedDecoratorStatus')) {
+            final newStatus = User.fromJson(
+              {'feedDecoratorStatus': requestBody['feedDecoratorStatus']},
+            ).feedDecoratorStatus;
+            userWithUpdates = userWithUpdates.copyWith(
+              feedDecoratorStatus: newStatus,
             );
           }
         }
 
-        DashboardUserRole? newDashboardRole;
-        if (requestBody.containsKey('dashboardRole')) {
-          try {
-            newDashboardRole = DashboardUserRole.values.byName(
-              requestBody['dashboardRole'] as String,
-            );
-          } on ArgumentError {
-            throw BadRequestException(
-              'Invalid value for "dashboardRole": "${requestBody['dashboardRole']}".',
-            );
-          }
-        }
-
-        Map<FeedDecoratorType, UserFeedDecoratorStatus>? newStatus;
-        if (requestBody.containsKey('feedDecoratorStatus')) {
-          newStatus = User.fromJson(
-            {'feedDecoratorStatus': requestBody['feedDecoratorStatus']},
-          ).feedDecoratorStatus;
-        }
-
-        final userWithUpdates = existingUser.copyWith(
-          appRole: newAppRole,
-          dashboardRole: newDashboardRole,
-          feedDecoratorStatus: newStatus,
+        _log.info('User update validation passed. Calling repository.');
+        return context.read<DataRepository<User>>().update(
+          id: id,
+          item: userWithUpdates,
+          userId: uid,
         );
-        return repo.update(id: id, item: userWithUpdates, userId: uid);
       },
       'user_app_settings': (c, id, item, uid) => c
           .read<DataRepository<UserAppSettings>>()
@@ -302,8 +336,6 @@ class DataOperationRegistry {
           c.read<DataRepository<Country>>().delete(id: id, userId: uid),
       'language': (c, id, uid) =>
           c.read<DataRepository<Language>>().delete(id: id, userId: uid),
-      'user': (c, id, uid) =>
-          c.read<DataRepository<User>>().delete(id: id, userId: uid),
       'user_app_settings': (c, id, uid) =>
           c.read<DataRepository<UserAppSettings>>().delete(id: id, userId: uid),
       'user_content_preferences': (c, id, uid) => c
