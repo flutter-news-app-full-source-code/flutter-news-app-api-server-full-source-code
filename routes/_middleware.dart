@@ -127,11 +127,6 @@ Handler middleware(Handler handler) {
                   (_) => deps.remoteConfigRepository,
                 ),
               )
-              .use(
-                provider<DataRepository<LocalAd>>(
-                  (_) => deps.localAdRepository,
-                ),
-              )
               .use(provider<EmailRepository>((_) => deps.emailRepository))
               .use(
                 provider<TokenBlacklistService>(

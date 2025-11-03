@@ -185,14 +185,12 @@ Handler middleware(Handler handler) {
   //      route handler).
   //
   // 5. Actual Route Handler (from `index.dart` or `[id].dart`):
-  //    - This runs last, only if all preceding middlewares pass. It will have
-  //      access to a non-null `User` (if authenticated), `ModelConfig`, and
-  //      `modelName` from the context.
-  //    - It performs the data operation and any necessary handler-level
-  //      ownership checks (if flagged by `ModelActionPermission.requiresOwnershipCheck`).
+  //    - This runs last, only if all preceding middlewares pass. It has
+  //      access to a `User?`, `ModelConfig`, and `modelName` from the context.
+  //    - It performs the final data operation.
   //
   return handler
-      .use(authorizationMiddleware()) // Applied fourth (inner-most)
+      .use(authorizationMiddleware()) // Applied fourth (innermost)
       .use(_dataRateLimiterMiddleware()) // Applied third
       .use(_conditionalAuthenticationMiddleware()) // Applied second
       .use(
