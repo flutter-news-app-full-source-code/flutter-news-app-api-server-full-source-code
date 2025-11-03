@@ -44,7 +44,6 @@ typedef ItemUpdater =
 typedef ItemDeleter =
     Future<void> Function(RequestContext context, String id, String? userId);
 
-
 final _log = Logger('DataOperationRegistry');
 
 /// {@template data_operation_registry}
