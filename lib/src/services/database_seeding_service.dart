@@ -40,13 +40,6 @@ class DatabaseSeedingService {
       getId: (item) => item.id,
       toJson: (item) => item.toJson(),
     );
-    await _seedCollection<LocalAd>(
-      collectionName: 'local_ads',
-      fixtureData: localAdsFixturesData,
-      getId: (ad) => ad.id,
-      // ignore: unnecessary_lambdas
-      toJson: (item) => LocalAd.toJson(item),
-    );
 
     _log.info('Database seeding process completed.');
   }
@@ -130,7 +123,7 @@ class DatabaseSeedingService {
         // Ensure primaryAdPlatform is not 'demo' for initial setup
         // since its not intended for any use outside the mobile client.
         final productionReadyAdConfig = initialConfig.adConfig.copyWith(
-          primaryAdPlatform: AdPlatformType.local,
+          primaryAdPlatform: AdPlatformType.admob,
         );
 
         final productionReadyConfig = initialConfig.copyWith(
@@ -190,13 +183,6 @@ class DatabaseSeedingService {
       await _db
           .collection('countries')
           .createIndex(keys: {'name': 1}, name: 'countries_name_index');
-
-      /// Index for searching local ads by adType.
-      /// This index supports efficient queries and filtering on the 'adType' field
-      /// of local ad documents.
-      await _db
-          .collection('local_ads')
-          .createIndex(keys: {'adType': 1}, name: 'local_ads_adType_index');
 
       // --- TTL and Unique Indexes via runCommand ---
       // The following indexes are created using the generic `runCommand` because
