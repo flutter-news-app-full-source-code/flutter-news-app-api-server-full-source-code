@@ -44,6 +44,9 @@ typedef ItemUpdater =
 typedef ItemDeleter =
     Future<void> Function(RequestContext context, String id, String? userId);
 
+
+final _log = Logger('DataOperationRegistry');
+
 /// {@template data_operation_registry}
 /// A centralized registry for all data handling functions (CRUD operations).
 ///
@@ -56,12 +59,12 @@ typedef ItemDeleter =
 /// data operations are performed for each model, improving consistency across
 /// the API.
 /// {@endtemplate}
-
-final _log = Logger('DataOperationRegistry');
-
 class DataOperationRegistry {
   /// {@macro data_operation_registry}
   DataOperationRegistry() {
+    _log.info(
+      'Initializing DataOperationRegistry.',
+    );
     _registerOperations();
   }
 
@@ -113,8 +116,6 @@ class DataOperationRegistry {
           .read(id: id, userId: null),
       'remote_config': (c, id) =>
           c.read<DataRepository<RemoteConfig>>().read(id: id, userId: null),
-      'local_ad': (c, id) =>
-          c.read<DataRepository<LocalAd>>().read(id: id, userId: null),
       'dashboard_summary': (c, id) =>
           c.read<DashboardSummaryService>().getSummary(),
     });
@@ -166,9 +167,6 @@ class DataOperationRegistry {
         sort: s,
         pagination: p,
       ),
-      'local_ad': (c, uid, f, s, p) => c
-          .read<DataRepository<LocalAd>>()
-          .readAll(userId: uid, filter: f, sort: s, pagination: p),
     });
 
     // --- Register Item Creators ---
@@ -196,10 +194,6 @@ class DataOperationRegistry {
       'remote_config': (c, item, uid) => c
           .read<DataRepository<RemoteConfig>>()
           .create(item: item as RemoteConfig, userId: uid),
-      'local_ad': (c, item, uid) => c.read<DataRepository<LocalAd>>().create(
-        item: item as LocalAd,
-        userId: uid,
-      ),
     });
 
     // --- Register Item Updaters ---
@@ -319,9 +313,6 @@ class DataOperationRegistry {
       'remote_config': (c, id, item, uid) => c
           .read<DataRepository<RemoteConfig>>()
           .update(id: id, item: item as RemoteConfig, userId: uid),
-      'local_ad': (c, id, item, uid) => c
-          .read<DataRepository<LocalAd>>()
-          .update(id: id, item: item as LocalAd, userId: uid),
     });
 
     // --- Register Item Deleters ---
@@ -343,8 +334,6 @@ class DataOperationRegistry {
           .delete(id: id, userId: uid),
       'remote_config': (c, id, uid) =>
           c.read<DataRepository<RemoteConfig>>().delete(id: id, userId: uid),
-      'local_ad': (c, id, uid) =>
-          c.read<DataRepository<LocalAd>>().delete(id: id, userId: uid),
     });
   }
 }
