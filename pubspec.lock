@@ -142,10 +142,10 @@ packages:
     dependency: "direct main"
     description:
       name: dart_frog
-      sha256: "87b5280b029aa2f80f5e9954db4b6c7cbbc2ae6adf5579150c11c40829f95a0a"
+      sha256: "4ab2323ad74f935f5f76cb2de7e699d0319245e8029753878b0ddc35984f9cfe"
       url: "https://pub.dev"
     source: hosted
-    version: "1.2.5"
+    version: "1.2.6"
   dart_jsonwebtoken:
     dependency: "direct main"
     description:
