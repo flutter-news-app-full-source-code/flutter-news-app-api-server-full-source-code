@@ -81,4 +81,12 @@ abstract class Permissions {
 
   // General System Permissions
   static const String rateLimitingBypass = 'rate_limiting.bypass';
+
+  // Push Notification Permissions
+  /// Allows sending breaking news push notifications.
+  ///
+  /// This permission is typically granted to dashboard roles like
+  /// 'publisher' or 'admin'.
+  static const String pushNotificationSendBreakingNews =
+      'push_notification.send_breaking_news';
 }
