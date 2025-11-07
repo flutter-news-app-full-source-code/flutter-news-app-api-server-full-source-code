@@ -20,6 +20,10 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/jwt_au
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_rate_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_verification_code_storage_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_client.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/firebase_push_notification_client.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/onesignal_push_notification_client.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_preference_limit_service.dart';
@@ -62,6 +66,10 @@ class AppDependencies {
   late final DataRepository<UserAppSettings> userAppSettingsRepository;
   late final DataRepository<UserContentPreferences>
   userContentPreferencesRepository;
+  late final DataRepository<PushNotificationDevice>
+  pushNotificationDeviceRepository;
+  late final DataRepository<PushNotificationSubscription>
+  pushNotificationSubscriptionRepository;
   late final DataRepository<RemoteConfig> remoteConfigRepository;
   late final EmailRepository emailRepository;
 
@@ -76,6 +84,9 @@ class AppDependencies {
   late final UserPreferenceLimitService userPreferenceLimitService;
   late final RateLimitService rateLimitService;
   late final CountryQueryService countryQueryService;
+  late final IPushNotificationService pushNotificationService;
+  late final IPushNotificationClient firebasePushNotificationClient;
+  late final IPushNotificationClient oneSignalPushNotificationClient;
 
   /// Initializes all application dependencies.
   ///
@@ -198,6 +209,36 @@ class AppDependencies {
         logger: Logger('DataMongodb<RemoteConfig>'),
       );
 
+      // Initialize Data Clients for Push Notifications
+      final pushNotificationDeviceClient = DataMongodb<PushNotificationDevice>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'push_notification_devices',
+        fromJson: PushNotificationDevice.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<PushNotificationDevice>'),
+      );
+      final pushNotificationSubscriptionClient =
+          DataMongodb<PushNotificationSubscription>(
+            connectionManager: _mongoDbConnectionManager,
+            modelName: 'push_notification_subscriptions',
+            fromJson: PushNotificationSubscription.fromJson,
+            toJson: (item) => item.toJson(),
+            logger: Logger('DataMongodb<PushNotificationSubscription>'),
+          );
+
+      // Initialize HTTP clients for push notification providers.
+      // The tokenProvider will be dynamically set by the PushNotificationService
+      // based on the RemoteConfig. For now, it's a placeholder.
+      final firebaseHttpClient = HttpClient(
+        baseUrl: 'https://fcm.googleapis.com/v1/projects/', // Base URL for FCM
+        tokenProvider: () async => '',
+        logger: Logger('FirebasePushNotificationClient'),
+      );
+      final oneSignalHttpClient = HttpClient(
+        baseUrl: 'https://onesignal.com/api/v1/', // Base URL for OneSignal
+        tokenProvider: () async => '',
+        logger: Logger('OneSignalPushNotificationClient'),
+      );
       // 4. Initialize Repositories
       headlineRepository = DataRepository(dataClient: headlineClient);
       topicRepository = DataRepository(dataClient: topicClient);
@@ -212,6 +253,12 @@ class AppDependencies {
         dataClient: userContentPreferencesClient,
       );
       remoteConfigRepository = DataRepository(dataClient: remoteConfigClient);
+      pushNotificationDeviceRepository = DataRepository(
+        dataClient: pushNotificationDeviceClient,
+      );
+      pushNotificationSubscriptionRepository = DataRepository(
+        dataClient: pushNotificationSubscriptionClient,
+      );
       // Configure the HTTP client for SendGrid.
       // The HttpClient's AuthInterceptor will use the tokenProvider to add
       // the 'Authorization: Bearer <SENDGRID_API_KEY>' header.
@@ -230,6 +277,16 @@ class AppDependencies {
       );
 
       emailRepository = EmailRepository(emailClient: emailClient);
+
+      // Initialize Push Notification Clients
+      firebasePushNotificationClient = FirebasePushNotificationClient(
+        httpClient: firebaseHttpClient,
+        log: Logger('FirebasePushNotificationClient'),
+      );
+      oneSignalPushNotificationClient = OneSignalPushNotificationClient(
+        httpClient: oneSignalHttpClient,
+        log: Logger('OneSignalPushNotificationClient'),
+      );
 
       // 5. Initialize Services
       tokenBlacklistService = MongoDbTokenBlacklistService(
@@ -274,6 +331,16 @@ class AppDependencies {
         countryRepository: countryRepository,
         log: Logger('CountryQueryService'),
         cacheDuration: EnvironmentConfig.countryServiceCacheDuration,
+      );
+      pushNotificationService = DefaultPushNotificationService(
+        pushNotificationDeviceRepository: pushNotificationDeviceRepository,
+        pushNotificationSubscriptionRepository:
+            pushNotificationSubscriptionRepository,
+        userRepository: userRepository,
+        remoteConfigRepository: remoteConfigRepository,
+        firebaseClient: firebasePushNotificationClient,
+        oneSignalClient: oneSignalPushNotificationClient,
+        log: Logger('DefaultPushNotificationService'),
       );
 
       _log.info('Application dependencies initialized successfully.');
