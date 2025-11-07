@@ -182,4 +182,37 @@ abstract final class EnvironmentConfig {
         int.tryParse(_env['COUNTRY_SERVICE_CACHE_MINUTES'] ?? '15') ?? 15;
     return Duration(minutes: minutes);
   }
+
+  /// Retrieves the Firebase Project ID from the environment.
+  ///
+  /// The value is read from the `FIREBASE_PROJECT_ID` environment variable.
+  /// Throws a [StateError] if not set.
+  static String get firebaseProjectId => _getRequiredEnv('FIREBASE_PROJECT_ID');
+
+  /// Retrieves the Firebase Client Email from the environment.
+  ///
+  /// The value is read from the `FIREBASE_CLIENT_EMAIL` environment variable.
+  /// Throws a [StateError] if not set.
+  static String get firebaseClientEmail =>
+      _getRequiredEnv('FIREBASE_CLIENT_EMAIL');
+
+  /// Retrieves the Firebase Private Key from the environment.
+  ///
+  /// The value is read from the `FIREBASE_PRIVATE_KEY` environment variable.
+  /// Throws a [StateError] if not set.
+  static String get firebasePrivateKey =>
+      _getRequiredEnv('FIREBASE_PRIVATE_KEY');
+
+  /// Retrieves the OneSignal App ID from the environment.
+  ///
+  /// The value is read from the `ONESIGNAL_APP_ID` environment variable.
+  /// Throws a [StateError] if not set.
+  static String get oneSignalAppId => _getRequiredEnv('ONESIGNAL_APP_ID');
+
+  /// Retrieves the OneSignal REST API Key from the environment.
+  ///
+  /// The value is read from the `ONESIGNAL_REST_API_KEY` environment variable.
+  /// Throws a [StateError] if not set.
+  static String get oneSignalRestApiKey =>
+      _getRequiredEnv('ONESIGNAL_API_KEY');
 }
