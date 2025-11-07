@@ -52,6 +52,9 @@ final Set<String> _dashboardPublisherPermissions = {
   // Core dashboard access and quality-of-life permissions.
   Permissions.dashboardLogin,
   Permissions.rateLimitingBypass,
+
+  // Publishers can send breaking news notifications.
+  Permissions.pushNotificationSendBreakingNews,
 };
 
 final Set<String> _dashboardAdminPermissions = {
