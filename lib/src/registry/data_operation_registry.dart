@@ -4,6 +4,7 @@ import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
 import 'package:logging/logging.dart';
 
@@ -170,10 +171,25 @@ class DataOperationRegistry {
 
     // --- Register Item Creators ---
     _itemCreators.addAll({
-      'headline': (c, item, uid) => c.read<DataRepository<Headline>>().create(
-        item: item as Headline,
-        userId: uid,
-      ),
+      'headline': (c, item, uid) async {
+        final createdHeadline = await c.read<DataRepository<Headline>>().create(
+          item: item as Headline,
+          userId: uid,
+        );
+
+        // If the created headline is marked as breaking news, send a notification.
+        if (createdHeadline.isBreaking) {
+          try {
+            final pushNotificationService = c.read<IPushNotificationService>();
+            await pushNotificationService.sendBreakingNewsNotification(
+              headline: createdHeadline,
+            );
+          } catch (e, s) {
+            _log.severe('Failed to send breaking news notification: $e', e, s);
+          }
+        }
+        return createdHeadline;
+      },
       'topic': (c, item, uid) => c.read<DataRepository<Topic>>().create(
         item: item as Topic,
         userId: uid,
