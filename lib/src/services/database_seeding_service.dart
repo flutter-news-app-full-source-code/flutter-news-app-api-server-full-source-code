@@ -231,11 +231,22 @@ class DatabaseSeedingService {
         'createIndexes': 'push_notification_devices',
         'indexes': [
           {
-            // This ensures that each device token is unique in the collection,
-            // preventing duplicate registrations for the same device.
-            'key': {'token': 1},
-            'name': 'token_unique_index',
+            // Ensures no two devices can have the same Firebase token.
+            // The index is sparse, so it only applies to documents that
+            // actually have a 'providerTokens.firebase' field.
+            'key': {'providerTokens.firebase': 1},
+            'name': 'firebase_token_unique_sparse_index',
             'unique': true,
+            'sparse': true,
+          },
+          {
+            // Ensures no two devices can have the same OneSignal token.
+            // The index is sparse, so it only applies to documents that
+            // actually have a 'providerTokens.oneSignal' field.
+            'key': {'providerTokens.oneSignal': 1},
+            'name': 'oneSignal_token_unique_sparse_index',
+            'unique': true,
+            'sparse': true,
           },
         ],
       });
