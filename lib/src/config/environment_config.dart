@@ -63,7 +63,8 @@ abstract final class EnvironmentConfig {
   static String? _getEnv(String key) {
     final value = _env[key];
     if (value == null || value.isEmpty) {
-      _log.warning('$key not found in environment variables.');
+      _log.warning('$key not found or is empty in environment variables.');
+      return null;
     }
 
     return value;
