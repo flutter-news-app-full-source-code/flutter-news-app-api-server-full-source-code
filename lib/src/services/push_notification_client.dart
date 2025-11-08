@@ -8,12 +8,9 @@ abstract class IPushNotificationClient {
   ///
   /// [deviceToken]: The unique token identifying the target device.
   /// [payload]: The data payload to be sent with the notification.
-  /// [providerConfig]: The specific configuration for the provider
-  /// (e.g., FirebaseProviderConfig, OneSignalProviderConfig).
   Future<void> sendNotification({
     required String deviceToken,
     required PushNotificationPayload payload,
-    required PushNotificationProviderConfig providerConfig,
   });
 
   /// Sends a push notification to a batch of devices.
@@ -23,10 +20,8 @@ abstract class IPushNotificationClient {
   ///
   /// [deviceTokens]: A list of unique tokens identifying the target devices.
   /// [payload]: The data payload to be sent with the notification.
-  /// [providerConfig]: The specific configuration for the provider.
   Future<void> sendBulkNotifications({
     required List<String> deviceTokens,
     required PushNotificationPayload payload,
-    required PushNotificationProviderConfig providerConfig,
   });
 }
