@@ -374,7 +374,6 @@ class AppDependencies {
         pushNotificationDeviceRepository: pushNotificationDeviceRepository,
         pushNotificationSubscriptionRepository:
             pushNotificationSubscriptionRepository,
-        userRepository: userRepository,
         remoteConfigRepository: remoteConfigRepository,
         firebaseClient: firebasePushNotificationClient,
         oneSignalClient: oneSignalPushNotificationClient,

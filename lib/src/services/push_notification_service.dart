@@ -36,7 +36,6 @@ class DefaultPushNotificationService implements IPushNotificationService {
     pushNotificationDeviceRepository,
     required DataRepository<PushNotificationSubscription>
     pushNotificationSubscriptionRepository,
-    required DataRepository<User> userRepository,
     required DataRepository<RemoteConfig> remoteConfigRepository,
     required IPushNotificationClient firebaseClient,
     required IPushNotificationClient oneSignalClient,
@@ -44,7 +43,6 @@ class DefaultPushNotificationService implements IPushNotificationService {
   }) : _pushNotificationDeviceRepository = pushNotificationDeviceRepository,
        _pushNotificationSubscriptionRepository =
            pushNotificationSubscriptionRepository,
-       _userRepository = userRepository,
        _remoteConfigRepository = remoteConfigRepository,
        _firebaseClient = firebaseClient,
        _oneSignalClient = oneSignalClient,
@@ -54,7 +52,6 @@ class DefaultPushNotificationService implements IPushNotificationService {
   _pushNotificationDeviceRepository;
   final DataRepository<PushNotificationSubscription>
   _pushNotificationSubscriptionRepository;
-  final DataRepository<User> _userRepository;
   final DataRepository<RemoteConfig> _remoteConfigRepository;
   final IPushNotificationClient _firebaseClient;
   final IPushNotificationClient _oneSignalClient;
