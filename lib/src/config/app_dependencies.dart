@@ -1,6 +1,7 @@
 // ignore_for_file: public_member_api_docs
 
 import 'dart:async';
+import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:core/core.dart';
 import 'package:data_mongodb/data_mongodb.dart';
 import 'package:data_repository/data_repository.dart';
@@ -226,17 +227,53 @@ class AppDependencies {
             logger: Logger('DataMongodb<PushNotificationSubscription>'),
           );
 
-      // Initialize HTTP clients for push notification providers.
-      // The tokenProvider will be dynamically set by the PushNotificationService
-      // based on the RemoteConfig. For now, it's a placeholder.
+      // --- Initialize HTTP clients for push notification providers ---
+
+      // The Firebase client requires a short-lived OAuth2 access token for the
+      // FCM v1 API. This tokenProvider generates a signed JWT using the
+      // service account credentials from the environment. For many Google
+      // Cloud APIs, this signed JWT can be used directly as a Bearer token.
       final firebaseHttpClient = HttpClient(
-        baseUrl: 'https://fcm.googleapis.com/v1/projects/', // Base URL for FCM
-        tokenProvider: () async => '',
+        baseUrl:
+            'https://fcm.googleapis.com/v1/projects/${EnvironmentConfig.firebaseProjectId}/',
+        tokenProvider: () async {
+          // The private key from environment variables often has escaped
+          // newlines. We must replace them with actual newline characters
+          // for the key to be parsed correctly.
+          final pem = EnvironmentConfig.firebasePrivateKey.replaceAll(
+            r'\n',
+            '\n',
+          );
+          final privateKey = RSAPrivateKey(pem);
+
+          final jwt = JWT(
+            {
+              'scope': 'https://www.googleapis.com/auth/cloud-platform',
+            },
+            issuer: EnvironmentConfig.firebaseClientEmail,
+            audience: Audience.one(
+              'https://oauth2.googleapis.com/token',
+            ),
+          );
+
+          // Sign the JWT, giving it a short expiry time.
+          final signedToken = jwt.sign(
+            privateKey,
+            algorithm: JWTAlgorithm.RS256,
+            expiresIn: const Duration(minutes: 5),
+          );
+
+          return signedToken;
+        },
         logger: Logger('FirebasePushNotificationClient'),
       );
+
+      // The OneSignal client requires the REST API key for authentication.
+      // The HttpClient's AuthInterceptor will use this tokenProvider to add
+      // the 'Authorization: Basic <API_KEY>' header to each request.
       final oneSignalHttpClient = HttpClient(
-        baseUrl: 'https://onesignal.com/api/v1/', // Base URL for OneSignal
-        tokenProvider: () async => '',
+        baseUrl: 'https://onesignal.com/api/v1/',
+        tokenProvider: () async => EnvironmentConfig.oneSignalRestApiKey,
         logger: Logger('OneSignalPushNotificationClient'),
       );
       // 4. Initialize Repositories
