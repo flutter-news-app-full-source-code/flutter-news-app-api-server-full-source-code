@@ -15,9 +15,9 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
     required DataRepository<RemoteConfig> remoteConfigRepository,
     required PermissionService permissionService,
     required Logger log,
-  })  : _remoteConfigRepository = remoteConfigRepository,
-        _permissionService = permissionService,
-        _log = log;
+  }) : _remoteConfigRepository = remoteConfigRepository,
+       _permissionService = permissionService,
+       _log = log;
 
   final DataRepository<RemoteConfig> _remoteConfigRepository;
   final PermissionService _permissionService;
@@ -56,49 +56,25 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
       switch (user.appRole) {
         case AppUserRole.premiumUser:
           accountType = 'premium';
-          if (isFollowedItem) {
-            limit = limits.premiumFollowedItemsLimit;
-          } else if (itemType == 'headline') {
-            limit = limits.premiumSavedHeadlinesLimit;
-          } else if (itemType == 'notificationSubscription') {
-            final pushConfig = remoteConfig.pushNotificationConfig;
-            limit = pushConfig.deliveryConfigs.values
-                    .map((c) => c.visibleTo[user.appRole]?.subscriptionLimit ?? 0)
-                    .fold(0, (prev, element) => prev + element) ??
-                0;
-          } else {
-            limit = limits.premiumSavedFiltersLimit;
-          }
+          limit = isFollowedItem
+              ? limits.premiumFollowedItemsLimit
+              : (itemType == 'headline')
+              ? limits.premiumSavedHeadlinesLimit
+              : limits.premiumSavedFiltersLimit;
         case AppUserRole.standardUser:
           accountType = 'standard';
-          if (isFollowedItem) {
-            limit = limits.authenticatedFollowedItemsLimit;
-          } else if (itemType == 'headline') {
-            limit = limits.authenticatedSavedHeadlinesLimit;
-          } else if (itemType == 'notificationSubscription') {
-            final pushConfig = remoteConfig.pushNotificationConfig;
-            limit = pushConfig.deliveryConfigs.values
-                    .map((c) => c.visibleTo[user.appRole]?.subscriptionLimit ?? 0)
-                    .fold(0, (prev, element) => prev + element) ??
-                0;
-          } else {
-            limit = limits.authenticatedSavedFiltersLimit;
-          }
+          limit = isFollowedItem
+              ? limits.authenticatedFollowedItemsLimit
+              : (itemType == 'headline')
+              ? limits.authenticatedSavedHeadlinesLimit
+              : limits.authenticatedSavedFiltersLimit;
         case AppUserRole.guestUser:
           accountType = 'guest';
-          if (isFollowedItem) {
-            limit = limits.guestFollowedItemsLimit;
-          } else if (itemType == 'headline') {
-            limit = limits.guestSavedHeadlinesLimit;
-          } else if (itemType == 'notificationSubscription') {
-            final pushConfig = remoteConfig.pushNotificationConfig;
-            limit = pushConfig.deliveryConfigs.values
-                    .map((c) => c.visibleTo[user.appRole]?.subscriptionLimit ?? 0)
-                    .fold(0, (prev, element) => prev + element) ??
-                0;
-          } else {
-            limit = limits.guestSavedFiltersLimit;
-          }
+          limit = isFollowedItem
+              ? limits.guestFollowedItemsLimit
+              : (itemType == 'headline')
+              ? limits.guestSavedHeadlinesLimit
+              : limits.guestSavedFiltersLimit;
       }
 
       // 3. Check if adding the item would exceed the limit
@@ -146,7 +122,6 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
       int followedItemsLimit;
       int savedHeadlinesLimit;
       int savedFiltersLimit;
-      int notificationSubscriptionLimit;
       String accountType;
 
       switch (user.appRole) {
@@ -155,33 +130,16 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
           followedItemsLimit = limits.premiumFollowedItemsLimit;
           savedHeadlinesLimit = limits.premiumSavedHeadlinesLimit;
           savedFiltersLimit = limits.premiumSavedFiltersLimit;
-          // The total limit for subscriptions is the sum of limits for each
-          // delivery type available to the user's role.
-          notificationSubscriptionLimit = remoteConfig
-                  .pushNotificationConfig.deliveryConfigs.values
-                  .map((c) => c.visibleTo[user.appRole]?.subscriptionLimit ?? 0)
-                  .fold(0, (prev, element) => prev + element) ??
-              0;
         case AppUserRole.standardUser:
           accountType = 'standard';
           followedItemsLimit = limits.authenticatedFollowedItemsLimit;
           savedHeadlinesLimit = limits.authenticatedSavedHeadlinesLimit;
           savedFiltersLimit = limits.authenticatedSavedFiltersLimit;
-          notificationSubscriptionLimit = remoteConfig
-                  .pushNotificationConfig.deliveryConfigs.values
-                  .map((c) => c.visibleTo[user.appRole]?.subscriptionLimit ?? 0)
-                  .fold(0, (prev, element) => prev + element) ??
-              0;
         case AppUserRole.guestUser:
           accountType = 'guest';
           followedItemsLimit = limits.guestFollowedItemsLimit;
           savedHeadlinesLimit = limits.guestSavedHeadlinesLimit;
           savedFiltersLimit = limits.guestSavedFiltersLimit;
-          notificationSubscriptionLimit = remoteConfig
-                  .pushNotificationConfig.deliveryConfigs.values
-                  .map((c) => c.visibleTo[user.appRole]?.subscriptionLimit ?? 0)
-                  .fold(0, (prev, element) => prev + element) ??
-              0;
       }
 
       // 3. Check if proposed preferences exceed limits
@@ -215,13 +173,49 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
           'for your account type ($accountType).',
         );
       }
-      if (updatedPreferences.notificationSubscriptions.length >
-          notificationSubscriptionLimit) {
-        throw ForbiddenException(
-          'You have reached the maximum number of notification subscriptions '
-          'allowed for your account type ($accountType).',
-        );
+
+      // 4. Check notification subscription limits (per delivery type).
+      _log.info(
+        'Checking notification subscription limits for user ${user.id}...',
+      );
+      final pushConfig = remoteConfig.pushNotificationConfig;
+      if (pushConfig != null) {
+        // Iterate through each possible delivery type defined in the enum.
+        for (final deliveryType
+            in PushNotificationSubscriptionDeliveryType.values) {
+          // Get the specific limit for this delivery type and user role.
+          final limit =
+              pushConfig
+                  .deliveryConfigs[deliveryType]
+                  ?.visibleTo[user.appRole]
+                  ?.subscriptionLimit ??
+              0;
+
+          // Count how many of the user's current subscriptions include this
+          // specific delivery type.
+          final count = updatedPreferences.notificationSubscriptions
+              .where((sub) => sub.deliveryTypes.contains(deliveryType))
+              .length;
+
+          _log.finer(
+            'User ${user.id} has $count subscriptions of type '
+            '${deliveryType.name} (limit: $limit).',
+          );
+
+          // If the count for this specific type exceeds its limit, throw.
+          if (count > limit) {
+            throw ForbiddenException(
+              'You have reached the maximum number of subscriptions for '
+              '${deliveryType.name} notifications allowed for your account '
+              'type ($accountType).',
+            );
+          }
+        }
       }
+
+      _log.info(
+        'All user preference limits for user ${user.id} are within range.',
+      );
     } on HttpException {
       // Propagate known exceptions from repositories
       rethrow;
