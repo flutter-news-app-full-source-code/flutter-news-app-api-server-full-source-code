@@ -67,11 +67,11 @@ class AppDependencies {
   late final DataRepository<User> userRepository;
   late final DataRepository<UserAppSettings> userAppSettingsRepository;
   late final DataRepository<UserContentPreferences>
-  userContentPreferencesRepository;
+      userContentPreferencesRepository;
   late final DataRepository<PushNotificationDevice>
-  pushNotificationDeviceRepository;
+      pushNotificationDeviceRepository;
   late final DataRepository<PushNotificationSubscription>
-  pushNotificationSubscriptionRepository;
+      pushNotificationSubscriptionRepository;
   late final DataRepository<RemoteConfig> remoteConfigRepository;
   late final EmailRepository emailRepository;
 
@@ -87,9 +87,9 @@ class AppDependencies {
   late final RateLimitService rateLimitService;
   late final CountryQueryService countryQueryService;
   late final IPushNotificationService pushNotificationService;
-  late final IFirebaseAuthenticator firebaseAuthenticator;
-  late final IPushNotificationClient firebasePushNotificationClient;
-  late final IPushNotificationClient oneSignalPushNotificationClient;
+  late final IFirebaseAuthenticator? firebaseAuthenticator;
+  late final IPushNotificationClient? firebasePushNotificationClient;
+  late final IPushNotificationClient? oneSignalPushNotificationClient;
 
   /// Initializes all application dependencies.
   ///
@@ -222,51 +222,78 @@ class AppDependencies {
       );
       final pushNotificationSubscriptionClient =
           DataMongodb<PushNotificationSubscription>(
-            connectionManager: _mongoDbConnectionManager,
-            modelName: 'push_notification_subscriptions',
-            fromJson: PushNotificationSubscription.fromJson,
-            toJson: (item) => item.toJson(),
-            logger: Logger('DataMongodb<PushNotificationSubscription>'),
-          );
-
-      // --- Initialize Firebase Authenticator ---
-      // This dedicated service encapsulates the logic for obtaining a Firebase
-      // access token, keeping the dependency setup clean.
-      firebaseAuthenticator = FirebaseAuthenticator(
-        log: Logger('FirebaseAuthenticator'),
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'push_notification_subscriptions',
+        fromJson: PushNotificationSubscription.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<PushNotificationSubscription>'),
       );
 
-      // --- Initialize HTTP clients for push notification providers ---
+      // --- Conditionally Initialize Push Notification Clients ---
 
-      // The Firebase client requires a short-lived OAuth2 access token. This
-      // tokenProvider implements the required two-legged OAuth flow:
-      // 1. Create a JWT signed with the service account's private key.
-      // 2. Exchange this JWT for an access token from Google's token endpoint.
-      final firebaseHttpClient = HttpClient(
-        baseUrl:
-            'https://fcm.googleapis.com/v1/projects/${EnvironmentConfig.firebaseProjectId}/',
-        tokenProvider: firebaseAuthenticator.getAccessToken,
-        logger: Logger('FirebasePushNotificationClient'),
-      );
+      // Firebase
+      final fcmProjectId = EnvironmentConfig.firebaseProjectId;
+      final fcmClientEmail = EnvironmentConfig.firebaseClientEmail;
+      final fcmPrivateKey = EnvironmentConfig.firebasePrivateKey;
 
-      // The OneSignal client requires the REST API key for authentication.
-      // We use a custom interceptor to add the 'Authorization: Basic <API_KEY>'
-      // header, as the default AuthInterceptor is hardcoded for 'Bearer' tokens.
-      final oneSignalHttpClient = HttpClient(
-        baseUrl: 'https://onesignal.com/api/v1/',
-        // The tokenProvider is not used here; auth is handled by the interceptor.
-        tokenProvider: () async => null,
-        interceptors: [
-          InterceptorsWrapper(
-            onRequest: (options, handler) {
-              options.headers['Authorization'] =
-                  'Basic ${EnvironmentConfig.oneSignalRestApiKey}';
-              return handler.next(options);
-            },
-          ),
-        ],
-        logger: Logger('OneSignalPushNotificationClient'),
-      );
+      if (fcmProjectId != null &&
+          fcmClientEmail != null &&
+          fcmPrivateKey != null) {
+        _log.info('Firebase credentials found. Initializing Firebase client.');
+        firebaseAuthenticator =
+            FirebaseAuthenticator(log: Logger('FirebaseAuthenticator'));
+
+        final firebaseHttpClient = HttpClient(
+          baseUrl: 'https://fcm.googleapis.com/v1/projects/$fcmProjectId/',
+          tokenProvider: firebaseAuthenticator!.getAccessToken,
+          logger: Logger('FirebasePushNotificationClient'),
+        );
+
+        firebasePushNotificationClient = FirebasePushNotificationClient(
+          httpClient: firebaseHttpClient,
+          projectId: fcmProjectId,
+          log: Logger('FirebasePushNotificationClient'),
+        );
+      } else {
+        _log.warning(
+          'One or more Firebase credentials not found. Firebase push notifications will be disabled.',
+        );
+        firebaseAuthenticator = null;
+        firebasePushNotificationClient = null;
+      }
+
+      // OneSignal
+      final osAppId = EnvironmentConfig.oneSignalAppId;
+      final osApiKey = EnvironmentConfig.oneSignalRestApiKey;
+
+      if (osAppId != null && osApiKey != null) {
+        _log.info('OneSignal credentials found. Initializing OneSignal client.');
+        final oneSignalHttpClient = HttpClient(
+          baseUrl: 'https://onesignal.com/api/v1/',
+          tokenProvider: () async => null,
+          interceptors: [
+            InterceptorsWrapper(
+              onRequest: (options, handler) {
+                options.headers['Authorization'] = 'Basic $osApiKey';
+                return handler.next(options);
+              },
+            ),
+          ],
+          logger: Logger('OneSignalPushNotificationClient'),
+        );
+
+        oneSignalPushNotificationClient = OneSignalPushNotificationClient(
+          httpClient: oneSignalHttpClient,
+          appId: osAppId,
+          log: Logger('OneSignalPushNotificationClient'),
+        );
+      } else {
+        _log.warning(
+          'One or more OneSignal credentials not found. OneSignal push notifications will be disabled.',
+        );
+        oneSignalPushNotificationClient = null;
+      }
+
       // 4. Initialize Repositories
       headlineRepository = DataRepository(dataClient: headlineClient);
       topicRepository = DataRepository(dataClient: topicClient);
@@ -305,18 +332,6 @@ class AppDependencies {
       );
 
       emailRepository = EmailRepository(emailClient: emailClient);
-
-      // Initialize Push Notification Clients
-      firebasePushNotificationClient = FirebasePushNotificationClient(
-        httpClient: firebaseHttpClient,
-        projectId: EnvironmentConfig.firebaseProjectId,
-        log: Logger('FirebasePushNotificationClient'),
-      );
-      oneSignalPushNotificationClient = OneSignalPushNotificationClient(
-        httpClient: oneSignalHttpClient,
-        appId: EnvironmentConfig.oneSignalAppId,
-        log: Logger('OneSignalPushNotificationClient'),
-      );
 
       // 5. Initialize Services
       tokenBlacklistService = MongoDbTokenBlacklistService(
