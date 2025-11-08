@@ -21,6 +21,7 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
   }) : _httpClient = httpClient,
        _log = log;
 
+  /// The Firebase Project ID for push notifications.
   final String projectId;
   final HttpClient _httpClient;
   final Logger _log;

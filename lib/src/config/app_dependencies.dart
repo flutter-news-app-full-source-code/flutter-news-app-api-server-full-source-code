@@ -3,10 +3,10 @@
 import 'dart:async';
 
 import 'package:core/core.dart';
-import 'package:dio/dio.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:data_mongodb/data_mongodb.dart';
 import 'package:data_repository/data_repository.dart';
+import 'package:dio/dio.dart';
 import 'package:email_repository/email_repository.dart';
 import 'package:email_sendgrid/email_sendgrid.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';

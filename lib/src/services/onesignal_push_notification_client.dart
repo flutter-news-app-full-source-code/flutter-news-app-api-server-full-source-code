@@ -21,6 +21,7 @@ class OneSignalPushNotificationClient implements IPushNotificationClient {
   }) : _httpClient = httpClient,
        _log = log;
 
+  /// The OneSignal App ID for push notifications.
   final String appId;
   final HttpClient _httpClient;
   final Logger _log;
