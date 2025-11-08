@@ -32,7 +32,7 @@ class FirebaseAuthenticator implements IFirebaseAuthenticator {
     _log.info('Requesting new Firebase access token...');
     try {
       // Step 1: Create and sign the JWT.
-      final pem = EnvironmentConfig.firebasePrivateKey.replaceAll(r'\n', '\n');
+      final pem = EnvironmentConfig.firebasePrivateKey!.replaceAll(r'\n', '\n');
       final privateKey = RSAPrivateKey(pem);
       final jwt = JWT(
         {'scope': 'https://www.googleapis.com/auth/cloud-platform'},
