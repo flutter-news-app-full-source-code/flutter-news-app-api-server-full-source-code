@@ -236,6 +236,16 @@ class AppDependencies {
       final firebaseHttpClient = HttpClient(
         baseUrl:
             'https://fcm.googleapis.com/v1/projects/${EnvironmentConfig.firebaseProjectId}/',
+        tokenProvider: _createFirebaseTokenProvider(),
+        logger: Logger('FirebasePushNotificationClient'),
+      );
+
+      // The OneSignal client requires the REST API key for authentication.
+      // We use a custom interceptor to add the 'Authorization: Basic <API_KEY>'
+      // header, as the default AuthInterceptor is hardcoded for 'Bearer' tokens.
+      final oneSignalHttpClient = HttpClient(
+        baseUrl:
+            'https://fcm.googleapis.com/v1/projects/${EnvironmentConfig.firebaseProjectId}/',
         tokenProvider: () async {
           try {
             // Step 1: Create and sign the JWT.
@@ -293,25 +303,6 @@ class AppDependencies {
           }
         },
         logger: Logger('FirebasePushNotificationClient'),
-      );
-
-      // The OneSignal client requires the REST API key for authentication.
-      // We use a custom interceptor to add the 'Authorization: Basic <API_KEY>'
-      // header, as the default AuthInterceptor is hardcoded for 'Bearer' tokens.
-      final oneSignalHttpClient = HttpClient(
-        baseUrl: 'https://onesignal.com/api/v1/',
-        // The tokenProvider is not used here; auth is handled by the interceptor.
-        tokenProvider: () async => null,
-        interceptors: [
-          InterceptorsWrapper(
-            onRequest: (options, handler) {
-              options.headers['Authorization'] =
-                  'Basic ${EnvironmentConfig.oneSignalRestApiKey}';
-              return handler.next(options);
-            },
-          ),
-        ],
-        logger: Logger('OneSignalPushNotificationClient'),
       );
       // 4. Initialize Repositories
       headlineRepository = DataRepository(dataClient: headlineClient);
@@ -427,6 +418,75 @@ class AppDependencies {
       _initCompleter!.completeError(e, s);
       rethrow;
     }
+  }
+
+  /// Creates a token provider closure for the Firebase HTTP client.
+  ///
+  /// This method encapsulates the logic for obtaining a short-lived OAuth2
+  /// access token from Google's token endpoint. It creates a single, reused
+  /// [HttpClient] instance (`tokenClient`) for efficiency.
+  Future<String?> Function() _createFirebaseTokenProvider() {
+    // This client is created once and reused for all token exchange requests.
+    // It is intentionally created without the standard AuthInterceptor to
+    // avoid an infinite loop, as this specific request does not use a
+    // Bearer token for its own authorization.
+    final tokenClient = HttpClient(
+      baseUrl: 'https://oauth2.googleapis.com',
+      tokenProvider: () async => null,
+    );
+
+    return () async {
+      try {
+        // Step 1: Create and sign the JWT.
+        final pem = EnvironmentConfig.firebasePrivateKey.replaceAll(
+          r'\n',
+          '\n',
+        );
+        final privateKey = RSAPrivateKey(pem);
+        final jwt = JWT(
+          {'scope': 'https://www.googleapis.com/auth/cloud-platform'},
+          issuer: EnvironmentConfig.firebaseClientEmail,
+          audience: Audience.one('https://oauth2.googleapis.com/token'),
+        );
+        final signedToken = jwt.sign(
+          privateKey,
+          algorithm: JWTAlgorithm.RS256,
+          expiresIn: const Duration(minutes: 5),
+        );
+
+        // Step 2: Exchange the JWT for an access token using the reused client.
+        final response = await tokenClient.post<Map<String, dynamic>>(
+          '/token',
+          data:
+              'grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=$signedToken',
+          options: Options(
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+          ),
+        );
+
+        final accessToken = response['access_token'] as String?;
+        if (accessToken == null) {
+          _log.severe('Failed to get access token from Google OAuth.');
+          throw const OperationFailedException(
+            'Could not retrieve Firebase access token.',
+          );
+        }
+        return accessToken;
+      } catch (e, s) {
+        _log.severe('Error during Firebase token exchange: $e', e, s);
+        // Check if the error is already an OperationFailedException to avoid
+        // re-wrapping it.
+        if (e is OperationFailedException) {
+          rethrow;
+        }
+        // Wrap other exceptions for consistent error handling.
+        throw OperationFailedException(
+          'Failed to authenticate with Firebase: $e',
+        );
+      }
+    };
   }
 
   /// Disposes of resources, such as closing the database connection.
