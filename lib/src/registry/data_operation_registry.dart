@@ -215,6 +215,38 @@ class DataOperationRegistry {
       'remote_config': (c, item, uid) => c
           .read<DataRepository<RemoteConfig>>()
           .create(item: item as RemoteConfig, userId: uid),
+      'push_notification_device': (context, item, uid) async {
+        _log.info('Executing custom creator for push_notification_device.');
+        final authenticatedUser = context.read<User>();
+        final deviceToCreate = item as PushNotificationDevice;
+
+        // Security Check: Ensure the userId in the payload matches the
+        // authenticated user's ID. This prevents a user from registering a
+        // device on behalf of another user.
+        if (deviceToCreate.userId != authenticatedUser.id) {
+          _log.warning(
+            'Forbidden attempt by user ${authenticatedUser.id} to create a '
+            'device for user ${deviceToCreate.userId}.',
+          );
+          throw const ForbiddenException(
+            'You can only register devices for your own account.',
+          );
+        }
+
+        _log.info(
+          'User ${authenticatedUser.id} is registering a new device. '
+          'Validation passed.',
+        );
+
+        // The validation passed, so we can now safely call the repository.
+        // The `uid` (userIdForRepoCall) is passed as null because for
+        // user-owned resources, the scoping is handled by the creator logic
+        // itself, not a generic filter in the repository.
+        return context.read<DataRepository<PushNotificationDevice>>().create(
+              item: deviceToCreate,
+              userId: null,
+            );
+      },
     });
 
     // --- Register Item Updaters ---
@@ -355,6 +387,9 @@ class DataOperationRegistry {
           .delete(id: id, userId: uid),
       'remote_config': (c, id, uid) =>
           c.read<DataRepository<RemoteConfig>>().delete(id: id, userId: uid),
+      'push_notification_device': (c, id, uid) => c
+          .read<DataRepository<PushNotificationDevice>>()
+          .delete(id: id, userId: uid),
     });
   }
 }
