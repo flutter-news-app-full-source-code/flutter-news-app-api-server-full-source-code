@@ -15,4 +15,18 @@ abstract class IPushNotificationClient {
     required PushNotificationPayload payload,
     required PushNotificationProviderConfig providerConfig,
   });
+
+  /// Sends a push notification to a batch of devices.
+  ///
+  /// This method is more efficient for sending the same notification to
+  /// multiple recipients, as it can reduce the number of API calls.
+  ///
+  /// [deviceTokens]: A list of unique tokens identifying the target devices.
+  /// [payload]: The data payload to be sent with the notification.
+  /// [providerConfig]: The specific configuration for the provider.
+  Future<void> sendBulkNotifications({
+    required List<String> deviceTokens,
+    required PushNotificationPayload payload,
+    required PushNotificationProviderConfig providerConfig,
+  });
 }
