@@ -16,7 +16,7 @@ class AddPushNotificationConfigToRemoteConfig extends Migration {
   /// {@macro add_push_notification_config_to_remote_config}
   AddPushNotificationConfigToRemoteConfig()
     : super(
-        prId: 'N/A', // This is a local refactoring task
+        prId: '71',
         prSummary:
             'Add pushNotificationConfig field to the remote_configs document.',
         prDate: '20251108103300',
@@ -30,58 +30,7 @@ class AddPushNotificationConfigToRemoteConfig extends Migration {
     final remoteConfigId = ObjectId.fromHexString(kRemoteConfigId);
 
     // Default structure for the push notification configuration.
-    // This matches the structure provided in the task description.
-    final defaultConfig = PushNotificationConfig(
-      enabled: true,
-      primaryProvider: PushNotificationProvider.firebase,
-      deliveryConfigs: {
-        PushNotificationSubscriptionDeliveryType.breakingOnly:
-            const PushNotificationDeliveryConfig(
-              enabled: true,
-              visibleTo: {
-                AppUserRole.guestUser: PushNotificationDeliveryRoleConfig(
-                  subscriptionLimit: 1,
-                ),
-                AppUserRole.standardUser: PushNotificationDeliveryRoleConfig(
-                  subscriptionLimit: 3,
-                ),
-                AppUserRole.premiumUser: PushNotificationDeliveryRoleConfig(
-                  subscriptionLimit: 10,
-                ),
-              },
-            ),
-        PushNotificationSubscriptionDeliveryType.dailyDigest:
-            const PushNotificationDeliveryConfig(
-              enabled: true,
-              visibleTo: {
-                AppUserRole.guestUser: PushNotificationDeliveryRoleConfig(
-                  subscriptionLimit: 0,
-                ),
-                AppUserRole.standardUser: PushNotificationDeliveryRoleConfig(
-                  subscriptionLimit: 2,
-                ),
-                AppUserRole.premiumUser: PushNotificationDeliveryRoleConfig(
-                  subscriptionLimit: 10,
-                ),
-              },
-            ),
-        PushNotificationSubscriptionDeliveryType.weeklyRoundup:
-            const PushNotificationDeliveryConfig(
-              enabled: true,
-              visibleTo: {
-                AppUserRole.guestUser: PushNotificationDeliveryRoleConfig(
-                  subscriptionLimit: 0,
-                ),
-                AppUserRole.standardUser: PushNotificationDeliveryRoleConfig(
-                  subscriptionLimit: 2,
-                ),
-                AppUserRole.premiumUser: PushNotificationDeliveryRoleConfig(
-                  subscriptionLimit: 10,
-                ),
-              },
-            ),
-      },
-    );
+    final pushNotificationConfig = remoteConfigsFixturesData.first.pushNotificationConfig;
 
     // Use $set to add the field only if it doesn't exist.
     // This is an idempotent operation.
@@ -89,9 +38,9 @@ class AddPushNotificationConfigToRemoteConfig extends Migration {
       where
           .id(remoteConfigId)
           .and(
-            where.exists('pushNotificationConfig', exists: false),
+            where.notExists('pushNotificationConfig'),
           ),
-      modify.set('pushNotificationConfig', defaultConfig.toJson()),
+      modify.set('pushNotificationConfig', pushNotificationConfig.toJson()),
     );
 
     log.info('Successfully completed up migration for $prDate.');
