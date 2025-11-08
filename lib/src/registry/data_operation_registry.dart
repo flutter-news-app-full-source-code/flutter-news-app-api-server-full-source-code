@@ -1,4 +1,5 @@
 import 'package:core/core.dart';
+import 'dart:async';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
@@ -180,15 +181,23 @@ class DataOperationRegistry {
         // If the created headline is marked as breaking news, trigger the
         // push notification service. The service itself contains all the
         // logic for fetching subscribers and sending notifications.
+        //
+        // CRITICAL: This is a "fire-and-forget" operation. We do NOT `await`
+        // the result. The API response for creating the headline should return
+        // immediately, while the notification service runs in the background.
+        // The service itself is responsible for its own internal error logging.
+        // We wrap this in a try-catch to prevent any unexpected synchronous
+        // error from crashing the headline creation process.
         if (createdHeadline.isBreaking) {
           try {
             final pushNotificationService = c.read<IPushNotificationService>();
-            await pushNotificationService.sendBreakingNewsNotification(
-              headline: createdHeadline,
+            unawaited(
+              pushNotificationService.sendBreakingNewsNotification(
+                headline: createdHeadline,
+              ),
             );
             _log.info(
-              'Successfully triggered breaking news notification '
-              'for headline: ${createdHeadline.id}',
+              'Successfully dispatched breaking news notification for headline: ${createdHeadline.id}',
             );
           } catch (e, s) {
             _log.severe('Failed to send breaking news notification: $e', e, s);
@@ -243,9 +252,9 @@ class DataOperationRegistry {
         // user-owned resources, the scoping is handled by the creator logic
         // itself, not a generic filter in the repository.
         return context.read<DataRepository<PushNotificationDevice>>().create(
-              item: deviceToCreate,
-              userId: null,
-            );
+          item: deviceToCreate,
+          userId: null,
+        );
       },
     });
 
