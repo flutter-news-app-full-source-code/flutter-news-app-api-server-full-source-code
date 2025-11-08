@@ -10,6 +10,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/registry/data_o
 import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_registry.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/firebase_authenticator.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
@@ -141,6 +142,11 @@ Handler middleware(Handler handler) {
               .use(
                 provider<IPushNotificationService>(
                   (_) => deps.pushNotificationService,
+                ),
+              )
+              .use(
+                provider<IFirebaseAuthenticator>(
+                  (_) => deps.firebaseAuthenticator,
                 ),
               )
               .use(provider<EmailRepository>((_) => deps.emailRepository))
