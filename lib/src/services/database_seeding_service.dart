@@ -226,6 +226,47 @@ class DatabaseSeedingService {
         ],
       });
 
+      // Indexes for the push notification devices collection
+      await _db.runCommand({
+        'createIndexes': 'push_notification_devices',
+        'indexes': [
+          {
+            // Ensures no two devices can have the same Firebase token.
+            // The index is sparse, so it only applies to documents that
+            // actually have a 'providerTokens.firebase' field.
+            'key': {'providerTokens.firebase': 1},
+            'name': 'firebase_token_unique_sparse_index',
+            'unique': true,
+            'sparse': true,
+          },
+          {
+            // Ensures no two devices can have the same OneSignal token.
+            // The index is sparse, so it only applies to documents that
+            // actually have a 'providerTokens.oneSignal' field.
+            'key': {'providerTokens.oneSignal': 1},
+            'name': 'oneSignal_token_unique_sparse_index',
+            'unique': true,
+            'sparse': true,
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "push_notification_devices".');
+
+      // Indexes for the push notification subscriptions collection
+      await _db.runCommand({
+        'createIndexes': 'push_notification_subscriptions',
+        'indexes': [
+          {
+            // This index optimizes queries that fetch subscriptions for a
+            // specific user, which is a common operation when sending
+            // notifications or managing user preferences.
+            'key': {'userId': 1},
+            'name': 'userId_index',
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "push_notification_subscriptions".');
+
       _log.info('Database indexes are set up correctly.');
     } on Exception catch (e, s) {
       _log.severe('Failed to create database indexes.', e, s);
@@ -349,6 +390,7 @@ class DatabaseSeedingService {
       followedTopics: const [],
       savedHeadlines: const [],
       savedFilters: const [],
+      notificationSubscriptions: const [],
     );
     await _db.collection('user_content_preferences').insertOne({
       '_id': userId,

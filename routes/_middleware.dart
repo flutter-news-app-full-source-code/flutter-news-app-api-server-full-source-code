@@ -11,7 +11,9 @@ import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/firebase_authenticator.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_preference_limit_service.dart';
@@ -125,6 +127,26 @@ Handler middleware(Handler handler) {
               .use(
                 provider<DataRepository<RemoteConfig>>(
                   (_) => deps.remoteConfigRepository,
+                ),
+              )
+              .use(
+                provider<DataRepository<PushNotificationDevice>>(
+                  (_) => deps.pushNotificationDeviceRepository,
+                ),
+              )
+              .use(
+                provider<DataRepository<PushNotificationSubscription>>(
+                  (_) => deps.pushNotificationSubscriptionRepository,
+                ),
+              )
+              .use(
+                provider<IPushNotificationService>(
+                  (_) => deps.pushNotificationService,
+                ),
+              )
+              .use(
+                provider<IFirebaseAuthenticator?>(
+                  (_) => deps.firebaseAuthenticator,
                 ),
               )
               .use(provider<EmailRepository>((_) => deps.emailRepository))

@@ -20,6 +20,11 @@ final Set<String> _appGuestUserPermissions = {
   // dismisses an in-feed prompt, etc). The endpoint handler ensures only
   // non-sensitive fields can be modified.
   Permissions.userUpdateOwned,
+
+  // Allow all app users to register and unregister their devices for push
+  // notifications.
+  Permissions.pushNotificationDeviceCreateOwned,
+  Permissions.pushNotificationDeviceDeleteOwned,
 };
 
 final Set<String> _appStandardUserPermissions = {
@@ -52,6 +57,9 @@ final Set<String> _dashboardPublisherPermissions = {
   // Core dashboard access and quality-of-life permissions.
   Permissions.dashboardLogin,
   Permissions.rateLimitingBypass,
+
+  // Publishers can send breaking news notifications.
+  Permissions.pushNotificationSendBreakingNews,
 };
 
 final Set<String> _dashboardAdminPermissions = {

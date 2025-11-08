@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:data_repository/data_repository.dart';
@@ -5,6 +7,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/own
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
 import 'package:logging/logging.dart';
 
 // --- Typedefs for Data Operations ---
@@ -170,10 +173,39 @@ class DataOperationRegistry {
 
     // --- Register Item Creators ---
     _itemCreators.addAll({
-      'headline': (c, item, uid) => c.read<DataRepository<Headline>>().create(
-        item: item as Headline,
-        userId: uid,
-      ),
+      'headline': (c, item, uid) async {
+        final createdHeadline = await c.read<DataRepository<Headline>>().create(
+          item: item as Headline,
+          userId: uid,
+        );
+
+        // If the created headline is marked as breaking news, trigger the
+        // push notification service. The service itself contains all the
+        // logic for fetching subscribers and sending notifications.
+        //
+        // CRITICAL: This is a "fire-and-forget" operation. We do NOT `await`
+        // the result. The API response for creating the headline should return
+        // immediately, while the notification service runs in the background.
+        // The service itself is responsible for its own internal error logging.
+        // We wrap this in a try-catch to prevent any unexpected synchronous
+        // error from crashing the headline creation process.
+        if (createdHeadline.isBreaking) {
+          try {
+            final pushNotificationService = c.read<IPushNotificationService>();
+            unawaited(
+              pushNotificationService.sendBreakingNewsNotification(
+                headline: createdHeadline,
+              ),
+            );
+            _log.info(
+              'Successfully dispatched breaking news notification for headline: ${createdHeadline.id}',
+            );
+          } catch (e, s) {
+            _log.severe('Failed to send breaking news notification: $e', e, s);
+          }
+        }
+        return createdHeadline;
+      },
       'topic': (c, item, uid) => c.read<DataRepository<Topic>>().create(
         item: item as Topic,
         userId: uid,
@@ -193,6 +225,38 @@ class DataOperationRegistry {
       'remote_config': (c, item, uid) => c
           .read<DataRepository<RemoteConfig>>()
           .create(item: item as RemoteConfig, userId: uid),
+      'push_notification_device': (context, item, uid) async {
+        _log.info('Executing custom creator for push_notification_device.');
+        final authenticatedUser = context.read<User>();
+        final deviceToCreate = item as PushNotificationDevice;
+
+        // Security Check: Ensure the userId in the payload matches the
+        // authenticated user's ID. This prevents a user from registering a
+        // device on behalf of another user.
+        if (deviceToCreate.userId != authenticatedUser.id) {
+          _log.warning(
+            'Forbidden attempt by user ${authenticatedUser.id} to create a '
+            'device for user ${deviceToCreate.userId}.',
+          );
+          throw const ForbiddenException(
+            'You can only register devices for your own account.',
+          );
+        }
+
+        _log.info(
+          'User ${authenticatedUser.id} is registering a new device. '
+          'Validation passed.',
+        );
+
+        // The validation passed, so we can now safely call the repository.
+        // The `uid` (userIdForRepoCall) is passed as null because for
+        // user-owned resources, the scoping is handled by the creator logic
+        // itself, not a generic filter in the repository.
+        return context.read<DataRepository<PushNotificationDevice>>().create(
+          item: deviceToCreate,
+          userId: null,
+        );
+      },
     });
 
     // --- Register Item Updaters ---
@@ -333,6 +397,9 @@ class DataOperationRegistry {
           .delete(id: id, userId: uid),
       'remote_config': (c, id, uid) =>
           c.read<DataRepository<RemoteConfig>>().delete(id: id, userId: uid),
+      'push_notification_device': (c, id, uid) => c
+          .read<DataRepository<PushNotificationDevice>>()
+          .delete(id: id, userId: uid),
     });
   }
 }

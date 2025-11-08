@@ -425,6 +425,44 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresAuthentication: true,
     ),
   ),
+  'push_notification_device': ModelConfig<PushNotificationDevice>(
+    fromJson: PushNotificationDevice.fromJson,
+    getId: (d) => d.id,
+    getOwnerId: (dynamic item) => (item as PushNotificationDevice).userId,
+    // Collection GET is not supported for this model as there is no use case
+    // for a client to list all device registrations.
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    // Item GET is not supported for this model. A client registers a device
+    // and then forgets about it until it needs to be deleted.
+    getItemPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    // POST is allowed for any authenticated user to register their own device.
+    // A custom check within the DataOperationRegistry's creator function will
+    // ensure the `userId` in the request body matches the authenticated user.
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.pushNotificationDeviceCreateOwned,
+      // Ownership check is on the *new* item's payload, which is handled
+      // by the creator function, not the standard ownership middleware.
+      requiresOwnershipCheck: false,
+    ),
+    // PUT is not supported. To update a token, the client should delete the
+    // old device registration and create a new one.
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    // DELETE is allowed for any authenticated user to delete their own device
+    // registration (e.g., on sign-out). The ownership check middleware will
+    // verify the user owns the device record before allowing deletion.
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.pushNotificationDeviceDeleteOwned,
+      requiresOwnershipCheck: true,
+    ),
+  ),
 };
 
 /// Type alias for the ModelRegistry map for easier provider usage.

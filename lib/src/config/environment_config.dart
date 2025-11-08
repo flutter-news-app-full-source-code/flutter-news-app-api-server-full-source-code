@@ -60,12 +60,13 @@ abstract final class EnvironmentConfig {
     return env; // Return even if fallback
   }
 
-  static String _getRequiredEnv(String key) {
+  static String? _getEnv(String key) {
     final value = _env[key];
     if (value == null || value.isEmpty) {
-      _log.severe('$key not found in environment variables.');
-      throw StateError('FATAL: $key environment variable is not set.');
+      _log.warning('$key not found or is empty in environment variables.');
+      return null;
     }
+
     return value;
   }
 
@@ -75,7 +76,18 @@ abstract final class EnvironmentConfig {
   ///
   /// Throws a [StateError] if the `DATABASE_URL` environment variable is not
   /// set, as the application cannot function without it.
-  static String get databaseUrl => _getRequiredEnv('DATABASE_URL');
+  static String get databaseUrl => _getRequiredEnv(
+    'DATABASE_URL',
+  );
+
+  static String _getRequiredEnv(String key) {
+    final value = _env[key];
+    if (value == null || value.isEmpty) {
+      _log.severe('$key not found in environment variables.');
+      throw StateError('FATAL: $key environment variable is not set.');
+    }
+    return value;
+  }
 
   /// Retrieves the JWT secret key from the environment.
   ///
@@ -182,4 +194,29 @@ abstract final class EnvironmentConfig {
         int.tryParse(_env['COUNTRY_SERVICE_CACHE_MINUTES'] ?? '15') ?? 15;
     return Duration(minutes: minutes);
   }
+
+  /// Retrieves the Firebase Project ID from the environment.
+  ///
+  /// The value is read from the `FIREBASE_PROJECT_ID` environment variable, if available.
+  static String? get firebaseProjectId => _getEnv('FIREBASE_PROJECT_ID');
+
+  /// Retrieves the Firebase Client Email from the environment.
+  ///
+  /// The value is read from the `FIREBASE_CLIENT_EMAIL` environment variable, if available.
+  static String? get firebaseClientEmail => _getEnv('FIREBASE_CLIENT_EMAIL');
+
+  /// Retrieves the Firebase Private Key from the environment.
+  ///
+  /// The value is read from the `FIREBASE_PRIVATE_KEY` environment variable, if available.
+  static String? get firebasePrivateKey => _getEnv('FIREBASE_PRIVATE_KEY');
+
+  /// Retrieves the OneSignal App ID from the environment.
+  ///
+  /// The value is read from the `ONESIGNAL_APP_ID` environment variable, if available.
+  static String? get oneSignalAppId => _getEnv('ONESIGNAL_APP_ID');
+
+  /// Retrieves the OneSignal REST API Key from the environment.
+  ///
+  /// The value is read from the `ONESIGNAL_REST_API_KEY` environment variable, if available.
+  static String? get oneSignalRestApiKey => _getEnv('ONESIGNAL_REST_API_KEY');
 }
