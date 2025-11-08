@@ -30,7 +30,8 @@ class AddPushNotificationConfigToRemoteConfig extends Migration {
     final remoteConfigId = ObjectId.fromHexString(kRemoteConfigId);
 
     // Default structure for the push notification configuration.
-    final pushNotificationConfig = remoteConfigsFixturesData.first.pushNotificationConfig;
+    final pushNotificationConfig =
+        remoteConfigsFixturesData.first.pushNotificationConfig;
 
     // Use $set to add the field only if it doesn't exist.
     // This is an idempotent operation.

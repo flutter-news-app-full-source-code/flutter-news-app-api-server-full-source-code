@@ -179,7 +179,7 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
         'Checking notification subscription limits for user ${user.id}...',
       );
       final pushConfig = remoteConfig.pushNotificationConfig;
-      
+
       // Iterate through each possible delivery type defined in the enum.
       for (final deliveryType
           in PushNotificationSubscriptionDeliveryType.values) {
