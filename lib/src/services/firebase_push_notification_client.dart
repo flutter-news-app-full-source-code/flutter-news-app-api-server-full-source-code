@@ -18,8 +18,8 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
     required this.projectId,
     required HttpClient httpClient,
     required Logger log,
-  })  : _httpClient = httpClient,
-        _log = log;
+  }) : _httpClient = httpClient,
+       _log = log;
 
   final String projectId;
   final HttpClient _httpClient;
@@ -98,8 +98,6 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
         },
       };
 
-Content-Type: application/http
-Content-Transfer-Encoding: binary
       // Return the future from the post request.
       return _httpClient.post<void>(url, data: requestBody);
     }).toList();
