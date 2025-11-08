@@ -11,8 +11,8 @@ import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/firebase_authenticator.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/firebase_authenticator.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
