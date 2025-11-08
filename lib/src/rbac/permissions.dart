@@ -89,4 +89,10 @@ abstract class Permissions {
   /// 'publisher' or 'admin'.
   static const String pushNotificationSendBreakingNews =
       'push_notification.send_breaking_news';
+
+  // Push Notification Device Permissions (User-owned)
+  static const String pushNotificationDeviceCreateOwned =
+      'push_notification_device.create_owned';
+  static const String pushNotificationDeviceDeleteOwned =
+      'push_notification_device.delete_owned';
 }

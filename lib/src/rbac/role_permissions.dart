@@ -20,6 +20,11 @@ final Set<String> _appGuestUserPermissions = {
   // dismisses an in-feed prompt, etc). The endpoint handler ensures only
   // non-sensitive fields can be modified.
   Permissions.userUpdateOwned,
+
+  // Allow all app users to register and unregister their devices for push
+  // notifications.
+  Permissions.pushNotificationDeviceCreateOwned,
+  Permissions.pushNotificationDeviceDeleteOwned,
 };
 
 final Set<String> _appStandardUserPermissions = {
