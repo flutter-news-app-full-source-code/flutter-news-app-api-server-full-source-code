@@ -71,6 +71,16 @@ The data API is equipped with powerful querying capabilities, enabling rich, hig
 The API automatically validates the structure of all incoming data, ensuring that every request is well-formed before it's processed. This built-in mechanism catches missing fields, incorrect data types, and invalid enum values at the gateway, providing clear, immediate feedback to the client.
 > **Your Advantage:** This eliminates an entire class of runtime errors and saves you from writing tedious, repetitive validation code. Your data models remain consistent and your API stays resilient against malformed requests.
 
+---
+
+### 📲 Dynamic & Personalized Notifications
+A complete, multi-provider notification engine that empowers you to engage users with timely, relevant, and personalized alerts.
+- **Editorial-Driven Alerts:** Any piece of content can be designated as "breaking news" from the content dashboard, triggering immediate, high-priority alerts to subscribed users.
+- **User-Crafted Notification Streams:** Users can create and save persistent notification subscriptions based on any combination of content filters (such as topics, sources, or regions), allowing them to receive alerts only for the news they care about.
+- **Flexible Delivery Mechanisms:** The system is architected to support multiple notification types for each subscription, from immediate alerts to scheduled daily or weekly digests.
+- **Provider Agnostic:** The engine is built to be provider-agnostic, with out-of-the-box support for Firebase (FCM) and OneSignal. The active provider can be switched remotely without any code changes.
+> **Your Advantage:** You get a complete, secure, and scalable notification system that enhances user engagement and can be managed entirely from the web dashboard.
+
 </details>
 
 <details>
