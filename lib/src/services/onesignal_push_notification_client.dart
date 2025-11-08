@@ -29,43 +29,105 @@ class OneSignalPushNotificationClient implements IPushNotificationClient {
     required PushNotificationPayload payload,
     required PushNotificationProviderConfig providerConfig,
   }) async {
+    // For consistency, delegate to the bulk sending method with a single token.
+    await sendBulkNotifications(
+      deviceTokens: [deviceToken],
+      payload: payload,
+      providerConfig: providerConfig,
+    );
+  }
+
+  @override
+  Future<void> sendBulkNotifications({
+    required List<String> deviceTokens,
+    required PushNotificationPayload payload,
+    required PushNotificationProviderConfig providerConfig,
+  }) async {
     if (providerConfig is! OneSignalProviderConfig) {
       _log.severe(
         'Invalid provider config type: ${providerConfig.runtimeType}. '
         'Expected OneSignalProviderConfig.',
       );
       throw const OperationFailedException(
-        'Internal configuration error for OneSignal push notification client.',
+        'Internal config error for OneSignal push notification client.',
       );
     }
 
-    final appId = providerConfig.appId;
-    // The REST API key is expected to be set in the HttpClient's AuthInterceptor.
-    const url = 'notifications'; // Relative to the base URL
+    if (deviceTokens.isEmpty) {
+      _log.info('No device tokens provided for OneSignal bulk send. Aborting.');
+      return;
+    }
 
     _log.info(
-      'Sending OneSignal notification to token starting with '
-      '"${deviceToken.substring(0, 10)}..." for app ID "$appId".',
+      'Sending OneSignal bulk notification to ${deviceTokens.length} '
+      'devices for app ID "${providerConfig.appId}".',
     );
+
+    // OneSignal has a limit of 2000 player_ids per API request.
+    const batchSize = 2000;
+    for (var i = 0; i < deviceTokens.length; i += batchSize) {
+      final batch = deviceTokens.sublist(
+        i,
+        i + batchSize > deviceTokens.length
+            ? deviceTokens.length
+            : i + batchSize,
+      );
+
+      await _sendBatch(
+        deviceTokens: batch,
+        payload: payload,
+        providerConfig: providerConfig,
+      );
+    }
+  }
+
+  /// Sends a single batch of notifications to the OneSignal API.
+  Future<void> _sendBatch({
+    required List<String> deviceTokens,
+    required PushNotificationPayload payload,
+    required OneSignalProviderConfig providerConfig,
+  }) async {
+    final appId = providerConfig.appId;
+    // The REST API key is provided by the HttpClient's tokenProvider and
+    // injected by its AuthInterceptor. The base URL is also configured in
+    // app_dependencies.dart. The final URL will be: `https://onesignal.com/api/v1/notifications`
+    const url = 'notifications';
 
     // Construct the OneSignal API request body.
     final requestBody = {
       'app_id': appId,
-      'include_player_ids': [deviceToken],
+      'include_player_ids': deviceTokens,
       'headings': {'en': payload.title},
       'contents': {'en': payload.body},
       if (payload.imageUrl != null) 'big_picture': payload.imageUrl,
       'data': payload.data,
     };
 
+    _log.finer(
+      'Sending OneSignal batch of ${deviceTokens.length} notifications.',
+    );
+
     try {
-      await _httpClient.post(url, data: requestBody);
+      await _httpClient.post<void>(url, data: requestBody);
       _log.info(
-        'Successfully sent OneSignal notification for app ID "$appId".',
+        'Successfully sent OneSignal batch of ${deviceTokens.length} '
+        'notifications for app ID "$appId".',
       );
     } on HttpException catch (e) {
-      _log.severe('HTTP error sending OneSignal notification: ${e.message}', e);
+      _log.severe(
+        'HTTP error sending OneSignal batch notification: ${e.message}',
+        e,
+      );
       rethrow;
+    } catch (e, s) {
+      _log.severe(
+        'Unexpected error sending OneSignal batch notification.',
+        e,
+        s,
+      );
+      throw OperationFailedException(
+        'Failed to send OneSignal batch notification: $e',
+      );
     }
   }
 }
