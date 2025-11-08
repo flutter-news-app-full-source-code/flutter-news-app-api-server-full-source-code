@@ -1,8 +1,8 @@
 // ignore_for_file: public_member_api_docs
 
 import 'dart:async';
+
 import 'package:core/core.dart';
-import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:data_mongodb/data_mongodb.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:email_repository/email_repository.dart';
@@ -17,6 +17,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/dashbo
 import 'package:flutter_news_app_api_server_full_source_code/src/services/database_migration_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/database_seeding_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/default_user_preference_limit_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/firebase_authenticator.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/firebase_push_notification_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/jwt_auth_token_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_rate_limit_service.dart';
@@ -86,6 +87,7 @@ class AppDependencies {
   late final RateLimitService rateLimitService;
   late final CountryQueryService countryQueryService;
   late final IPushNotificationService pushNotificationService;
+  late final IFirebaseAuthenticator firebaseAuthenticator;
   late final IPushNotificationClient firebasePushNotificationClient;
   late final IPushNotificationClient oneSignalPushNotificationClient;
 
@@ -115,56 +117,6 @@ class AppDependencies {
   /// The core logic for initializing all dependencies.
   /// This method is private and should only be called once by [init].
   Future<void> _initializeDependencies() async {
-    Future<String?> getFirebaseAccessToken() async {
-      try {
-        // Step 1: Create and sign the JWT.
-        final pem = EnvironmentConfig.firebasePrivateKey.replaceAll(
-          r'\n',
-          '\n',
-        );
-        final privateKey = RSAPrivateKey(pem);
-        final jwt = JWT(
-          {'scope': 'https://www.googleapis.com/auth/cloud-platform'},
-          issuer: EnvironmentConfig.firebaseClientEmail,
-          audience: Audience.one('https://oauth2.googleapis.com/token'),
-        );
-        final signedToken = jwt.sign(
-          privateKey,
-          algorithm: JWTAlgorithm.RS256,
-          expiresIn: const Duration(minutes: 5),
-        );
-
-        // Step 2: Exchange the JWT for an access token.
-        final tokenClient = HttpClient(
-          baseUrl: 'https://oauth2.googleapis.com',
-          // The tokenProvider for this client is null because this request
-          // does not use a Bearer token.
-          tokenProvider: () async => null,
-        );
-
-        final response = await tokenClient.post<Map<String, dynamic>>(
-          '/token',
-          data: {
-            'grant_type': 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-            'assertion': signedToken,
-          },
-        );
-
-        final accessToken = response['access_token'] as String?;
-        if (accessToken == null) {
-          throw const OperationFailedException(
-            'Could not retrieve Firebase access token.',
-          );
-        }
-        return accessToken;
-      } catch (e, s) {
-        _log.severe('Error during Firebase token exchange: $e', e, s);
-        throw OperationFailedException(
-          'Failed to authenticate with Firebase: $e',
-        );
-      }
-    }
-
     _log.info('Initializing application dependencies...');
     try {
       // 1. Initialize Database Connection
@@ -277,6 +229,13 @@ class AppDependencies {
             logger: Logger('DataMongodb<PushNotificationSubscription>'),
           );
 
+      // --- Initialize Firebase Authenticator ---
+      // This dedicated service encapsulates the logic for obtaining a Firebase
+      // access token, keeping the dependency setup clean.
+      firebaseAuthenticator = FirebaseAuthenticator(
+        log: Logger('FirebaseAuthenticator'),
+      );
+
       // --- Initialize HTTP clients for push notification providers ---
 
       // The Firebase client requires a short-lived OAuth2 access token. This
@@ -286,7 +245,7 @@ class AppDependencies {
       final firebaseHttpClient = HttpClient(
         baseUrl:
             'https://fcm.googleapis.com/v1/projects/${EnvironmentConfig.firebaseProjectId}/',
-        tokenProvider: getFirebaseAccessToken,
+        tokenProvider: firebaseAuthenticator.getAccessToken,
         logger: Logger('FirebasePushNotificationClient'),
       );
 
