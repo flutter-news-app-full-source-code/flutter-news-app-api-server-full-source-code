@@ -67,11 +67,11 @@ class AppDependencies {
   late final DataRepository<User> userRepository;
   late final DataRepository<UserAppSettings> userAppSettingsRepository;
   late final DataRepository<UserContentPreferences>
-      userContentPreferencesRepository;
+  userContentPreferencesRepository;
   late final DataRepository<PushNotificationDevice>
-      pushNotificationDeviceRepository;
+  pushNotificationDeviceRepository;
   late final DataRepository<PushNotificationSubscription>
-      pushNotificationSubscriptionRepository;
+  pushNotificationSubscriptionRepository;
   late final DataRepository<RemoteConfig> remoteConfigRepository;
   late final EmailRepository emailRepository;
 
@@ -222,12 +222,12 @@ class AppDependencies {
       );
       final pushNotificationSubscriptionClient =
           DataMongodb<PushNotificationSubscription>(
-        connectionManager: _mongoDbConnectionManager,
-        modelName: 'push_notification_subscriptions',
-        fromJson: PushNotificationSubscription.fromJson,
-        toJson: (item) => item.toJson(),
-        logger: Logger('DataMongodb<PushNotificationSubscription>'),
-      );
+            connectionManager: _mongoDbConnectionManager,
+            modelName: 'push_notification_subscriptions',
+            fromJson: PushNotificationSubscription.fromJson,
+            toJson: (item) => item.toJson(),
+            logger: Logger('DataMongodb<PushNotificationSubscription>'),
+          );
 
       // --- Conditionally Initialize Push Notification Clients ---
 
@@ -240,8 +240,9 @@ class AppDependencies {
           fcmClientEmail != null &&
           fcmPrivateKey != null) {
         _log.info('Firebase credentials found. Initializing Firebase client.');
-        firebaseAuthenticator =
-            FirebaseAuthenticator(log: Logger('FirebaseAuthenticator'));
+        firebaseAuthenticator = FirebaseAuthenticator(
+          log: Logger('FirebaseAuthenticator'),
+        );
 
         final firebaseHttpClient = HttpClient(
           baseUrl: 'https://fcm.googleapis.com/v1/projects/$fcmProjectId/',
@@ -267,7 +268,9 @@ class AppDependencies {
       final osApiKey = EnvironmentConfig.oneSignalRestApiKey;
 
       if (osAppId != null && osApiKey != null) {
-        _log.info('OneSignal credentials found. Initializing OneSignal client.');
+        _log.info(
+          'OneSignal credentials found. Initializing OneSignal client.',
+        );
         final oneSignalHttpClient = HttpClient(
           baseUrl: 'https://onesignal.com/api/v1/',
           tokenProvider: () async => null,
