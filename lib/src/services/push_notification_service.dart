@@ -80,7 +80,7 @@ class DefaultPushNotificationService implements IPushNotificationService {
       final pushConfig = remoteConfig.pushNotificationConfig;
 
       // Check if push notifications are globally enabled.
-      if (pushConfig == null || !pushConfig.enabled) {
+      if (!pushConfig.enabled) {
         _log.info('Push notifications are globally disabled. Aborting.');
         return;
       }
@@ -188,7 +188,7 @@ class DefaultPushNotificationService implements IPushNotificationService {
         e,
         s,
       );
-      throw OperationFailedException(
+      throw const OperationFailedException(
         'An internal error occurred while sending breaking news notification.',
       );
     }

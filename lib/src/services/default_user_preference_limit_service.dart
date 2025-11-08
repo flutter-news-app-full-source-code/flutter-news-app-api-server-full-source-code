@@ -62,7 +62,7 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
             limit = limits.premiumSavedHeadlinesLimit;
           } else if (itemType == 'notificationSubscription') {
             final pushConfig = remoteConfig.pushNotificationConfig;
-            limit = pushConfig?.deliveryConfigs.values
+            limit = pushConfig.deliveryConfigs.values
                     .map((c) => c.visibleTo[user.appRole]?.subscriptionLimit ?? 0)
                     .fold(0, (prev, element) => prev + element) ??
                 0;
@@ -77,7 +77,7 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
             limit = limits.authenticatedSavedHeadlinesLimit;
           } else if (itemType == 'notificationSubscription') {
             final pushConfig = remoteConfig.pushNotificationConfig;
-            limit = pushConfig?.deliveryConfigs.values
+            limit = pushConfig.deliveryConfigs.values
                     .map((c) => c.visibleTo[user.appRole]?.subscriptionLimit ?? 0)
                     .fold(0, (prev, element) => prev + element) ??
                 0;
@@ -92,7 +92,7 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
             limit = limits.guestSavedHeadlinesLimit;
           } else if (itemType == 'notificationSubscription') {
             final pushConfig = remoteConfig.pushNotificationConfig;
-            limit = pushConfig?.deliveryConfigs.values
+            limit = pushConfig.deliveryConfigs.values
                     .map((c) => c.visibleTo[user.appRole]?.subscriptionLimit ?? 0)
                     .fold(0, (prev, element) => prev + element) ??
                 0;
@@ -158,7 +158,7 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
           // The total limit for subscriptions is the sum of limits for each
           // delivery type available to the user's role.
           notificationSubscriptionLimit = remoteConfig
-                  .pushNotificationConfig?.deliveryConfigs.values
+                  .pushNotificationConfig.deliveryConfigs.values
                   .map((c) => c.visibleTo[user.appRole]?.subscriptionLimit ?? 0)
                   .fold(0, (prev, element) => prev + element) ??
               0;
@@ -168,7 +168,7 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
           savedHeadlinesLimit = limits.authenticatedSavedHeadlinesLimit;
           savedFiltersLimit = limits.authenticatedSavedFiltersLimit;
           notificationSubscriptionLimit = remoteConfig
-                  .pushNotificationConfig?.deliveryConfigs.values
+                  .pushNotificationConfig.deliveryConfigs.values
                   .map((c) => c.visibleTo[user.appRole]?.subscriptionLimit ?? 0)
                   .fold(0, (prev, element) => prev + element) ??
               0;
@@ -178,7 +178,7 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
           savedHeadlinesLimit = limits.guestSavedHeadlinesLimit;
           savedFiltersLimit = limits.guestSavedFiltersLimit;
           notificationSubscriptionLimit = remoteConfig
-                  .pushNotificationConfig?.deliveryConfigs.values
+                  .pushNotificationConfig.deliveryConfigs.values
                   .map((c) => c.visibleTo[user.appRole]?.subscriptionLimit ?? 0)
                   .fold(0, (prev, element) => prev + element) ??
               0;
