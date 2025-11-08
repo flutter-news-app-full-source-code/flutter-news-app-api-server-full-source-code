@@ -179,37 +179,36 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
         'Checking notification subscription limits for user ${user.id}...',
       );
       final pushConfig = remoteConfig.pushNotificationConfig;
-      if (pushConfig != null) {
-        // Iterate through each possible delivery type defined in the enum.
-        for (final deliveryType
-            in PushNotificationSubscriptionDeliveryType.values) {
-          // Get the specific limit for this delivery type and user role.
-          final limit =
-              pushConfig
-                  .deliveryConfigs[deliveryType]
-                  ?.visibleTo[user.appRole]
-                  ?.subscriptionLimit ??
-              0;
+      
+      // Iterate through each possible delivery type defined in the enum.
+      for (final deliveryType
+          in PushNotificationSubscriptionDeliveryType.values) {
+        // Get the specific limit for this delivery type and user role.
+        final limit =
+            pushConfig
+                .deliveryConfigs[deliveryType]
+                ?.visibleTo[user.appRole]
+                ?.subscriptionLimit ??
+            0;
 
-          // Count how many of the user's current subscriptions include this
-          // specific delivery type.
-          final count = updatedPreferences.notificationSubscriptions
-              .where((sub) => sub.deliveryTypes.contains(deliveryType))
-              .length;
+        // Count how many of the user's current subscriptions include this
+        // specific delivery type.
+        final count = updatedPreferences.notificationSubscriptions
+            .where((sub) => sub.deliveryTypes.contains(deliveryType))
+            .length;
 
-          _log.finer(
-            'User ${user.id} has $count subscriptions of type '
-            '${deliveryType.name} (limit: $limit).',
+        _log.finer(
+          'User ${user.id} has $count subscriptions of type '
+          '${deliveryType.name} (limit: $limit).',
+        );
+
+        // If the count for this specific type exceeds its limit, throw.
+        if (count > limit) {
+          throw ForbiddenException(
+            'You have reached the maximum number of subscriptions for '
+            '${deliveryType.name} notifications allowed for your account '
+            'type ($accountType).',
           );
-
-          // If the count for this specific type exceeds its limit, throw.
-          if (count > limit) {
-            throw ForbiddenException(
-              'You have reached the maximum number of subscriptions for '
-              '${deliveryType.name} notifications allowed for your account '
-              'type ($accountType).',
-            );
-          }
         }
       }
 
