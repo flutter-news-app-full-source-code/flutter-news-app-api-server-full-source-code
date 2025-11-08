@@ -1,12 +1,11 @@
 // ignore_for_file: public_member_api_docs
 
 import 'dart:async';
-
+import 'dart:convert';
 import 'package:core/core.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:data_mongodb/data_mongodb.dart';
 import 'package:data_repository/data_repository.dart';
-import 'package:dio/dio.dart';
 import 'package:email_repository/email_repository.dart';
 import 'package:email_sendgrid/email_sendgrid.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
@@ -258,17 +257,29 @@ class AppDependencies {
             );
 
             // Step 2: Exchange the JWT for an access token.
-            // We use a temporary Dio instance for this single request.
-            final response = await Dio().post<Map<String, dynamic>>(
-              'https://oauth2.googleapis.com/token',
+            // We use a temporary, interceptor-free HttpClient for this one
+            // specific request to avoid the infinite loop caused by the
+            // AuthInterceptor in the main firebaseHttpClient.
+            final tokenClient = HttpClient(
+              baseUrl: 'https://oauth2.googleapis.com',
+              // The tokenProvider for this client is null because this request
+              // does not use a Bearer token.
+              tokenProvider: () async => null,
+            );
+
+            final response =
+                await tokenClient.post<Map<String, dynamic>>(
+              '/token',
               data:
                   'grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=$signedToken',
               options: Options(
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded',
+                },
               ),
             );
 
-            final accessToken = response.data?['access_token'] as String?;
+            final accessToken = response['access_token'] as String?;
             if (accessToken == null) {
               _log.severe('Failed to get access token from Google OAuth.');
               throw const OperationFailedException(
@@ -288,12 +299,12 @@ class AppDependencies {
 
       // The OneSignal client requires the REST API key for authentication.
       // We use a custom interceptor to add the 'Authorization: Basic <API_KEY>'
-      // header, as the default AuthInterceptor is hardcoded for 'Bearer'.
+      // header, as the default AuthInterceptor is hardcoded for 'Bearer' tokens.
       final oneSignalHttpClient = HttpClient(
         baseUrl: 'https://onesignal.com/api/v1/',
         // The tokenProvider is not used here; auth is handled by the interceptor.
         tokenProvider: () async => null,
-        interceptors: [
+        interceptors: const [
           InterceptorsWrapper(
             onRequest: (options, handler) {
               options.headers['Authorization'] =
