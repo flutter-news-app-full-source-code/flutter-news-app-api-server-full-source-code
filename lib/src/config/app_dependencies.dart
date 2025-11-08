@@ -115,6 +115,56 @@ class AppDependencies {
   /// The core logic for initializing all dependencies.
   /// This method is private and should only be called once by [init].
   Future<void> _initializeDependencies() async {
+    Future<String?> getFirebaseAccessToken() async {
+      try {
+        // Step 1: Create and sign the JWT.
+        final pem = EnvironmentConfig.firebasePrivateKey.replaceAll(
+          r'\n',
+          '\n',
+        );
+        final privateKey = RSAPrivateKey(pem);
+        final jwt = JWT(
+          {'scope': 'https://www.googleapis.com/auth/cloud-platform'},
+          issuer: EnvironmentConfig.firebaseClientEmail,
+          audience: Audience.one('https://oauth2.googleapis.com/token'),
+        );
+        final signedToken = jwt.sign(
+          privateKey,
+          algorithm: JWTAlgorithm.RS256,
+          expiresIn: const Duration(minutes: 5),
+        );
+
+        // Step 2: Exchange the JWT for an access token.
+        final tokenClient = HttpClient(
+          baseUrl: 'https://oauth2.googleapis.com',
+          // The tokenProvider for this client is null because this request
+          // does not use a Bearer token.
+          tokenProvider: () async => null,
+        );
+
+        final response = await tokenClient.post<Map<String, dynamic>>(
+          '/token',
+          data: {
+            'grant_type': 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+            'assertion': signedToken,
+          },
+        );
+
+        final accessToken = response['access_token'] as String?;
+        if (accessToken == null) {
+          throw const OperationFailedException(
+            'Could not retrieve Firebase access token.',
+          );
+        }
+        return accessToken;
+      } catch (e, s) {
+        _log.severe('Error during Firebase token exchange: $e', e, s);
+        throw OperationFailedException(
+          'Failed to authenticate with Firebase: $e',
+        );
+      }
+    }
+
     _log.info('Initializing application dependencies...');
     try {
       // 1. Initialize Database Connection
@@ -236,62 +286,7 @@ class AppDependencies {
       final firebaseHttpClient = HttpClient(
         baseUrl:
             'https://fcm.googleapis.com/v1/projects/${EnvironmentConfig.firebaseProjectId}/',
-        tokenProvider: () async {
-          try {
-            // Step 1: Create and sign the JWT.
-            final pem = EnvironmentConfig.firebasePrivateKey.replaceAll(
-              r'\n',
-              '\n',
-            );
-            final privateKey = RSAPrivateKey(pem);
-            final jwt = JWT(
-              {'scope': 'https://www.googleapis.com/auth/cloud-platform'},
-              issuer: EnvironmentConfig.firebaseClientEmail,
-              audience: Audience.one('https://oauth2.googleapis.com/token'),
-            );
-            final signedToken = jwt.sign(
-              privateKey,
-              algorithm: JWTAlgorithm.RS256,
-              expiresIn: const Duration(minutes: 5),
-            );
-
-            // Step 2: Exchange the JWT for an access token.
-            // We use a temporary, interceptor-free HttpClient for this one
-            // specific request to avoid the infinite loop caused by the
-            // AuthInterceptor in the main firebaseHttpClient.
-            final tokenClient = HttpClient(
-              baseUrl: 'https://oauth2.googleapis.com',
-              // The tokenProvider for this client is null because this request
-              // does not use a Bearer token.
-              tokenProvider: () async => null,
-            );
-
-            final response = await tokenClient.post<Map<String, dynamic>>(
-              '/token',
-              data:
-                  'grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=$signedToken',
-              options: Options(
-                headers: {
-                  'Content-Type': 'application/x-www-form-urlencoded',
-                },
-              ),
-            );
-
-            final accessToken = response['access_token'] as String?;
-            if (accessToken == null) {
-              _log.severe('Failed to get access token from Google OAuth.');
-              throw const OperationFailedException(
-                'Could not retrieve Firebase access token.',
-              );
-            }
-            return accessToken;
-          } catch (e, s) {
-            _log.severe('Error during Firebase token exchange: $e', e, s);
-            throw OperationFailedException(
-              'Failed to authenticate with Firebase: $e',
-            );
-          }
-        },
+        tokenProvider: getFirebaseAccessToken,
         logger: Logger('FirebasePushNotificationClient'),
       );
 
