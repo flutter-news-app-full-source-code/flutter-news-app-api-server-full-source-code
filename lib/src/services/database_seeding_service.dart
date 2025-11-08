@@ -226,6 +226,36 @@ class DatabaseSeedingService {
         ],
       });
 
+      // Indexes for the push notification devices collection
+      await _db.runCommand({
+        'createIndexes': 'push_notification_devices',
+        'indexes': [
+          {
+            // This ensures that each device token is unique in the collection,
+            // preventing duplicate registrations for the same device.
+            'key': {'token': 1},
+            'name': 'token_unique_index',
+            'unique': true,
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "push_notification_devices".');
+
+      // Indexes for the push notification subscriptions collection
+      await _db.runCommand({
+        'createIndexes': 'push_notification_subscriptions',
+        'indexes': [
+          {
+            // This index optimizes queries that fetch subscriptions for a
+            // specific user, which is a common operation when sending
+            // notifications or managing user preferences.
+            'key': {'userId': 1},
+            'name': 'userId_index',
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "push_notification_subscriptions".');
+
       _log.info('Database indexes are set up correctly.');
     } on Exception catch (e, s) {
       _log.severe('Failed to create database indexes.', e, s);
