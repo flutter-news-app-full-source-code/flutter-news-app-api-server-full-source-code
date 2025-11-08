@@ -1,7 +1,6 @@
 // ignore_for_file: public_member_api_docs
 
 import 'dart:async';
-import 'dart:convert';
 import 'package:core/core.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:data_mongodb/data_mongodb.dart';
@@ -267,8 +266,7 @@ class AppDependencies {
               tokenProvider: () async => null,
             );
 
-            final response =
-                await tokenClient.post<Map<String, dynamic>>(
+            final response = await tokenClient.post<Map<String, dynamic>>(
               '/token',
               data:
                   'grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=$signedToken',
@@ -304,7 +302,7 @@ class AppDependencies {
         baseUrl: 'https://onesignal.com/api/v1/',
         // The tokenProvider is not used here; auth is handled by the interceptor.
         tokenProvider: () async => null,
-        interceptors: const [
+        interceptors: [
           InterceptorsWrapper(
             onRequest: (options, handler) {
               options.headers['Authorization'] =
