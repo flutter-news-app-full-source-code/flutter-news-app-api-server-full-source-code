@@ -316,11 +316,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "v1.0.1"
-      resolved-ref: "22a1531a279769ec472f698e9c727cd2c29a81b9"
+      ref: "v1.1.0"
+      resolved-ref: e3540bcd27de93f96f4bce79cc20ff55dfe3b2bf
       url: "https://github.com/flutter-news-app-full-source-code/http-client.git"
     source: git
-    version: "1.0.1"
+    version: "1.1.0"
   http_methods:
     dependency: transitive
     description:
