@@ -104,22 +104,46 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
     }).toList();
 
     try {
-      // Wait for all notifications in the batch to be sent.
       // `eagerError: false` ensures that all futures complete, even if some
-      // fail. This is important for logging all failures, not just the first.
-      await Future.wait(sendFutures, eagerError: false);
-      _log.info(
-        'Successfully sent Firebase batch of ${deviceTokens.length} '
-        'notifications for project "$projectId".',
+      // fail. The results list will contain Exception objects for failures.
+      final results = await Future.wait<dynamic>(
+        sendFutures,
+        eagerError: false,
       );
-    } on HttpException catch (e) {
-      _log.severe('HTTP error sending Firebase batch: ${e.message}', e);
-      rethrow;
+
+      final failedResults = results.whereType<Exception>().toList();
+
+      if (failedResults.isEmpty) {
+        _log.info(
+          'Successfully sent Firebase batch of ${deviceTokens.length} '
+          'notifications for project "$projectId".',
+        );
+      } else {
+        _log.warning(
+          '${failedResults.length} out of ${deviceTokens.length} Firebase '
+          'notifications failed to send in batch for project "$projectId".',
+        );
+        for (final error in failedResults) {
+          if (error is HttpException) {
+            _log.severe(
+              'HTTP error sending Firebase notification: ${error.message}',
+              error,
+            );
+          } else {
+            _log.severe(
+              'Unexpected error sending Firebase notification.',
+              error,
+            );
+          }
+        }
+        // Throw an exception to indicate that the batch send was not fully successful.
+        throw OperationFailedException(
+          'Failed to send ${failedResults.length} Firebase notifications.',
+        );
+      }
     } catch (e, s) {
-      _log.severe('Unexpected error sending Firebase batch.', e, s);
-      throw OperationFailedException(
-        'Failed to send Firebase batch: $e',
-      );
+      _log.severe('Unexpected error processing Firebase batch results.', e, s);
+      throw OperationFailedException('Failed to process Firebase batch: $e');
     }
   }
 }
