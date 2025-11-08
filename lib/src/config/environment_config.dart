@@ -214,5 +214,5 @@ abstract final class EnvironmentConfig {
   /// The value is read from the `ONESIGNAL_REST_API_KEY` environment variable.
   /// Throws a [StateError] if not set.
   static String get oneSignalRestApiKey =>
-      _getRequiredEnv('ONESIGNAL_API_KEY');
+      _getRequiredEnv('ONESIGNAL_REST_API_KEY');
 }
