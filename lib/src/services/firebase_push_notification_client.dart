@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:core/core.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_client.dart';
 import 'package:http_client/http_client.dart';
@@ -17,11 +15,13 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
   ///
   /// Requires an [HttpClient] to make API requests and a [Logger] for logging.
   const FirebasePushNotificationClient({
+    required this.projectId,
     required HttpClient httpClient,
     required Logger log,
   })  : _httpClient = httpClient,
         _log = log;
 
+  final String projectId;
   final HttpClient _httpClient;
   final Logger _log;
 
@@ -29,14 +29,12 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
   Future<void> sendNotification({
     required String deviceToken,
     required PushNotificationPayload payload,
-    required PushNotificationProviderConfig providerConfig,
   }) async {
     // For consistency, the single send method now delegates to the bulk
     // method with a list containing just one token.
     await sendBulkNotifications(
       deviceTokens: [deviceToken],
       payload: payload,
-      providerConfig: providerConfig,
     );
   }
 
@@ -44,26 +42,15 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
   Future<void> sendBulkNotifications({
     required List<String> deviceTokens,
     required PushNotificationPayload payload,
-    required PushNotificationProviderConfig providerConfig,
   }) async {
-    if (providerConfig is! FirebaseProviderConfig) {
-      _log.severe(
-        'Invalid provider config type: ${providerConfig.runtimeType}. '
-        'Expected FirebaseProviderConfig.',
-      );
-      throw const OperationFailedException(
-        'Internal config error for Firebase push notification client.',
-      );
-    }
-
     if (deviceTokens.isEmpty) {
       _log.info('No device tokens provided for Firebase bulk send. Aborting.');
       return;
     }
 
     _log.info(
-      'Sending Firebase bulk notification to ${deviceTokens.length} '
-      'devices for project "${providerConfig.projectId}".',
+      'Sending Firebase bulk notification to ${deviceTokens.length} devices '
+      'for project "$projectId".',
     );
 
     // The FCM v1 batch API has a limit of 500 messages per request.
@@ -78,32 +65,28 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
       );
 
       // Send each chunk as a separate batch request.
-      await _sendBatch(
-        deviceTokens: batch,
-        payload: payload,
-        providerConfig: providerConfig,
-      );
+      await _sendBatch(deviceTokens: batch, payload: payload);
     }
   }
 
-  /// Sends a single batch of notifications to the FCM v1 batch endpoint.
+  /// Sends a batch of notifications by dispatching individual requests in
+  /// parallel.
   ///
-  /// This method constructs a `multipart/mixed` request body, where each part
-  /// is a complete HTTP POST request to the standard `messages:send` endpoint.
+  /// This approach is simpler and more robust than using the `batch` endpoint,
+  /// as it avoids the complexity of constructing a multipart request body and
+  /// provides clearer error handling for individual message failures.
   Future<void> _sendBatch({
     required List<String> deviceTokens,
     required PushNotificationPayload payload,
-    required FirebaseProviderConfig providerConfig,
   }) async {
-    const boundary = 'batch_boundary';
-    // The FCM v1 batch endpoint is at a different path. We must use a full
-    // URL here to override the HttpClient's default base URL.
-    const batchUrl = 'https://fcm.googleapis.com/batch';
+    // The base URL is configured in app_dependencies.dart.
+    // The final URL will be:
+    // `https://fcm.googleapis.com/v1/projects/<projectId>/messages:send`
+    const url = 'messages:send';
 
-    // Map each device token to its corresponding sub-request string.
-    final subrequests = deviceTokens.map((token) {
-      // Construct the JSON body for a single message.
-      final messageBody = jsonEncode({
+    // Create a list of futures, one for each notification to be sent.
+    final sendFutures = deviceTokens.map((token) {
+      final requestBody = {
         'message': {
           'token': token,
           'notification': {
@@ -113,54 +96,30 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
           },
           'data': payload.data,
         },
-      });
+      };
 
-      // Construct the full HTTP request for this single message as a string.
-      // This is the format required for each part of the multipart request.
-      return '''
---$boundary
 Content-Type: application/http
 Content-Transfer-Encoding: binary
-
-POST /v1/projects/${providerConfig.projectId}/messages:send
-Content-Type: application/json
-accept: application/json
-
-$messageBody''';
-    }).join('\n');
-
-    // The final request body is the joined sub-requests followed by the
-    // closing boundary marker.
-    final batchRequestBody = '$subrequests\n--$boundary--';
+      // Return the future from the post request.
+      return _httpClient.post<void>(url, data: requestBody);
+    }).toList();
 
     try {
-      // Post the raw multipart body with the correct `Content-Type` header
-      // to the specific batch endpoint URL.
-      await _httpClient.post<void>(
-        batchUrl,
-        data: batchRequestBody,
-        options: Options(
-          headers: {'Content-Type': 'multipart/mixed; boundary=$boundary'},
-        ),
-      );
+      // Wait for all notifications in the batch to be sent.
+      // `eagerError: false` ensures that all futures complete, even if some
+      // fail. This is important for logging all failures, not just the first.
+      await Future.wait(sendFutures, eagerError: false);
       _log.info(
         'Successfully sent Firebase batch of ${deviceTokens.length} '
-        'notifications for project "${providerConfig.projectId}".',
+        'notifications for project "$projectId".',
       );
     } on HttpException catch (e) {
-      _log.severe(
-        'HTTP error sending Firebase batch notification: ${e.message}',
-        e,
-      );
+      _log.severe('HTTP error sending Firebase batch: ${e.message}', e);
       rethrow;
     } catch (e, s) {
-      _log.severe(
-        'Unexpected error sending Firebase batch notification.',
-        e,
-        s,
-      );
+      _log.severe('Unexpected error sending Firebase batch.', e, s);
       throw OperationFailedException(
-        'Failed to send Firebase batch notification: $e',
+        'Failed to send Firebase batch: $e',
       );
     }
   }
