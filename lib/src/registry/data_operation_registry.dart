@@ -177,12 +177,18 @@ class DataOperationRegistry {
           userId: uid,
         );
 
-        // If the created headline is marked as breaking news, send a notification.
+        // If the created headline is marked as breaking news, trigger the
+        // push notification service. The service itself contains all the
+        // logic for fetching subscribers and sending notifications.
         if (createdHeadline.isBreaking) {
           try {
             final pushNotificationService = c.read<IPushNotificationService>();
             await pushNotificationService.sendBreakingNewsNotification(
               headline: createdHeadline,
+            );
+            _log.info(
+              'Successfully triggered breaking news notification '
+              'for headline: ${createdHeadline.id}',
             );
           } catch (e, s) {
             _log.severe('Failed to send breaking news notification: $e', e, s);
