@@ -35,8 +35,8 @@ class DefaultPushNotificationService implements IPushNotificationService {
     required DataRepository<PushNotificationSubscription>
     pushNotificationSubscriptionRepository,
     required DataRepository<RemoteConfig> remoteConfigRepository,
-    required IPushNotificationClient firebaseClient,
-    required IPushNotificationClient oneSignalClient,
+    required IPushNotificationClient? firebaseClient,
+    required IPushNotificationClient? oneSignalClient,
     required Logger log,
   }) : _pushNotificationDeviceRepository = pushNotificationDeviceRepository,
        _pushNotificationSubscriptionRepository =
@@ -51,8 +51,8 @@ class DefaultPushNotificationService implements IPushNotificationService {
   final DataRepository<PushNotificationSubscription>
   _pushNotificationSubscriptionRepository;
   final DataRepository<RemoteConfig> _remoteConfigRepository;
-  final IPushNotificationClient _firebaseClient;
-  final IPushNotificationClient _oneSignalClient;
+  final IPushNotificationClient? _firebaseClient;
+  final IPushNotificationClient? _oneSignalClient;
   final Logger _log;
 
   // Assuming a fixed ID for the RemoteConfig document
@@ -86,6 +86,26 @@ class DefaultPushNotificationService implements IPushNotificationService {
       _log.info(
         'Push notifications are enabled. Primary provider is "$primaryProvider".',
       );
+
+      // Determine which client to use based on the primary provider.
+      final IPushNotificationClient? client;
+      if (primaryProvider == PushNotificationProvider.firebase) {
+        client = _firebaseClient;
+      } else {
+        client = _oneSignalClient;
+      }
+
+      // CRITICAL: Check if the selected primary provider's client was
+      // actually initialized. If not (due to missing .env credentials),
+      // log a severe error and abort.
+      if (client == null) {
+        _log.severe(
+          'Push notifications are enabled with "$primaryProvider" as the '
+          'primary provider, but the client could not be initialized. '
+          'Please ensure all required environment variables for this provider are set. Aborting.',
+        );
+        return;
+      }
 
       // Check if breaking news notifications are enabled.
       final breakingNewsDeliveryConfig =
@@ -180,11 +200,6 @@ class DefaultPushNotificationService implements IPushNotificationService {
               PushNotificationSubscriptionDeliveryType.breakingOnly.name,
         },
       );
-
-      // 8. Select the correct client and send the notifications.
-      final client = primaryProvider == PushNotificationProvider.firebase
-          ? _firebaseClient
-          : _oneSignalClient;
 
       await client.sendBulkNotifications(
         deviceTokens: tokens,
