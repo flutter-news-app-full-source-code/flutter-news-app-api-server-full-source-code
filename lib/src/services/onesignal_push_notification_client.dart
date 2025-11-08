@@ -15,11 +15,13 @@ class OneSignalPushNotificationClient implements IPushNotificationClient {
   ///
   /// Requires an [HttpClient] to make API requests and a [Logger] for logging.
   const OneSignalPushNotificationClient({
+    required this.appId,
     required HttpClient httpClient,
     required Logger log,
   }) : _httpClient = httpClient,
        _log = log;
 
+  final String appId;
   final HttpClient _httpClient;
   final Logger _log;
 
@@ -27,13 +29,11 @@ class OneSignalPushNotificationClient implements IPushNotificationClient {
   Future<void> sendNotification({
     required String deviceToken,
     required PushNotificationPayload payload,
-    required PushNotificationProviderConfig providerConfig,
   }) async {
     // For consistency, delegate to the bulk sending method with a single token.
     await sendBulkNotifications(
       deviceTokens: [deviceToken],
       payload: payload,
-      providerConfig: providerConfig,
     );
   }
 
@@ -41,18 +41,7 @@ class OneSignalPushNotificationClient implements IPushNotificationClient {
   Future<void> sendBulkNotifications({
     required List<String> deviceTokens,
     required PushNotificationPayload payload,
-    required PushNotificationProviderConfig providerConfig,
   }) async {
-    if (providerConfig is! OneSignalProviderConfig) {
-      _log.severe(
-        'Invalid provider config type: ${providerConfig.runtimeType}. '
-        'Expected OneSignalProviderConfig.',
-      );
-      throw const OperationFailedException(
-        'Internal config error for OneSignal push notification client.',
-      );
-    }
-
     if (deviceTokens.isEmpty) {
       _log.info('No device tokens provided for OneSignal bulk send. Aborting.');
       return;
@@ -60,7 +49,7 @@ class OneSignalPushNotificationClient implements IPushNotificationClient {
 
     _log.info(
       'Sending OneSignal bulk notification to ${deviceTokens.length} '
-      'devices for app ID "${providerConfig.appId}".',
+      'devices for app ID "$appId".',
     );
 
     // OneSignal has a limit of 2000 player_ids per API request.
@@ -76,7 +65,6 @@ class OneSignalPushNotificationClient implements IPushNotificationClient {
       await _sendBatch(
         deviceTokens: batch,
         payload: payload,
-        providerConfig: providerConfig,
       );
     }
   }
@@ -85,9 +73,7 @@ class OneSignalPushNotificationClient implements IPushNotificationClient {
   Future<void> _sendBatch({
     required List<String> deviceTokens,
     required PushNotificationPayload payload,
-    required OneSignalProviderConfig providerConfig,
   }) async {
-    final appId = providerConfig.appId;
     // The REST API key is provided by the HttpClient's tokenProvider and
     // injected by its AuthInterceptor. The base URL is also configured in
     // app_dependencies.dart. The final URL will be: `https://onesignal.com/api/v1/notifications`
