@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_client.dart';
 import 'package:logging/logging.dart';
 
@@ -78,7 +80,7 @@ class DefaultPushNotificationService implements IPushNotificationService {
       final pushConfig = remoteConfig.pushNotificationConfig;
 
       // Check if push notifications are globally enabled.
-      if (!pushConfig.enabled) {
+      if (pushConfig == null || !pushConfig.enabled) {
         _log.info('Push notifications are globally disabled. Aborting.');
         return;
       }
@@ -93,40 +95,17 @@ class DefaultPushNotificationService implements IPushNotificationService {
         return;
       }
 
-      // Determine the primary push notification provider and its configuration.
-      final primaryProvider = pushConfig.primaryProvider;
-      final providerConfig = pushConfig.providerConfigs[primaryProvider];
-
-      if (providerConfig == null) {
-        _log.severe(
-          'No configuration found for primary push notification provider: '
-          '$primaryProvider. Cannot send notification.',
-        );
-        throw const OperationFailedException(
-          'Push notification provider not configured.',
-        );
-      }
-
-      // Select the appropriate client based on the primary provider.
-      final IPushNotificationClient client;
-      switch (primaryProvider) {
-        case PushNotificationProvider.firebase:
-          client = _firebaseClient;
-          break;
-        case PushNotificationProvider.oneSignal:
-          client = _oneSignalClient;
-          break;
-      }
-
       // 2. Find all subscriptions for breaking news.
-      // Filter for subscriptions that explicitly include 'breakingOnly'
-      // in their deliveryTypes.
+      // The query now correctly finds subscriptions where 'deliveryTypes'
+      // array *contains* the 'breakingOnly' value.
       final breakingNewsSubscriptions =
           await _pushNotificationSubscriptionRepository.readAll(
             filter: {
-              'deliveryTypes': PushNotificationSubscriptionDeliveryType
-                  .breakingOnly
-                  .name, // Filter by enum name
+              'deliveryTypes': {
+                r'$in': [
+                  PushNotificationSubscriptionDeliveryType.breakingOnly.name,
+                ],
+              },
             },
           );
 
@@ -135,62 +114,67 @@ class DefaultPushNotificationService implements IPushNotificationService {
         return;
       }
 
+      // 3. Collect all unique user IDs from the subscriptions.
+      // Using a Set automatically handles deduplication.
+      final userIds = breakingNewsSubscriptions.items
+          .map((sub) => sub.userId)
+          .toSet();
+
       _log.info(
-        'Found ${breakingNewsSubscriptions.items.length} subscriptions '
-        'for breaking news.',
+        'Found ${breakingNewsSubscriptions.items.length} subscriptions for '
+        'breaking news, corresponding to ${userIds.length} unique users.',
       );
 
-      // 3. For each subscription, find the user's registered devices.
-      for (final subscription in breakingNewsSubscriptions.items) {
-        _log.finer(
-          'Processing subscription ${subscription.id} for user ${subscription.userId}.',
-        );
-
-        // Fetch devices for the user associated with this subscription.
-        final userDevices = await _pushNotificationDeviceRepository.readAll(
-          filter: {'userId': subscription.userId},
-        );
-
-        if (userDevices.items.isEmpty) {
-          _log.finer(
-            'User ${subscription.userId} has no registered devices. Skipping.',
+      // 4. Fetch all devices for all subscribed users in a single bulk query.
+      final allDevicesResponse = await _pushNotificationDeviceRepository
+          .readAll(
+            filter: {
+              'userId': {r'$in': userIds.toList()},
+            },
           );
-          continue;
-        }
 
-        _log.finer(
-          'User ${subscription.userId} has ${userDevices.items.length} devices.',
-        );
-
-        // 4. Construct the notification payload.
-        final payload = PushNotificationPayload(
-          title: headline.title,
-          body: headline.excerpt,
-          imageUrl: headline.imageUrl,
-          data: {
-            'headlineId': headline.id,
-            'contentType': 'headline',
-            'notificationType':
-                PushNotificationSubscriptionDeliveryType.breakingOnly.name,
-          },
-        );
-
-        // 5. Send notification to each device.
-        for (final device in userDevices.items) {
-          _log.finer(
-            'Sending notification to device ${device.id} '
-            '(${device.platform.name}) via ${device.provider.name}.',
-          );
-          // Note: We use the client determined by the primary provider,
-          // not necessarily the device's registered provider, for consistency.
-          await client.sendNotification(
-            deviceToken: device.token,
-            payload: payload,
-            providerConfig: providerConfig,
-          );
-          _log.finer('Notification sent to device ${device.id}.');
-        }
+      final allDevices = allDevicesResponse.items;
+      if (allDevices.isEmpty) {
+        _log.info('No registered devices found for any subscribed users.');
+        return;
       }
+
+      _log.info(
+        'Found ${allDevices.length} total devices for subscribed users.',
+      );
+
+      // 5. Group devices by their registered provider (Firebase or OneSignal).
+      // This is crucial because a device must be notified via the provider
+      // it registered with, regardless of the system's primary provider.
+      final devicesByProvider = allDevices.groupListsBy((d) => d.provider);
+
+      // 6. Construct the notification payload.
+      final payload = PushNotificationPayload(
+        title: headline.title,
+        body: headline.excerpt,
+        imageUrl: headline.imageUrl,
+        data: {
+          'headlineId': headline.id,
+          'contentType': 'headline',
+          'notificationType':
+              PushNotificationSubscriptionDeliveryType.breakingOnly.name,
+        },
+      );
+
+      // 7. Dispatch notifications in bulk for each provider group.
+      await Future.wait([
+        if (devicesByProvider.containsKey(PushNotificationProvider.firebase))
+          _sendToFirebase(
+            devices: devicesByProvider[PushNotificationProvider.firebase]!,
+            payload: payload,
+          ),
+        if (devicesByProvider.containsKey(PushNotificationProvider.oneSignal))
+          _sendToOneSignal(
+            devices: devicesByProvider[PushNotificationProvider.oneSignal]!,
+            payload: payload,
+          ),
+      ]);
+
       _log.info(
         'Finished processing breaking news notification for headline: '
         '"${headline.title}" (ID: ${headline.id}).',
@@ -199,7 +183,8 @@ class DefaultPushNotificationService implements IPushNotificationService {
       rethrow; // Propagate known HTTP exceptions
     } catch (e, s) {
       _log.severe(
-        'Failed to send breaking news notification for headline ${headline.id}: $e',
+        'Failed to send breaking news notification for headline '
+        '${headline.id}: $e',
         e,
         s,
       );
@@ -207,5 +192,46 @@ class DefaultPushNotificationService implements IPushNotificationService {
         'An internal error occurred while sending breaking news notification.',
       );
     }
+  }
+
+  Future<void> _sendToFirebase({
+    required List<PushNotificationDevice> devices,
+    required PushNotificationPayload payload,
+  }) async {
+    final tokens = devices.map((d) => d.token).toList();
+    _log.info('Sending notification to ${tokens.length} Firebase devices.');
+    await _firebaseClient.sendBulkNotifications(
+      deviceTokens: tokens,
+      payload: payload,
+      // The provider config is now created on-the-fly using non-sensitive
+      // data from environment variables, not from RemoteConfig.
+      providerConfig: FirebaseProviderConfig(
+        projectId: EnvironmentConfig.firebaseProjectId,
+        // These fields are not used by the client but are required by the
+        // model. They will be removed in a future refactor.
+        clientEmail: '',
+        privateKey: '',
+      ),
+    );
+  }
+
+  Future<void> _sendToOneSignal({
+    required List<PushNotificationDevice> devices,
+    required PushNotificationPayload payload,
+  }) async {
+    final tokens = devices.map((d) => d.token).toList();
+    _log.info('Sending notification to ${tokens.length} OneSignal devices.');
+    await _oneSignalClient.sendBulkNotifications(
+      deviceTokens: tokens,
+      payload: payload,
+      // The provider config is now created on-the-fly using non-sensitive
+      // data from environment variables, not from RemoteConfig.
+      providerConfig: OneSignalProviderConfig(
+        appId: EnvironmentConfig.oneSignalAppId,
+        // This field is not used by the client but is required by the
+        // model. It will be removed in a future refactor.
+        restApiKey: '',
+      ),
+    );
   }
 }
