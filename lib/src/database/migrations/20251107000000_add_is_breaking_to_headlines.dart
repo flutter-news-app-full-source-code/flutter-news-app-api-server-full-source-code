@@ -31,9 +31,8 @@ class AddIsBreakingToHeadlines extends Migration {
     // Update all documents in the 'headlines' collection that do not
     // already have the 'isBreaking' field, setting it to false.
     final updateResult = await collection.updateMany(
-      where
-          .exists('isBreaking')
-          .not(), // Select documents where isBreaking does not exist
+      // Select documents where 'isBreaking' does not exist.
+      where.notExists('isBreaking'),
       modify.set('isBreaking', false), // Set isBreaking to false
     );
 
