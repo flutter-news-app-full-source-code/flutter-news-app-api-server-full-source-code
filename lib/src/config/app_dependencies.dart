@@ -70,9 +70,10 @@ class AppDependencies {
   userContentPreferencesRepository;
   late final DataRepository<PushNotificationDevice>
   pushNotificationDeviceRepository;
-  late final DataRepository<PushNotificationSubscription>
-  pushNotificationSubscriptionRepository;
   late final DataRepository<RemoteConfig> remoteConfigRepository;
+  late final DataRepository<Interest> interestRepository;
+  late final DataRepository<InAppNotification> inAppNotificationRepository;
+
   late final EmailRepository emailRepository;
 
   // Services
@@ -220,14 +221,27 @@ class AppDependencies {
         toJson: (item) => item.toJson(),
         logger: Logger('DataMongodb<PushNotificationDevice>'),
       );
-      final pushNotificationSubscriptionClient =
-          DataMongodb<PushNotificationSubscription>(
-            connectionManager: _mongoDbConnectionManager,
-            modelName: 'push_notification_subscriptions',
-            fromJson: PushNotificationSubscription.fromJson,
-            toJson: (item) => item.toJson(),
-            logger: Logger('DataMongodb<PushNotificationSubscription>'),
-          );
+
+      // Initialize Data Clients for new Interest and InAppNotification models
+      final interestClient = DataMongodb<Interest>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'interests',
+        fromJson: Interest.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<Interest>'),
+      );
+
+      final inAppNotificationClient = DataMongodb<InAppNotification>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'in_app_notifications',
+        fromJson: InAppNotification.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<InAppNotification>'),
+      );
+
+      _log.info(
+        'Initialized data clients for Interest and InAppNotification.',
+      );
 
       // --- Conditionally Initialize Push Notification Clients ---
 
@@ -314,8 +328,11 @@ class AppDependencies {
       pushNotificationDeviceRepository = DataRepository(
         dataClient: pushNotificationDeviceClient,
       );
-      pushNotificationSubscriptionRepository = DataRepository(
-        dataClient: pushNotificationSubscriptionClient,
+      interestRepository = DataRepository(
+        dataClient: interestClient,
+      );
+      inAppNotificationRepository = DataRepository(
+        dataClient: inAppNotificationClient,
       );
       // Configure the HTTP client for SendGrid.
       // The HttpClient's AuthInterceptor will use the tokenProvider to add
@@ -382,8 +399,7 @@ class AppDependencies {
       );
       pushNotificationService = DefaultPushNotificationService(
         pushNotificationDeviceRepository: pushNotificationDeviceRepository,
-        pushNotificationSubscriptionRepository:
-            pushNotificationSubscriptionRepository,
+        interestRepository: interestRepository,
         remoteConfigRepository: remoteConfigRepository,
         firebaseClient: firebasePushNotificationClient,
         oneSignalClient: oneSignalPushNotificationClient,
