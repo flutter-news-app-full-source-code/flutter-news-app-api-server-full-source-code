@@ -108,77 +108,50 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
       );
     }
 
-    // Find the interest that was added or updated to check its specific limits.
-    // This logic assumes only one interest is added or updated per request.
-    final currentInterestIds = currentPreferences.interests
-        .map((i) => i.id)
-        .toSet();
-    Interest? changedInterest;
-
-    for (final updatedInterest in updatedPreferences.interests) {
-      if (!currentInterestIds.contains(updatedInterest.id)) {
-        // This is a newly added interest.
-        changedInterest = updatedInterest;
-        break;
-      } else {
-        // This is a potentially updated interest. Find the original.
-        final originalInterest = currentPreferences.interests.firstWhere(
-          (i) => i.id == updatedInterest.id,
-        );
-        if (updatedInterest != originalInterest) {
-          changedInterest = updatedInterest;
-          break;
-        }
-      }
+    // Check total number of pinned feed filters.
+    final pinnedCount = updatedPreferences.interests
+        .where((i) => i.isPinnedFeedFilter)
+        .length;
+    if (pinnedCount > interestLimits.pinnedFeedFilters) {
+      _log.warning(
+        'User ${user.id} exceeded pinned feed filter limit: '
+        '${interestLimits.pinnedFeedFilters} (attempted $pinnedCount).',
+      );
+      throw ForbiddenException(
+        'You have reached your limit of ${interestLimits.pinnedFeedFilters} '
+        'pinned feed filters.',
+      );
     }
 
-    // If an interest was added or updated, check its specific limits.
-    if (changedInterest != null) {
-      _log.info('Checking limits for changed interest: ${changedInterest.id}');
-
-      // Check total number of pinned feed filters.
-      final pinnedCount = updatedPreferences.interests
-          .where((i) => i.isPinnedFeedFilter)
-          .length;
-      if (pinnedCount > interestLimits.pinnedFeedFilters) {
-        _log.warning(
-          'User ${user.id} exceeded pinned feed filter limit: '
-          '${interestLimits.pinnedFeedFilters} (attempted $pinnedCount).',
+    // Check notification subscription limits for each possible delivery type.
+    for (final deliveryType
+        in PushNotificationSubscriptionDeliveryType.values) {
+      final notificationLimit = interestLimits.notifications[deliveryType];
+      if (notificationLimit == null) {
+        _log.severe(
+          'Notification limit for type ${deliveryType.name} not found for '
+          'role ${user.appRole}. Denying request by default.',
         );
         throw ForbiddenException(
-          'You have reached your limit of ${interestLimits.pinnedFeedFilters} '
-          'pinned feed filters.',
+          'Notification limits for ${deliveryType.name} are not configured.',
         );
       }
 
-      // Check notification subscription limits for each type.
-      for (final deliveryType in changedInterest.deliveryTypes) {
-        final notificationLimit = interestLimits.notifications[deliveryType];
-        if (notificationLimit == null) {
-          _log.severe(
-            'Notification limit for type ${deliveryType.name} not found for '
-            'role ${user.appRole}. Denying request by default.',
-          );
-          throw ForbiddenException(
-            'Notification limits for ${deliveryType.name} are not configured.',
-          );
-        }
+      // Count how many of the user's proposed interests include this type.
+      final subscriptionCount = updatedPreferences.interests
+          .where((i) => i.deliveryTypes.contains(deliveryType))
+          .length;
 
-        final subscriptionCount = updatedPreferences.interests
-            .where((i) => i.deliveryTypes.contains(deliveryType))
-            .length;
-
-        if (subscriptionCount > notificationLimit) {
-          _log.warning(
-            'User ${user.id} exceeded notification limit for '
-            '${deliveryType.name}: $notificationLimit '
-            '(attempted $subscriptionCount).',
-          );
-          throw ForbiddenException(
-            'You have reached your limit of $notificationLimit '
-            '${deliveryType.name} notification subscriptions.',
-          );
-        }
+      if (subscriptionCount > notificationLimit) {
+        _log.warning(
+          'User ${user.id} exceeded notification limit for '
+          '${deliveryType.name}: $notificationLimit '
+          '(attempted $subscriptionCount).',
+        );
+        throw ForbiddenException(
+          'You have reached your limit of $notificationLimit '
+          '${deliveryType.name} notification subscriptions.',
+        );
       }
     }
 
