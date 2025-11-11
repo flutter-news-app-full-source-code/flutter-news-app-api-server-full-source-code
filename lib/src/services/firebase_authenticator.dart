@@ -24,7 +24,6 @@ class FirebaseAuthenticator implements IFirebaseAuthenticator {
   /// Creates an instance of [FirebaseAuthenticator].
   FirebaseAuthenticator({required Logger log}) : _log = log {
     // This internal HttpClient is used exclusively for the token exchange.
-    // This internal HttpClient is used exclusively for the token exchange.
     // It does not have an auth interceptor, which is crucial to prevent
     // an infinite loop.
     _tokenClient = HttpClient(
