@@ -463,6 +463,74 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresOwnershipCheck: true,
     ),
   ),
+  'interest': ModelConfig<Interest>(
+    fromJson: Interest.fromJson,
+    getId: (i) => i.id,
+    getOwnerId: (dynamic item) => (item as Interest).userId,
+    // Collection GET is admin-only to prevent listing all users' interests.
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+    ),
+    // Item GET is unsupported. Interests are managed as part of the
+    // UserContentPreferences object, not as individual top-level documents.
+    getItemPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    // POST is allowed for any authenticated user to create their own interest.
+    // A custom creator in DataOperationRegistry will enforce role-based limits.
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.interestCreateOwned,
+      requiresOwnershipCheck: false,
+    ),
+    // PUT is allowed for any authenticated user to update their own interest.
+    // A custom updater in DataOperationRegistry will enforce role-based limits.
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.interestUpdateOwned,
+      requiresOwnershipCheck: true,
+    ),
+    // DELETE is allowed for any authenticated user to delete their own interest.
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.interestDeleteOwned,
+      requiresOwnershipCheck: true,
+    ),
+  ),
+  'in_app_notification': ModelConfig<InAppNotification>(
+    fromJson: InAppNotification.fromJson,
+    getId: (n) => n.id,
+    getOwnerId: (dynamic item) => (item as InAppNotification).userId,
+    // Collection GET is allowed for a user to fetch their own notification inbox.
+    // The ownership check ensures they only see their own notifications.
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.inAppNotificationReadOwned,
+      requiresOwnershipCheck: true,
+    ),
+    // Item GET is allowed for a user to fetch a single notification.
+    getItemPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.inAppNotificationReadOwned,
+      requiresOwnershipCheck: true,
+    ),
+    // POST is unsupported as notifications are created by the system, not users.
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    // PUT is allowed for a user to update their own notification (e.g., mark as read).
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.inAppNotificationUpdateOwned,
+      requiresOwnershipCheck: true,
+    ),
+    // DELETE is allowed for a user to delete their own notification.
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.inAppNotificationDeleteOwned,
+      requiresOwnershipCheck: true,
+    ),
+  ),
 };
 
 /// Type alias for the ModelRegistry map for easier provider usage.
