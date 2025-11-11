@@ -121,8 +121,6 @@ class DataOperationRegistry {
           c.read<DataRepository<RemoteConfig>>().read(id: id, userId: null),
       'dashboard_summary': (c, id) =>
           c.read<DashboardSummaryService>().getSummary(),
-      'interest': (c, id) =>
-          c.read<DataRepository<Interest>>().read(id: id, userId: null),
       'in_app_notification': (c, id) => c
           .read<DataRepository<InAppNotification>>()
           .read(id: id, userId: null),
@@ -170,13 +168,6 @@ class DataOperationRegistry {
           .read<DataRepository<Language>>()
           .readAll(userId: uid, filter: f, sort: s, pagination: p),
       'user': (c, uid, f, s, p) => c.read<DataRepository<User>>().readAll(
-        userId: uid,
-        filter: f,
-        sort: s,
-        pagination: p,
-      ),
-      'interest': (c, uid, f, s, p) =>
-          c.read<DataRepository<Interest>>().readAll(
             userId: uid,
             filter: f,
             sort: s,
@@ -275,30 +266,6 @@ class DataOperationRegistry {
         return context.read<DataRepository<PushNotificationDevice>>().create(
           item: deviceToCreate,
           userId: null,
-        );
-      },
-      'interest': (context, item, uid) async {
-        _log.info('Executing custom creator for interest.');
-        final authenticatedUser = context.read<User>();
-        final interestToCreate = (item as Interest).copyWith(
-          userId: authenticatedUser.id,
-        );
-
-        // 1. Fetch current user preferences to get existing interests.
-        final preferences = await context
-            .read<DataRepository<UserContentPreferences>>()
-            .read(id: authenticatedUser.id);
-
-        // 2. Check limits before creating.
-        await context.read<UserPreferenceLimitService>().checkInterestLimits(
-          user: authenticatedUser,
-          interest: interestToCreate,
-          existingInterests: preferences.interests,
-        );
-
-        // 3. Proceed with creation.
-        return context.read<DataRepository<Interest>>().create(
-          item: interestToCreate,
         );
       },
     });
@@ -419,18 +386,104 @@ class DataOperationRegistry {
           'Executing custom updater for user_content_preferences ID: $id.',
         );
         final authenticatedUser = context.read<User>();
+        final userPreferenceLimitService =
+            context.read<UserPreferenceLimitService>();
+        final userContentPreferencesRepository =
+            context.read<DataRepository<UserContentPreferences>>();
+
         final preferencesToUpdate = item as UserContentPreferences;
 
-        // 1. Check limits before updating.
-        await context
-            .read<UserPreferenceLimitService>()
-            .checkUserContentPreferencesLimits(
-              user: authenticatedUser,
-              updatedPreferences: preferencesToUpdate,
+        // 1. Fetch the current state of the user's preferences.
+        final currentPreferences = await userContentPreferencesRepository.read(
+          id: id,
+        );
+
+        // 2. Detect changes in the interests list.
+        final currentIds =
+            currentPreferences.interests.map((i) => i.id).toSet();
+        final updatedIds =
+            preferencesToUpdate.interests.map((i) => i.id).toSet();
+
+        final addedIds = updatedIds.difference(currentIds);
+        final removedIds = currentIds.difference(updatedIds);
+
+        // For simplicity and clear validation, enforce one change at a time.
+        if (addedIds.length + removedIds.length > 1) {
+          throw const BadRequestException(
+            'Only one interest can be added or removed per request.',
+          );
+        }
+
+        // 3. Perform permission and limit checks based on the detected action.
+        if (addedIds.isNotEmpty) {
+          // --- Interest Added ---
+          final addedInterestId = addedIds.first;
+          _log.info(
+            'Detected interest addition for user ${authenticatedUser.id}.',
+          );
+
+          final addedInterest = preferencesToUpdate.interests
+              .firstWhere((i) => i.id == addedInterestId);
+
+          // Check business logic limits.
+          await userPreferenceLimitService.checkInterestLimits(
+            user: authenticatedUser,
+            interest: addedInterest,
+            existingInterests: currentPreferences.interests,
+          );
+        } else if (removedIds.isNotEmpty) {
+          // --- Interest Removed ---
+          _log.info(
+            'Detected interest removal for user ${authenticatedUser.id}.',
+          );
+
+        } else {
+          // --- Interest Potentially Updated ---
+          // Check if any existing interest was modified.
+          Interest? updatedInterest;
+          for (final newInterest in preferencesToUpdate.interests) {
+            // Find the corresponding interest in the old list.
+            final oldInterest = currentPreferences.interests.firstWhere(
+              (i) => i.id == newInterest.id,
+              // This should not be hit if add/remove is handled, but as a
+              // safeguard, we use the newInterest to avoid null issues.
+              orElse: () => newInterest,
+            );
+            if (newInterest != oldInterest) {
+              updatedInterest = newInterest;
+              break; // Found the updated one, no need to continue loop.
+            }
+          }
+
+          if (updatedInterest != null) {
+            _log.info(
+              'Detected interest update for user ${authenticatedUser.id}.',
             );
 
-        // 2. Proceed with update.
-        return context.read<DataRepository<UserContentPreferences>>().update(
+            // Check business logic limits.
+            final otherInterests = currentPreferences.interests
+                .where((i) => i.id != updatedInterest!.id)
+                .toList();
+            await userPreferenceLimitService.checkInterestLimits(
+              user: authenticatedUser,
+              interest: updatedInterest,
+              existingInterests: otherInterests,
+            );
+          }
+        }
+
+        // 4. Always validate general preference limits (followed items, etc.).
+        await userPreferenceLimitService.checkUserContentPreferencesLimits(
+          user: authenticatedUser,
+          updatedPreferences: preferencesToUpdate,
+        );
+
+        // 5. If all checks pass, proceed with the update.
+        _log.info(
+          'All preference validations passed for user ${authenticatedUser.id}. '
+          'Proceeding with update.',
+        );
+        return userContentPreferencesRepository.update(
           id: id,
           item: preferencesToUpdate,
         );
@@ -438,34 +491,6 @@ class DataOperationRegistry {
       'remote_config': (c, id, item, uid) => c
           .read<DataRepository<RemoteConfig>>()
           .update(id: id, item: item as RemoteConfig, userId: uid),
-      'interest': (context, id, item, uid) async {
-        _log.info('Executing custom updater for interest ID: $id.');
-        final authenticatedUser = context.read<User>();
-        final interestToUpdate = item as Interest;
-
-        // 1. Fetch current user preferences to get existing interests.
-        final preferences = await context
-            .read<DataRepository<UserContentPreferences>>()
-            .read(id: authenticatedUser.id);
-
-        // Exclude the interest being updated from the list for limit checking.
-        final otherInterests = preferences.interests
-            .where((i) => i.id != id)
-            .toList();
-
-        // 2. Check limits before updating.
-        await context.read<UserPreferenceLimitService>().checkInterestLimits(
-          user: authenticatedUser,
-          interest: interestToUpdate,
-          existingInterests: otherInterests,
-        );
-
-        // 3. Proceed with update.
-        return context.read<DataRepository<Interest>>().update(
-          id: id,
-          item: interestToUpdate,
-        );
-      },
     });
 
     // --- Register Item Deleters ---
@@ -490,8 +515,6 @@ class DataOperationRegistry {
       'push_notification_device': (c, id, uid) => c
           .read<DataRepository<PushNotificationDevice>>()
           .delete(id: id, userId: uid),
-      'interest': (c, id, uid) =>
-          c.read<DataRepository<Interest>>().delete(id: id, userId: uid),
       'in_app_notification': (c, id, uid) => c
           .read<DataRepository<InAppNotification>>()
           .delete(id: id, userId: uid),

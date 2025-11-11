@@ -463,40 +463,6 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresOwnershipCheck: true,
     ),
   ),
-  'interest': ModelConfig<Interest>(
-    fromJson: Interest.fromJson,
-    getId: (i) => i.id,
-    getOwnerId: (dynamic item) => (item as Interest).userId,
-    // Collection GET is admin-only to prevent listing all users' interests.
-    getCollectionPermission: const ModelActionPermission(
-      type: RequiredPermissionType.adminOnly,
-    ),
-    // Item GET is unsupported. Interests are managed as part of the
-    // UserContentPreferences object, not as individual top-level documents.
-    getItemPermission: const ModelActionPermission(
-      type: RequiredPermissionType.unsupported,
-    ),
-    // POST is allowed for any authenticated user to create their own interest.
-    // A custom creator in DataOperationRegistry will enforce role-based limits.
-    postPermission: const ModelActionPermission(
-      type: RequiredPermissionType.specificPermission,
-      permission: Permissions.interestCreateOwned,
-      requiresOwnershipCheck: false,
-    ),
-    // PUT is allowed for any authenticated user to update their own interest.
-    // A custom updater in DataOperationRegistry will enforce role-based limits.
-    putPermission: const ModelActionPermission(
-      type: RequiredPermissionType.specificPermission,
-      permission: Permissions.interestUpdateOwned,
-      requiresOwnershipCheck: true,
-    ),
-    // DELETE is allowed for any authenticated user to delete their own interest.
-    deletePermission: const ModelActionPermission(
-      type: RequiredPermissionType.specificPermission,
-      permission: Permissions.interestDeleteOwned,
-      requiresOwnershipCheck: true,
-    ),
-  ),
   'in_app_notification': ModelConfig<InAppNotification>(
     fromJson: InAppNotification.fromJson,
     getId: (n) => n.id,
