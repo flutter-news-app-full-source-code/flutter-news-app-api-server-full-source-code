@@ -4,6 +4,7 @@ import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
@@ -386,6 +387,7 @@ class DataOperationRegistry {
           'Executing custom updater for user_content_preferences ID: $id.',
         );
         final authenticatedUser = context.read<User>();
+        final permissionService = context.read<PermissionService>();
         final userPreferenceLimitService = context
             .read<UserPreferenceLimitService>();
         final userContentPreferencesRepository = context
@@ -400,13 +402,23 @@ class DataOperationRegistry {
 
         // 2. Validate all limits using the consolidated service method.
         // The service now contains all logic to compare the updated and
-        // current preferences and check all relevant limits (interests,
-        // followed items, etc.) in one go.
-        await userPreferenceLimitService.checkUserContentPreferencesLimits(
-          user: authenticatedUser,
-          updatedPreferences: preferencesToUpdate,
-          currentPreferences: currentPreferences,
-        );
+        // current preferences and check all relevant limits.
+        //
+        // We first check if the user has permission to bypass these limits.
+        if (permissionService.hasPermission(
+          authenticatedUser,
+          Permissions.userPreferenceBypassLimits,
+        )) {
+          _log.info(
+            'User ${authenticatedUser.id} has bypass permission. Skipping limit checks.',
+          );
+        } else {
+          await userPreferenceLimitService.checkUserContentPreferencesLimits(
+            user: authenticatedUser,
+            updatedPreferences: preferencesToUpdate,
+            currentPreferences: currentPreferences,
+          );
+        }
 
         // 3. If all checks pass, proceed with the update.
         _log.info(

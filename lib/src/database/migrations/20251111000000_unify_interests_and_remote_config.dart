@@ -104,11 +104,18 @@ class UnifyInterestsAndRemoteConfig extends Migration {
         final key = _generateCriteriaKey(criteria);
         final deliveryTypes =
             (subscription['deliveryTypes'] as List<dynamic>? ?? [])
-                .map(
-                  (e) => PushNotificationSubscriptionDeliveryType.values.byName(
-                    e as String,
-                  ),
-                )
+                .map((e) {
+                  try {
+                    return PushNotificationSubscriptionDeliveryType.values
+                        .byName(e as String);
+                  } catch (_) {
+                    log.warning(
+                      'User $userId has a notificationSubscription with an invalid deliveryType: "$e". Skipping this type.',
+                    );
+                    return null;
+                  }
+                })
+                .whereType<PushNotificationSubscriptionDeliveryType>()
                 .toSet();
 
         interestMap.update(
