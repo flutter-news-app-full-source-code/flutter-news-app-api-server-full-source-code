@@ -5,9 +5,11 @@ import 'package:dart_frog/dart_frog.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/user_preference_limit_service.dart';
 import 'package:logging/logging.dart';
 
 // --- Typedefs for Data Operations ---
@@ -120,6 +122,9 @@ class DataOperationRegistry {
           c.read<DataRepository<RemoteConfig>>().read(id: id, userId: null),
       'dashboard_summary': (c, id) =>
           c.read<DashboardSummaryService>().getSummary(),
+      'in_app_notification': (c, id) => c
+          .read<DataRepository<InAppNotification>>()
+          .read(id: id, userId: null),
     });
 
     // --- Register "Read All" Readers ---
@@ -169,6 +174,13 @@ class DataOperationRegistry {
         sort: s,
         pagination: p,
       ),
+      'in_app_notification': (c, uid, f, s, p) =>
+          c.read<DataRepository<InAppNotification>>().readAll(
+            userId: uid,
+            filter: f,
+            sort: s,
+            pagination: p,
+          ),
     });
 
     // --- Register Item Creators ---
@@ -370,9 +382,46 @@ class DataOperationRegistry {
       'user_app_settings': (c, id, item, uid) => c
           .read<DataRepository<UserAppSettings>>()
           .update(id: id, item: item as UserAppSettings, userId: uid),
-      'user_content_preferences': (c, id, item, uid) => c
-          .read<DataRepository<UserContentPreferences>>()
-          .update(id: id, item: item as UserContentPreferences, userId: uid),
+      'user_content_preferences': (context, id, item, uid) async {
+        _log.info(
+          'Executing custom updater for user_content_preferences ID: $id.',
+        );
+        final authenticatedUser = context.read<User>();
+        final permissionService = context.read<PermissionService>();
+        final userPreferenceLimitService = context
+            .read<UserPreferenceLimitService>();
+        final userContentPreferencesRepository = context
+            .read<DataRepository<UserContentPreferences>>();
+
+        final preferencesToUpdate = item as UserContentPreferences;
+
+        // 2. Validate all limits using the consolidated service method.
+        // The service validates the entire proposed state. We first check
+        // if the user has permission to bypass these limits.
+        if (permissionService.hasPermission(
+          authenticatedUser,
+          Permissions.userPreferenceBypassLimits,
+        )) {
+          _log.info(
+            'User ${authenticatedUser.id} has bypass permission. Skipping limit checks.',
+          );
+        } else {
+          await userPreferenceLimitService.checkUserContentPreferencesLimits(
+            user: authenticatedUser,
+            updatedPreferences: preferencesToUpdate,
+          );
+        }
+
+        // 3. If all checks pass, proceed with the update.
+        _log.info(
+          'All preference validations passed for user ${authenticatedUser.id}. '
+          'Proceeding with update.',
+        );
+        return userContentPreferencesRepository.update(
+          id: id,
+          item: preferencesToUpdate,
+        );
+      },
       'remote_config': (c, id, item, uid) => c
           .read<DataRepository<RemoteConfig>>()
           .update(id: id, item: item as RemoteConfig, userId: uid),
@@ -399,6 +448,9 @@ class DataOperationRegistry {
           c.read<DataRepository<RemoteConfig>>().delete(id: id, userId: uid),
       'push_notification_device': (c, id, uid) => c
           .read<DataRepository<PushNotificationDevice>>()
+          .delete(id: id, userId: uid),
+      'in_app_notification': (c, id, uid) => c
+          .read<DataRepository<InAppNotification>>()
           .delete(id: id, userId: uid),
     });
   }

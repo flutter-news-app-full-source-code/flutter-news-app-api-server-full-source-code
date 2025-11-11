@@ -135,8 +135,8 @@ Handler middleware(Handler handler) {
                 ),
               )
               .use(
-                provider<DataRepository<PushNotificationSubscription>>(
-                  (_) => deps.pushNotificationSubscriptionRepository,
+                provider<DataRepository<InAppNotification>>(
+                  (_) => deps.inAppNotificationRepository,
                 ),
               )
               .use(

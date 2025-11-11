@@ -32,15 +32,14 @@ class DefaultPushNotificationService implements IPushNotificationService {
   DefaultPushNotificationService({
     required DataRepository<PushNotificationDevice>
     pushNotificationDeviceRepository,
-    required DataRepository<PushNotificationSubscription>
-    pushNotificationSubscriptionRepository,
+    required DataRepository<UserContentPreferences>
+    userContentPreferencesRepository,
     required DataRepository<RemoteConfig> remoteConfigRepository,
     required IPushNotificationClient? firebaseClient,
     required IPushNotificationClient? oneSignalClient,
     required Logger log,
   }) : _pushNotificationDeviceRepository = pushNotificationDeviceRepository,
-       _pushNotificationSubscriptionRepository =
-           pushNotificationSubscriptionRepository,
+       _userContentPreferencesRepository = userContentPreferencesRepository,
        _remoteConfigRepository = remoteConfigRepository,
        _firebaseClient = firebaseClient,
        _oneSignalClient = oneSignalClient,
@@ -48,8 +47,8 @@ class DefaultPushNotificationService implements IPushNotificationService {
 
   final DataRepository<PushNotificationDevice>
   _pushNotificationDeviceRepository;
-  final DataRepository<PushNotificationSubscription>
-  _pushNotificationSubscriptionRepository;
+  final DataRepository<UserContentPreferences>
+  _userContentPreferencesRepository;
   final DataRepository<RemoteConfig> _remoteConfigRepository;
   final IPushNotificationClient? _firebaseClient;
   final IPushNotificationClient? _oneSignalClient;
@@ -108,22 +107,22 @@ class DefaultPushNotificationService implements IPushNotificationService {
       }
 
       // Check if breaking news notifications are enabled.
-      final breakingNewsDeliveryConfig =
+      final isBreakingNewsEnabled =
           pushConfig.deliveryConfigs[PushNotificationSubscriptionDeliveryType
-              .breakingOnly];
-      if (breakingNewsDeliveryConfig == null ||
-          !breakingNewsDeliveryConfig.enabled) {
+              .breakingOnly] ??
+          false;
+
+      if (!isBreakingNewsEnabled) {
         _log.info('Breaking news notifications are disabled. Aborting.');
         return;
       }
 
-      // 2. Find all subscriptions for breaking news.
-      // The query now correctly finds subscriptions where 'deliveryTypes'
-      // array *contains* the 'breakingOnly' value.
-      final breakingNewsSubscriptions =
-          await _pushNotificationSubscriptionRepository.readAll(
+      // 2. Find all user preferences that contain an interest subscribed to
+      //    breaking news. This query targets the embedded 'interests' array.
+      final subscribedUserPreferences = await _userContentPreferencesRepository
+          .readAll(
             filter: {
-              'deliveryTypes': {
+              'interests.deliveryTypes': {
                 r'$in': [
                   PushNotificationSubscriptionDeliveryType.breakingOnly.name,
                 ],
@@ -131,20 +130,21 @@ class DefaultPushNotificationService implements IPushNotificationService {
             },
           );
 
-      if (breakingNewsSubscriptions.items.isEmpty) {
+      if (subscribedUserPreferences.items.isEmpty) {
         _log.info('No users subscribed to breaking news. Aborting.');
         return;
       }
 
-      // 3. Collect all unique user IDs from the subscriptions.
+      // 3. Collect all unique user IDs from the preference documents.
       // Using a Set automatically handles deduplication.
-      final userIds = breakingNewsSubscriptions.items
-          .map((sub) => sub.userId)
+      // The ID of the UserContentPreferences document is the user's ID.
+      final userIds = subscribedUserPreferences.items
+          .map((preference) => preference.id)
           .toSet();
 
       _log.info(
-        'Found ${breakingNewsSubscriptions.items.length} subscriptions for '
-        'breaking news, corresponding to ${userIds.length} unique users.',
+        'Found ${subscribedUserPreferences.items.length} users with '
+        'subscriptions to breaking news.',
       );
 
       // 4. Fetch all devices for all subscribed users in a single bulk query.

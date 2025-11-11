@@ -70,9 +70,9 @@ class AppDependencies {
   userContentPreferencesRepository;
   late final DataRepository<PushNotificationDevice>
   pushNotificationDeviceRepository;
-  late final DataRepository<PushNotificationSubscription>
-  pushNotificationSubscriptionRepository;
   late final DataRepository<RemoteConfig> remoteConfigRepository;
+  late final DataRepository<InAppNotification> inAppNotificationRepository;
+
   late final EmailRepository emailRepository;
 
   // Services
@@ -220,14 +220,16 @@ class AppDependencies {
         toJson: (item) => item.toJson(),
         logger: Logger('DataMongodb<PushNotificationDevice>'),
       );
-      final pushNotificationSubscriptionClient =
-          DataMongodb<PushNotificationSubscription>(
-            connectionManager: _mongoDbConnectionManager,
-            modelName: 'push_notification_subscriptions',
-            fromJson: PushNotificationSubscription.fromJson,
-            toJson: (item) => item.toJson(),
-            logger: Logger('DataMongodb<PushNotificationSubscription>'),
-          );
+
+      final inAppNotificationClient = DataMongodb<InAppNotification>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'in_app_notifications',
+        fromJson: InAppNotification.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<InAppNotification>'),
+      );
+
+      _log.info('Initialized data client for InAppNotification.');
 
       // --- Conditionally Initialize Push Notification Clients ---
 
@@ -314,8 +316,8 @@ class AppDependencies {
       pushNotificationDeviceRepository = DataRepository(
         dataClient: pushNotificationDeviceClient,
       );
-      pushNotificationSubscriptionRepository = DataRepository(
-        dataClient: pushNotificationSubscriptionClient,
+      inAppNotificationRepository = DataRepository(
+        dataClient: inAppNotificationClient,
       );
       // Configure the HTTP client for SendGrid.
       // The HttpClient's AuthInterceptor will use the tokenProvider to add
@@ -368,7 +370,6 @@ class AppDependencies {
       );
       userPreferenceLimitService = DefaultUserPreferenceLimitService(
         remoteConfigRepository: remoteConfigRepository,
-        permissionService: permissionService,
         log: Logger('DefaultUserPreferenceLimitService'),
       );
       rateLimitService = MongoDbRateLimitService(
@@ -382,8 +383,7 @@ class AppDependencies {
       );
       pushNotificationService = DefaultPushNotificationService(
         pushNotificationDeviceRepository: pushNotificationDeviceRepository,
-        pushNotificationSubscriptionRepository:
-            pushNotificationSubscriptionRepository,
+        userContentPreferencesRepository: userContentPreferencesRepository,
         remoteConfigRepository: remoteConfigRepository,
         firebaseClient: firebasePushNotificationClient,
         oneSignalClient: oneSignalPushNotificationClient,

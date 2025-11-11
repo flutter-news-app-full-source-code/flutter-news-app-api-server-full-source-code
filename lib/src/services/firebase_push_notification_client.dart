@@ -66,7 +66,12 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
       );
 
       // Send each chunk as a separate batch request.
-      await _sendBatch(deviceTokens: batch, payload: payload);
+      await _sendBatch(
+        batchNumber: (i ~/ batchSize) + 1,
+        totalBatches: (deviceTokens.length / batchSize).ceil(),
+        deviceTokens: batch,
+        payload: payload,
+      );
     }
   }
 
@@ -77,6 +82,8 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
   /// as it avoids the complexity of constructing a multipart request body and
   /// provides clearer error handling for individual message failures.
   Future<void> _sendBatch({
+    required int batchNumber,
+    required int totalBatches,
     required List<String> deviceTokens,
     required PushNotificationPayload payload,
   }) async {
@@ -84,6 +91,10 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
     // The final URL will be:
     // `https://fcm.googleapis.com/v1/projects/<projectId>/messages:send`
     const url = 'messages:send';
+    _log.info(
+      'Sending Firebase batch $batchNumber of $totalBatches '
+      'to ${deviceTokens.length} devices.',
+    );
 
     // Create a list of futures, one for each notification to be sent.
     final sendFutures = deviceTokens.map((token) {
@@ -120,12 +131,14 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
         );
       } else {
         _log.warning(
-          '${failedResults.length} out of ${deviceTokens.length} Firebase '
-          'notifications failed to send in batch for project "$projectId".',
+          'Batch $batchNumber/$totalBatches: '
+          '${failedResults.length} of ${deviceTokens.length} Firebase '
+          'notifications failed to send for project "$projectId".',
         );
         for (final error in failedResults) {
           if (error is HttpException) {
             _log.severe(
+              'Batch $batchNumber/$totalBatches: '
               'HTTP error sending Firebase notification: ${error.message}',
               error,
             );
@@ -142,7 +155,12 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
         );
       }
     } catch (e, s) {
-      _log.severe('Unexpected error processing Firebase batch results.', e, s);
+      _log.severe(
+        'Unexpected error processing Firebase batch $batchNumber/$totalBatches '
+        'results.',
+        e,
+        s,
+      );
       throw OperationFailedException('Failed to process Firebase batch: $e');
     }
   }
