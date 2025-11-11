@@ -10,11 +10,20 @@ abstract class IFirebaseAuthenticator {
   Future<String?> getAccessToken();
 }
 
+/// {@template firebase_authenticator}
 /// A concrete implementation of [IFirebaseAuthenticator] that uses a
 /// two-legged OAuth flow to obtain an access token from Google.
+///
+/// This service is responsible for generating a signed JWT using the service
+/// account credentials and exchanging it for a short-lived OAuth2 access token
+/// that can be used to authenticate with Google APIs, such as the Firebase
+/// Cloud Messaging (FCM) v1 API.
+/// {@endtemplate}
 class FirebaseAuthenticator implements IFirebaseAuthenticator {
+  /// {@macro firebase_authenticator}
   /// Creates an instance of [FirebaseAuthenticator].
   FirebaseAuthenticator({required Logger log}) : _log = log {
+    // This internal HttpClient is used exclusively for the token exchange.
     // This internal HttpClient is used exclusively for the token exchange.
     // It does not have an auth interceptor, which is crucial to prevent
     // an infinite loop.
@@ -28,6 +37,7 @@ class FirebaseAuthenticator implements IFirebaseAuthenticator {
   late final HttpClient _tokenClient;
 
   @override
+  /// Retrieves a short-lived OAuth2 access token for Firebase.
   Future<String?> getAccessToken() async {
     _log.info('Requesting new Firebase access token...');
     try {
@@ -35,6 +45,8 @@ class FirebaseAuthenticator implements IFirebaseAuthenticator {
       final pem = EnvironmentConfig.firebasePrivateKey!.replaceAll(r'\n', '\n');
       final privateKey = RSAPrivateKey(pem);
       final jwt = JWT(
+        // The 'scope' claim defines the permissions the access token will have.
+        // 'cloud-platform' is a broad scope suitable for many Google Cloud APIs.
         {'scope': 'https://www.googleapis.com/auth/cloud-platform'},
         issuer: EnvironmentConfig.firebaseClientEmail,
         audience: Audience.one('https://oauth2.googleapis.com/token'),
