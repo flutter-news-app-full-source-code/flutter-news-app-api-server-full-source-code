@@ -4,8 +4,8 @@ import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
@@ -395,16 +395,9 @@ class DataOperationRegistry {
 
         final preferencesToUpdate = item as UserContentPreferences;
 
-        // 1. Fetch the current state of the user's preferences.
-        final currentPreferences = await userContentPreferencesRepository.read(
-          id: id,
-        );
-
         // 2. Validate all limits using the consolidated service method.
-        // The service now contains all logic to compare the updated and
-        // current preferences and check all relevant limits.
-        //
-        // We first check if the user has permission to bypass these limits.
+        // The service validates the entire proposed state. We first check
+        // if the user has permission to bypass these limits.
         if (permissionService.hasPermission(
           authenticatedUser,
           Permissions.userPreferenceBypassLimits,
@@ -416,7 +409,6 @@ class DataOperationRegistry {
           await userPreferenceLimitService.checkUserContentPreferencesLimits(
             user: authenticatedUser,
             updatedPreferences: preferencesToUpdate,
-            currentPreferences: currentPreferences,
           );
         }
 

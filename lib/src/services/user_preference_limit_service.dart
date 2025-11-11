@@ -19,6 +19,5 @@ abstract class UserPreferenceLimitService {
   Future<void> checkUserContentPreferencesLimits({
     required User user,
     required UserContentPreferences updatedPreferences,
-    required UserContentPreferences currentPreferences,
   });
 }
