@@ -7,7 +7,6 @@ import 'package:logging/logging.dart';
 /// {@template default_user_preference_limit_service}
 /// Default implementation of [UserPreferenceLimitService] that enforces limits
 /// based on user role and the new `InterestConfig` within [RemoteConfig].
-/// {@template default_user_preference_limit_service}
 /// {@endtemplate}
 class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
   /// {@macro default_user_preference_limit_service}
