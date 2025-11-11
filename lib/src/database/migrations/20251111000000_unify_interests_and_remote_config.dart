@@ -63,9 +63,16 @@ class UnifyInterestsAndRemoteConfig extends Migration {
 
       // Process saved filters
       for (final filter in savedFilters) {
-        final criteria = InterestCriteria.fromJson(
-          filter['criteria'] as Map<String, dynamic>,
-        );
+        final criteriaData = filter['criteria'];
+        if (criteriaData is! Map<String, dynamic>) {
+          log.warning(
+            'User $userId has a malformed savedFilter with missing or invalid '
+            '"criteria". Skipping this filter.',
+          );
+          continue;
+        }
+
+        final criteria = InterestCriteria.fromJson(criteriaData);
         final key = _generateCriteriaKey(criteria);
 
         interestMap.update(
@@ -84,9 +91,16 @@ class UnifyInterestsAndRemoteConfig extends Migration {
 
       // Process notification subscriptions
       for (final subscription in notificationSubscriptions) {
-        final criteria = InterestCriteria.fromJson(
-          subscription['criteria'] as Map<String, dynamic>,
-        );
+        final criteriaData = subscription['criteria'];
+        if (criteriaData is! Map<String, dynamic>) {
+          log.warning(
+            'User $userId has a malformed notificationSubscription with '
+            'missing or invalid "criteria". Skipping this subscription.',
+          );
+          continue;
+        }
+
+        final criteria = InterestCriteria.fromJson(criteriaData);
         final key = _generateCriteriaKey(criteria);
         final deliveryTypes =
             (subscription['deliveryTypes'] as List<dynamic>? ?? [])
