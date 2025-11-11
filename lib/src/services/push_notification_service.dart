@@ -32,15 +32,13 @@ class DefaultPushNotificationService implements IPushNotificationService {
   DefaultPushNotificationService({
     required DataRepository<PushNotificationDevice>
     pushNotificationDeviceRepository,
-    required DataRepository<PushNotificationSubscription>
-    pushNotificationSubscriptionRepository,
+    required DataRepository<Interest> interestRepository,
     required DataRepository<RemoteConfig> remoteConfigRepository,
     required IPushNotificationClient? firebaseClient,
     required IPushNotificationClient? oneSignalClient,
     required Logger log,
   }) : _pushNotificationDeviceRepository = pushNotificationDeviceRepository,
-       _pushNotificationSubscriptionRepository =
-           pushNotificationSubscriptionRepository,
+       _interestRepository = interestRepository,
        _remoteConfigRepository = remoteConfigRepository,
        _firebaseClient = firebaseClient,
        _oneSignalClient = oneSignalClient,
@@ -48,8 +46,7 @@ class DefaultPushNotificationService implements IPushNotificationService {
 
   final DataRepository<PushNotificationDevice>
   _pushNotificationDeviceRepository;
-  final DataRepository<PushNotificationSubscription>
-  _pushNotificationSubscriptionRepository;
+  final DataRepository<Interest> _interestRepository;
   final DataRepository<RemoteConfig> _remoteConfigRepository;
   final IPushNotificationClient? _firebaseClient;
   final IPushNotificationClient? _oneSignalClient;
@@ -108,42 +105,42 @@ class DefaultPushNotificationService implements IPushNotificationService {
       }
 
       // Check if breaking news notifications are enabled.
-      final breakingNewsDeliveryConfig =
+      final isBreakingNewsEnabled =
           pushConfig.deliveryConfigs[PushNotificationSubscriptionDeliveryType
-              .breakingOnly];
-      if (breakingNewsDeliveryConfig == null ||
-          !breakingNewsDeliveryConfig.enabled) {
+              .breakingOnly] ??
+          false;
+
+      if (!isBreakingNewsEnabled) {
         _log.info('Breaking news notifications are disabled. Aborting.');
         return;
       }
 
-      // 2. Find all subscriptions for breaking news.
-      // The query now correctly finds subscriptions where 'deliveryTypes'
-      // array *contains* the 'breakingOnly' value.
-      final breakingNewsSubscriptions =
-          await _pushNotificationSubscriptionRepository.readAll(
-            filter: {
-              'deliveryTypes': {
-                r'$in': [
-                  PushNotificationSubscriptionDeliveryType.breakingOnly.name,
-                ],
-              },
-            },
-          );
+      // 2. Find all interests subscribed to breaking news.
+      // The query now correctly finds interests where the 'deliveryTypes'
+      // set *contains* the 'breakingOnly' value.
+      final breakingNewsInterests = await _interestRepository.readAll(
+        filter: {
+          'deliveryTypes': {
+            r'$in': [
+              PushNotificationSubscriptionDeliveryType.breakingOnly.name,
+            ],
+          },
+        },
+      );
 
-      if (breakingNewsSubscriptions.items.isEmpty) {
+      if (breakingNewsInterests.items.isEmpty) {
         _log.info('No users subscribed to breaking news. Aborting.');
         return;
       }
 
       // 3. Collect all unique user IDs from the subscriptions.
       // Using a Set automatically handles deduplication.
-      final userIds = breakingNewsSubscriptions.items
-          .map((sub) => sub.userId)
+      final userIds = breakingNewsInterests.items
+          .map((interest) => interest.userId)
           .toSet();
 
       _log.info(
-        'Found ${breakingNewsSubscriptions.items.length} subscriptions for '
+        'Found ${breakingNewsInterests.items.length} interests subscribed to '
         'breaking news, corresponding to ${userIds.length} unique users.',
       );
 
