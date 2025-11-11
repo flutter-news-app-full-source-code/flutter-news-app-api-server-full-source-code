@@ -1,6 +1,7 @@
 import 'package:core/core.dart';
 
-/// An abstract interface for push notification clients.///
+/// An abstract interface for push notification clients.
+///
 /// This interface defines the contract for sending push notifications
 /// through different providers (e.g., Firebase Cloud Messaging, OneSignal).
 abstract class IPushNotificationClient {
