@@ -175,19 +175,20 @@ class DataOperationRegistry {
         sort: s,
         pagination: p,
       ),
-      'interest': (c, uid, f, s, p) => c.read<DataRepository<Interest>>().readAll(
-        userId: uid,
-        filter: f,
-        sort: s,
-        pagination: p,
-      ),
+      'interest': (c, uid, f, s, p) =>
+          c.read<DataRepository<Interest>>().readAll(
+            userId: uid,
+            filter: f,
+            sort: s,
+            pagination: p,
+          ),
       'in_app_notification': (c, uid, f, s, p) =>
           c.read<DataRepository<InAppNotification>>().readAll(
-        userId: uid,
-        filter: f,
-        sort: s,
-        pagination: p,
-      ),
+            userId: uid,
+            filter: f,
+            sort: s,
+            pagination: p,
+          ),
     });
 
     // --- Register Item Creators ---
@@ -290,15 +291,15 @@ class DataOperationRegistry {
 
         // 2. Check limits before creating.
         await context.read<UserPreferenceLimitService>().checkInterestLimits(
-              authenticatedUser,
-              interestToCreate,
-              existingInterests: preferences.interests,
-            );
+          user: authenticatedUser,
+          interest: interestToCreate,
+          existingInterests: preferences.interests,
+        );
 
         // 3. Proceed with creation.
         return context.read<DataRepository<Interest>>().create(
-              item: interestToCreate,
-            );
+          item: interestToCreate,
+        );
       },
     });
 
@@ -413,9 +414,27 @@ class DataOperationRegistry {
       'user_app_settings': (c, id, item, uid) => c
           .read<DataRepository<UserAppSettings>>()
           .update(id: id, item: item as UserAppSettings, userId: uid),
-      'user_content_preferences': (c, id, item, uid) => c
-          .read<DataRepository<UserContentPreferences>>()
-          .update(id: id, item: item as UserContentPreferences, userId: uid),
+      'user_content_preferences': (context, id, item, uid) async {
+        _log.info(
+          'Executing custom updater for user_content_preferences ID: $id.',
+        );
+        final authenticatedUser = context.read<User>();
+        final preferencesToUpdate = item as UserContentPreferences;
+
+        // 1. Check limits before updating.
+        await context
+            .read<UserPreferenceLimitService>()
+            .checkUserContentPreferencesLimits(
+              user: authenticatedUser,
+              updatedPreferences: preferencesToUpdate,
+            );
+
+        // 2. Proceed with update.
+        return context.read<DataRepository<UserContentPreferences>>().update(
+          id: id,
+          item: preferencesToUpdate,
+        );
+      },
       'remote_config': (c, id, item, uid) => c
           .read<DataRepository<RemoteConfig>>()
           .update(id: id, item: item as RemoteConfig, userId: uid),
@@ -430,18 +449,22 @@ class DataOperationRegistry {
             .read(id: authenticatedUser.id);
 
         // Exclude the interest being updated from the list for limit checking.
-        final otherInterests =
-            preferences.interests.where((i) => i.id != id).toList();
+        final otherInterests = preferences.interests
+            .where((i) => i.id != id)
+            .toList();
 
         // 2. Check limits before updating.
         await context.read<UserPreferenceLimitService>().checkInterestLimits(
-              authenticatedUser,
-              interestToUpdate,
-              existingInterests: otherInterests,
-            );
+          user: authenticatedUser,
+          interest: interestToUpdate,
+          existingInterests: otherInterests,
+        );
 
         // 3. Proceed with update.
-        return context.read<DataRepository<Interest>>().update(id: id, item: interestToUpdate);
+        return context.read<DataRepository<Interest>>().update(
+          id: id,
+          item: interestToUpdate,
+        );
       },
     });
 
