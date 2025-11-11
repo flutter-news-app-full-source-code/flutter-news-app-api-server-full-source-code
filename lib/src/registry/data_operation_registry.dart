@@ -398,89 +398,17 @@ class DataOperationRegistry {
           id: id,
         );
 
-        // 2. Detect changes in the interests list.
-        final currentIds = currentPreferences.interests
-            .map((i) => i.id)
-            .toSet();
-        final updatedIds = preferencesToUpdate.interests
-            .map((i) => i.id)
-            .toSet();
-
-        final addedIds = updatedIds.difference(currentIds);
-        final removedIds = currentIds.difference(updatedIds);
-
-        // For simplicity and clear validation, enforce one change at a time.
-        if (addedIds.length + removedIds.length > 1) {
-          throw const BadRequestException(
-            'Only one interest can be added or removed per request.',
-          );
-        }
-
-        // 3. Perform permission and limit checks based on the detected action.
-        if (addedIds.isNotEmpty) {
-          // --- Interest Added ---
-          final addedInterestId = addedIds.first;
-          _log.info(
-            'Detected interest addition for user ${authenticatedUser.id}.',
-          );
-
-          final addedInterest = preferencesToUpdate.interests.firstWhere(
-            (i) => i.id == addedInterestId,
-          );
-
-          // Check business logic limits.
-          await userPreferenceLimitService.checkInterestLimits(
-            user: authenticatedUser,
-            interest: addedInterest,
-            existingInterests: currentPreferences.interests,
-          );
-        } else if (removedIds.isNotEmpty) {
-          // --- Interest Removed ---
-          _log.info(
-            'Detected interest removal for user ${authenticatedUser.id}.',
-          );
-        } else {
-          // --- Interest Potentially Updated ---
-          // Check if any existing interest was modified.
-          Interest? updatedInterest;
-          for (final newInterest in preferencesToUpdate.interests) {
-            // Find the corresponding interest in the old list.
-            final oldInterest = currentPreferences.interests.firstWhere(
-              (i) => i.id == newInterest.id,
-              // This should not be hit if add/remove is handled, but as a
-              // safeguard, we use the newInterest to avoid null issues.
-              orElse: () => newInterest,
-            );
-            if (newInterest != oldInterest) {
-              updatedInterest = newInterest;
-              break; // Found the updated one, no need to continue loop.
-            }
-          }
-
-          if (updatedInterest != null) {
-            _log.info(
-              'Detected interest update for user ${authenticatedUser.id}.',
-            );
-
-            // Check business logic limits.
-            final otherInterests = currentPreferences.interests
-                .where((i) => i.id != updatedInterest!.id)
-                .toList();
-            await userPreferenceLimitService.checkInterestLimits(
-              user: authenticatedUser,
-              interest: updatedInterest,
-              existingInterests: otherInterests,
-            );
-          }
-        }
-
-        // 4. Always validate general preference limits (followed items, etc.).
+        // 2. Validate all limits using the consolidated service method.
+        // The service now contains all logic to compare the updated and
+        // current preferences and check all relevant limits (interests,
+        // followed items, etc.) in one go.
         await userPreferenceLimitService.checkUserContentPreferencesLimits(
           user: authenticatedUser,
           updatedPreferences: preferencesToUpdate,
+          currentPreferences: currentPreferences,
         );
 
-        // 5. If all checks pass, proceed with the update.
+        // 3. If all checks pass, proceed with the update.
         _log.info(
           'All preference validations passed for user ${authenticatedUser.id}. '
           'Proceeding with update.',
