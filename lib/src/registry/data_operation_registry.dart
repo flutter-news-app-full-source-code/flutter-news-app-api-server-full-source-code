@@ -8,6 +8,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/user_preference_limit_service.dart';
 import 'package:logging/logging.dart';
 
 // --- Typedefs for Data Operations ---
@@ -120,6 +121,11 @@ class DataOperationRegistry {
           c.read<DataRepository<RemoteConfig>>().read(id: id, userId: null),
       'dashboard_summary': (c, id) =>
           c.read<DashboardSummaryService>().getSummary(),
+      'interest': (c, id) =>
+          c.read<DataRepository<Interest>>().read(id: id, userId: null),
+      'in_app_notification': (c, id) => c
+          .read<DataRepository<InAppNotification>>()
+          .read(id: id, userId: null),
     });
 
     // --- Register "Read All" Readers ---
@@ -164,6 +170,19 @@ class DataOperationRegistry {
           .read<DataRepository<Language>>()
           .readAll(userId: uid, filter: f, sort: s, pagination: p),
       'user': (c, uid, f, s, p) => c.read<DataRepository<User>>().readAll(
+        userId: uid,
+        filter: f,
+        sort: s,
+        pagination: p,
+      ),
+      'interest': (c, uid, f, s, p) => c.read<DataRepository<Interest>>().readAll(
+        userId: uid,
+        filter: f,
+        sort: s,
+        pagination: p,
+      ),
+      'in_app_notification': (c, uid, f, s, p) =>
+          c.read<DataRepository<InAppNotification>>().readAll(
         userId: uid,
         filter: f,
         sort: s,
@@ -256,6 +275,30 @@ class DataOperationRegistry {
           item: deviceToCreate,
           userId: null,
         );
+      },
+      'interest': (context, item, uid) async {
+        _log.info('Executing custom creator for interest.');
+        final authenticatedUser = context.read<User>();
+        final interestToCreate = (item as Interest).copyWith(
+          userId: authenticatedUser.id,
+        );
+
+        // 1. Fetch current user preferences to get existing interests.
+        final preferences = await context
+            .read<DataRepository<UserContentPreferences>>()
+            .read(id: authenticatedUser.id);
+
+        // 2. Check limits before creating.
+        await context.read<UserPreferenceLimitService>().checkInterestLimits(
+              authenticatedUser,
+              interestToCreate,
+              existingInterests: preferences.interests,
+            );
+
+        // 3. Proceed with creation.
+        return context.read<DataRepository<Interest>>().create(
+              item: interestToCreate,
+            );
       },
     });
 
@@ -376,6 +419,30 @@ class DataOperationRegistry {
       'remote_config': (c, id, item, uid) => c
           .read<DataRepository<RemoteConfig>>()
           .update(id: id, item: item as RemoteConfig, userId: uid),
+      'interest': (context, id, item, uid) async {
+        _log.info('Executing custom updater for interest ID: $id.');
+        final authenticatedUser = context.read<User>();
+        final interestToUpdate = item as Interest;
+
+        // 1. Fetch current user preferences to get existing interests.
+        final preferences = await context
+            .read<DataRepository<UserContentPreferences>>()
+            .read(id: authenticatedUser.id);
+
+        // Exclude the interest being updated from the list for limit checking.
+        final otherInterests =
+            preferences.interests.where((i) => i.id != id).toList();
+
+        // 2. Check limits before updating.
+        await context.read<UserPreferenceLimitService>().checkInterestLimits(
+              authenticatedUser,
+              interestToUpdate,
+              existingInterests: otherInterests,
+            );
+
+        // 3. Proceed with update.
+        return context.read<DataRepository<Interest>>().update(id: id, item: interestToUpdate);
+      },
     });
 
     // --- Register Item Deleters ---
@@ -399,6 +466,11 @@ class DataOperationRegistry {
           c.read<DataRepository<RemoteConfig>>().delete(id: id, userId: uid),
       'push_notification_device': (c, id, uid) => c
           .read<DataRepository<PushNotificationDevice>>()
+          .delete(id: id, userId: uid),
+      'interest': (c, id, uid) =>
+          c.read<DataRepository<Interest>>().delete(id: id, userId: uid),
+      'in_app_notification': (c, id, uid) => c
+          .read<DataRepository<InAppNotification>>()
           .delete(id: id, userId: uid),
     });
   }
