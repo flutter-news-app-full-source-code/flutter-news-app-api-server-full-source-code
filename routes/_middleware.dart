@@ -135,11 +135,6 @@ Handler middleware(Handler handler) {
                 ),
               )
               .use(
-                provider<DataRepository<Interest>>(
-                  (_) => deps.interestRepository,
-                ),
-              )
-              .use(
                 provider<DataRepository<InAppNotification>>(
                   (_) => deps.inAppNotificationRepository,
                 ),
