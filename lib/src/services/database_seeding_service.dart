@@ -252,19 +252,6 @@ class DatabaseSeedingService {
       });
       _log.info('Ensured indexes for "push_notification_devices".');
 
-      // Indexes for the interests collection
-      await _db.runCommand({
-        'createIndexes': 'interests',
-        'indexes': [
-          {
-            // Optimizes fetching interests for a specific user.
-            'key': {'userId': 1},
-            'name': 'userId_index',
-          },
-        ],
-      });
-      _log.info('Ensured indexes for "interests".');
-
       // Indexes for the in-app notifications collection
       await _db.runCommand({
         'createIndexes': 'in_app_notifications',
