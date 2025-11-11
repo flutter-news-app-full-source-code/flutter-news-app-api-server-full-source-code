@@ -6,6 +6,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/database/migrat
 import 'package:flutter_news_app_api_server_full_source_code/src/database/migrations/20251103073226_remove_local_ad_platform.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/database/migrations/20251107000000_add_is_breaking_to_headlines.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/database/migrations/20251108103300_add_push_notification_config_to_remote_config.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/database/migrations/20251111000000_unify_interests_and_remote_config.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/database_migration_service.dart'
     show DatabaseMigrationService;
 
@@ -22,4 +23,5 @@ final List<Migration> allMigrations = [
   RemoveLocalAdPlatform(),
   AddIsBreakingToHeadlines(),
   AddPushNotificationConfigToRemoteConfig(),
+  UnifyInterestsAndRemoteConfig(),
 ];
