@@ -96,19 +96,6 @@ abstract class Permissions {
   static const String pushNotificationDeviceDeleteOwned =
       'push_notification_device.delete_owned';
 
-  // Interest Permissions (User-owned)
-  /// Allows creating a new interest for the authenticated user.
-  static const String interestCreateOwned = 'interest.create_owned';
-
-  /// Allows reading the authenticated user's own interests.
-  static const String interestReadOwned = 'interest.read_owned';
-
-  /// Allows updating the authenticated user's own interests.
-  static const String interestUpdateOwned = 'interest.update_owned';
-
-  /// Allows deleting the authenticated user's own interests.
-  static const String interestDeleteOwned = 'interest.delete_owned';
-
   // In-App Notification Permissions (User-owned)
   /// Allows reading the user's own in-app notifications.
   static const String inAppNotificationReadOwned =
