@@ -66,7 +66,12 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
       );
 
       // Send each chunk as a separate batch request.
-      await _sendBatch(deviceTokens: batch, payload: payload);
+      await _sendBatch(
+        batchNumber: (i ~/ batchSize) + 1,
+        totalBatches: (deviceTokens.length / batchSize).ceil(),
+        deviceTokens: batch,
+        payload: payload,
+      );
     }
   }
 
