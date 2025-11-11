@@ -385,7 +385,6 @@ class AppDependencies {
       );
       userPreferenceLimitService = DefaultUserPreferenceLimitService(
         remoteConfigRepository: remoteConfigRepository,
-        permissionService: permissionService,
         log: Logger('DefaultUserPreferenceLimitService'),
       );
       rateLimitService = MongoDbRateLimitService(
