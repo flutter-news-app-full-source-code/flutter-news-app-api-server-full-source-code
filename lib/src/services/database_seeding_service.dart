@@ -252,20 +252,39 @@ class DatabaseSeedingService {
       });
       _log.info('Ensured indexes for "push_notification_devices".');
 
-      // Indexes for the push notification subscriptions collection
+      // Indexes for the interests collection
       await _db.runCommand({
-        'createIndexes': 'push_notification_subscriptions',
+        'createIndexes': 'interests',
         'indexes': [
           {
-            // This index optimizes queries that fetch subscriptions for a
-            // specific user, which is a common operation when sending
-            // notifications or managing user preferences.
+            // Optimizes fetching interests for a specific user.
             'key': {'userId': 1},
             'name': 'userId_index',
           },
         ],
       });
-      _log.info('Ensured indexes for "push_notification_subscriptions".');
+      _log.info('Ensured indexes for "interests".');
+
+      // Indexes for the in-app notifications collection
+      await _db.runCommand({
+        'createIndexes': 'in_app_notifications',
+        'indexes': [
+          {
+            // Optimizes fetching notifications for a specific user.
+            'key': {'userId': 1},
+            'name': 'userId_index',
+          },
+          {
+            // This is a TTL (Time-To-Live) index. MongoDB will automatically
+            // delete documents from this collection when the `createdAt`
+            // field's value is older than the specified number of seconds.
+            'key': {'createdAt': 1},
+            'name': 'createdAt_ttl_index',
+            'expireAfterSeconds': 7776000, // 90 days
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "in_app_notifications".');
 
       _log.info('Database indexes are set up correctly.');
     } on Exception catch (e, s) {
@@ -389,8 +408,7 @@ class DatabaseSeedingService {
       followedSources: const [],
       followedTopics: const [],
       savedHeadlines: const [],
-      savedFilters: const [],
-      notificationSubscriptions: const [],
+      interests: const [],
     );
     await _db.collection('user_content_preferences').insertOne({
       '_id': userId,
