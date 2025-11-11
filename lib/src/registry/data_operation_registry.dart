@@ -168,11 +168,11 @@ class DataOperationRegistry {
           .read<DataRepository<Language>>()
           .readAll(userId: uid, filter: f, sort: s, pagination: p),
       'user': (c, uid, f, s, p) => c.read<DataRepository<User>>().readAll(
-            userId: uid,
-            filter: f,
-            sort: s,
-            pagination: p,
-          ),
+        userId: uid,
+        filter: f,
+        sort: s,
+        pagination: p,
+      ),
       'in_app_notification': (c, uid, f, s, p) =>
           c.read<DataRepository<InAppNotification>>().readAll(
             userId: uid,
@@ -386,10 +386,10 @@ class DataOperationRegistry {
           'Executing custom updater for user_content_preferences ID: $id.',
         );
         final authenticatedUser = context.read<User>();
-        final userPreferenceLimitService =
-            context.read<UserPreferenceLimitService>();
-        final userContentPreferencesRepository =
-            context.read<DataRepository<UserContentPreferences>>();
+        final userPreferenceLimitService = context
+            .read<UserPreferenceLimitService>();
+        final userContentPreferencesRepository = context
+            .read<DataRepository<UserContentPreferences>>();
 
         final preferencesToUpdate = item as UserContentPreferences;
 
@@ -399,10 +399,12 @@ class DataOperationRegistry {
         );
 
         // 2. Detect changes in the interests list.
-        final currentIds =
-            currentPreferences.interests.map((i) => i.id).toSet();
-        final updatedIds =
-            preferencesToUpdate.interests.map((i) => i.id).toSet();
+        final currentIds = currentPreferences.interests
+            .map((i) => i.id)
+            .toSet();
+        final updatedIds = preferencesToUpdate.interests
+            .map((i) => i.id)
+            .toSet();
 
         final addedIds = updatedIds.difference(currentIds);
         final removedIds = currentIds.difference(updatedIds);
@@ -422,8 +424,9 @@ class DataOperationRegistry {
             'Detected interest addition for user ${authenticatedUser.id}.',
           );
 
-          final addedInterest = preferencesToUpdate.interests
-              .firstWhere((i) => i.id == addedInterestId);
+          final addedInterest = preferencesToUpdate.interests.firstWhere(
+            (i) => i.id == addedInterestId,
+          );
 
           // Check business logic limits.
           await userPreferenceLimitService.checkInterestLimits(
@@ -436,7 +439,6 @@ class DataOperationRegistry {
           _log.info(
             'Detected interest removal for user ${authenticatedUser.id}.',
           );
-
         } else {
           // --- Interest Potentially Updated ---
           // Check if any existing interest was modified.
