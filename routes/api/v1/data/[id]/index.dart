@@ -7,7 +7,6 @@ import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/own
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/registry/data_operation_registry.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_registry.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/user_preference_limit_service.dart';
 import 'package:logging/logging.dart';
 
 // Create a logger for this file.
@@ -57,7 +56,6 @@ Future<Response> _handlePut(RequestContext context, String id) async {
   final modelConfig = context.read<ModelConfig<dynamic>>();
   final authenticatedUser = context.read<User?>();
   final permissionService = context.read<PermissionService>();
-  final userPreferenceLimitService = context.read<UserPreferenceLimitService>();
 
   _logger.info('Handling PUT request for model "$modelName", id "$id".');
 
@@ -102,28 +100,6 @@ Future<Response> _handlePut(RequestContext context, String id) async {
       }
     } catch (e) {
       _logger.info('Could not get ID from PUT body: $e');
-    }
-  }
-
-  if (modelName == 'user_content_preferences') {
-    // User content preferences can only be updated by an authenticated user.
-    if (authenticatedUser == null) {
-      throw const UnauthorizedException(
-        'Authentication required to update user content preferences.',
-      );
-    }
-    if (itemToUpdate is UserContentPreferences) {
-      await userPreferenceLimitService.checkUpdatePreferences(
-        authenticatedUser,
-        itemToUpdate,
-      );
-    } else {
-      _logger.severe(
-        'Type Error: Expected UserContentPreferences for limit check, but got ${itemToUpdate.runtimeType}.',
-      );
-      throw const OperationFailedException(
-        'Internal Server Error: Model type mismatch for limit check.',
-      );
     }
   }
 
