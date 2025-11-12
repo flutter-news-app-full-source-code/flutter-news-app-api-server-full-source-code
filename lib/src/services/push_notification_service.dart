@@ -117,12 +117,12 @@ class DefaultPushNotificationService implements IPushNotificationService {
         return;
       }
 
-      // 2. Find all user preferences that contain an interest subscribed to
-      //    breaking news. This query targets the embedded 'interests' array.
+      // 2. Find all user preferences that contain a saved headline filter
+      //    subscribed to breaking news. This query targets the embedded 'savedHeadlineFilters' array.
       final subscribedUserPreferences = await _userContentPreferencesRepository
           .readAll(
             filter: {
-              'interests.deliveryTypes': {
+              'savedHeadlineFilters.deliveryTypes': {
                 r'$in': [
                   PushNotificationSubscriptionDeliveryType.breakingOnly.name,
                 ],

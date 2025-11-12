@@ -389,13 +389,15 @@ class DatabaseSeedingService {
       ...defaultAppSettings.toJson()..remove('id'),
     });
 
+    // Initialize with empty lists for all user-managed content.
     final defaultUserPreferences = UserContentPreferences(
       id: userId.oid,
       followedCountries: const [],
       followedSources: const [],
       followedTopics: const [],
       savedHeadlines: const [],
-      interests: const [],
+      savedHeadlineFilters: const [],
+      savedSourceFilters: const [],
     );
     await _db.collection('user_content_preferences').insertOne({
       '_id': userId,
