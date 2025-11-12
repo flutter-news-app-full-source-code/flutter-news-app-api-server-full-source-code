@@ -558,13 +558,15 @@ class AuthService {
       _log.info(
         'UserContentPreferences not found for user ${user.id}. Creating with defaults.',
       );
+      // Initialize with empty lists for all user-managed content.
       final defaultUserPreferences = UserContentPreferences(
         id: user.id,
         followedCountries: const [],
         followedSources: const [],
         followedTopics: const [],
         savedHeadlines: const [],
-        interests: const [],
+        savedHeadlineFilters: const [],
+        savedSourceFilters: const [],
       );
       await _userContentPreferencesRepository.create(
         item: defaultUserPreferences,
