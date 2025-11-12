@@ -95,7 +95,7 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
     // Validate the total number of saved headline filters.
     if (updatedPreferences.savedHeadlineFilters.length >
         savedHeadlineFiltersLimit.total) {
-      _log.severe(
+      _log.warning(
         'User ${user.id} exceeded total saved headline filter limit: '
         '${savedHeadlineFiltersLimit.total} (attempted '
         '${updatedPreferences.savedHeadlineFilters.length}).',
