@@ -35,7 +35,13 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
     );
     final limits = remoteConfig.userPreferenceConfig;
 
-    final (followedItemsLimit, savedHeadlinesLimit) = _getLimitsForRole(
+    // Retrieve all relevant limits for the user's role from the remote configuration.
+    final (
+      followedItemsLimit,
+      savedHeadlinesLimit,
+      savedHeadlineFiltersLimit,
+      savedSourceFiltersLimit,
+    ) = _getLimitsForRole(
       user.appRole,
       limits,
     );
@@ -85,73 +91,100 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
       );
     }
 
-    // --- 2. Check interest-specific limits ---
-    final interestLimits = remoteConfig.interestConfig.limits[user.appRole];
-    if (interestLimits == null) {
+    // --- 2. Check saved headline filter limits ---
+    // Validate the total number of saved headline filters.
+    if (updatedPreferences.savedHeadlineFilters.length >
+        savedHeadlineFiltersLimit.total) {
       _log.severe(
-        'Interest limits not found for role ${user.appRole}. '
-        'Denying request by default.',
-      );
-      throw const ForbiddenException('Interest limits are not configured.');
-    }
-
-    // Check total number of interests.
-    if (updatedPreferences.interests.length > interestLimits.total) {
-      _log.warning(
-        'User ${user.id} exceeded total interest limit: '
-        '${interestLimits.total} (attempted '
-        '${updatedPreferences.interests.length}).',
+        'User ${user.id} exceeded total saved headline filter limit: '
+        '${savedHeadlineFiltersLimit.total} (attempted '
+        '${updatedPreferences.savedHeadlineFilters.length}).',
       );
       throw ForbiddenException(
-        'You have reached your limit of ${interestLimits.total} saved interests.',
+        'You have reached your limit of ${savedHeadlineFiltersLimit.total} '
+        'saved headline filters.',
       );
     }
 
-    // Check total number of pinned feed filters.
-    final pinnedCount = updatedPreferences.interests
-        .where((i) => i.isPinnedFeedFilter)
+    // Validate the number of pinned saved headline filters.
+    final pinnedHeadlineFilterCount = updatedPreferences.savedHeadlineFilters
+        .where((f) => f.isPinned)
         .length;
-    if (pinnedCount > interestLimits.pinnedFeedFilters) {
+    if (pinnedHeadlineFilterCount > savedHeadlineFiltersLimit.pinned) {
       _log.warning(
-        'User ${user.id} exceeded pinned feed filter limit: '
-        '${interestLimits.pinnedFeedFilters} (attempted $pinnedCount).',
+        'User ${user.id} exceeded pinned saved headline filter limit: '
+        '${savedHeadlineFiltersLimit.pinned} (attempted $pinnedHeadlineFilterCount).',
       );
       throw ForbiddenException(
-        'You have reached your limit of ${interestLimits.pinnedFeedFilters} '
-        'pinned feed filters.',
+        'You have reached your limit of ${savedHeadlineFiltersLimit.pinned} '
+        'pinned saved headline filters.',
       );
     }
 
-    // Check notification subscription limits for each possible delivery type.
-    for (final deliveryType
-        in PushNotificationSubscriptionDeliveryType.values) {
-      final notificationLimit = interestLimits.notifications[deliveryType];
-      if (notificationLimit == null) {
-        _log.severe(
-          'Notification limit for type ${deliveryType.name} not found for '
-          'role ${user.appRole}. Denying request by default.',
-        );
-        throw ForbiddenException(
-          'Notification limits for ${deliveryType.name} are not configured.',
-        );
-      }
+    // Validate notification subscription limits for each delivery type for saved headline filters.
+    if (savedHeadlineFiltersLimit.notificationSubscriptions != null) {
+      for (final deliveryType
+          in PushNotificationSubscriptionDeliveryType.values) {
+        final notificationLimit =
+            savedHeadlineFiltersLimit.notificationSubscriptions![deliveryType];
+        if (notificationLimit == null) {
+          // This indicates a misconfiguration in RemoteConfig if a deliveryType is expected but not present.
+          _log.severe(
+            'Notification limit for type ${deliveryType.name} not configured for '
+            'role ${user.appRole} in savedHeadlineFiltersLimit. Denying request.',
+          );
+          throw ForbiddenException(
+            'Notification limits for ${deliveryType.name} are not configured '
+            'for saved headline filters.',
+          );
+        }
 
-      // Count how many of the user's proposed interests include this type.
-      final subscriptionCount = updatedPreferences.interests
-          .where((i) => i.deliveryTypes.contains(deliveryType))
-          .length;
+        final subscriptionCount = updatedPreferences.savedHeadlineFilters
+            .where((f) => f.deliveryTypes.contains(deliveryType))
+            .length;
 
-      if (subscriptionCount > notificationLimit) {
-        _log.warning(
-          'User ${user.id} exceeded notification limit for '
-          '${deliveryType.name}: $notificationLimit '
-          '(attempted $subscriptionCount).',
-        );
-        throw ForbiddenException(
-          'You have reached your limit of $notificationLimit '
-          '${deliveryType.name} notification subscriptions.',
-        );
+        if (subscriptionCount > notificationLimit) {
+          _log.warning(
+            'User ${user.id} exceeded notification limit for '
+            '${deliveryType.name} in saved headline filters: $notificationLimit '
+            '(attempted $subscriptionCount).',
+          );
+          throw ForbiddenException(
+            'You have reached your limit of $notificationLimit '
+            '${deliveryType.name} notification subscriptions for saved headline filters.',
+          );
+        }
       }
+    }
+
+    // --- 3. Check saved source filter limits ---
+    // Validate the total number of saved source filters.
+    if (updatedPreferences.savedSourceFilters.length >
+        savedSourceFiltersLimit.total) {
+      _log.warning(
+        'User ${user.id} exceeded total saved source filter limit: '
+        '${savedSourceFiltersLimit.total} (attempted '
+        '${updatedPreferences.savedSourceFilters.length}).',
+      );
+      throw ForbiddenException(
+        'You have reached your limit of ${savedSourceFiltersLimit.total} '
+        'saved source filters.',
+      );
+    }
+
+    // Validate the number of pinned saved source filters.
+    final pinnedSourceFilterCount = updatedPreferences.savedSourceFilters
+        .where((f) => f.isPinned)
+        .length;
+    if (pinnedSourceFilterCount > savedSourceFiltersLimit.pinned) {
+      _log.warning(
+        'User ${user.id} exceeded pinned saved source filter limit: '
+        '${savedSourceFiltersLimit.pinned} (attempted $pinnedSourceFilterCount).',
+      );
+      throw ForbiddenException(
+        'You have reached your limit of ${savedSourceFiltersLimit.pinned} '
+        'pinned saved source filters.',
+      );
     }
 
     _log.info(
@@ -159,24 +192,49 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
     );
   }
 
-  /// Helper to get the correct limits based on the user's role.
-  (int, int) _getLimitsForRole(
+  /// Helper to retrieve all relevant user preference limits based on the user's role.
+  ///
+  /// Throws [StateError] if a required limit is not configured for the given role,
+  /// indicating a misconfiguration in the remote config.
+  (
+    int followedItemsLimit,
+    int savedHeadlinesLimit,
+    SavedFilterLimits savedHeadlineFiltersLimit,
+    SavedFilterLimits savedSourceFiltersLimit,
+  )
+  _getLimitsForRole(
     AppUserRole role,
     UserPreferenceConfig limits,
   ) {
-    return switch (role) {
-      AppUserRole.guestUser => (
-        limits.guestFollowedItemsLimit,
-        limits.guestSavedHeadlinesLimit,
-      ),
-      AppUserRole.standardUser => (
-        limits.authenticatedFollowedItemsLimit,
-        limits.authenticatedSavedHeadlinesLimit,
-      ),
-      AppUserRole.premiumUser => (
-        limits.premiumFollowedItemsLimit,
-        limits.premiumSavedHeadlinesLimit,
-      ),
-    };
+    final followedItemsLimit = limits.followedItemsLimit[role];
+    if (followedItemsLimit == null) {
+      throw StateError('Followed items limit not configured for role: $role');
+    }
+
+    final savedHeadlinesLimit = limits.savedHeadlinesLimit[role];
+    if (savedHeadlinesLimit == null) {
+      throw StateError('Saved headlines limit not configured for role: $role');
+    }
+
+    final savedHeadlineFiltersLimit = limits.savedHeadlineFiltersLimit[role];
+    if (savedHeadlineFiltersLimit == null) {
+      throw StateError(
+        'Saved headline filters limit not configured for role: $role',
+      );
+    }
+
+    final savedSourceFiltersLimit = limits.savedSourceFiltersLimit[role];
+    if (savedSourceFiltersLimit == null) {
+      throw StateError(
+        'Saved source filters limit not configured for role: $role',
+      );
+    }
+
+    return (
+      followedItemsLimit,
+      savedHeadlinesLimit,
+      savedHeadlineFiltersLimit,
+      savedSourceFiltersLimit,
+    );
   }
 }
