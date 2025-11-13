@@ -59,6 +59,12 @@ Future<void> main(List<String> args) async {
     )
     ..addFlag('all', abbr: 'a', help: 'Seeds all available resources.')
     ..addFlag(
+      'clean',
+      abbr: 'c',
+      negatable: false,
+      help: 'Deletes all documents from the collection(s) before seeding.',
+    )
+    ..addFlag(
       'help',
       abbr: 'h',
       negatable: false,
