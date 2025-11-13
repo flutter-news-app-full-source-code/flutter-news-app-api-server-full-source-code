@@ -28,24 +28,77 @@ class DatabaseSeedingService {
     await _ensureIndexes();
     await _seedOverrideAdminUser();
     await _seedRemoteConfig();
-    await _seedCollection<Country>(
+    await seedCollection<Country>(
       collectionName: 'countries',
       fixtureData: countriesFixturesData,
       getId: (item) => item.id,
       toJson: (item) => item.toJson(),
     );
-    await _seedCollection<Language>(
+    await seedCollection<Language>(
       collectionName: 'languages',
       fixtureData: languagesFixturesData,
       getId: (item) => item.id,
       toJson: (item) => item.toJson(),
     );
-
     _log.info('Database seeding process completed.');
   }
 
+  /// Seeds a collection of topics from the predefined fixture data.
+  Future<void> seedTopics() async {
+    _log.info('Seeding topics from fixtures...');
+    await seedCollection<Topic>(
+      collectionName: 'topics',
+      fixtureData: topicsFixturesData,
+      getId: (item) => item.id,
+      toJson: (item) => item.toJson(),
+    );
+  }
+
+  /// Seeds a collection of sources from the predefined fixture data.
+  Future<void> seedSources() async {
+    _log.info('Seeding sources from fixtures...');
+    await seedCollection<Source>(
+      collectionName: 'sources',
+      fixtureData: sourcesFixturesData,
+      getId: (item) => item.id,
+      toJson: (item) => item.toJson(),
+    );
+  }
+
+  /// Seeds a collection of headlines from the predefined fixture data.
+  Future<void> seedHeadlines() async {
+    _log.info('Seeding headlines from fixtures...');
+    await seedCollection<Headline>(
+      collectionName: 'headlines',
+      fixtureData: headlinesFixturesData,
+      getId: (item) => item.id,
+      toJson: (item) => item.toJson(),
+    );
+  }
+
+  /// Seeds a collection of users from the predefined fixture data.
+  Future<void> seedUsers() async {
+    _log.info('Seeding users from fixtures...');
+    await seedCollection<User>(
+      collectionName: 'users',
+      fixtureData: usersFixturesData,
+      getId: (item) => item.id,
+      toJson: (item) => item.toJson(),
+    );
+  }
+
+  /// Seeds all fixture-based collections (topics, sources, headlines, users).
+  Future<void> seedAllFixtures() async {
+    _log.info('Starting to seed all fixture-based collections...');
+    await seedTopics();
+    await seedSources();
+    await seedHeadlines();
+    await seedUsers();
+    _log.info('Completed seeding all fixture-based collections.');
+  }
+
   /// Seeds a specific collection from a given list of fixture data.
-  Future<void> _seedCollection<T>({
+  Future<void> seedCollection<T>({
     required String collectionName,
     required List<T> fixtureData,
     required String Function(T) getId,
