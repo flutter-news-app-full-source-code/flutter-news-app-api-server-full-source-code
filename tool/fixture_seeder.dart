@@ -15,9 +15,9 @@ import 'package:logging/logging.dart';
 /// with the `--clean` flag.
 ///
 /// Usage:
-///   dart run tool/seed.dart --resource=topics
-///   dart run tool/seed.dart --all
-///   dart run tool/seed.dart --clean --all
+///   dart run tool/fixture_seeder.dart --resource=topics
+///   dart run tool/fixture_seeder.dart --all
+///   dart run tool/fixture_seeder.dart --clean --all
 ///
 /// Options:
 ///   --resource: Seeds a specific resource. Can be one of:
