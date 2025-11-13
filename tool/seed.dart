@@ -11,16 +11,21 @@ import 'package:logging/logging.dart';
 /// This tool provides a flexible way to populate the database with specific
 /// sets of data (e.g., topics, sources, headlines) or all fixtures at once,
 /// which is useful for development, testing, and staging environments.
+/// It is idempotent by default but can perform destructive cleaning operations
+/// with the `--clean` flag.
 ///
 /// Usage:
-///   dart run tool/seed.dart --resource=<resource_name>
+///   dart run tool/seed.dart --resource=topics
 ///   dart run tool/seed.dart --all
+///   dart run tool/seed.dart --clean --all
 ///
 /// Options:
 ///   --resource: Seeds a specific resource. Can be one of:
 ///               [topics, sources, headlines, users].
 ///               This option can be used multiple times.
 ///   --all:      Seeds all available fixture resources.
+///   --clean:    Deletes all existing documents in the specified collection(s)
+///               before seeding. Use with caution.
 ///   --help:     Shows this usage information.
 Future<void> main(List<String> args) async {
   // --- Logger Setup ---
@@ -68,6 +73,33 @@ Future<void> main(List<String> args) async {
     exit(0);
   }
 
+  // --- Confirmation Prompt for Destructive Operations ---
+  final resourcesToSeed = argResults['resource'] as List<String>;
+  final seedAll = argResults['all'] as bool;
+  final useClean = argResults['clean'] as bool;
+
+  if (useClean && (resourcesToSeed.isNotEmpty || seedAll)) {
+    final target = seedAll ? 'ALL' : resourcesToSeed.join(', ').toUpperCase();
+    log.warning('--- DESTRUCTIVE OPERATION WARNING ---');
+    log.warning(
+      'You are about to DELETE ALL documents from the following collections: $target.',
+    );
+    log.warning('This action cannot be undone.');
+    stdout.write('Are you sure you want to continue? (yes/no): ');
+
+    final confirmation = stdin.readLineSync();
+    if (confirmation?.toLowerCase() != 'yes') {
+      log.info('Operation cancelled by user.');
+      exit(0);
+    }
+    log.info('Confirmation received. Proceeding with destructive operation...');
+  } else if (resourcesToSeed.isEmpty && !seedAll) {
+    // No valid arguments provided.
+    log.warning('No resources specified. Use --all or --resource.');
+    log.info('Usage:\n${parser.usage}');
+    exit(1);
+  }
+
   // --- Dependency Initialization and Seeding Logic ---
   MongoDbConnectionManager? mongoDbConnectionManager;
   try {
@@ -84,12 +116,12 @@ Future<void> main(List<String> args) async {
     );
 
     // 3. Execute Seeding Based on Arguments
-    final resourcesToSeed = argResults['resource'] as List<String>;
-    final seedAll = argResults['all'] as bool;
-
     if (seedAll) {
       // --all flag takes precedence.
-      log.info('Seeding all resources as requested by --all flag...');
+      if (useClean) {
+        await seedingService.cleanAllFixtures();
+      }
+      log.info('Seeding all fixture resources...');
       await seedingService.seedAllFixtures();
     } else if (resourcesToSeed.isNotEmpty) {
       // Seed specific resources.
@@ -97,20 +129,19 @@ Future<void> main(List<String> args) async {
       for (final resource in resourcesToSeed) {
         switch (resource) {
           case 'topics':
+            if (useClean) await seedingService.cleanTopics();
             await seedingService.seedTopics();
           case 'sources':
+            if (useClean) await seedingService.cleanSources();
             await seedingService.seedSources();
           case 'headlines':
+            if (useClean) await seedingService.cleanHeadlines();
             await seedingService.seedHeadlines();
           case 'users':
+            if (useClean) await seedingService.cleanUsers();
             await seedingService.seedUsers();
         }
       }
-    } else {
-      // No valid arguments provided.
-      log.warning('No resources specified. Use --all or --resource.');
-      log.info('Usage:\n${parser.usage}');
-      exit(1);
     }
 
     log.info('On-demand seeding process completed successfully.');
