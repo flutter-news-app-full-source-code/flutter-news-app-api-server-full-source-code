@@ -97,6 +97,45 @@ class DatabaseSeedingService {
     _log.info('Completed seeding all fixture-based collections.');
   }
 
+  /// Removes all documents from the 'topics' collection.
+  Future<void> cleanTopics() => cleanCollection('topics');
+
+  /// Removes all documents from the 'sources' collection.
+  Future<void> cleanSources() => cleanCollection('sources');
+
+  /// Removes all documents from the 'headlines' collection.
+  Future<void> cleanHeadlines() => cleanCollection('headlines');
+
+  /// Removes all documents from the 'users' collection.
+  Future<void> cleanUsers() => cleanCollection('users');
+
+  /// Removes all documents from all fixture-based collections.
+  Future<void> cleanAllFixtures() async {
+    _log.info('Starting to clean all fixture-based collections...');
+    await cleanTopics();
+    await cleanSources();
+    await cleanHeadlines();
+    await cleanUsers();
+    _log.info('Completed cleaning all fixture-based collections.');
+  }
+
+  /// Removes all documents from a specified collection.
+  ///
+  /// This is a destructive operation and should be used with caution.
+  Future<void> cleanCollection(String collectionName) async {
+    _log.warning('Cleaning all documents from collection: "$collectionName"');
+    try {
+      final collection = _db.collection(collectionName);
+      final result = await collection.deleteMany(<String, dynamic>{});
+      _log.info(
+        'Cleaned "$collectionName": ${result.nRemoved} documents removed.',
+      );
+    } on Exception catch (e, s) {
+      _log.severe('Failed to clean collection "$collectionName".', e, s);
+      rethrow;
+    }
+  }
+
   /// Seeds a specific collection from a given list of fixture data.
   Future<void> seedCollection<T>({
     required String collectionName,
