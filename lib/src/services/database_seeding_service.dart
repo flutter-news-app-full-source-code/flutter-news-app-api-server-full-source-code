@@ -45,7 +45,7 @@ class DatabaseSeedingService {
 
   /// Seeds a collection of topics from the predefined fixture data.
   Future<void> seedTopics() async {
-    _log.info('Seeding topics from fixtures...');
+    _log.info('Seeding ${topicsFixturesData.length}  topics from fixtures...');
     await seedCollection<Topic>(
       collectionName: 'topics',
       fixtureData: topicsFixturesData,
@@ -56,7 +56,8 @@ class DatabaseSeedingService {
 
   /// Seeds a collection of sources from the predefined fixture data.
   Future<void> seedSources() async {
-    _log.info('Seeding sources from fixtures...');
+    _log.info('Seeding ${sourcesFixturesData.length} sources from fixtures...');
+
     await seedCollection<Source>(
       collectionName: 'sources',
       fixtureData: sourcesFixturesData,
@@ -67,7 +68,9 @@ class DatabaseSeedingService {
 
   /// Seeds a collection of headlines from the predefined fixture data.
   Future<void> seedHeadlines() async {
-    _log.info('Seeding headlines from fixtures...');
+    _log.info(
+      'Seeding ${headlinesFixturesData.length} headlines from fixtures...',
+    );
     await seedCollection<Headline>(
       collectionName: 'headlines',
       fixtureData: headlinesFixturesData,
@@ -78,7 +81,7 @@ class DatabaseSeedingService {
 
   /// Seeds a collection of users from the predefined fixture data.
   Future<void> seedUsers() async {
-    _log.info('Seeding users from fixtures...');
+    _log.info('Seeding ${usersFixturesData.length} users from fixtures...');
     await seedCollection<User>(
       collectionName: 'users',
       fixtureData: usersFixturesData,
@@ -90,8 +93,8 @@ class DatabaseSeedingService {
   /// Seeds all fixture-based collections (topics, sources, headlines, users).
   Future<void> seedAllFixtures() async {
     _log.info('Starting to seed all fixture-based collections...');
-    await seedTopics();
     await seedSources();
+    await seedTopics();
     await seedHeadlines();
     await seedUsers();
     _log.info('Completed seeding all fixture-based collections.');
