@@ -429,10 +429,9 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     fromJson: PushNotificationDevice.fromJson,
     getId: (d) => d.id,
     getOwnerId: (dynamic item) => (item as PushNotificationDevice).userId,
-    // Collection GET is not supported for this model as there is no use case
-    // for a client to list all device registrations.
+    // Required by the ownership check middelware used by the deletePermission.
     getCollectionPermission: const ModelActionPermission(
-      type: RequiredPermissionType.unsupported,
+      type: RequiredPermissionType.adminOnly,
     ),
     // Item GET is not supported for this model. A client registers a device
     // and then forgets about it until it needs to be deleted.
