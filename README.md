@@ -74,8 +74,8 @@ The API automatically validates the structure of all incoming data, ensuring tha
 ---
 
 ### 📲 Dynamic & Personalized Notifications
-A complete, multi-provider notification engine that empowers you to engage users with timely, relevant, and personalized alerts.
-- **Editorial-Driven Alerts:** Any piece of content can be designated as "breaking news" from the content dashboard, triggering immediate, high-priority alerts to subscribed users.
+A complete, multi-provider notification engine that empowers you to engage users with timely and relevant alerts, seamlessly integrated into their app experience.
+- **Editorial-Driven Alerts:** Any piece of content can be designated as "breaking news" from the content dashboard, triggering immediate, high-priority push notifications that are also captured in each user's in-app notification center.
 - **User-Crafted Notification Streams:** Users can create and save persistent **Saved Headline Filters** based on any combination of content filters (such as topics, sources, or regions). They can then subscribe to notifications for that filter, receiving alerts only for the news they care about.
 - **Flexible Delivery Mechanisms:** The system is architected to support multiple notification types for each subscription, from immediate alerts to scheduled daily or weekly digests.
 - **Provider Agnostic:** The engine is built to be provider-agnostic, with out-of-the-box support for Firebase (FCM) and OneSignal. The active provider can be switched remotely without any code changes.

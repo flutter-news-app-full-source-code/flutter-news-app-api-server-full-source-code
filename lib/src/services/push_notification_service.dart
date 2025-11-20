@@ -4,6 +4,7 @@ import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_client.dart';
 import 'package:logging/logging.dart';
+import 'package:mongo_dart/mongo_dart.dart';
 
 /// An abstract interface for the push notification service.
 ///
@@ -35,12 +36,14 @@ class DefaultPushNotificationService implements IPushNotificationService {
     required DataRepository<UserContentPreferences>
     userContentPreferencesRepository,
     required DataRepository<RemoteConfig> remoteConfigRepository,
+    required DataRepository<InAppNotification> inAppNotificationRepository,
     required IPushNotificationClient? firebaseClient,
     required IPushNotificationClient? oneSignalClient,
     required Logger log,
   }) : _pushNotificationDeviceRepository = pushNotificationDeviceRepository,
        _userContentPreferencesRepository = userContentPreferencesRepository,
        _remoteConfigRepository = remoteConfigRepository,
+       _inAppNotificationRepository = inAppNotificationRepository,
        _firebaseClient = firebaseClient,
        _oneSignalClient = oneSignalClient,
        _log = log;
@@ -50,6 +53,7 @@ class DefaultPushNotificationService implements IPushNotificationService {
   final DataRepository<UserContentPreferences>
   _userContentPreferencesRepository;
   final DataRepository<RemoteConfig> _remoteConfigRepository;
+  final DataRepository<InAppNotification> _inAppNotificationRepository;
   final IPushNotificationClient? _firebaseClient;
   final IPushNotificationClient? _oneSignalClient;
   final Logger _log;
@@ -187,6 +191,35 @@ class DefaultPushNotificationService implements IPushNotificationService {
       _log.info(
         'Found ${tokens.length} devices to target via $primaryProvider.',
       );
+
+      // Before sending the push, persist the InAppNotification record for
+      // each targeted user. This ensures the notification is available in
+      // their inbox immediately.
+      try {
+        final notificationCreationFutures = userIds.map((userId) {
+          final notification = InAppNotification(
+            id: ObjectId().oid,
+            userId: userId,
+            payload: PushNotificationPayload(
+              title: headline.title,
+              body: headline.excerpt,
+              imageUrl: headline.imageUrl,
+              data: {
+                'headlineId': headline.id,
+                'contentType': 'headline',
+                'notificationType':
+                    PushNotificationSubscriptionDeliveryType.breakingOnly.name,
+              },
+            ),
+            createdAt: DateTime.now(),
+          );
+          return _inAppNotificationRepository.create(item: notification);
+        });
+        await Future.wait(notificationCreationFutures);
+        _log.info('Persisted ${userIds.length} in-app notifications.');
+      } catch (e, s) {
+        _log.severe('Failed to persist in-app notifications.', e, s);
+      }
 
       // 7. Construct the notification payload.
       final payload = PushNotificationPayload(

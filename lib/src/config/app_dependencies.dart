@@ -385,6 +385,7 @@ class AppDependencies {
         pushNotificationDeviceRepository: pushNotificationDeviceRepository,
         userContentPreferencesRepository: userContentPreferencesRepository,
         remoteConfigRepository: remoteConfigRepository,
+        inAppNotificationRepository: inAppNotificationRepository,
         firebaseClient: firebasePushNotificationClient,
         oneSignalClient: oneSignalPushNotificationClient,
         log: Logger('DefaultPushNotificationService'),
