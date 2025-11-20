@@ -32,26 +32,26 @@ class DefaultPushNotificationService implements IPushNotificationService {
   /// {@macro default_push_notification_service}
   DefaultPushNotificationService({
     required DataRepository<PushNotificationDevice>
-    pushNotificationDeviceRepository,
+        pushNotificationDeviceRepository,
     required DataRepository<UserContentPreferences>
-    userContentPreferencesRepository,
+        userContentPreferencesRepository,
     required DataRepository<RemoteConfig> remoteConfigRepository,
     required DataRepository<InAppNotification> inAppNotificationRepository,
     required IPushNotificationClient? firebaseClient,
     required IPushNotificationClient? oneSignalClient,
     required Logger log,
-  }) : _pushNotificationDeviceRepository = pushNotificationDeviceRepository,
-       _userContentPreferencesRepository = userContentPreferencesRepository,
-       _remoteConfigRepository = remoteConfigRepository,
-       _inAppNotificationRepository = inAppNotificationRepository,
-       _firebaseClient = firebaseClient,
-       _oneSignalClient = oneSignalClient,
-       _log = log;
+  })  : _pushNotificationDeviceRepository = pushNotificationDeviceRepository,
+        _userContentPreferencesRepository = userContentPreferencesRepository,
+        _remoteConfigRepository = remoteConfigRepository,
+        _inAppNotificationRepository = inAppNotificationRepository,
+        _firebaseClient = firebaseClient,
+        _oneSignalClient = oneSignalClient,
+        _log = log;
 
   final DataRepository<PushNotificationDevice>
-  _pushNotificationDeviceRepository;
+      _pushNotificationDeviceRepository;
   final DataRepository<UserContentPreferences>
-  _userContentPreferencesRepository;
+      _userContentPreferencesRepository;
   final DataRepository<RemoteConfig> _remoteConfigRepository;
   final DataRepository<InAppNotification> _inAppNotificationRepository;
   final IPushNotificationClient? _firebaseClient;
@@ -113,8 +113,8 @@ class DefaultPushNotificationService implements IPushNotificationService {
       // Check if breaking news notifications are enabled.
       final isBreakingNewsEnabled =
           pushConfig.deliveryConfigs[PushNotificationSubscriptionDeliveryType
-              .breakingOnly] ??
-          false;
+                  .breakingOnly] ??
+              false;
 
       if (!isBreakingNewsEnabled) {
         _log.info('Breaking news notifications are disabled. Aborting.');
@@ -123,16 +123,16 @@ class DefaultPushNotificationService implements IPushNotificationService {
 
       // 2. Find all user preferences that contain a saved headline filter
       //    subscribed to breaking news. This query targets the embedded 'savedHeadlineFilters' array.
-      final subscribedUserPreferences = await _userContentPreferencesRepository
-          .readAll(
-            filter: {
-              'savedHeadlineFilters.deliveryTypes': {
-                r'$in': [
-                  PushNotificationSubscriptionDeliveryType.breakingOnly.name,
-                ],
-              },
-            },
-          );
+      final subscribedUserPreferences =
+          await _userContentPreferencesRepository.readAll(
+        filter: {
+          'savedHeadlineFilters.deliveryTypes': {
+            r'$in': [
+              PushNotificationSubscriptionDeliveryType.breakingOnly.name,
+            ],
+          },
+        },
+      );
 
       if (subscribedUserPreferences.items.isEmpty) {
         _log.info('No users subscribed to breaking news. Aborting.');
@@ -142,9 +142,8 @@ class DefaultPushNotificationService implements IPushNotificationService {
       // 3. Collect all unique user IDs from the preference documents.
       // Using a Set automatically handles deduplication.
       // The ID of the UserContentPreferences document is the user's ID.
-      final userIds = subscribedUserPreferences.items
-          .map((preference) => preference.id)
-          .toSet();
+      final userIds =
+          subscribedUserPreferences.items.map((preference) => preference.id).toSet();
 
       _log.info(
         'Found ${subscribedUserPreferences.items.length} users with '
@@ -152,12 +151,12 @@ class DefaultPushNotificationService implements IPushNotificationService {
       );
 
       // 4. Fetch all devices for all subscribed users in a single bulk query.
-      final allDevicesResponse = await _pushNotificationDeviceRepository
-          .readAll(
-            filter: {
-              'userId': {r'$in': userIds.toList()},
-            },
-          );
+      final allDevicesResponse =
+          await _pushNotificationDeviceRepository.readAll(
+        filter: {
+          'userId': {r'$in': userIds.toList()},
+        },
+      );
 
       final allDevices = allDevicesResponse.items;
       if (allDevices.isEmpty) {
@@ -183,61 +182,59 @@ class DefaultPushNotificationService implements IPushNotificationService {
         return;
       }
 
-      // 6. Extract the specific tokens for the primary provider.
-      final tokens = targetedDevices
-          .map((d) => d.providerTokens[primaryProvider]!)
-          .toList();
-
       _log.info(
-        'Found ${tokens.length} devices to target via $primaryProvider.',
+        'Found ${targetedDevices.length} devices to target via $primaryProvider.',
       );
 
-      // Before sending the push, persist the InAppNotification record for
-      // each targeted user. This ensures the notification is available in
-      // their inbox immediately.
-      try {
-        final notificationCreationFutures = userIds.map((userId) {
-          final notification = InAppNotification(
-            id: ObjectId().oid,
-            userId: userId,
-            payload: PushNotificationPayload(
-              title: headline.title,
-              body: headline.excerpt,
-              imageUrl: headline.imageUrl,
-              data: {
-                'headlineId': headline.id,
-                'contentType': 'headline',
-                'notificationType':
-                    PushNotificationSubscriptionDeliveryType.breakingOnly.name,
-              },
-            ),
-            createdAt: DateTime.now(),
-          );
-          return _inAppNotificationRepository.create(item: notification);
-        });
-        await Future.wait(notificationCreationFutures);
-        _log.info('Persisted ${userIds.length} in-app notifications.');
-      } catch (e, s) {
-        _log.severe('Failed to persist in-app notifications.', e, s);
+      // 7. Iterate through each subscribed user to create and send a
+      // personalized notification.
+      final sendFutures = <Future<void>>[];
+      for (final userId in userIds) {
+        // Create the InAppNotification record first to get its unique ID.
+        final notificationId = ObjectId();
+        final notification = InAppNotification(
+          id: notificationId.oid,
+          userId: userId,
+          payload: PushNotificationPayload(
+            title: headline.title,
+            body: headline.excerpt,
+            imageUrl: headline.imageUrl,
+            data: {
+              'notificationType':
+                  PushNotificationSubscriptionDeliveryType.breakingOnly.name,
+              'contentType': 'headline',
+              'headlineId': headline.id,
+              'notificationId': notificationId.oid,
+            },
+          ),
+          createdAt: DateTime.now(),
+        );
+
+        try {
+          await _inAppNotificationRepository.create(item: notification);
+
+          // Find all device tokens for the current user.
+          final userDeviceTokens = targetedDevices
+              .where((d) => d.userId == userId)
+              .map((d) => d.providerTokens[primaryProvider]!)
+              .toList();
+
+          if (userDeviceTokens.isNotEmpty) {
+            // Add the send operation to the list of futures.
+            sendFutures.add(
+              client.sendBulkNotifications(
+                deviceTokens: userDeviceTokens,
+                payload: notification.payload,
+              ),
+            );
+          }
+        } catch (e, s) {
+          _log.severe('Failed to process notification for user $userId.', e, s);
+        }
       }
 
-      // 7. Construct the notification payload.
-      final payload = PushNotificationPayload(
-        title: headline.title,
-        body: headline.excerpt,
-        imageUrl: headline.imageUrl,
-        data: {
-          'headlineId': headline.id,
-          'contentType': 'headline',
-          'notificationType':
-              PushNotificationSubscriptionDeliveryType.breakingOnly.name,
-        },
-      );
-
-      await client.sendBulkNotifications(
-        deviceTokens: tokens,
-        payload: payload,
-      );
+      // Await all the send operations to complete in parallel.
+      await Future.wait(sendFutures);
 
       _log.info(
         'Successfully dispatched breaking news notification for headline: '
