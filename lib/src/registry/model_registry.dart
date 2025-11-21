@@ -429,14 +429,12 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     fromJson: PushNotificationDevice.fromJson,
     getId: (d) => d.id,
     getOwnerId: (dynamic item) => (item as PushNotificationDevice).userId,
-    // Required by the ownership check middelware used by the deletePermission.
     getCollectionPermission: const ModelActionPermission(
-      type: RequiredPermissionType.adminOnly,
-    ),
-    // Item GET is not supported for this model. A client registers a device
-    // and then forgets about it until it needs to be deleted.
-    getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported,
+    ),
+    // Required by the ownership check middelware
+    getItemPermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
     ),
     // POST is allowed for any authenticated user to register their own device.
     // A custom check within the DataOperationRegistry's creator function will

@@ -125,6 +125,9 @@ class DataOperationRegistry {
       'in_app_notification': (c, id) => c
           .read<DataRepository<InAppNotification>>()
           .read(id: id, userId: null),
+      'push_notification_device': (c, id) => c
+          .read<DataRepository<PushNotificationDevice>>()
+          .read(id: id, userId: null),
     });
 
     // --- Register "Read All" Readers ---
