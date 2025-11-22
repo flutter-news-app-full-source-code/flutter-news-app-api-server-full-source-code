@@ -244,7 +244,7 @@ class DefaultPushNotificationService implements IPushNotificationService {
       final sendFutures = notificationsToCreate.map((notification) {
         final userDeviceTokens =
             userDeviceTokensMapForSending[notification.userId] ?? [];
-        return client
+        return client!
             .sendBulkNotifications(
               deviceTokens: userDeviceTokens,
               payload: notification.payload,
