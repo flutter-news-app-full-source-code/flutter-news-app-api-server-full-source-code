@@ -184,6 +184,13 @@ class DataOperationRegistry {
             sort: s,
             pagination: p,
           ),
+      'push_notification_device': (c, uid, f, s, p) =>
+          c.read<DataRepository<PushNotificationDevice>>().readAll(
+                userId: uid,
+                filter: f,
+                sort: s,
+                pagination: p,
+              ),
     });
 
     // --- Register Item Creators ---
