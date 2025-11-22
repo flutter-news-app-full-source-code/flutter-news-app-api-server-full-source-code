@@ -18,8 +18,8 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
     required this.projectId,
     required HttpClient httpClient,
     required Logger log,
-  }) : _httpClient = httpClient,
-       _log = log;
+  })  : _httpClient = httpClient,
+        _log = log;
 
   /// The Firebase Project ID for push notifications.
   final String projectId;
@@ -27,28 +27,30 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
   final Logger _log;
 
   @override
-  Future<void> sendNotification({
+  Future<PushNotificationResult> sendNotification({
     required String deviceToken,
     required PushNotificationPayload payload,
-  }) async {
+  }) {
     // For consistency, the single send method now delegates to the bulk
     // method with a list containing just one token.
-    await sendBulkNotifications(
+    return sendBulkNotifications(
       deviceTokens: [deviceToken],
       payload: payload,
     );
   }
 
   @override
-  Future<void> sendBulkNotifications({
+  Future<PushNotificationResult> sendBulkNotifications({
     required List<String> deviceTokens,
     required PushNotificationPayload payload,
   }) async {
     if (deviceTokens.isEmpty) {
       _log.info('No device tokens provided for Firebase bulk send. Aborting.');
-      return;
+      return const PushNotificationResult(
+        sentTokens: [],
+        failedTokens: [],
+      );
     }
-
     _log.info(
       'Sending Firebase bulk notification to ${deviceTokens.length} devices '
       'for project "$projectId".',
@@ -57,6 +59,9 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
     // The FCM v1 batch API has a limit of 500 messages per request.
     // We must chunk the tokens into batches of this size.
     const batchSize = 500;
+    final allSentTokens = <String>[];
+    final allFailedTokens = <String>[];
+
     for (var i = 0; i < deviceTokens.length; i += batchSize) {
       final batch = deviceTokens.sublist(
         i,
@@ -66,22 +71,29 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
       );
 
       // Send each chunk as a separate batch request.
-      await _sendBatch(
+      final batchResult = await _sendBatch(
         batchNumber: (i ~/ batchSize) + 1,
         totalBatches: (deviceTokens.length / batchSize).ceil(),
         deviceTokens: batch,
         payload: payload,
       );
+
+      allSentTokens.addAll(batchResult.sentTokens);
+      allFailedTokens.addAll(batchResult.failedTokens);
     }
+
+    return PushNotificationResult(
+      sentTokens: allSentTokens,
+      failedTokens: allFailedTokens,
+    );
   }
 
   /// Sends a batch of notifications by dispatching individual requests in
   /// parallel.
   ///
-  /// This approach is simpler and more robust than using the `batch` endpoint,
-  /// as it avoids the complexity of constructing a multipart request body and
-  /// provides clearer error handling for individual message failures.
-  Future<void> _sendBatch({
+  /// This method processes the results to distinguish between successful and
+  /// failed sends, returning a [PushNotificationResult].
+  Future<PushNotificationResult> _sendBatch({
     required int batchNumber,
     required int totalBatches,
     required List<String> deviceTokens,
@@ -114,63 +126,52 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
       return _httpClient.post<void>(url, data: requestBody);
     }).toList();
 
-    try {
-      // `eagerError: false` ensures that all futures complete, even if some
-      // fail. The results list will contain Exception objects for failures.
-      final results = await Future.wait<dynamic>(
-        sendFutures,
-        eagerError: false,
-      );
+    // `eagerError: false` ensures that all futures complete, even if some
+    // fail. The results list will contain Exception objects for failures.
+    final results = await Future.wait<dynamic>(
+      sendFutures,
+      eagerError: false,
+    );
 
-      final failedResults = results.whereType<Exception>().toList();
+    final sentTokens = <String>[];
+    final failedTokens = <String>[];
 
-      if (failedResults.isEmpty) {
-        _log.info(
-          'Successfully sent Firebase batch of ${deviceTokens.length} '
-          'notifications for project "$projectId".',
-        );
-      } else {
-        _log.warning(
-          'Batch $batchNumber/$totalBatches: '
-          '${failedResults.length} of ${deviceTokens.length} Firebase '
-          'notifications failed to send for project "$projectId".',
-        );
-        for (final error in failedResults) {
-          if (error is HttpException) {
-            // Downgrade log level for invalid tokens (NotFoundException), which
-            // is an expected occurrence. Other HTTP errors are still severe.
-            if (error is NotFoundException) {
-              _log.info(
-                'Batch $batchNumber/$totalBatches: Failed to send to an '
-                'invalid/unregistered token: ${error.message}',
-              );
-            } else {
-              _log.severe(
-                'Batch $batchNumber/$totalBatches: HTTP error sending '
-                'Firebase notification: ${error.message}',
-                error,
-              );
-            }
-          } else {
-            _log.severe(
-              'Unexpected error sending Firebase notification.',
-              error,
-            );
-          }
+    for (var i = 0; i < results.length; i++) {
+      final result = results[i];
+      final token = deviceTokens[i];
+
+      if (result is Exception) {
+        failedTokens.add(token);
+        if (result is NotFoundException) {
+          // This is an expected failure when a token is unregistered (e.g.,
+          // app uninstalled). Log it as info for cleanup purposes.
+          _log.info(
+            'Batch $batchNumber/$totalBatches: Failed to send to an '
+            'invalid/unregistered token: ${result.message}',
+          );
+        } else if (result is HttpException) {
+          _log.severe(
+            'Batch $batchNumber/$totalBatches: HTTP error sending '
+            'Firebase notification to token "$token": ${result.message}',
+            result,
+          );
+        } else {
+          _log.severe(
+            'Unexpected error sending Firebase notification to token "$token".',
+            result,
+          );
         }
-        // Throw an exception to indicate that the batch send was not fully successful.
-        throw OperationFailedException(
-          'Failed to send ${failedResults.length} Firebase notifications.',
-        );
+      } else {
+        // If there's no exception, the send was successful.
+        sentTokens.add(token);
       }
-    } catch (e, s) {
-      _log.severe(
-        'Unexpected error processing Firebase batch $batchNumber/$totalBatches '
-        'results.',
-        e,
-        s,
-      );
-      throw OperationFailedException('Failed to process Firebase batch: $e');
     }
+    _log.info(
+      'Firebase batch $batchNumber/$totalBatches complete. Success: ${sentTokens.length}, Failed: ${failedTokens.length}.',
+    );
+    return PushNotificationResult(
+      sentTokens: sentTokens,
+      failedTokens: failedTokens,
+    );
   }
 }
