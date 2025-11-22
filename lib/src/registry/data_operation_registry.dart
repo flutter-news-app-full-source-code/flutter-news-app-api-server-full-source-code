@@ -428,6 +428,11 @@ class DataOperationRegistry {
       'remote_config': (c, id, item, uid) => c
           .read<DataRepository<RemoteConfig>>()
           .update(id: id, item: item as RemoteConfig, userId: uid),
+      'in_app_notification': (c, id, item, uid) =>
+          c.read<DataRepository<InAppNotification>>().update(
+                id: id,
+                item: item as InAppNotification,
+              ),
     });
 
     // --- Register Item Deleters ---
