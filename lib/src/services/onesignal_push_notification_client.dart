@@ -27,25 +27,25 @@ class OneSignalPushNotificationClient implements IPushNotificationClient {
   final Logger _log;
 
   @override
-  Future<void> sendNotification({
+  Future<PushNotificationResult> sendNotification({
     required String deviceToken,
     required PushNotificationPayload payload,
-  }) async {
+  }) {
     // For consistency, delegate to the bulk sending method with a single token.
-    await sendBulkNotifications(
+    return sendBulkNotifications(
       deviceTokens: [deviceToken],
       payload: payload,
     );
   }
 
   @override
-  Future<void> sendBulkNotifications({
+  Future<PushNotificationResult> sendBulkNotifications({
     required List<String> deviceTokens,
     required PushNotificationPayload payload,
   }) async {
     if (deviceTokens.isEmpty) {
       _log.info('No device tokens provided for OneSignal bulk send. Aborting.');
-      return;
+      return const PushNotificationResult();
     }
 
     _log.info(
@@ -55,6 +55,9 @@ class OneSignalPushNotificationClient implements IPushNotificationClient {
 
     // OneSignal has a limit of 2000 player_ids per API request.
     const batchSize = 2000;
+    final allSentTokens = <String>[];
+    final allFailedTokens = <String>[];
+
     for (var i = 0; i < deviceTokens.length; i += batchSize) {
       final batch = deviceTokens.sublist(
         i,
@@ -63,15 +66,26 @@ class OneSignalPushNotificationClient implements IPushNotificationClient {
             : i + batchSize,
       );
 
-      await _sendBatch(
+      final batchResult = await _sendBatch(
         deviceTokens: batch,
         payload: payload,
       );
+
+      allSentTokens.addAll(batchResult.sentTokens);
+      allFailedTokens.addAll(batchResult.failedTokens);
     }
+
+    return PushNotificationResult(
+      sentTokens: allSentTokens,
+      failedTokens: allFailedTokens,
+    );
   }
 
   /// Sends a single batch of notifications to the OneSignal API.
-  Future<void> _sendBatch({
+  ///
+  /// This method processes the API response to distinguish between successful
+  /// and failed sends, returning a [PushNotificationResult].
+  Future<PushNotificationResult> _sendBatch({
     required List<String> deviceTokens,
     required PushNotificationPayload payload,
   }) async {
@@ -95,17 +109,49 @@ class OneSignalPushNotificationClient implements IPushNotificationClient {
     );
 
     try {
-      await _httpClient.post<void>(url, data: requestBody);
+      // The OneSignal API returns a JSON object with details about the send,
+      // including errors for invalid player IDs.
+      final response = await _httpClient.post<Map<String, dynamic>>(
+        url,
+        data: requestBody,
+      );
+
+      final sentTokens = <String>{...deviceTokens};
+      final failedTokens = <String>{};
+
+      // Check for errors in the response body.
+      if (response.containsKey('errors') && response['errors'] != null) {
+        final errors = response['errors'];
+        if (errors is Map && errors.containsKey('invalid_player_ids')) {
+          final invalidIds = List<String>.from(
+            errors['invalid_player_ids'] as List,
+          );
+          if (invalidIds.isNotEmpty) {
+            _log.info(
+              'OneSignal reported ${invalidIds.length} invalid player IDs. '
+              'These will be marked as failed.',
+            );
+            failedTokens.addAll(invalidIds);
+            sentTokens.removeAll(invalidIds);
+          }
+        }
+      }
+
       _log.info(
-        'Successfully sent OneSignal batch of ${deviceTokens.length} '
-        'notifications for app ID "$appId".',
+        'OneSignal batch complete. Success: ${sentTokens.length}, '
+        'Failed: ${failedTokens.length}.',
+      );
+      return PushNotificationResult(
+        sentTokens: sentTokens.toList(),
+        failedTokens: failedTokens.toList(),
       );
     } on HttpException catch (e) {
       _log.severe(
         'HTTP error sending OneSignal batch notification: ${e.message}',
         e,
       );
-      rethrow;
+      // If the entire request fails, all tokens in this batch are considered failed.
+      return PushNotificationResult(failedTokens: deviceTokens);
     } catch (e, s) {
       _log.severe(
         'Unexpected error sending OneSignal batch notification.',
