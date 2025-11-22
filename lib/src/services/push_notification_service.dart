@@ -201,62 +201,61 @@ class DefaultPushNotificationService implements IPushNotificationService {
 
       // 7. Iterate through each subscribed user to create and send a
       // personalized notification.
-      final sendFutures = <Future<void>>[];
+      final notificationsToCreate = <InAppNotification>[];
+
       for (final userId in userIds) {
-        // Create the InAppNotification record first to get its unique ID.
-        final notificationId = ObjectId();
-        final notification = InAppNotification(
-          id: notificationId.oid,
-          userId: userId,
-          payload: PushNotificationPayload(
-            title: headline.title,
-            body: headline.excerpt,
-            imageUrl: headline.imageUrl,
-            data: {
-              'notificationType':
-                  PushNotificationSubscriptionDeliveryType.breakingOnly.name,
-              'contentType': 'headline',
-              'headlineId': headline.id,
-              'notificationId': notificationId.oid,
-            },
-          ),
-          createdAt: DateTime.now(),
-        );
-
-        try {
-          await _inAppNotificationRepository.create(item: notification);
-
-          // Efficiently retrieve the tokens for the current user from the map.
-          final userDeviceTokens = userDeviceTokensMap[userId] ?? [];
-
-          if (userDeviceTokens.isNotEmpty) {
-            // Add the send operation to the list of futures.
-            // The result of this future will contain information about which
-            // tokens succeeded and which failed.
-            sendFutures.add(
-              client
-                  .sendBulkNotifications(
-                    deviceTokens: userDeviceTokens,
-                    payload: notification.payload,
-                  )
-                  .then((result) {
-                    // After the send completes, trigger the cleanup process for
-                    // any failed tokens. This is a fire-and-forget operation.
-                    unawaited(
-                      _cleanupInvalidDevices(
-                        result.failedTokens,
-                        primaryProvider,
-                      ),
-                    );
-                  }),
-            );
-          }
-        } catch (e, s) {
-          _log.severe('Failed to process notification for user $userId.', e, s);
+        final userDeviceTokens = userDeviceTokensMap[userId];
+        if (userDeviceTokens != null && userDeviceTokens.isNotEmpty) {
+          final notificationId = ObjectId();
+          final notification = InAppNotification(
+            id: notificationId.oid,
+            userId: userId,
+            payload: PushNotificationPayload(
+              title: headline.title,
+              body: headline.excerpt,
+              imageUrl: headline.imageUrl,
+              data: {
+                'notificationType':
+                    PushNotificationSubscriptionDeliveryType.breakingOnly.name,
+                'contentType': 'headline',
+                'headlineId': headline.id,
+                'notificationId': notificationId.oid,
+              },
+            ),
+            createdAt: DateTime.now(),
+          );
+          notificationsToCreate.add(notification);
         }
       }
 
-      // Await all the send operations to complete in parallel.
+      // 8. Create all InAppNotification documents in parallel.
+      final createFutures = notificationsToCreate.map(
+        (notification) =>
+            _inAppNotificationRepository.create(item: notification),
+      );
+      await Future.wait(createFutures);
+      _log.info(
+        'Successfully created ${notificationsToCreate.length} in-app notifications.',
+      );
+
+      // 9. Dispatch all push notifications in parallel.
+      final sendFutures = notificationsToCreate.map((notification) {
+        final userDeviceTokens = userDeviceTokensMap[notification.userId] ?? [];
+        return client!
+            .sendBulkNotifications(
+              deviceTokens: userDeviceTokens,
+              payload: notification.payload,
+            )
+            .then((result) {
+              // After the send completes, trigger the cleanup process for
+              // any failed tokens. This is a fire-and-forget operation.
+              unawaited(
+                _cleanupInvalidDevices(result.failedTokens, primaryProvider),
+              );
+            });
+      });
+
+      // Await all the send operations to complete.
       await Future.wait(sendFutures);
 
       _log.info(
