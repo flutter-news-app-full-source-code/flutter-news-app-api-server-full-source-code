@@ -193,12 +193,9 @@ class DefaultPushNotificationService implements IPushNotificationService {
       for (final device in targetedDevices) {
         final token = device.providerTokens[primaryProvider];
         if (token != null) {
-          // If the user's list doesn't exist, create it.
-          if (!userDeviceTokensMap.containsKey(device.userId)) {
-            userDeviceTokensMap[device.userId] = [];
-          }
-          // Add the token to the user's list.
-          userDeviceTokensMap[device.userId]!.add(token);
+          // The `putIfAbsent` method provides a concise way to ensure the list
+          // exists before adding the token to it.
+          userDeviceTokensMap.putIfAbsent(device.userId, () => []).add(token);
         }
       }
 
@@ -310,14 +307,11 @@ class DefaultPushNotificationService implements IPushNotificationService {
     );
 
     try {
-      // Delete the devices one by one.
-      // While this is less efficient than a bulk delete, it is necessary
-      // as `DataRepository` does not have a `deleteAll` method.
-      await Future.forEach<PushNotificationDevice>(devicesToDelete.items, (
-        device,
-      ) async {
-        await _pushNotificationDeviceRepository.delete(id: device.id);
-      });
+      // Delete the devices in parallel for better performance.
+      final deleteFutures = devicesToDelete.items.map(
+        (device) => _pushNotificationDeviceRepository.delete(id: device.id),
+      );
+      await Future.wait(deleteFutures);
 
       _log.info('Successfully cleaned up invalid device tokens.');
     } catch (e, s) {
