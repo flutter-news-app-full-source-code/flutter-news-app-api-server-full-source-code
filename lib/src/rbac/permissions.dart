@@ -89,7 +89,6 @@ abstract class Permissions {
       'push_notification_device.create_owned';
   static const String pushNotificationDeviceDeleteOwned =
       'push_notification_device.delete_owned';
-  // Allows reading the user's own push notification devices.
   static const String pushNotificationDeviceReadOwned =
       'push_notification_device.read_owned';
 
