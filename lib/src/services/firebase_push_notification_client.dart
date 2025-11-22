@@ -137,11 +137,20 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
         );
         for (final error in failedResults) {
           if (error is HttpException) {
-            _log.severe(
-              'Batch $batchNumber/$totalBatches: '
-              'HTTP error sending Firebase notification: ${error.message}',
-              error,
-            );
+            // Downgrade log level for invalid tokens (NotFoundException), which
+            // is an expected occurrence. Other HTTP errors are still severe.
+            if (error is NotFoundException) {
+              _log.info(
+                'Batch $batchNumber/$totalBatches: Failed to send to an '
+                'invalid/unregistered token: ${error.message}',
+              );
+            } else {
+              _log.severe(
+                'Batch $batchNumber/$totalBatches: HTTP error sending '
+                'Firebase notification: ${error.message}',
+                error,
+              );
+            }
           } else {
             _log.severe(
               'Unexpected error sending Firebase notification.',
