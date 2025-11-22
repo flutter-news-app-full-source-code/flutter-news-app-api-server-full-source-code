@@ -187,6 +187,21 @@ class DefaultPushNotificationService implements IPushNotificationService {
         'Found ${targetedDevices.length} devices to target via $primaryProvider.',
       );
 
+      // 6. Group device tokens by user ID for efficient lookup.
+      // This avoids iterating through all devices for each user.
+      final userDeviceTokensMap = <String, List<String>>{};
+      for (final device in targetedDevices) {
+        final token = device.providerTokens[primaryProvider];
+        if (token != null) {
+          // If the user's list doesn't exist, create it.
+          if (!userDeviceTokensMap.containsKey(device.userId)) {
+            userDeviceTokensMap[device.userId] = [];
+          }
+          // Add the token to the user's list.
+          userDeviceTokensMap[device.userId]!.add(token);
+        }
+      }
+
       // 7. Iterate through each subscribed user to create and send a
       // personalized notification.
       final sendFutures = <Future<void>>[];
@@ -214,11 +229,8 @@ class DefaultPushNotificationService implements IPushNotificationService {
         try {
           await _inAppNotificationRepository.create(item: notification);
 
-          // Find all device tokens for the current user.
-          final userDeviceTokens = targetedDevices
-              .where((d) => d.userId == userId)
-              .map((d) => d.providerTokens[primaryProvider]!)
-              .toList();
+          // Efficiently retrieve the tokens for the current user from the map.
+          final userDeviceTokens = userDeviceTokensMap[userId] ?? [];
 
           if (userDeviceTokens.isNotEmpty) {
             // Add the send operation to the list of futures.
