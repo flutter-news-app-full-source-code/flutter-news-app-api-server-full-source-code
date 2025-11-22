@@ -202,7 +202,6 @@ class DefaultPushNotificationService implements IPushNotificationService {
       // 7. Iterate through each subscribed user to create and send a
       // personalized notification.
       final notificationsToCreate = <InAppNotification>[];
-      final userDeviceTokensMapForSending = <String, List<String>>{};
 
       for (final userId in userIds) {
         final userDeviceTokens = userDeviceTokensMap[userId];
@@ -226,7 +225,6 @@ class DefaultPushNotificationService implements IPushNotificationService {
             createdAt: DateTime.now(),
           );
           notificationsToCreate.add(notification);
-          userDeviceTokensMapForSending[userId] = userDeviceTokens;
         }
       }
 
@@ -242,8 +240,7 @@ class DefaultPushNotificationService implements IPushNotificationService {
 
       // 9. Dispatch all push notifications in parallel.
       final sendFutures = notificationsToCreate.map((notification) {
-        final userDeviceTokens =
-            userDeviceTokensMapForSending[notification.userId] ?? [];
+        final userDeviceTokens = userDeviceTokensMap[notification.userId] ?? [];
         return client!
             .sendBulkNotifications(
               deviceTokens: userDeviceTokens,
