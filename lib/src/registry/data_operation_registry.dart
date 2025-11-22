@@ -184,6 +184,13 @@ class DataOperationRegistry {
             sort: s,
             pagination: p,
           ),
+      'push_notification_device': (c, uid, f, s, p) =>
+          c.read<DataRepository<PushNotificationDevice>>().readAll(
+            userId: uid,
+            filter: f,
+            sort: s,
+            pagination: p,
+          ),
     });
 
     // --- Register Item Creators ---
@@ -430,9 +437,9 @@ class DataOperationRegistry {
           .update(id: id, item: item as RemoteConfig, userId: uid),
       'in_app_notification': (c, id, item, uid) =>
           c.read<DataRepository<InAppNotification>>().update(
-                id: id,
-                item: item as InAppNotification,
-              ),
+            id: id,
+            item: item as InAppNotification,
+          ),
     });
 
     // --- Register Item Deleters ---

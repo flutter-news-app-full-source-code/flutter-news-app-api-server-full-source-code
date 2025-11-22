@@ -429,12 +429,19 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     fromJson: PushNotificationDevice.fromJson,
     getId: (d) => d.id,
     getOwnerId: (dynamic item) => (item as PushNotificationDevice).userId,
+    // Collection GET is allowed for a user to fetch their own notification devices.
+    // The generic route handler will automatically scope the query to the
+    // authenticated user's ID because `getOwnerId` is defined.
     getCollectionPermission: const ModelActionPermission(
-      type: RequiredPermissionType.unsupported,
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.pushNotificationDeviceReadOwned,
     ),
-    // Required by the ownership check middelware
+    // Item GET is allowed for a user to fetch a single one of their devices.
+    // The ownership check middleware will verify they own this specific item.
     getItemPermission: const ModelActionPermission(
-      type: RequiredPermissionType.adminOnly,
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.pushNotificationDeviceReadOwned,
+      requiresOwnershipCheck: true,
     ),
     // POST is allowed for any authenticated user to register their own device.
     // A custom check within the DataOperationRegistry's creator function will

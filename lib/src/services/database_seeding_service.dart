@@ -248,6 +248,12 @@ class DatabaseSeedingService {
             'unique': true,
             'sparse': true,
           },
+          {
+            // Optimizes fetching all devices for a specific user, which is
+            // needed for the device cleanup flow on the client.
+            'key': {'userId': 1},
+            'name': 'userId_index',
+          },
         ],
       });
       _log.info('Ensured indexes for "push_notification_devices".');
