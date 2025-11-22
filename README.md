@@ -79,6 +79,7 @@ A complete, multi-provider notification engine that empowers you to engage users
 - **User-Crafted Notification Streams:** Users can create and save persistent **Saved Headline Filters** based on any combination of content filters (such as topics, sources, or regions). They can then subscribe to notifications for that filter, receiving alerts only for the news they care about.
 - **Flexible Delivery Mechanisms:** The system is architected to support multiple notification types for each subscription, from immediate alerts to scheduled daily or weekly digests.
 - **Provider Agnostic:** The engine is built to be provider-agnostic, with out-of-the-box support for Firebase (FCM) and OneSignal. The active provider can be switched remotely without any code changes.
+- **Intelligent, Self-Healing Delivery:** The notification engine is designed for long-term reliability. It automatically detects and prunes invalid device tokens—for example, when a user uninstalls the app—ensuring the system remains efficient and notifications are only sent to active devices.
 > **Your Advantage:** You get a complete, secure, and scalable notification system that enhances user engagement and can be managed entirely from the web dashboard.
 
 </details>

@@ -187,6 +187,18 @@ class DefaultPushNotificationService implements IPushNotificationService {
         'Found ${targetedDevices.length} devices to target via $primaryProvider.',
       );
 
+      // 6. Group device tokens by user ID for efficient lookup.
+      // This avoids iterating through all devices for each user.
+      final userDeviceTokensMap = <String, List<String>>{};
+      for (final device in targetedDevices) {
+        final token = device.providerTokens[primaryProvider];
+        if (token != null) {
+          // The `putIfAbsent` method provides a concise way to ensure the list
+          // exists before adding the token to it.
+          userDeviceTokensMap.putIfAbsent(device.userId, () => []).add(token);
+        }
+      }
+
       // 7. Iterate through each subscribed user to create and send a
       // personalized notification.
       final sendFutures = <Future<void>>[];
@@ -214,19 +226,29 @@ class DefaultPushNotificationService implements IPushNotificationService {
         try {
           await _inAppNotificationRepository.create(item: notification);
 
-          // Find all device tokens for the current user.
-          final userDeviceTokens = targetedDevices
-              .where((d) => d.userId == userId)
-              .map((d) => d.providerTokens[primaryProvider]!)
-              .toList();
+          // Efficiently retrieve the tokens for the current user from the map.
+          final userDeviceTokens = userDeviceTokensMap[userId] ?? [];
 
           if (userDeviceTokens.isNotEmpty) {
             // Add the send operation to the list of futures.
+            // The result of this future will contain information about which
+            // tokens succeeded and which failed.
             sendFutures.add(
-              client.sendBulkNotifications(
-                deviceTokens: userDeviceTokens,
-                payload: notification.payload,
-              ),
+              client
+                  .sendBulkNotifications(
+                    deviceTokens: userDeviceTokens,
+                    payload: notification.payload,
+                  )
+                  .then((result) {
+                    // After the send completes, trigger the cleanup process for
+                    // any failed tokens. This is a fire-and-forget operation.
+                    unawaited(
+                      _cleanupInvalidDevices(
+                        result.failedTokens,
+                        primaryProvider,
+                      ),
+                    );
+                  }),
             );
           }
         } catch (e, s) {
@@ -253,6 +275,49 @@ class DefaultPushNotificationService implements IPushNotificationService {
       throw const OperationFailedException(
         'An internal error occurred while sending breaking news notification.',
       );
+    }
+  }
+
+  /// Deletes device registrations associated with a list of invalid tokens.
+  ///
+  /// This method is called after a push notification send operation to prune
+  /// the database of tokens that the provider has identified as unregistered
+  /// or invalid (e.g., because the app was uninstalled).
+  ///
+  /// - [invalidTokens]: A list of device tokens that failed to be delivered.
+  /// - [provider]: The push notification provider that reported the tokens as
+  ///   invalid.
+  Future<void> _cleanupInvalidDevices(
+    List<String> invalidTokens,
+    PushNotificationProvider provider,
+  ) async {
+    if (invalidTokens.isEmpty) {
+      return; // Nothing to clean up.
+    }
+
+    _log.info(
+      'Cleaning up ${invalidTokens.length} invalid device tokens for provider "$provider".',
+    );
+
+    // Retrieve the list of devices that match the filter criteria.
+    final devicesToDelete = await _pushNotificationDeviceRepository.readAll(
+      filter: {
+        'providerTokens.${provider.name}': {r'$in': invalidTokens},
+      },
+    );
+
+    try {
+      // Delete the devices in parallel for better performance.
+      final deleteFutures = devicesToDelete.items.map(
+        (device) => _pushNotificationDeviceRepository.delete(id: device.id),
+      );
+      await Future.wait(deleteFutures);
+
+      _log.info('Successfully cleaned up invalid device tokens.');
+    } catch (e, s) {
+      _log.severe('Failed to clean up invalid device tokens.', e, s);
+      // We log the error but do not rethrow, as this is a background
+      // cleanup task and should not crash the main application flow.
     }
   }
 }
