@@ -18,8 +18,8 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
     required this.projectId,
     required HttpClient httpClient,
     required Logger log,
-  })  : _httpClient = httpClient,
-        _log = log;
+  }) : _httpClient = httpClient,
+       _log = log;
 
   /// The Firebase Project ID for push notifications.
   final String projectId;
@@ -141,21 +141,24 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
       final token = deviceTokens[i];
 
       if (result is Exception) {
-        failedTokens.add(token);
         if (result is NotFoundException) {
-          // This is an expected failure when a token is unregistered (e.g.,
-          // app uninstalled). Log it as info for cleanup purposes.
+          // This is the only case where we treat the token as permanently
+          // invalid and mark it for cleanup.
+          failedTokens.add(token);
           _log.info(
             'Batch $batchNumber/$totalBatches: Failed to send to an '
             'invalid/unregistered token: ${result.message}',
           );
         } else if (result is HttpException) {
+          // For other HTTP errors (e.g., 500), we log it as severe but do
+          // not mark the token for deletion as the error may be transient.
           _log.severe(
             'Batch $batchNumber/$totalBatches: HTTP error sending '
             'Firebase notification to token "$token": ${result.message}',
             result,
           );
         } else {
+          // For any other unexpected exception.
           _log.severe(
             'Unexpected error sending Firebase notification to token "$token".',
             result,
