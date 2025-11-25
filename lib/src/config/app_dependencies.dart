@@ -65,11 +65,11 @@ class AppDependencies {
   late final DataRepository<Country> countryRepository;
   late final DataRepository<Language> languageRepository;
   late final DataRepository<User> userRepository;
-  late final DataRepository<UserAppSettings> userAppSettingsRepository;
+  late final DataRepository<AppSettings> userAppSettingsRepository;
   late final DataRepository<UserContentPreferences>
-  userContentPreferencesRepository;
+      userContentPreferencesRepository;
   late final DataRepository<PushNotificationDevice>
-  pushNotificationDeviceRepository;
+      pushNotificationDeviceRepository;
   late final DataRepository<RemoteConfig> remoteConfigRepository;
   late final DataRepository<InAppNotification> inAppNotificationRepository;
 
@@ -190,12 +190,12 @@ class AppDependencies {
         toJson: (item) => item.toJson(),
         logger: Logger('DataMongodb<User>'),
       );
-      final userAppSettingsClient = DataMongodb<UserAppSettings>(
+      final userAppSettingsClient = DataMongodb<AppSettings>(
         connectionManager: _mongoDbConnectionManager,
         modelName: 'user_app_settings',
-        fromJson: UserAppSettings.fromJson,
+        fromJson: AppSettings.fromJson,
         toJson: (item) => item.toJson(),
-        logger: Logger('DataMongodb<UserAppSettings>'),
+        logger: Logger('DataMongodb<AppSettings>'),
       );
       final userContentPreferencesClient = DataMongodb<UserContentPreferences>(
         connectionManager: _mongoDbConnectionManager,
