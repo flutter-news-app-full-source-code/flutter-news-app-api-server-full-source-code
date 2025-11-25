@@ -24,8 +24,7 @@ class AuthService {
   const AuthService({
     required DataRepository<User> userRepository,
     required AuthTokenService authTokenService,
-    required VerificationCodeStorageService
-    verificationCodeStorageService,
+    required VerificationCodeStorageService verificationCodeStorageService,
     required EmailRepository emailRepository,
     required DataRepository<AppSettings> appSettingsRepository,
     required DataRepository<UserContentPreferences>
