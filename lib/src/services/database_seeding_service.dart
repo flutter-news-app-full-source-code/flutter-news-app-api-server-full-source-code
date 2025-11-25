@@ -122,14 +122,16 @@ class DatabaseSeedingService {
 
         // Ensure primaryAdPlatform is not 'demo' for initial setup
         // since its not intended for any use outside the mobile client.
-        final productionReadyAdConfig = initialConfig.adConfig.copyWith(
+        final productionReadyAdConfig = initialConfig.features.ads.copyWith(
           primaryAdPlatform: AdPlatformType.admob,
         );
 
         final productionReadyConfig = initialConfig.copyWith(
-          adConfig: productionReadyAdConfig,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          features: initialConfig.features.copyWith(
+            ads: productionReadyAdConfig,
+          ),
         );
 
         await remoteConfigCollection.insertOne({
@@ -357,9 +359,7 @@ class DatabaseSeedingService {
   /// Deletes a user and their associated sub-documents.
   Future<void> _deleteUserAndData(ObjectId userId) async {
     await _db.collection('users').deleteOne(where.eq('_id', userId));
-    await _db
-        .collection('app_settings')
-        .deleteOne(where.eq('_id', userId));
+    await _db.collection('app_settings').deleteOne(where.eq('_id', userId));
     await _db
         .collection('user_content_preferences')
         .deleteOne(where.eq('_id', userId));
@@ -368,7 +368,7 @@ class DatabaseSeedingService {
 
   /// Creates the default sub-documents (settings, preferences) for a new user.
   Future<void> _createUserSubDocuments(ObjectId userId) async {
-    final defaultAppSettings = UserAppSettings(
+    final defaultAppSettings = AppSettings(
       id: userId.oid,
       displaySettings: const DisplaySettings(
         baseTheme: AppBaseTheme.system,
@@ -383,11 +383,10 @@ class DatabaseSeedingService {
           'Default language "en" not found in language fixtures.',
         ),
       ),
-      feedPreferences: const FeedDisplayPreferences(
-        headlineDensity: HeadlineDensity.standard,
-        headlineImageStyle: HeadlineImageStyle.smallThumbnail,
-        showSourceInHeadlineFeed: true,
-        showPublishDateInHeadlineFeed: true,
+      feedSettings: const FeedSettings(
+        feedItemDensity: FeedItemDensity.standard,
+        feedItemImageStyle: FeedItemImageStyle.smallThumbnail,
+        feedItemClickBehavior: FeedItemClickBehavior.internalNavigation,
       ),
     );
     await _db.collection('app_settings').insertOne({
