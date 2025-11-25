@@ -1,3 +1,4 @@
+import 'package:core/core.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
@@ -35,8 +36,8 @@ class OneSignalRequestBody extends Equatable {
   /// The notification's content.
   final Map<String, String> contents;
 
-  /// The custom data payload.
-  final Map<String, dynamic> data;
+  /// The custom data payload
+  final PushNotificationPayload data;
 
   /// The URL of a large image to display in the notification.
   final String? bigPicture;
