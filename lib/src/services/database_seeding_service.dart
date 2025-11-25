@@ -358,7 +358,7 @@ class DatabaseSeedingService {
   Future<void> _deleteUserAndData(ObjectId userId) async {
     await _db.collection('users').deleteOne(where.eq('_id', userId));
     await _db
-        .collection('user_app_settings')
+        .collection('app_settings')
         .deleteOne(where.eq('_id', userId));
     await _db
         .collection('user_content_preferences')
@@ -390,7 +390,7 @@ class DatabaseSeedingService {
         showPublishDateInHeadlineFeed: true,
       ),
     );
-    await _db.collection('user_app_settings').insertOne({
+    await _db.collection('app_settings').insertOne({
       '_id': userId,
       ...defaultAppSettings.toJson()..remove('id'),
     });

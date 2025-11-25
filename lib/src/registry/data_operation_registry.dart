@@ -113,7 +113,7 @@ class DataOperationRegistry {
           c.read<DataRepository<Language>>().read(id: id, userId: null),
       'user': (c, id) =>
           c.read<DataRepository<User>>().read(id: id, userId: null),
-      'user_app_settings': (c, id) =>
+      'app_settings': (c, id) =>
           c.read<DataRepository<AppSettings>>().read(id: id, userId: null),
       'user_content_preferences': (c, id) => c
           .read<DataRepository<UserContentPreferences>>()
@@ -389,7 +389,7 @@ class DataOperationRegistry {
           userId: uid,
         );
       },
-      'user_app_settings': (c, id, item, uid) => c
+      'app_settings': (c, id, item, uid) => c
           .read<DataRepository<AppSettings>>()
           .update(id: id, item: item as AppSettings, userId: uid),
       'user_content_preferences': (context, id, item, uid) async {
@@ -454,7 +454,7 @@ class DataOperationRegistry {
           c.read<DataRepository<Country>>().delete(id: id, userId: uid),
       'language': (c, id, uid) =>
           c.read<DataRepository<Language>>().delete(id: id, userId: uid),
-      'user_app_settings': (c, id, uid) =>
+      'app_settings': (c, id, uid) =>
           c.read<DataRepository<AppSettings>>().delete(id: id, userId: uid),
       'user_content_preferences': (c, id, uid) => c
           .read<DataRepository<UserContentPreferences>>()

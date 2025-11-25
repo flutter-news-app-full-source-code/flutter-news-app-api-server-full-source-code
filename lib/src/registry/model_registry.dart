@@ -305,7 +305,7 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       type: RequiredPermissionType.unsupported,
     ),
   ),
-  'user_app_settings': ModelConfig<AppSettings>(
+  'app_settings': ModelConfig<AppSettings>(
     fromJson: AppSettings.fromJson,
     getId: (s) => s.id,
     getOwnerId: (dynamic item) => (item as AppSettings).id,
