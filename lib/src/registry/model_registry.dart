@@ -305,11 +305,10 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       type: RequiredPermissionType.unsupported,
     ),
   ),
-  'user_app_settings': ModelConfig<UserAppSettings>(
-    fromJson: UserAppSettings.fromJson,
+  'user_app_settings': ModelConfig<AppSettings>(
+    fromJson: AppSettings.fromJson,
     getId: (s) => s.id,
-    getOwnerId: (dynamic item) =>
-        (item as UserAppSettings).id as String?, // User ID is the owner ID
+    getOwnerId: (dynamic item) => (item as AppSettings).id,
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported, // Not accessible via collection
       requiresAuthentication: true,
