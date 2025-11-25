@@ -114,7 +114,7 @@ class DataOperationRegistry {
       'user': (c, id) =>
           c.read<DataRepository<User>>().read(id: id, userId: null),
       'user_app_settings': (c, id) =>
-          c.read<DataRepository<UserAppSettings>>().read(id: id, userId: null),
+          c.read<DataRepository<AppSettings>>().read(id: id, userId: null),
       'user_content_preferences': (c, id) => c
           .read<DataRepository<UserContentPreferences>>()
           .read(id: id, userId: null),
@@ -390,8 +390,8 @@ class DataOperationRegistry {
         );
       },
       'user_app_settings': (c, id, item, uid) => c
-          .read<DataRepository<UserAppSettings>>()
-          .update(id: id, item: item as UserAppSettings, userId: uid),
+          .read<DataRepository<AppSettings>>()
+          .update(id: id, item: item as AppSettings, userId: uid),
       'user_content_preferences': (context, id, item, uid) async {
         _log.info(
           'Executing custom updater for user_content_preferences ID: $id.',
@@ -455,7 +455,7 @@ class DataOperationRegistry {
       'language': (c, id, uid) =>
           c.read<DataRepository<Language>>().delete(id: id, userId: uid),
       'user_app_settings': (c, id, uid) =>
-          c.read<DataRepository<UserAppSettings>>().delete(id: id, userId: uid),
+          c.read<DataRepository<AppSettings>>().delete(id: id, userId: uid),
       'user_content_preferences': (c, id, uid) => c
           .read<DataRepository<UserContentPreferences>>()
           .delete(id: id, userId: uid),
