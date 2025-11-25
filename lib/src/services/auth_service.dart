@@ -26,7 +26,7 @@ class AuthService {
     required AuthTokenService authTokenService,
     required VerificationCodeStorageService verificationCodeStorageService,
     required EmailRepository emailRepository,
-    required DataRepository<UserAppSettings> userAppSettingsRepository,
+    required DataRepository<AppSettings> appSettingsRepository,
     required DataRepository<UserContentPreferences>
     userContentPreferencesRepository,
     required PermissionService permissionService,
@@ -36,7 +36,7 @@ class AuthService {
        _verificationCodeStorageService = verificationCodeStorageService,
        _permissionService = permissionService,
        _emailRepository = emailRepository,
-       _userAppSettingsRepository = userAppSettingsRepository,
+       _appSettingsRepository = appSettingsRepository,
        _userContentPreferencesRepository = userContentPreferencesRepository,
        _log = log;
 
@@ -44,7 +44,7 @@ class AuthService {
   final AuthTokenService _authTokenService;
   final VerificationCodeStorageService _verificationCodeStorageService;
   final EmailRepository _emailRepository;
-  final DataRepository<UserAppSettings> _userAppSettingsRepository;
+  final DataRepository<AppSettings> _appSettingsRepository;
   final DataRepository<UserContentPreferences>
   _userContentPreferencesRepository;
   final PermissionService _permissionService;
@@ -450,8 +450,8 @@ class AuthService {
       // 1. Explicitly delete associated user data. Unlike relational databases
       // with CASCADE constraints, MongoDB requires manual deletion of related
       // documents in different collections.
-      await _userAppSettingsRepository.delete(id: userId, userId: userId);
-      _log.info('Deleted UserAppSettings for user ${userToDelete.id}.');
+      await _appSettingsRepository.delete(id: userId, userId: userId);
+      _log.info('Deleted AppSettings for user ${userToDelete.id}.');
 
       await _userContentPreferencesRepository.delete(
         id: userId,
@@ -513,14 +513,14 @@ class AuthService {
   /// who might have been created before these documents were part of the standard
   /// user creation process.
   Future<void> _ensureUserDataExists(User user) async {
-    // Check for UserAppSettings
+    // Check for AppSettings
     try {
-      await _userAppSettingsRepository.read(id: user.id, userId: user.id);
+      await _appSettingsRepository.read(id: user.id, userId: user.id);
     } on NotFoundException {
       _log.info(
-        'UserAppSettings not found for user ${user.id}. Creating with defaults.',
+        'AppSettings not found for user ${user.id}. Creating with defaults.',
       );
-      final defaultAppSettings = UserAppSettings(
+      final defaultAppSettings = AppSettings(
         id: user.id,
         displaySettings: const DisplaySettings(
           baseTheme: AppBaseTheme.system,
@@ -535,14 +535,13 @@ class AuthService {
             'Default language "en" not found in language fixtures.',
           ),
         ),
-        feedPreferences: const FeedDisplayPreferences(
-          headlineDensity: HeadlineDensity.standard,
-          headlineImageStyle: HeadlineImageStyle.smallThumbnail,
-          showSourceInHeadlineFeed: true,
-          showPublishDateInHeadlineFeed: true,
+        feedSettings: const FeedSettings(
+          feedItemDensity: FeedItemDensity.standard,
+          feedItemImageStyle: FeedItemImageStyle.smallThumbnail,
+          feedItemClickBehavior: FeedItemClickBehavior.internalNavigation,
         ),
       );
-      await _userAppSettingsRepository.create(
+      await _appSettingsRepository.create(
         item: defaultAppSettings,
         userId: user.id,
       );

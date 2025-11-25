@@ -1,4 +1,5 @@
 import 'package:core/core.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_client.dart';
 import 'package:http_client/http_client.dart';
 import 'package:logging/logging.dart';
@@ -110,17 +111,16 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
 
     // Create a list of futures, one for each notification to be sent.
     final sendFutures = deviceTokens.map((token) {
-      final requestBody = {
-        'message': {
-          'token': token,
-          'notification': {
-            'title': payload.title,
-            'body': payload.body,
-            if (payload.imageUrl != null) 'image': payload.imageUrl,
-          },
-          'data': payload.data,
-        },
-      };
+      final requestBody = FirebaseRequestBody(
+        message: FirebaseMessage(
+          token: token,
+          notification: FirebaseNotification(
+            title: payload.title,
+            image: payload.imageUrl,
+          ),
+          data: payload,
+        ),
+      );
 
       // Return the future from the post request.
       return _httpClient.post<void>(url, data: requestBody);

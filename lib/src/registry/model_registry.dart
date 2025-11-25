@@ -305,37 +305,36 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       type: RequiredPermissionType.unsupported,
     ),
   ),
-  'user_app_settings': ModelConfig<UserAppSettings>(
-    fromJson: UserAppSettings.fromJson,
+  'app_settings': ModelConfig<AppSettings>(
+    fromJson: AppSettings.fromJson,
     getId: (s) => s.id,
-    getOwnerId: (dynamic item) =>
-        (item as UserAppSettings).id as String?, // User ID is the owner ID
+    getOwnerId: (dynamic item) => (item as AppSettings).id,
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported, // Not accessible via collection
       requiresAuthentication: true,
     ),
     getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
-      permission: Permissions.userAppSettingsReadOwned,
+      permission: Permissions.appSettingsReadOwned,
       requiresOwnershipCheck: true,
       requiresAuthentication: true,
     ),
     postPermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported,
       requiresAuthentication: true,
-      // Creation of UserAppSettings is handled by the authentication service
+      // Creation of AppSettings is handled by the authentication service
       // during user creation, not via a direct POST to /api/v1/data.
     ),
     putPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
-      permission: Permissions.userAppSettingsUpdateOwned,
+      permission: Permissions.appSettingsUpdateOwned,
       requiresOwnershipCheck: true,
       requiresAuthentication: true,
     ),
     deletePermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported,
       requiresAuthentication: true,
-      // Deletion of UserAppSettings is handled by the authentication service
+      // Deletion of AppSettings is handled by the authentication service
       // during account deletion, not via a direct DELETE to /api/v1/data.
     ),
   ),

@@ -65,7 +65,7 @@ class AppDependencies {
   late final DataRepository<Country> countryRepository;
   late final DataRepository<Language> languageRepository;
   late final DataRepository<User> userRepository;
-  late final DataRepository<UserAppSettings> userAppSettingsRepository;
+  late final DataRepository<AppSettings> appSettingsRepository;
   late final DataRepository<UserContentPreferences>
   userContentPreferencesRepository;
   late final DataRepository<PushNotificationDevice>
@@ -190,12 +190,12 @@ class AppDependencies {
         toJson: (item) => item.toJson(),
         logger: Logger('DataMongodb<User>'),
       );
-      final userAppSettingsClient = DataMongodb<UserAppSettings>(
+      final appSettingsClient = DataMongodb<AppSettings>(
         connectionManager: _mongoDbConnectionManager,
-        modelName: 'user_app_settings',
-        fromJson: UserAppSettings.fromJson,
+        modelName: 'app_settings',
+        fromJson: AppSettings.fromJson,
         toJson: (item) => item.toJson(),
-        logger: Logger('DataMongodb<UserAppSettings>'),
+        logger: Logger('DataMongodb<AppSettings>'),
       );
       final userContentPreferencesClient = DataMongodb<UserContentPreferences>(
         connectionManager: _mongoDbConnectionManager,
@@ -306,8 +306,8 @@ class AppDependencies {
       countryRepository = DataRepository(dataClient: countryClient);
       languageRepository = DataRepository(dataClient: languageClient);
       userRepository = DataRepository(dataClient: userClient);
-      userAppSettingsRepository = DataRepository(
-        dataClient: userAppSettingsClient,
+      appSettingsRepository = DataRepository(
+        dataClient: appSettingsClient,
       );
       userContentPreferencesRepository = DataRepository(
         dataClient: userContentPreferencesClient,
@@ -359,7 +359,7 @@ class AppDependencies {
         verificationCodeStorageService: verificationCodeStorageService,
         permissionService: permissionService,
         emailRepository: emailRepository,
-        userAppSettingsRepository: userAppSettingsRepository,
+        appSettingsRepository: appSettingsRepository,
         userContentPreferencesRepository: userContentPreferencesRepository,
         log: Logger('AuthService'),
       );

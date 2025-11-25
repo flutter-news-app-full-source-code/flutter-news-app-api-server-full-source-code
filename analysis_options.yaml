@@ -11,6 +11,7 @@ analyzer:
     document_ignores: ignore
     one_member_abstracts: ignore
     cascade_invocations: ignore
+    cast_nullable_to_non_nullable: ignore
   exclude:
     - build/**
 linter:

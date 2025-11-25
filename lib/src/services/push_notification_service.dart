@@ -75,7 +75,7 @@ class DefaultPushNotificationService implements IPushNotificationService {
       final remoteConfig = await _remoteConfigRepository.read(
         id: _remoteConfigId,
       );
-      final pushConfig = remoteConfig.pushNotificationConfig;
+      final pushConfig = remoteConfig.features.pushNotifications;
 
       // Check if push notifications are globally enabled.
       if (!pushConfig.enabled) {
@@ -211,16 +211,14 @@ class DefaultPushNotificationService implements IPushNotificationService {
             id: notificationId.oid,
             userId: userId,
             payload: PushNotificationPayload(
+              // Corrected payload structure
               title: headline.title,
-              body: headline.excerpt,
               imageUrl: headline.imageUrl,
-              data: {
-                'notificationType':
-                    PushNotificationSubscriptionDeliveryType.breakingOnly.name,
-                'contentType': 'headline',
-                'headlineId': headline.id,
-                'notificationId': notificationId.oid,
-              },
+              notificationId: notificationId.oid,
+              notificationType:
+                  PushNotificationSubscriptionDeliveryType.breakingOnly,
+              contentType: ContentType.headline,
+              contentId: headline.id,
             ),
             createdAt: DateTime.now(),
           );

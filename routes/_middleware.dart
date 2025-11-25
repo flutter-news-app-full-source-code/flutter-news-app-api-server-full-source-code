@@ -115,8 +115,8 @@ Handler middleware(Handler handler) {
                 provider<DataRepository<User>>((_) => deps.userRepository),
               ) //
               .use(
-                provider<DataRepository<UserAppSettings>>(
-                  (_) => deps.userAppSettingsRepository,
+                provider<DataRepository<AppSettings>>(
+                  (_) => deps.appSettingsRepository,
                 ),
               )
               .use(
