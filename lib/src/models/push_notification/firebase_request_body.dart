@@ -1,3 +1,4 @@
+import 'package:core/core.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
@@ -41,7 +42,7 @@ class FirebaseMessage extends Equatable {
   final FirebaseNotification notification;
 
   /// The custom data payload.
-  final Map<String, dynamic> data;
+  final PushNotificationPayload data;
 
   /// Converts this [FirebaseMessage] instance to a JSON map.
   Map<String, dynamic> toJson() => _$FirebaseMessageToJson(this);
