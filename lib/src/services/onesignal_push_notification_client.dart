@@ -1,4 +1,5 @@
 import 'package:core/core.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_client.dart';
 import 'package:http_client/http_client.dart';
 import 'package:logging/logging.dart';
@@ -94,24 +95,17 @@ class OneSignalPushNotificationClient implements IPushNotificationClient {
     // app_dependencies.dart. The final URL will be: `https://onesignal.com/api/v1/notifications`
     const url = 'notifications';
 
-    // Construct the OneSignal API request body.
-    final requestBody = {
-      'app_id': appId,
-      'include_player_ids': deviceTokens,
-      'headings': {'en': payload.title},
-      'contents': {'en': payload.title},
-      if (payload.imageUrl != null) 'big_picture': payload.imageUrl,
-      // Reconstruct the data payload from the explicit fields
-      'data': {
-        'notificationId': payload.notificationId,
-        'notificationType': payload.notificationType.name,
-        'contentType': payload.contentType.name,
-        'contentId': payload.contentId,
-      },
-    };
-
     _log.finer(
       'Sending OneSignal batch of ${deviceTokens.length} notifications.',
+    );
+
+    final requestBody = OneSignalRequestBody(
+      appId: appId,
+      includePlayerIds: deviceTokens,
+      headings: {'en': payload.title},
+      contents: {'en': payload.title},
+      bigPicture: payload.imageUrl,
+      data: payload,
     );
 
     try {
