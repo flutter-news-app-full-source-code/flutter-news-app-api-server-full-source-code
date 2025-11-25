@@ -75,7 +75,7 @@ class DefaultPushNotificationService implements IPushNotificationService {
       final remoteConfig = await _remoteConfigRepository.read(
         id: _remoteConfigId,
       );
-      final pushConfig = remoteConfig.pushNotificationConfig;
+      final pushConfig = remoteConfig.features.pushNotifications;
 
       // Check if push notifications are globally enabled.
       if (!pushConfig.enabled) {
