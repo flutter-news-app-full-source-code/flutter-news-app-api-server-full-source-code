@@ -451,7 +451,7 @@ class AuthService {
       // with CASCADE constraints, MongoDB requires manual deletion of related
       // documents in different collections.
       await _appSettingsRepository.delete(id: userId, userId: userId);
-      _log.info('Deleted UserAppSettings for user ${userToDelete.id}.');
+      _log.info('Deleted AppSettings for user ${userToDelete.id}.');
 
       await _userContentPreferencesRepository.delete(
         id: userId,
@@ -513,7 +513,7 @@ class AuthService {
   /// who might have been created before these documents were part of the standard
   /// user creation process.
   Future<void> _ensureUserDataExists(User user) async {
-    // Check for UserAppSettings
+    // Check for AppSettings
     try {
       await _appSettingsRepository.read(id: user.id, userId: user.id);
     } on NotFoundException {

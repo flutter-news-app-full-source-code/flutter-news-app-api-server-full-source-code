@@ -50,8 +50,8 @@ abstract class Permissions {
   static const String userUpdate = 'user.update';
 
   // User App Settings Permissions (User-owned)
-  static const String userAppSettingsReadOwned = 'app_settings.read_owned';
-  static const String userAppSettingsUpdateOwned = 'app_settings.update_owned';
+  static const String appSettingsReadOwned = 'app_settings.read_owned';
+  static const String appSettingsUpdateOwned = 'app_settings.update_owned';
 
   // User Content Preferences Permissions (User-owned)
   static const String userContentPreferencesReadOwned =
