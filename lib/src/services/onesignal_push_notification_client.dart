@@ -103,7 +103,6 @@ class OneSignalPushNotificationClient implements IPushNotificationClient {
       appId: appId,
       includePlayerIds: deviceTokens,
       headings: {'en': payload.title},
-      contents: {'en': payload.title},
       bigPicture: payload.imageUrl,
       data: payload,
     );

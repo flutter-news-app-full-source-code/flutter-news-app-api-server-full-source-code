@@ -20,8 +20,8 @@ class OneSignalRequestBody extends Equatable {
     required this.appId,
     required this.includePlayerIds,
     required this.headings,
-    required this.contents,
     required this.data,
+    this.contents,
     this.bigPicture,
   });
 
@@ -35,7 +35,7 @@ class OneSignalRequestBody extends Equatable {
   final Map<String, String> headings;
 
   /// The notification's content.
-  final Map<String, String> contents;
+  final Map<String, String>? contents;
 
   /// The custom data payload
   final PushNotificationPayload data;

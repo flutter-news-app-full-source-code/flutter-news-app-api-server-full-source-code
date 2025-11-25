@@ -14,7 +14,7 @@ Map<String, dynamic> _$OneSignalRequestBodyToJson(
   'app_id': instance.appId,
   'include_player_ids': instance.includePlayerIds,
   'headings': instance.headings,
-  'contents': instance.contents,
+  'contents': ?instance.contents,
   'data': instance.data.toJson(),
   'big_picture': ?instance.bigPicture,
   'props': instance.props,
