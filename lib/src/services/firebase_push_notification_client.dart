@@ -116,7 +116,6 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
           token: token,
           notification: FirebaseNotification(
             title: payload.title,
-            body: payload.title,
             image: payload.imageUrl,
           ),
           data: payload,

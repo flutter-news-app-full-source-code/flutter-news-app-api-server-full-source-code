@@ -74,7 +74,7 @@ class FirebaseNotification extends Equatable {
   /// {@macro firebase_notification}
   const FirebaseNotification({
     required this.title,
-    required this.body,
+    this.body,
     this.image,
   });
 
@@ -82,7 +82,7 @@ class FirebaseNotification extends Equatable {
   final String title;
 
   /// The notification's body text.
-  final String body;
+  final String? body;
 
   /// The URL of an image to be displayed in the notification.
   final String? image;
