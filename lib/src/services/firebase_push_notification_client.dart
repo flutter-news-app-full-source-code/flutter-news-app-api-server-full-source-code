@@ -115,10 +115,16 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
           'token': token,
           'notification': {
             'title': payload.title,
-            'body': payload.body,
+            'body': payload.title,
             if (payload.imageUrl != null) 'image': payload.imageUrl,
           },
-          'data': payload.data,
+          // Reconstruct the data payload from the explicit fields
+          'data': {
+            'notificationId': payload.notificationId,
+            'notificationType': payload.notificationType.name,
+            'contentType': payload.contentType.name,
+            'contentId': payload.contentId,
+          },
         },
       };
 
