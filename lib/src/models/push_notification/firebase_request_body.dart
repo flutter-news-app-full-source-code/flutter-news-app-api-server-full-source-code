@@ -8,7 +8,12 @@ part 'firebase_request_body.g.dart';
 /// Represents the top-level structure for a Firebase Cloud Messaging
 /// v1 API request.
 /// {@endtemplate}
-@JsonSerializable(explicitToJson: true, includeIfNull: true, checked: true)
+@JsonSerializable(
+  explicitToJson: true,
+  includeIfNull: true,
+  checked: true,
+  createFactory: false,
+)
 class FirebaseRequestBody extends Equatable {
   /// {@macro firebase_request_body}
   const FirebaseRequestBody({required this.message});
@@ -26,7 +31,12 @@ class FirebaseRequestBody extends Equatable {
 /// {@template firebase_message}
 /// Represents the message object within a Firebase request.
 /// {@endtemplate}
-@JsonSerializable(explicitToJson: true, includeIfNull: true, checked: true)
+@JsonSerializable(
+  explicitToJson: true,
+  includeIfNull: true,
+  checked: true,
+  createFactory: false,
+)
 class FirebaseMessage extends Equatable {
   /// {@macro firebase_message}
   const FirebaseMessage({
@@ -54,7 +64,12 @@ class FirebaseMessage extends Equatable {
 /// {@template firebase_notification}
 /// Represents the notification content within a Firebase message.
 /// {@endtemplate}
-@JsonSerializable(explicitToJson: true, includeIfNull: true, checked: true)
+@JsonSerializable(
+  explicitToJson: true,
+  includeIfNull: true,
+  checked: true,
+  createFactory: false,
+)
 class FirebaseNotification extends Equatable {
   /// {@macro firebase_notification}
   const FirebaseNotification({

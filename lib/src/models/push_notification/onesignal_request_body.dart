@@ -12,6 +12,7 @@ part 'onesignal_request_body.g.dart';
   includeIfNull: false, // Do not include null fields in the JSON
   checked: true,
   fieldRename: FieldRename.snake,
+  createFactory: false,
 )
 class OneSignalRequestBody extends Equatable {
   /// {@macro onesignal_request_body}
