@@ -33,7 +33,7 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
     final remoteConfig = await _remoteConfigRepository.read(
       id: _remoteConfigId,
     );
-    final limits = remoteConfig.userPreferenceConfig;
+    final limits = remoteConfig.user.limits;
 
     // Retrieve all relevant limits for the user's role from the remote configuration.
     final (
@@ -204,26 +204,26 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
   )
   _getLimitsForRole(
     AppUserRole role,
-    UserPreferenceConfig limits,
+    UserLimitsConfig limits,
   ) {
-    final followedItemsLimit = limits.followedItemsLimit[role];
+    final followedItemsLimit = limits.followedItems[role];
     if (followedItemsLimit == null) {
       throw StateError('Followed items limit not configured for role: $role');
     }
 
-    final savedHeadlinesLimit = limits.savedHeadlinesLimit[role];
+    final savedHeadlinesLimit = limits.savedHeadlines[role];
     if (savedHeadlinesLimit == null) {
       throw StateError('Saved headlines limit not configured for role: $role');
     }
 
-    final savedHeadlineFiltersLimit = limits.savedHeadlineFiltersLimit[role];
+    final savedHeadlineFiltersLimit = limits.savedHeadlineFilters[role];
     if (savedHeadlineFiltersLimit == null) {
       throw StateError(
         'Saved headline filters limit not configured for role: $role',
       );
     }
 
-    final savedSourceFiltersLimit = limits.savedSourceFiltersLimit[role];
+    final savedSourceFiltersLimit = limits.savedSourceFilters[role];
     if (savedSourceFiltersLimit == null) {
       throw StateError(
         'Saved source filters limit not configured for role: $role',

@@ -359,7 +359,7 @@ class AppDependencies {
         verificationCodeStorageService: verificationCodeStorageService,
         permissionService: permissionService,
         emailRepository: emailRepository,
-        userAppSettingsRepository: userAppSettingsRepository,
+        appSettingsRepository: userAppSettingsRepository,
         userContentPreferencesRepository: userContentPreferencesRepository,
         log: Logger('AuthService'),
       );
