@@ -197,17 +197,17 @@ class DataOperationRegistry {
           ),
       'engagement': (c, uid, f, s, p) =>
           c.read<DataRepository<Engagement>>().readAll(
-                userId: uid,
-                filter: f,
-                sort: s,
-                pagination: p,
-              ),
-      'report': (c, uid, f, s, p) => c.read<DataRepository<Report>>().readAll(
             userId: uid,
             filter: f,
             sort: s,
             pagination: p,
           ),
+      'report': (c, uid, f, s, p) => c.read<DataRepository<Report>>().readAll(
+        userId: uid,
+        filter: f,
+        sort: s,
+        pagination: p,
+      ),
     });
 
     // --- Register Item Creators ---
@@ -316,9 +316,9 @@ class DataOperationRegistry {
         );
 
         return context.read<DataRepository<Engagement>>().create(
-              item: engagementToCreate,
-              userId: null,
-            );
+          item: engagementToCreate,
+          userId: null,
+        );
       },
       'report': (context, item, uid) async {
         _log.info('Executing custom creator for report.');
@@ -335,7 +335,8 @@ class DataOperationRegistry {
 
         // Limit Check
         await userActionLimitService.checkReportCreationLimit(
-            user: authenticatedUser);
+          user: authenticatedUser,
+        );
 
         return context.read<DataRepository<Report>>().create(item: item);
       },
@@ -501,13 +502,13 @@ class DataOperationRegistry {
           ),
       'engagement': (c, id, item, uid) =>
           c.read<DataRepository<Engagement>>().update(
-                id: id,
-                item: item as Engagement,
-              ),
-      'report': (c, id, item, uid) => c.read<DataRepository<Report>>().update(
             id: id,
-            item: item as Report,
+            item: item as Engagement,
           ),
+      'report': (c, id, item, uid) => c.read<DataRepository<Report>>().update(
+        id: id,
+        item: item as Report,
+      ),
     });
 
     // --- Register Item Deleters ---

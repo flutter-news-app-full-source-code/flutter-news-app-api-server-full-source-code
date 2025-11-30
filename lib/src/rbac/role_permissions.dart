@@ -25,7 +25,7 @@ final Set<String> _appGuestUserPermissions = {
   Permissions.pushNotificationDeviceCreateOwned,
   Permissions.pushNotificationDeviceDeleteOwned,
   Permissions.pushNotificationDeviceReadOwned,
-  
+
   // Allow all app users to manage their own in-app notifications.
   Permissions.inAppNotificationReadOwned,
   Permissions.inAppNotificationUpdateOwned,

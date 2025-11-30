@@ -545,8 +545,12 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.reportCreateOwned,
     ),
-    putPermission: const ModelActionPermission(type: RequiredPermissionType.unsupported),
-    deletePermission: const ModelActionPermission(type: RequiredPermissionType.unsupported),
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
   ),
 };
 

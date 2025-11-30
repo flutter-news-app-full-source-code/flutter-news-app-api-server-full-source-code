@@ -252,7 +252,9 @@ class DefaultUserActionLimitService implements UserActionLimitService {
     required Engagement engagement,
   }) async {
     _log.info('Checking engagement creation limits for user ${user.id}.');
-    final remoteConfig = await _remoteConfigRepository.read(id: _remoteConfigId);
+    final remoteConfig = await _remoteConfigRepository.read(
+      id: _remoteConfigId,
+    );
     final limits = remoteConfig.user.limits;
 
     // --- 1. Check Reaction Limit ---
@@ -264,7 +266,9 @@ class DefaultUserActionLimitService implements UserActionLimitService {
     }
 
     // Count all engagements in the last 24 hours for the reaction limit.
-    final twentyFourHoursAgo = DateTime.now().subtract(const Duration(hours: 24));
+    final twentyFourHoursAgo = DateTime.now().subtract(
+      const Duration(hours: 24),
+    );
     final reactionCount = await _engagementRepository.count(
       filter: {
         'userId': user.id,
@@ -317,7 +321,9 @@ class DefaultUserActionLimitService implements UserActionLimitService {
   @override
   Future<void> checkReportCreationLimit({required User user}) async {
     _log.info('Checking report creation limits for user ${user.id}.');
-    final remoteConfig = await _remoteConfigRepository.read(id: _remoteConfigId);
+    final remoteConfig = await _remoteConfigRepository.read(
+      id: _remoteConfigId,
+    );
     final limits = remoteConfig.user.limits;
 
     final reportsLimit = limits.reportsPerDay[user.appRole];
@@ -327,7 +333,9 @@ class DefaultUserActionLimitService implements UserActionLimitService {
       );
     }
 
-    final twentyFourHoursAgo = DateTime.now().subtract(const Duration(hours: 24));
+    final twentyFourHoursAgo = DateTime.now().subtract(
+      const Duration(hours: 24),
+    );
     final reportCount = await _reportRepository.count(
       filter: {
         'reporterUserId': user.id,
@@ -339,7 +347,9 @@ class DefaultUserActionLimitService implements UserActionLimitService {
       _log.warning(
         'User ${user.id} exceeded reports per day limit: $reportsLimit.',
       );
-      throw const ForbiddenException('You have reached your daily limit for reports.');
+      throw const ForbiddenException(
+        'You have reached your daily limit for reports.',
+      );
     }
 
     _log.info('Report creation limit checks passed for user ${user.id}.');

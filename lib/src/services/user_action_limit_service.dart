@@ -25,8 +25,10 @@ abstract class UserActionLimitService {
   ///
   /// This method checks against `reactionsPerDay` and, if the engagement
   /// contains a comment, also checks against `commentsPerDay`.
-  Future<void> checkEngagementCreationLimit(
-      {required User user, required Engagement engagement});
+  Future<void> checkEngagementCreationLimit({
+    required User user,
+    required Engagement engagement,
+  });
 
   /// Validates if a user can create a new [Report].
   ///
