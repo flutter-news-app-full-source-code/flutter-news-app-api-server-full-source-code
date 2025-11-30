@@ -352,7 +352,6 @@ class DataOperationRegistry {
       'app_review': (context, item, uid) async {
         _log.info('Executing custom creator for app_review.');
         final authenticatedUser = context.read<User>();
-        final userActionLimitService = context.read<UserActionLimitService>();
         final appReviewToCreate = item as AppReview;
 
         // Security Check
