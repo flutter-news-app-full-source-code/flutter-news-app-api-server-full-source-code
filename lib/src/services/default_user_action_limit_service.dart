@@ -1,22 +1,28 @@
 import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/user_preference_limit_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
 import 'package:logging/logging.dart';
 
-/// {@template default_user_preference_limit_service}
-/// Default implementation of [UserPreferenceLimitService] that enforces limits
-/// based on user role and the `InterestConfig` and `UserPreferenceConfig`
+/// {@template default_user_action_limit_service}
+/// Default implementation of [UserActionLimitService] that enforces limits
+/// based on user role and the `UserLimitsConfig`
 /// sections within the application's [RemoteConfig].
 /// {@endtemplate}
-class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
-  /// {@macro default_user_preference_limit_service}
-  const DefaultUserPreferenceLimitService({
+class DefaultUserActionLimitService implements UserActionLimitService {
+  /// {@macro default_user_action_limit_service}
+  const DefaultUserActionLimitService({
     required DataRepository<RemoteConfig> remoteConfigRepository,
+    required DataRepository<Engagement> engagementRepository,
+    required DataRepository<Report> reportRepository,
     required Logger log,
   }) : _remoteConfigRepository = remoteConfigRepository,
+       _engagementRepository = engagementRepository,
+       _reportRepository = reportRepository,
        _log = log;
 
   final DataRepository<RemoteConfig> _remoteConfigRepository;
+  final DataRepository<Engagement> _engagementRepository;
+  final DataRepository<Report> _reportRepository;
   final Logger _log;
 
   // Assuming a fixed ID for the RemoteConfig document
@@ -28,7 +34,7 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
     required UserContentPreferences updatedPreferences,
   }) async {
     _log.info(
-      'Checking all user content preferences limits for user ${user.id}.',
+      'Checking all user action limits for user ${user.id}.',
     );
     final remoteConfig = await _remoteConfigRepository.read(
       id: _remoteConfigId,
@@ -47,6 +53,8 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
     );
 
     // --- 1. Check general preference limits ---
+    // Note: The checks for commentsPerDay and reportsPerDay are not performed
+    // here. They are action-based and enforced by the RateLimitService.
     if (updatedPreferences.followedCountries.length > followedItemsLimit) {
       _log.warning(
         'User ${user.id} exceeded followed countries limit: '
@@ -202,7 +210,7 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
     SavedFilterLimits savedHeadlineFiltersLimit,
     SavedFilterLimits savedSourceFiltersLimit,
   )
-  _getLimitsForRole(
+  _getPreferenceLimitsForRole(
     AppUserRole role,
     UserLimitsConfig limits,
   ) {
@@ -236,5 +244,104 @@ class DefaultUserPreferenceLimitService implements UserPreferenceLimitService {
       savedHeadlineFiltersLimit,
       savedSourceFiltersLimit,
     );
+  }
+
+  @override
+  Future<void> checkEngagementCreationLimit({
+    required User user,
+    required Engagement engagement,
+  }) async {
+    _log.info('Checking engagement creation limits for user ${user.id}.');
+    final remoteConfig = await _remoteConfigRepository.read(id: _remoteConfigId);
+    final limits = remoteConfig.user.limits;
+
+    // --- 1. Check Reaction Limit ---
+    final reactionsLimit = limits.reactionsPerDay[user.appRole];
+    if (reactionsLimit == null) {
+      throw StateError(
+        'Reactions per day limit not configured for role: ${user.appRole}',
+      );
+    }
+
+    // Count all engagements in the last 24 hours for the reaction limit.
+    final twentyFourHoursAgo = DateTime.now().subtract(const Duration(hours: 24));
+    final reactionCount = await _engagementRepository.count(
+      filter: {
+        'userId': user.id,
+        'createdAt': {r'$gte': twentyFourHoursAgo.toIso8601String()},
+      },
+    );
+
+    if (reactionCount >= reactionsLimit) {
+      _log.warning(
+        'User ${user.id} exceeded reactions per day limit: $reactionsLimit.',
+      );
+      throw ForbiddenException(
+        'You have reached your daily limit for reactions.',
+      );
+    }
+
+    // --- 2. Check Comment Limit (only if a comment is present) ---
+    if (engagement.comment != null) {
+      final commentsLimit = limits.commentsPerDay[user.appRole];
+      if (commentsLimit == null) {
+        throw StateError(
+          'Comments per day limit not configured for role: ${user.appRole}',
+        );
+      }
+
+      // Count engagements with comments in the last 24 hours.
+      final commentCount = await _engagementRepository.count(
+        filter: {
+          'userId': user.id,
+          'comment': {r'$exists': true, r'$ne': null},
+          'createdAt': {r'$gte': twentyFourHoursAgo.toIso8601String()},
+        },
+      );
+
+      if (commentCount >= commentsLimit) {
+        _log.warning(
+          'User ${user.id} exceeded comments per day limit: $commentsLimit.',
+        );
+        throw ForbiddenException(
+          'You have reached your daily limit for comments.',
+        );
+      }
+    }
+
+    _log.info(
+      'Engagement creation limit checks passed for user ${user.id}.',
+    );
+  }
+
+  @override
+  Future<void> checkReportCreationLimit({required User user}) async {
+    _log.info('Checking report creation limits for user ${user.id}.');
+    final remoteConfig = await _remoteConfigRepository.read(id: _remoteConfigId);
+    final limits = remoteConfig.user.limits;
+
+    final reportsLimit = limits.reportsPerDay[user.appRole];
+    if (reportsLimit == null) {
+      throw StateError(
+        'Reports per day limit not configured for role: ${user.appRole}',
+      );
+    }
+
+    final twentyFourHoursAgo = DateTime.now().subtract(const Duration(hours: 24));
+    final reportCount = await _reportRepository.count(
+      filter: {
+        'reporterUserId': user.id,
+        'createdAt': {r'$gte': twentyFourHoursAgo.toIso8601String()},
+      },
+    );
+
+    if (reportCount >= reportsLimit) {
+      _log.warning(
+        'User ${user.id} exceeded reports per day limit: $reportsLimit.',
+      );
+      throw ForbiddenException('You have reached your daily limit for reports.');
+    }
+
+    _log.info('Report creation limit checks passed for user ${user.id}.');
   }
 }
