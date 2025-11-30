@@ -75,6 +75,7 @@ class AppDependencies {
 
   late final DataRepository<Engagement> engagementRepository;
   late final DataRepository<Report> reportRepository;
+  late final DataRepository<AppReview> appReviewRepository;
   late final EmailRepository emailRepository;
 
   // Services
@@ -249,6 +250,14 @@ class AppDependencies {
         logger: Logger('DataMongodb<Report>'),
       );
 
+      final appReviewClient = DataMongodb<AppReview>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'app_reviews',
+        fromJson: AppReview.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<AppReview>'),
+      );
+
       // --- Conditionally Initialize Push Notification Clients ---
 
       // Firebase
@@ -339,6 +348,7 @@ class AppDependencies {
       );
       engagementRepository = DataRepository(dataClient: engagementClient);
       reportRepository = DataRepository(dataClient: reportClient);
+      appReviewRepository = DataRepository(dataClient: appReviewClient);
 
       // Configure the HTTP client for SendGrid.
       // The HttpClient's AuthInterceptor will use the tokenProvider to add
