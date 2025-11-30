@@ -140,6 +140,11 @@ Handler middleware(Handler handler) {
                 ),
               )
               .use(
+                provider<DataRepository<AppReview>>(
+                  (_) => deps.appReviewRepository,
+                ),
+              )
+              .use(
                 provider<IPushNotificationService>(
                   (_) => deps.pushNotificationService,
                 ),

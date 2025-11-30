@@ -313,6 +313,19 @@ class DatabaseSeedingService {
       });
       _log.info('Ensured indexes for "reports".');
 
+      // Indexes for the app_reviews collection
+      await _db.runCommand({
+        'createIndexes': 'app_reviews',
+        'indexes': [
+          {
+            // Optimizes fetching the review record for a specific user.
+            'key': {'userId': 1},
+            'name': 'userId_index',
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "app_reviews".');
+
       _log.info('Database indexes are set up correctly.');
     } on Exception catch (e, s) {
       _log.severe('Failed to create database indexes.', e, s);
