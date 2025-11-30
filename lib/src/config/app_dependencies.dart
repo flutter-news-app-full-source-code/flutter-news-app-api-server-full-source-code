@@ -16,7 +16,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/countr
 import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/database_migration_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/database_seeding_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/default_user_preference_limit_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/default_user_action_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/firebase_authenticator.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/firebase_push_notification_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/jwt_auth_token_service.dart';
@@ -28,7 +28,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/push_n
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/user_preference_limit_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/verification_code_storage_service.dart';
 import 'package:http_client/http_client.dart';
 import 'package:logging/logging.dart';
@@ -73,6 +73,8 @@ class AppDependencies {
   late final DataRepository<RemoteConfig> remoteConfigRepository;
   late final DataRepository<InAppNotification> inAppNotificationRepository;
 
+  late final DataRepository<Engagement> engagementRepository;
+  late final DataRepository<Report> reportRepository;
   late final EmailRepository emailRepository;
 
   // Services
@@ -83,7 +85,7 @@ class AppDependencies {
   late final AuthService authService;
   late final DashboardSummaryService dashboardSummaryService;
   late final PermissionService permissionService;
-  late final UserPreferenceLimitService userPreferenceLimitService;
+  late final UserActionLimitService userActionLimitService;
   late final RateLimitService rateLimitService;
   late final CountryQueryService countryQueryService;
   late final IPushNotificationService pushNotificationService;
@@ -231,6 +233,22 @@ class AppDependencies {
 
       _log.info('Initialized data client for InAppNotification.');
 
+      final engagementClient = DataMongodb<Engagement>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'engagements',
+        fromJson: Engagement.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<Engagement>'),
+      );
+
+      final reportClient = DataMongodb<Report>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'reports',
+        fromJson: Report.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<Report>'),
+      );
+
       // --- Conditionally Initialize Push Notification Clients ---
 
       // Firebase
@@ -319,6 +337,9 @@ class AppDependencies {
       inAppNotificationRepository = DataRepository(
         dataClient: inAppNotificationClient,
       );
+      engagementRepository = DataRepository(dataClient: engagementClient);
+      reportRepository = DataRepository(dataClient: reportClient);
+
       // Configure the HTTP client for SendGrid.
       // The HttpClient's AuthInterceptor will use the tokenProvider to add
       // the 'Authorization: Bearer <SENDGRID_API_KEY>' header.
@@ -368,9 +389,11 @@ class AppDependencies {
         topicRepository: topicRepository,
         sourceRepository: sourceRepository,
       );
-      userPreferenceLimitService = DefaultUserPreferenceLimitService(
+      userActionLimitService = DefaultUserActionLimitService(
         remoteConfigRepository: remoteConfigRepository,
-        log: Logger('DefaultUserPreferenceLimitService'),
+        engagementRepository: engagementRepository,
+        reportRepository: reportRepository,
+        log: Logger('DefaultUserActionLimitService'),
       );
       rateLimitService = MongoDbRateLimitService(
         connectionManager: _mongoDbConnectionManager,
