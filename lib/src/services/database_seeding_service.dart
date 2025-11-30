@@ -281,6 +281,38 @@ class DatabaseSeedingService {
       });
       _log.info('Ensured indexes for "in_app_notifications".');
 
+      // Indexes for the engagements collection
+      await _db.runCommand({
+        'createIndexes': 'engagements',
+        'indexes': [
+          {
+            // Optimizes fetching all engagements for a specific user.
+            'key': {'userId': 1},
+            'name': 'userId_index',
+          },
+          {
+            // Optimizes fetching all engagements for a specific entity
+            // (e.g., a headline).
+            'key': {'entityId': 1, 'entityType': 1},
+            'name': 'entity_index',
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "engagements".');
+
+      // Indexes for the reports collection
+      await _db.runCommand({
+        'createIndexes': 'reports',
+        'indexes': [
+          {
+            // Optimizes fetching all reports submitted by a specific user.
+            'key': {'reporterUserId': 1},
+            'name': 'reporterUserId_index',
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "reports".');
+
       _log.info('Database indexes are set up correctly.');
     } on Exception catch (e, s) {
       _log.severe('Failed to create database indexes.', e, s);
