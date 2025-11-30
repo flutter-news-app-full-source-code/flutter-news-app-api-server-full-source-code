@@ -38,6 +38,11 @@ final Set<String> _appGuestUserPermissions = {
   Permissions.engagementDeleteOwned,
   Permissions.reportCreateOwned,
   Permissions.reportReadOwned,
+
+  // App Review Permissions
+  Permissions.appReviewCreateOwned,
+  Permissions.appReviewReadOwned,
+  Permissions.appReviewUpdateOwned,
 };
 
 final Set<String> _appStandardUserPermissions = {
