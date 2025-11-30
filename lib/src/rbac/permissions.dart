@@ -123,4 +123,14 @@ abstract class Permissions {
 
   /// Allows reading the user's own reports.
   static const String reportReadOwned = 'report.read_owned';
+
+  // App Review Permissions (User-owned)
+  /// Allows creating an app review record.
+  static const String appReviewCreateOwned = 'app_review.create_owned';
+
+  /// Allows reading the user's own app review record.
+  static const String appReviewReadOwned = 'app_review.read_owned';
+
+  /// Allows updating the user's own app review record.
+  static const String appReviewUpdateOwned = 'app_review.update_owned';
 }
