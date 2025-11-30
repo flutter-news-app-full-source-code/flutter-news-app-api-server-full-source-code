@@ -16,7 +16,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/fireba
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/user_preference_limit_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/verification_code_storage_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
@@ -169,8 +169,8 @@ Handler middleware(Handler handler) {
               )
               .use(provider<PermissionService>((_) => deps.permissionService))
               .use(
-                provider<UserPreferenceLimitService>(
-                  (_) => deps.userPreferenceLimitService,
+                provider<UserActionLimitService>(
+                  (_) => deps.userActionLimitService,
                 ),
               )
               .use(provider<RateLimitService>((_) => deps.rateLimitService))

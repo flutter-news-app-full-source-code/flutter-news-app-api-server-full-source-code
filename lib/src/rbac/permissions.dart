@@ -103,4 +103,24 @@ abstract class Permissions {
   /// Allows deleting the user's own in-app notifications.
   static const String inAppNotificationDeleteOwned =
       'in_app_notification.delete_owned';
+
+  // Engagement Permissions (User-owned)
+  /// Allows creating an engagement (reaction or comment).
+  static const String engagementCreateOwned = 'engagement.create_owned';
+
+  /// Allows reading the user's own engagements.
+  static const String engagementReadOwned = 'engagement.read_owned';
+
+  /// Allows updating the user's own engagement (e.g., changing a reaction).
+  static const String engagementUpdateOwned = 'engagement.update_owned';
+
+  /// Allows deleting the user's own engagement.
+  static const String engagementDeleteOwned = 'engagement.delete_owned';
+
+  // Report Permissions (User-owned)
+  /// Allows creating a report.
+  static const String reportCreateOwned = 'report.create_owned';
+
+  /// Allows reading the user's own reports.
+  static const String reportReadOwned = 'report.read_owned';
 }

@@ -9,7 +9,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/user_preference_limit_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
 import 'package:logging/logging.dart';
 
 // --- Typedefs for Data Operations ---
@@ -128,6 +128,10 @@ class DataOperationRegistry {
       'push_notification_device': (c, id) => c
           .read<DataRepository<PushNotificationDevice>>()
           .read(id: id, userId: null),
+      'engagement': (c, id) =>
+          c.read<DataRepository<Engagement>>().read(id: id, userId: null),
+      'report': (c, id) =>
+          c.read<DataRepository<Report>>().read(id: id, userId: null),
     });
 
     // --- Register "Read All" Readers ---
@@ -191,6 +195,19 @@ class DataOperationRegistry {
             sort: s,
             pagination: p,
           ),
+      'engagement': (c, uid, f, s, p) =>
+          c.read<DataRepository<Engagement>>().readAll(
+            userId: uid,
+            filter: f,
+            sort: s,
+            pagination: p,
+          ),
+      'report': (c, uid, f, s, p) => c.read<DataRepository<Report>>().readAll(
+        userId: uid,
+        filter: f,
+        sort: s,
+        pagination: p,
+      ),
     });
 
     // --- Register Item Creators ---
@@ -278,6 +295,50 @@ class DataOperationRegistry {
           item: deviceToCreate,
           userId: null,
         );
+      },
+      'engagement': (context, item, uid) async {
+        _log.info('Executing custom creator for engagement.');
+        final authenticatedUser = context.read<User>();
+        final userActionLimitService = context.read<UserActionLimitService>();
+        final engagementToCreate = item as Engagement;
+
+        // Security Check
+        if (engagementToCreate.userId != authenticatedUser.id) {
+          throw const ForbiddenException(
+            'You can only create engagements for your own account.',
+          );
+        }
+
+        // Limit Check: Delegate to the centralized service.
+        await userActionLimitService.checkEngagementCreationLimit(
+          user: authenticatedUser,
+          engagement: engagementToCreate,
+        );
+
+        return context.read<DataRepository<Engagement>>().create(
+          item: engagementToCreate,
+          userId: null,
+        );
+      },
+      'report': (context, item, uid) async {
+        _log.info('Executing custom creator for report.');
+        final authenticatedUser = context.read<User>();
+        final userActionLimitService = context.read<UserActionLimitService>();
+        final reportToCreate = item as Report;
+
+        // Security Check
+        if (reportToCreate.reporterUserId != authenticatedUser.id) {
+          throw const ForbiddenException(
+            'You can only create reports for your own account.',
+          );
+        }
+
+        // Limit Check
+        await userActionLimitService.checkReportCreationLimit(
+          user: authenticatedUser,
+        );
+
+        return context.read<DataRepository<Report>>().create(item: item);
       },
     });
 
@@ -398,8 +459,7 @@ class DataOperationRegistry {
         );
         final authenticatedUser = context.read<User>();
         final permissionService = context.read<PermissionService>();
-        final userPreferenceLimitService = context
-            .read<UserPreferenceLimitService>();
+        final userActionLimitService = context.read<UserActionLimitService>();
         final userContentPreferencesRepository = context
             .read<DataRepository<UserContentPreferences>>();
 
@@ -416,7 +476,7 @@ class DataOperationRegistry {
             'User ${authenticatedUser.id} has bypass permission. Skipping limit checks.',
           );
         } else {
-          await userPreferenceLimitService.checkUserContentPreferencesLimits(
+          await userActionLimitService.checkUserContentPreferencesLimits(
             user: authenticatedUser,
             updatedPreferences: preferencesToUpdate,
           );
@@ -440,6 +500,15 @@ class DataOperationRegistry {
             id: id,
             item: item as InAppNotification,
           ),
+      'engagement': (c, id, item, uid) =>
+          c.read<DataRepository<Engagement>>().update(
+            id: id,
+            item: item as Engagement,
+          ),
+      'report': (c, id, item, uid) => c.read<DataRepository<Report>>().update(
+        id: id,
+        item: item as Report,
+      ),
     });
 
     // --- Register Item Deleters ---
@@ -467,6 +536,10 @@ class DataOperationRegistry {
       'in_app_notification': (c, id, uid) => c
           .read<DataRepository<InAppNotification>>()
           .delete(id: id, userId: uid),
+      'engagement': (c, id, uid) =>
+          c.read<DataRepository<Engagement>>().delete(id: id, userId: uid),
+      'report': (c, id, uid) =>
+          c.read<DataRepository<Report>>().delete(id: id, userId: uid),
     });
   }
 }
