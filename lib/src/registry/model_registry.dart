@@ -500,6 +500,90 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresOwnershipCheck: true,
     ),
   ),
+  'engagement': ModelConfig<Engagement>(
+    fromJson: Engagement.fromJson,
+    getId: (e) => e.id,
+    getOwnerId: (dynamic item) => (item as Engagement).userId,
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.engagementReadOwned,
+      requiresOwnershipCheck: true,
+    ),
+    getItemPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.engagementReadOwned,
+      requiresOwnershipCheck: true,
+    ),
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.engagementCreateOwned,
+    ),
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.engagementUpdateOwned,
+      requiresOwnershipCheck: true,
+    ),
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.engagementDeleteOwned,
+      requiresOwnershipCheck: true,
+    ),
+  ),
+  'report': ModelConfig<Report>(
+    fromJson: Report.fromJson,
+    getId: (r) => r.id,
+    getOwnerId: (dynamic item) => (item as Report).reporterUserId,
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.reportReadOwned,
+      requiresOwnershipCheck: true,
+    ),
+    getItemPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.reportCreateOwned,
+    ),
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+  ),
+  'app_review': ModelConfig<AppReview>(
+    fromJson: AppReview.fromJson,
+    getId: (r) => r.id,
+    getOwnerId: (dynamic item) => (item as AppReview).userId,
+    // Collection GET is allowed for a user to fetch their own review record.
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.appReviewReadOwned,
+      requiresOwnershipCheck: true,
+    ),
+    // Item GET is allowed for a user to fetch their own review record.
+    getItemPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.appReviewReadOwned,
+      requiresOwnershipCheck: true,
+    ),
+    // POST is allowed for a user to create their initial review record.
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.appReviewCreateOwned,
+    ),
+    // PUT is allowed for a user to update their review record (e.g., add
+    // negative feedback history).
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.appReviewUpdateOwned,
+      requiresOwnershipCheck: true,
+    ),
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+  ),
 };
 
 /// Type alias for the ModelRegistry map for easier provider usage.
