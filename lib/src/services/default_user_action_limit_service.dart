@@ -47,7 +47,7 @@ class DefaultUserActionLimitService implements UserActionLimitService {
       savedHeadlinesLimit,
       savedHeadlineFiltersLimit,
       savedSourceFiltersLimit,
-    ) = _getLimitsForRole(
+    ) = _getPreferenceLimitsForRole(
       user.appRole,
       limits,
     );
@@ -276,7 +276,7 @@ class DefaultUserActionLimitService implements UserActionLimitService {
       _log.warning(
         'User ${user.id} exceeded reactions per day limit: $reactionsLimit.',
       );
-      throw ForbiddenException(
+      throw const ForbiddenException(
         'You have reached your daily limit for reactions.',
       );
     }
@@ -303,7 +303,7 @@ class DefaultUserActionLimitService implements UserActionLimitService {
         _log.warning(
           'User ${user.id} exceeded comments per day limit: $commentsLimit.',
         );
-        throw ForbiddenException(
+        throw const ForbiddenException(
           'You have reached your daily limit for comments.',
         );
       }
@@ -339,7 +339,7 @@ class DefaultUserActionLimitService implements UserActionLimitService {
       _log.warning(
         'User ${user.id} exceeded reports per day limit: $reportsLimit.',
       );
-      throw ForbiddenException('You have reached your daily limit for reports.');
+      throw const ForbiddenException('You have reached your daily limit for reports.');
     }
 
     _log.info('Report creation limit checks passed for user ${user.id}.');
