@@ -239,11 +239,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "v1.0.1"
-      resolved-ref: a353f46f48019b0fc8e9180cf4061623adcd2b99
+      ref: cb4848f25a5914ec705cf2c743ec6fc75171f7fa
+      resolved-ref: cb4848f25a5914ec705cf2c743ec6fc75171f7fa
       url: "https://github.com/flutter-news-app-full-source-code/data-mongodb.git"
     source: git
-    version: "1.0.1"
+    version: "1.1.0"
   data_repository:
     dependency: "direct main"
     description:
