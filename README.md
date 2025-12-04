@@ -72,23 +72,6 @@ The API automatically validates the structure of all incoming data, ensuring tha
 > **Your Advantage:** This eliminates an entire class of runtime errors and saves you from writing tedious, repetitive validation code. Your data models remain consistent and your API stays resilient against malformed requests.
 
 ---
-
-### 📲 Dynamic & Personalized Notifications
-A complete, multi-provider notification engine that empowers you to engage users with timely and relevant alerts, seamlessly integrated into their app experience.
-- **Editorial-Driven Alerts:** Any piece of content can be designated as "breaking news" from the content dashboard, triggering immediate, high-priority push notifications that are also captured in each user's in-app notification center.
-- **User-Crafted Notification Streams:** Users can create and save persistent **Saved Headline Filters** based on any combination of content filters (such as topics, sources, or regions). They can then subscribe to notifications for that filter, receiving alerts only for the news they care about.
-- **Flexible Delivery Mechanisms:** The system is architected to support multiple notification types for each subscription, from immediate alerts to scheduled daily or weekly digests.
-- **Provider Agnostic:** The engine is built to be provider-agnostic, with out-of-the-box support for Firebase (FCM) and OneSignal. The active provider can be switched remotely without any code changes.
-- **Intelligent, Self-Healing Delivery:** The notification engine is designed for long-term reliability. It automatically detects and prunes invalid device tokens—for example, when a user uninstalls the app—ensuring the system remains efficient and notifications are only sent to active devices.
-> **Your Advantage:** You get a complete, secure, and scalable notification system that enhances user engagement and can be managed entirely from the web dashboard.
-
-</details>
-
-<details>
-<summary><strong>🏗️ Architecture & Infrastructure</strong></summary>
-
-### 🚀 High-Performance by Design
-Built on a modern, minimalist foundation to ensure low latency and excellent performance.
 - **Dart Frog Core:** Leverages the high-performance Dart Frog framework for a fast, efficient, and scalable backend.
 - **Clean, Layered Architecture:** A strict separation of concerns into distinct layers makes the codebase clean, maintainable, and easy to reason about.
 > **Your Advantage:** Your backend is built on a solid, modern foundation that is both powerful and a pleasure to work with, reducing maintenance overhead.
@@ -109,6 +92,26 @@ Say goodbye to risky manual database updates. A professional, versioned migratio
 > **Your Advantage:** Deploy with confidence. This robust system eliminates an entire class of deployment errors, ensuring your data models evolve gracefully and reliably with full traceability.
 
 </details>
+
+<details>
+<summary><strong>📲 User Engagement & Notifications</strong></summary>
+
+### 🔔 A Dynamic, Multi-Channel Notification Engine
+A complete, multi-provider notification engine empowers you to engage users with timely and relevant alerts, seamlessly integrated into their app experience.
+- **Editorial-Driven Alerts:** Designate any content as "breaking news" from the dashboard to trigger immediate, high-priority push notifications to all relevant subscribers.
+- **User-Crafted Notification Streams:** Allow users to create and save persistent filters based on any combination of content attributes (such as topics or sources) and subscribe to receive notifications that match their exact interests.
+- **Centralized In-App Inbox:** Every push notification is automatically captured as a persistent in-app message, giving users a central place to catch up on alerts they may have missed.
+- **Provider Agnostic & Scalable:** The engine is built to be provider-agnostic, with out-of-the-box support for Firebase (FCM) and OneSignal. The active provider can be switched remotely without any code changes.
+- **Intelligent, Self-Healing Delivery:** The system is designed for long-term efficiency. It automatically detects and prunes invalid device tokens—for example, when a user uninstalls the app—ensuring your delivery infrastructure remains clean and performant.
+> **Your Advantage:** Drive user re-engagement with a powerful and flexible notification system that delivers both broad-reaching alerts and deeply personalized content streams, all built on a scalable, self-healing, and provider-agnostic architecture.
+
+</details>
+
+<details>
+<summary><strong>🏗️ Architecture & Infrastructure</strong></summary>
+
+### 🚀 High-Performance by Design
+Built on a modern, minimalist foundation to ensure low latency and excellent performance.
 
 ## 🔑 Licensing
 This `Flutter News App API Server` package is an integral part of the [**Flutter News App Full Source Code Toolkit**](https://github.com/flutter-news-app-full-source-code). For comprehensive details regarding licensing, including trial and commercial options for the entire toolkit, please refer to the main toolkit organization page.

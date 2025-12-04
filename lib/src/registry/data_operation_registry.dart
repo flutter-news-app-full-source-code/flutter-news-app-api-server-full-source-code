@@ -212,11 +212,11 @@ class DataOperationRegistry {
       ),
       'app_review': (c, uid, f, s, p) =>
           c.read<DataRepository<AppReview>>().readAll(
-                userId: uid,
-                filter: f,
-                sort: s,
-                pagination: p,
-              ),
+            userId: uid,
+            filter: f,
+            sort: s,
+            pagination: p,
+          ),
     });
 
     // --- Register Item Creators ---
@@ -359,6 +359,21 @@ class DataOperationRegistry {
           throw const ForbiddenException(
             'You can only create app reviews for your own account.',
           );
+        }
+
+        // Business Logic Check: Ensure a user can only have one AppReview record.
+        // This prevents creating multiple feedback entries, adhering to the
+        // intended "create once, update later" workflow.
+        final appReviewRepository = context.read<DataRepository<AppReview>>();
+        final existingReviews = await appReviewRepository.readAll(
+          filter: {'userId': authenticatedUser.id},
+        );
+
+        if (existingReviews.items.isNotEmpty) {
+          _log.warning(
+            'User ${authenticatedUser.id} attempted to create a second AppReview record.',
+          );
+          throw const ConflictException('An app review record already exists.');
         }
 
         return context.read<DataRepository<AppReview>>().create(item: item);
@@ -534,9 +549,9 @@ class DataOperationRegistry {
       ),
       'app_review': (c, id, item, uid) =>
           c.read<DataRepository<AppReview>>().update(
-                id: id,
-                item: item as AppReview,
-              ),
+            id: id,
+            item: item as AppReview,
+          ),
     });
 
     // --- Register Item Deleters ---
