@@ -333,7 +333,9 @@ class DataOperationRegistry {
           _log.warning(
             'User ${authenticatedUser.id} attempted to create a second engagement for entity ${engagementToCreate.entityId}.',
           );
-          throw const ConflictException('An engagement for this item already exists.');
+          throw const ConflictException(
+            'An engagement for this item already exists.',
+          );
         }
 
         // Limit Check: Delegate to the centralized service.
