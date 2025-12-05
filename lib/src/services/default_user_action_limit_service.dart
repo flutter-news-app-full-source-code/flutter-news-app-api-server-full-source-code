@@ -265,24 +265,35 @@ class DefaultUserActionLimitService implements UserActionLimitService {
       );
     }
 
-    // Count all engagements in the last 24 hours for the reaction limit.
-    final twentyFourHoursAgo = DateTime.now().subtract(
-      const Duration(hours: 24),
-    );
-    final reactionCount = await _engagementRepository.count(
-      filter: {
-        'userId': user.id,
-        'createdAt': {r'$gte': twentyFourHoursAgo.toIso8601String()},
-      },
-    );
+    // --- 1. Check Reaction Limit (only if a reaction is present) ---
+    if (engagement.reaction != null) {
+      final reactionsLimit = limits.reactionsPerDay[user.appRole];
+      if (reactionsLimit == null) {
+        throw StateError(
+          'Reactions per day limit not configured for role: ${user.appRole}',
+        );
+      }
 
-    if (reactionCount >= reactionsLimit) {
-      _log.warning(
-        'User ${user.id} exceeded reactions per day limit: $reactionsLimit.',
+      // Count engagements with reactions in the last 24 hours.
+      final twentyFourHoursAgo = DateTime.now().subtract(
+        const Duration(hours: 24),
       );
-      throw const ForbiddenException(
-        'You have reached your daily limit for reactions.',
+      final reactionCount = await _engagementRepository.count(
+        filter: {
+          'userId': user.id,
+          'reaction': {r'$exists': true, r'$ne': null},
+          'createdAt': {r'$gte': twentyFourHoursAgo.toIso8601String()},
+        },
       );
+
+      if (reactionCount >= reactionsLimit) {
+        _log.warning(
+          'User ${user.id} exceeded reactions per day limit: $reactionsLimit.',
+        );
+        throw const ForbiddenException(
+          'You have reached your daily limit for reactions.',
+        );
+      }
     }
 
     // --- 2. Check Comment Limit (only if a comment is present) ---
@@ -295,6 +306,9 @@ class DefaultUserActionLimitService implements UserActionLimitService {
       }
 
       // Count engagements with comments in the last 24 hours.
+      final twentyFourHoursAgo = DateTime.now().subtract(
+        const Duration(hours: 24),
+      );
       final commentCount = await _engagementRepository.count(
         filter: {
           'userId': user.id,
