@@ -318,6 +318,26 @@ class DataOperationRegistry {
           );
         }
 
+        // Business Logic Check: Ensure a user can only have one engagement
+        // per headline to prevent duplicate reactions or comments.
+        final engagementRepository = context.read<DataRepository<Engagement>>();
+        final existingEngagements = await engagementRepository.readAll(
+          filter: {
+            'userId': authenticatedUser.id,
+            'entityId': engagementToCreate.entityId,
+            'entityType': engagementToCreate.entityType.name,
+          },
+        );
+
+        if (existingEngagements.items.isNotEmpty) {
+          _log.warning(
+            'User ${authenticatedUser.id} attempted to create a second engagement for entity ${engagementToCreate.entityId}.',
+          );
+          throw const ConflictException(
+            'An engagement for this item already exists.',
+          );
+        }
+
         // Limit Check: Delegate to the centralized service.
         await userActionLimitService.checkEngagementCreationLimit(
           user: authenticatedUser,
