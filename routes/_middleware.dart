@@ -140,6 +140,16 @@ Handler middleware(Handler handler) {
                 ),
               )
               .use(
+                provider<DataRepository<Engagement>>(
+                  (_) => deps.engagementRepository,
+                ),
+              )
+              .use(
+                provider<DataRepository<Report>>(
+                  (_) => deps.reportRepository,
+                ),
+              )
+              .use(
                 provider<DataRepository<AppReview>>(
                   (_) => deps.appReviewRepository,
                 ),
