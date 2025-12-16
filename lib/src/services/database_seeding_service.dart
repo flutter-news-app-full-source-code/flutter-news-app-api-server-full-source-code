@@ -40,6 +40,7 @@ class DatabaseSeedingService {
       getId: (item) => item.id,
       toJson: (item) => item.toJson(),
     );
+    await _seedAnalyticsPlaceholders();
 
     _log.info('Database seeding process completed.');
   }
@@ -149,6 +150,72 @@ class DatabaseSeedingService {
       _log.severe('Failed to seed RemoteConfig.', e, s);
       rethrow;
     }
+  }
+
+  /// Seeds placeholder documents for analytics card data collections.
+  ///
+  /// This is a structural seeding process. It ensures that the collections
+  /// exist and that there is a default document for every possible card ID.
+  /// This prevents `NotFound` errors on the dashboard before the first
+  /// `AnalyticsSyncWorker` run and guarantees the API always returns a valid,
+  /// empty object.
+  Future<void> _seedAnalyticsPlaceholders() async {
+    _log.info('Seeding analytics placeholder documents...');
+
+    // --- KPI Cards ---
+    for (final kpiId in KpiCardId.values) {
+      final placeholder = KpiCardData(
+        id: kpiId,
+        label: kpiId.name, // Will be updated by worker
+        timeFrames: {
+          for (final timeFrame in KpiTimeFrame.values)
+            timeFrame: const KpiTimeFrameData(value: 0, trend: '0%'),
+        },
+      );
+      await _db.collection('kpi_card_data').update(
+        where.eq('_id', kpiId.name),
+        {r'$setOnInsert': placeholder.toJson()},
+        upsert: true,
+      );
+    }
+    _log.info('Seeded placeholder KPI cards.');
+
+    // --- Chart Cards ---
+    for (final chartId in ChartCardId.values) {
+      final placeholder = ChartCardData(
+        id: chartId,
+        label: chartId.name,
+        type: ChartType.line, // Default type
+        timeFrames: {
+          for (final timeFrame in ChartTimeFrame.values)
+            timeFrame: <DataPoint>[],
+        },
+      );
+      await _db.collection('chart_card_data').update(
+        where.eq('_id', chartId.name),
+        {r'$setOnInsert': placeholder.toJson()},
+        upsert: true,
+      );
+    }
+    _log.info('Seeded placeholder Chart cards.');
+
+    // --- Ranked List Cards ---
+    for (final rankedListId in RankedListCardId.values) {
+      final placeholder = RankedListCardData(
+        id: rankedListId,
+        label: rankedListId.name,
+        timeFrames: {
+          for (final timeFrame in RankedListTimeFrame.values)
+            timeFrame: <RankedListItem>[],
+        },
+      );
+      await _db.collection('ranked_list_card_data').update(
+        where.eq('_id', rankedListId.name),
+        {r'$setOnInsert': placeholder.toJson()},
+        upsert: true,
+      );
+    }
+    _log.info('Seeded placeholder Ranked List cards.');
   }
 
   /// Ensures that the necessary indexes exist on the collections.
@@ -325,6 +392,34 @@ class DatabaseSeedingService {
         ],
       });
       _log.info('Ensured indexes for "app_reviews".');
+
+      // Indexes for analytics card data collections
+      await _db
+          .collection('kpi_card_data')
+          .createIndex(
+            keys: {'_id': 1},
+            name: 'kpi_card_data_id_index',
+            unique: true,
+          );
+      _log.info('Ensured indexes for "kpi_card_data".');
+
+      await _db
+          .collection('chart_card_data')
+          .createIndex(
+            keys: {'_id': 1},
+            name: 'chart_card_data_id_index',
+            unique: true,
+          );
+      _log.info('Ensured indexes for "chart_card_data".');
+
+      await _db
+          .collection('ranked_list_card_data')
+          .createIndex(
+            keys: {'_id': 1},
+            name: 'ranked_list_card_data_id_index',
+            unique: true,
+          );
+      _log.info('Ensured indexes for "ranked_list_card_data".');
 
       _log.info('Database indexes are set up correctly.');
     } on Exception catch (e, s) {
