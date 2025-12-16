@@ -6,8 +6,6 @@ import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
 import 'package:logging/logging.dart';
@@ -120,8 +118,6 @@ class DataOperationRegistry {
           .read(id: id, userId: null),
       'remote_config': (c, id) =>
           c.read<DataRepository<RemoteConfig>>().read(id: id, userId: null),
-      'dashboard_summary': (c, id) =>
-          c.read<DashboardSummaryService>().getSummary(),
       'in_app_notification': (c, id) => c
           .read<DataRepository<InAppNotification>>()
           .read(id: id, userId: null),
@@ -134,6 +130,13 @@ class DataOperationRegistry {
           c.read<DataRepository<Report>>().read(id: id, userId: null),
       'app_review': (c, id) =>
           c.read<DataRepository<AppReview>>().read(id: id, userId: null),
+      'kpi_card_data': (c, id) =>
+          c.read<DataRepository<KpiCardData>>().read(id: id, userId: null),
+      'chart_card_data': (c, id) =>
+          c.read<DataRepository<ChartCardData>>().read(id: id, userId: null),
+      'ranked_list_card_data': (c, id) => c
+          .read<DataRepository<RankedListCardData>>()
+          .read(id: id, userId: null),
     });
 
     // --- Register "Read All" Readers ---
@@ -217,6 +220,27 @@ class DataOperationRegistry {
             sort: s,
             pagination: p,
           ),
+      'kpi_card_data': (c, uid, f, s, p) =>
+          c.read<DataRepository<KpiCardData>>().readAll(
+                userId: uid,
+                filter: f,
+                sort: s,
+                pagination: p,
+              ),
+      'chart_card_data': (c, uid, f, s, p) =>
+          c.read<DataRepository<ChartCardData>>().readAll(
+                userId: uid,
+                filter: f,
+                sort: s,
+                pagination: p,
+              ),
+      'ranked_list_card_data': (c, uid, f, s, p) =>
+          c.read<DataRepository<RankedListCardData>>().readAll(
+                userId: uid,
+                filter: f,
+                sort: s,
+                pagination: p,
+              ),
     });
 
     // --- Register Item Creators ---
