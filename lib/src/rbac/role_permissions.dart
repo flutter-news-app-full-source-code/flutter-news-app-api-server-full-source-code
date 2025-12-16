@@ -102,6 +102,9 @@ final Set<String> _dashboardAdminPermissions = {
   Permissions.remoteConfigUpdate,
   Permissions.remoteConfigDelete,
   Permissions.userPreferenceBypassLimits,
+
+  // Analytics
+  Permissions.analyticsRead,
 };
 
 /// Defines the mapping between user roles (both app and dashboard) and the
