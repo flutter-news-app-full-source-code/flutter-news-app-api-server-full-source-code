@@ -8,11 +8,11 @@ import 'package:logging/logging.dart';
 ///
 /// This service reads the remote config to determine the active provider,
 /// instantiates the correct reporting client, and iterates through all
-/// `KpiCardId`, `ChartCardId`, and `RankedListCardId` enums.
+/// [KpiCardId], [ChartCardId], and [RankedListCardId] enums.
 ///
 /// For each ID, it fetches the corresponding data from the provider,
-/// transforms it into the appropriate `KpiCardData`, `ChartCardData`, or
-/// `RankedListCardData` model, and upserts it into the database using the
+/// transforms it into the appropriate [KpiCardData], [ChartCardData], or
+/// [RankedListCardData] model, and upserts it into the database using the
 /// generic repositories. This service encapsulates the entire ETL (Extract,
 /// Transform, Load) logic.
 /// {@endtemplate}
@@ -26,13 +26,13 @@ class AnalyticsSyncService {
     required AnalyticsReportingClient? googleAnalyticsClient,
     required AnalyticsReportingClient? mixpanelClient,
     required Logger log,
-  })  : _remoteConfigRepository = remoteConfigRepository,
-        _kpiCardRepository = kpiCardRepository,
-        _chartCardRepository = chartCardRepository,
-        _rankedListCardRepository = rankedListCardRepository,
-        _googleAnalyticsClient = googleAnalyticsClient,
-        _mixpanelClient = mixpanelClient,
-        _log = log;
+  }) : _remoteConfigRepository = remoteConfigRepository,
+       _kpiCardRepository = kpiCardRepository,
+       _chartCardRepository = chartCardRepository,
+       _rankedListCardRepository = rankedListCardRepository,
+       _googleAnalyticsClient = googleAnalyticsClient,
+       _mixpanelClient = mixpanelClient,
+       _log = log;
 
   final DataRepository<RemoteConfig> _remoteConfigRepository;
   final DataRepository<KpiCardData> _kpiCardRepository;
@@ -47,8 +47,9 @@ class AnalyticsSyncService {
     _log.info('Starting analytics sync process...');
 
     try {
-      final remoteConfig =
-          await _remoteConfigRepository.read(id: kRemoteConfigId);
+      final remoteConfig = await _remoteConfigRepository.read(
+        id: kRemoteConfigId,
+      );
       final analyticsConfig = remoteConfig.features.analytics;
 
       if (!analyticsConfig.enabled) {
@@ -89,7 +90,7 @@ class AnalyticsSyncService {
       case AnalyticsProvider.mixpanel:
         return _mixpanelClient;
       case AnalyticsProvider.demo:
-        return null; // Demo provider does not fetch data.
+        return null; // Demo is intended for the mobile client demo env.
     }
   }
 
@@ -178,7 +179,9 @@ class AnalyticsSyncService {
           item: rankedListCard,
           upsert: true,
         );
-        _log.finer('Successfully synced Ranked List card: ${rankedListId.name}');
+        _log.finer(
+          'Successfully synced Ranked List card: ${rankedListId.name}',
+        );
       } catch (e, s) {
         _log.severe(
           'Failed to sync Ranked List card: ${rankedListId.name}',
