@@ -9,10 +9,17 @@ sealed class AnalyticsQuery {
   const AnalyticsQuery();
 }
 
+/// A sealed class for queries that return a numeric metric value, such as
+/// a total count or a time series.
+sealed class MetricQuery extends AnalyticsQuery {
+  /// {@macro metric_query}
+  const MetricQuery();
+}
+
 /// A query for a simple event count.
 ///
 /// This is used when the metric is the count of a specific [AnalyticsEvent].
-class EventCountQuery extends AnalyticsQuery {
+class EventCountQuery extends MetricQuery {
   /// {@macro event_count_query}
   const EventCountQuery({required this.event});
 
@@ -23,7 +30,7 @@ class EventCountQuery extends AnalyticsQuery {
 /// A query for a standard, provider-defined metric (e.g., 'activeUsers').
 ///
 /// This is used for metrics that have a built-in name in the provider's API.
-class StandardMetricQuery extends AnalyticsQuery {
+class StandardMetricQuery extends MetricQuery {
   /// {@macro standard_metric_query}
   const StandardMetricQuery({required this.metric});
 
