@@ -17,20 +17,20 @@ abstract class AnalyticsReportingClient {
   ///
   /// Returns a list of [DataPoint]s representing the metric's value over time.
   Future<List<DataPoint>> getTimeSeries(
-    AnalyticsQuery query,
+    MetricQuery query,
     DateTime startDate,
     DateTime endDate,
   );
 
   /// Fetches a single metric value for a given time range.
   ///
-  /// - [query]: The structured query object defining what to fetch.
+  /// - [query]: The structured metric query object defining what to fetch.
   /// - [startDate]: The start date for the time range.
   /// - [endDate]: The end date for the time range.
   ///
   /// Returns the total value of the metric as a [num].
   Future<num> getMetricTotal(
-    AnalyticsQuery query,
+    MetricQuery query,
     DateTime startDate,
     DateTime endDate,
   );
