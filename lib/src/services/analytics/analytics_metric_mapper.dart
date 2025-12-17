@@ -129,7 +129,7 @@ class AnalyticsMetricMapper {
     ChartCardId.contentSourcesEngagementByType: const StandardMetricQuery(
       metric: 'database:sourceEngagementByType',
     ),
-    ChartCardId.content_sources_status_distribution: const StandardMetricQuery(
+    ChartCardId.contentSourcesStatusDistribution: const StandardMetricQuery(
       metric: 'database:sourceStatusDistribution',
     ),
     // Topics Tab
@@ -137,7 +137,7 @@ class AnalyticsMetricMapper {
         const StandardMetricQuery(
           metric: 'database:headlinesByTopic',
         ),
-    ChartCardId.content_headlines_breaking_news_distribution:
+    ChartCardId.contentHeadlinesBreakingNewsDistribution:
         const StandardMetricQuery(
           metric: 'database:breakingNewsDistribution',
         ),
