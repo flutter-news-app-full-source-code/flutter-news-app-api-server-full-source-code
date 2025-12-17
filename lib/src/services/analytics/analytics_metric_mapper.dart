@@ -10,17 +10,19 @@ import 'package:flutter_news_app_api_server_full_source_code/src/models/models.d
 /// {@endtemplate}
 class AnalyticsMetricMapper {
   /// Returns the query object for a given KPI card.
-  AnalyticsQuery? getKpiQuery(KpiCardId kpiId) {
+  MetricQuery? getKpiQuery(KpiCardId kpiId) {
     return _kpiQueryMappings[kpiId];
   }
 
   /// Returns the query object for a given chart card.
-  AnalyticsQuery? getChartQuery(ChartCardId chartId) {
+  MetricQuery? getChartQuery(ChartCardId chartId) {
     return _chartQueryMappings[chartId];
   }
 
   /// Returns the query object for a ranked list.
-  AnalyticsQuery? getRankedListQuery(RankedListCardId rankedListId) {
+  AnalyticsQuery? getRankedListQuery(
+    RankedListCardId rankedListId,
+  ) {
     return _rankedListQueryMappings[rankedListId];
   }
 
@@ -112,24 +114,62 @@ class AnalyticsMetricMapper {
     ChartCardId.contentHeadlinesLikesOverTime: const EventCountQuery(
       event: AnalyticsEvent.reactionCreated,
     ),
-    // Other charts are placeholders for now as they require more complex
-    // queries or database-only aggregations not yet implemented.
-    ChartCardId.contentHeadlinesViewsByTopic: null,
-    ChartCardId.contentSourcesHeadlinesPublishedOverTime: null,
-    ChartCardId.contentSourcesFollowersOverTime: null,
-    ChartCardId.contentSourcesEngagementByType: null,
-    ChartCardId.contentTopicsFollowersOverTime: null,
-    ChartCardId.contentTopicsHeadlinesPublishedOverTime: null,
-    ChartCardId.contentTopicsEngagementByTopic: null,
-    ChartCardId.engagementsReactionsOverTime: null,
-    ChartCardId.engagementsCommentsOverTime: null,
-    ChartCardId.engagementsReactionsByType: null,
-    ChartCardId.engagementsReportsSubmittedOverTime: null,
-    ChartCardId.engagementsReportsResolutionTimeOverTime: null,
-    ChartCardId.engagementsReportsByReason: null,
-    ChartCardId.engagementsAppReviewsFeedbackOverTime: null,
-    ChartCardId.engagementsAppReviewsPositiveVsNegative: null,
-    ChartCardId.engagementsAppReviewsStoreRequestsOverTime: null,
+    ChartCardId.contentHeadlinesViewsByTopic: const StandardMetricQuery(
+      metric: 'database:viewsByTopic',
+    ),
+    // Sources Tab
+    ChartCardId.contentSourcesHeadlinesPublishedOverTime:
+        const StandardMetricQuery(
+      metric: 'database:headlinesBySource',
+    ),
+    ChartCardId.contentSourcesFollowersOverTime: const StandardMetricQuery(
+      metric: 'database:sourceFollowers',
+    ),
+    ChartCardId.contentSourcesEngagementByType: const StandardMetricQuery(
+      metric: 'database:sourceEngagementByType',
+    ),
+    // Topics Tab
+    ChartCardId.contentTopicsFollowersOverTime: const StandardMetricQuery(
+      metric: 'database:topicFollowers',
+    ),
+    ChartCardId.contentTopicsHeadlinesPublishedOverTime:
+        const StandardMetricQuery(
+      metric: 'database:headlinesByTopic',
+    ),
+    ChartCardId.contentTopicsEngagementByTopic: const StandardMetricQuery(
+      metric: 'database:topicEngagement',
+    ),
+    // Engagements Tab
+    ChartCardId.engagementsReactionsOverTime: const EventCountQuery(
+      event: AnalyticsEvent.reactionCreated,
+    ),
+    ChartCardId.engagementsCommentsOverTime: const EventCountQuery(
+      event: AnalyticsEvent.commentCreated,
+    ),
+    ChartCardId.engagementsReactionsByType: const StandardMetricQuery(
+      metric: 'database:reactionsByType',
+    ),
+    // Reports Tab
+    ChartCardId.engagementsReportsSubmittedOverTime: const EventMetricQuery(
+      event: AnalyticsEvent.reportSubmitted,
+    ),
+    ChartCardId.engagementsReportsResolutionTimeOverTime:
+        const StandardMetricQuery(metric: 'database:avgReportResolutionTime'),
+    ChartCardId.engagementsReportsByReason: const StandardMetricQuery(
+      metric: 'database:reportsByReason',
+    ),
+    // App Reviews Tab
+    ChartCardId.engagementsAppReviewsFeedbackOverTime: const EventCountQuery(
+      event: AnalyticsEvent.appReviewPromptResponded,
+    ),
+    ChartCardId.engagementsAppReviewsPositiveVsNegative:
+        const StandardMetricQuery(
+      metric: 'database:appReviewFeedback',
+    ),
+    ChartCardId.engagementsAppReviewsStoreRequestsOverTime:
+        const EventCountQuery(
+      event: AnalyticsEvent.appReviewStoreRequested,
+    ),
   };
 
   static final Map<RankedListCardId, AnalyticsQuery>
