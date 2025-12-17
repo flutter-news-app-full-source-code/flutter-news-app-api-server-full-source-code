@@ -73,7 +73,7 @@ class MixpanelDataClient implements AnalyticsReportingClient {
     }
     if (metricName == 'activeUsers') {
       // Mixpanel uses a special name for active users.
-      metricName = '\$active';
+      metricName = r'$active';
     }
 
     _log.info('Fetching time series for metric "$metricName" from Mixpanel.');
@@ -131,7 +131,7 @@ class MixpanelDataClient implements AnalyticsReportingClient {
     }
     if (metricName == 'activeUsers') {
       // Mixpanel uses a special name for active users.
-      metricName = '\$active';
+      metricName = r'$active';
     }
 
     _log.info('Fetching total for metric "$metricName" from Mixpanel.');

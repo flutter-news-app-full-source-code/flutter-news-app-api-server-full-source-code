@@ -113,7 +113,7 @@ class AnalyticsSyncService {
     _log.info('Syncing KPI cards...');
     for (final kpiId in KpiCardId.values) {
       try {
-        final query = _analyticsMetricMapper.getKpiQuery(kpiId) as MetricQuery?;
+        final query = _analyticsMetricMapper.getKpiQuery(kpiId);
         if (query == null) {
           _log.finer('No metric mapping for KPI ${kpiId.name}. Skipping.');
           continue;
@@ -133,7 +133,7 @@ class AnalyticsSyncService {
 
           if (isDatabaseQuery) {
             value = await _getDatabaseMetricTotal(
-              query as StandardMetricQuery,
+              query,
               startDate,
               now,
             );
@@ -146,7 +146,7 @@ class AnalyticsSyncService {
 
           if (isDatabaseQuery) {
             prevValue = await _getDatabaseMetricTotal(
-              query as StandardMetricQuery,
+              query,
               prevPeriodStartDate,
               prevPeriodEndDate,
             );
@@ -184,7 +184,7 @@ class AnalyticsSyncService {
     for (final chartId in ChartCardId.values) {
       try {
         final query =
-            _analyticsMetricMapper.getChartQuery(chartId) as MetricQuery?;
+            _analyticsMetricMapper.getChartQuery(chartId);
         if (query == null) {
           _log.finer('No metric mapping for Chart ${chartId.name}. Skipping.');
           continue;
@@ -204,7 +204,7 @@ class AnalyticsSyncService {
 
           if (isDatabaseQuery) {
             dataPoints = await _getDatabaseTimeSeries(
-              query as StandardMetricQuery,
+              query,
               startDate,
               now,
             );
@@ -258,7 +258,7 @@ class AnalyticsSyncService {
 
           if (isDatabaseQuery) {
             items = await _getDatabaseRankedList(
-              query as StandardMetricQuery,
+              query,
               startDate,
               now,
             );
@@ -387,7 +387,7 @@ class AnalyticsSyncService {
               (e) => DataPoint(
                 label: (e['label'] as String)
                     .replaceAllMapped(
-                      RegExp(r'([A-Z])'),
+                      RegExp('([A-Z])'),
                       (match) => ' ${match.group(1)}',
                     )
                     .trim()
@@ -479,7 +479,7 @@ class AnalyticsSyncService {
   }
 
   String _formatLabel(String idName) => idName
-      .replaceAll(RegExp(r'([A-Z])'), r' $1')
+      .replaceAll(RegExp('([A-Z])'), r' $1')
       .trim()
       .split(' ')
       .map((w) => '${w[0].toUpperCase()}${w.substring(1)}')

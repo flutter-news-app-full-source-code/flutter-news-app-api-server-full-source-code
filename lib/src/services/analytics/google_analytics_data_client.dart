@@ -162,7 +162,7 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
     DateTime startDate,
     DateTime endDate,
   ) async {
-    final metricName = 'eventCount'; // Ranked lists are always event counts
+    const metricName = 'eventCount'; // Ranked lists are always event counts
     final dimensionName = query.dimension;
 
     _log.info(
@@ -179,7 +179,7 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
       dimensions: [
         GARequestDimension(name: 'customEvent:$dimensionName'),
       ],
-      metrics: [
+      metrics: const [
         GARequestMetric(name: metricName),
       ],
       limit: query.limit,

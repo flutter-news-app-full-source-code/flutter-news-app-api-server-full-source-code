@@ -40,8 +40,13 @@ class RunReportRequest extends Equatable {
   Map<String, dynamic> toJson() => _$RunReportRequestToJson(this);
 
   @override
-  List<Object?> get props =>
-      [dateRanges, dimensions, metrics, dimensionFilter, limit];
+  List<Object?> get props => [
+    dateRanges,
+    dimensions,
+    metrics,
+    dimensionFilter,
+    limit,
+  ];
 }
 
 /// {@template ga_request_date_range}
