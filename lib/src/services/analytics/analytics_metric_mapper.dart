@@ -26,7 +26,7 @@ class AnalyticsMetricMapper {
     return _rankedListQueryMappings[rankedListId];
   }
 
-  static final Map<KpiCardId, AnalyticsQuery> _kpiQueryMappings = {
+  static final Map<KpiCardId, MetricQuery> _kpiQueryMappings = {
     // User KPIs
     KpiCardId.usersTotalRegistered: const EventCountQuery(
       event: AnalyticsEvent.userRegistered,
@@ -97,7 +97,7 @@ class AnalyticsMetricMapper {
     ),
   };
 
-  static final Map<ChartCardId, AnalyticsQuery> _chartQueryMappings = {
+  static final Map<ChartCardId, MetricQuery> _chartQueryMappings = {
     // User Charts
     ChartCardId.usersRegistrationsOverTime: const EventCountQuery(
       event: AnalyticsEvent.userRegistered,
@@ -150,7 +150,7 @@ class AnalyticsMetricMapper {
       metric: 'database:reactionsByType',
     ),
     // Reports Tab
-    ChartCardId.engagementsReportsSubmittedOverTime: const EventMetricQuery(
+    ChartCardId.engagementsReportsSubmittedOverTime: const EventCountQuery(
       event: AnalyticsEvent.reportSubmitted,
     ),
     ChartCardId.engagementsReportsResolutionTimeOverTime:
