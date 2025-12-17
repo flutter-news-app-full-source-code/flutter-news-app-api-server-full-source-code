@@ -494,6 +494,7 @@ class AppDependencies {
         userRepository: userRepository,
         topicRepository: topicRepository,
         sourceRepository: sourceRepository,
+        reportRepository: reportRepository,
         headlineRepository: headlineRepository,
         googleAnalyticsClient: googleAnalyticsClient,
         mixpanelClient: mixpanelClient,
