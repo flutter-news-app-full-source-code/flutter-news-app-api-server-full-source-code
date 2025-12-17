@@ -223,25 +223,25 @@ class DataOperationRegistry {
           ),
       'kpi_card_data': (c, uid, f, s, p) =>
           c.read<DataRepository<KpiCardData>>().readAll(
-                userId: uid,
-                filter: f,
-                sort: s,
-                pagination: p,
-              ),
+            userId: uid,
+            filter: f,
+            sort: s,
+            pagination: p,
+          ),
       'chart_card_data': (c, uid, f, s, p) =>
           c.read<DataRepository<ChartCardData>>().readAll(
-                userId: uid,
-                filter: f,
-                sort: s,
-                pagination: p,
-              ),
+            userId: uid,
+            filter: f,
+            sort: s,
+            pagination: p,
+          ),
       'ranked_list_card_data': (c, uid, f, s, p) =>
           c.read<DataRepository<RankedListCardData>>().readAll(
-                userId: uid,
-                filter: f,
-                sort: s,
-                pagination: p,
-              ),
+            userId: uid,
+            filter: f,
+            sort: s,
+            pagination: p,
+          ),
     });
 
     // --- Register Item Creators ---

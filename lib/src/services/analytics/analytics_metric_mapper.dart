@@ -34,7 +34,9 @@ class AnalyticsMetricMapper {
     KpiCardId.usersNewRegistrations: const EventCountQuery(
       event: AnalyticsEvent.userRegistered,
     ),
-    KpiCardId.usersActiveUsers: const StandardMetricQuery(metric: 'activeUsers'),
+    KpiCardId.usersActiveUsers: const StandardMetricQuery(
+      metric: 'activeUsers',
+    ),
     // Headline KPIs
     KpiCardId.contentHeadlinesTotalPublished: const StandardMetricQuery(
       metric: 'database:headlines',
@@ -82,9 +84,10 @@ class AnalyticsMetricMapper {
     KpiCardId.engagementsReportsResolved: const StandardMetricQuery(
       metric: 'database:reportsResolved',
     ),
-    KpiCardId.engagementsReportsAverageResolutionTime: const StandardMetricQuery(
-      metric: 'database:avgReportResolutionTime',
-    ),
+    KpiCardId.engagementsReportsAverageResolutionTime:
+        const StandardMetricQuery(
+          metric: 'database:avgReportResolutionTime',
+        ),
     // App Review KPIs
     KpiCardId.engagementsAppReviewsTotalFeedback: const EventCountQuery(
       event: AnalyticsEvent.appReviewPromptResponded,
@@ -102,8 +105,9 @@ class AnalyticsMetricMapper {
     ChartCardId.usersRegistrationsOverTime: const EventCountQuery(
       event: AnalyticsEvent.userRegistered,
     ),
-    ChartCardId.usersActiveUsersOverTime:
-        const StandardMetricQuery(metric: 'activeUsers'),
+    ChartCardId.usersActiveUsersOverTime: const StandardMetricQuery(
+      metric: 'activeUsers',
+    ),
     ChartCardId.usersRoleDistribution: const StandardMetricQuery(
       metric: 'database:userRoleDistribution',
     ),
@@ -120,8 +124,8 @@ class AnalyticsMetricMapper {
     // Sources Tab
     ChartCardId.contentSourcesHeadlinesPublishedOverTime:
         const StandardMetricQuery(
-      metric: 'database:headlinesBySource',
-    ),
+          metric: 'database:headlinesBySource',
+        ),
     ChartCardId.contentSourcesFollowersOverTime: const StandardMetricQuery(
       metric: 'database:sourceFollowers',
     ),
@@ -134,8 +138,8 @@ class AnalyticsMetricMapper {
     ),
     ChartCardId.contentTopicsHeadlinesPublishedOverTime:
         const StandardMetricQuery(
-      metric: 'database:headlinesByTopic',
-    ),
+          metric: 'database:headlinesByTopic',
+        ),
     ChartCardId.contentTopicsEngagementByTopic: const StandardMetricQuery(
       metric: 'database:topicEngagement',
     ),
@@ -164,30 +168,30 @@ class AnalyticsMetricMapper {
     ),
     ChartCardId.engagementsAppReviewsPositiveVsNegative:
         const StandardMetricQuery(
-      metric: 'database:appReviewFeedback',
-    ),
+          metric: 'database:appReviewFeedback',
+        ),
     ChartCardId.engagementsAppReviewsStoreRequestsOverTime:
         const EventCountQuery(
-      event: AnalyticsEvent.appReviewStoreRequested,
-    ),
+          event: AnalyticsEvent.appReviewStoreRequested,
+        ),
   };
 
-  static final Map<RankedListCardId, AnalyticsQuery>
-      _rankedListQueryMappings = {
-    RankedListCardId.overviewHeadlinesMostViewed: const RankedListQuery(
-      event: AnalyticsEvent.contentViewed,
-      dimension: 'contentId',
-    ),
-    RankedListCardId.overviewHeadlinesMostLiked: const RankedListQuery(
-      event: AnalyticsEvent.reactionCreated,
-      dimension: 'contentId',
-    ),
-    // These require database-only aggregations.
-    RankedListCardId.overviewSourcesMostFollowed: const StandardMetricQuery(
-      metric: 'database:sourcesByFollowers',
-    ),
-    RankedListCardId.overviewTopicsMostFollowed: const StandardMetricQuery(
-      metric: 'database:topicsByFollowers',
-    ),
-  };
+  static final Map<RankedListCardId, AnalyticsQuery> _rankedListQueryMappings =
+      {
+        RankedListCardId.overviewHeadlinesMostViewed: const RankedListQuery(
+          event: AnalyticsEvent.contentViewed,
+          dimension: 'contentId',
+        ),
+        RankedListCardId.overviewHeadlinesMostLiked: const RankedListQuery(
+          event: AnalyticsEvent.reactionCreated,
+          dimension: 'contentId',
+        ),
+        // These require database-only aggregations.
+        RankedListCardId.overviewSourcesMostFollowed: const StandardMetricQuery(
+          metric: 'database:sourcesByFollowers',
+        ),
+        RankedListCardId.overviewTopicsMostFollowed: const StandardMetricQuery(
+          metric: 'database:topicsByFollowers',
+        ),
+      };
 }

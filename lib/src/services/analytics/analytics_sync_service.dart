@@ -1,8 +1,8 @@
 import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/analytics/analytics_query_builder.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/analytics/analytics.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/analytics/analytics_query_builder.dart';
 import 'package:logging/logging.dart';
 
 /// {@template analytics_sync_service}
