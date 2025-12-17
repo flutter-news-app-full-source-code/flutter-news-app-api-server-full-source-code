@@ -15,8 +15,15 @@ Map<String, dynamic> _$MixpanelSegmentationRequestToJson(
   'event': instance.event,
   'from_date': instance.fromDate,
   'to_date': instance.toDate,
-  'unit': instance.unit,
+  'unit': _$MixpanelTimeUnitEnumMap[instance.unit]!,
   'props': instance.props,
+};
+
+const _$MixpanelTimeUnitEnumMap = {
+  MixpanelTimeUnit.hour: 'hour',
+  MixpanelTimeUnit.day: 'day',
+  MixpanelTimeUnit.week: 'week',
+  MixpanelTimeUnit.month: 'month',
 };
 
 Map<String, dynamic> _$MixpanelTopEventsRequestToJson(

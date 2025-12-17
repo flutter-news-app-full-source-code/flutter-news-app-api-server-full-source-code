@@ -12,6 +12,7 @@ analyzer:
     one_member_abstracts: ignore
     cascade_invocations: ignore
     cast_nullable_to_non_nullable: ignore
+    specify_nonobvious_property_types: ignore
   exclude:
     - build/**
 linter:
