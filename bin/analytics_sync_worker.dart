@@ -29,7 +29,7 @@ Future<void> main(List<String> args) async {
   });
 
   await AppDependencies.instance.init();
-  await AppDependencies.instance.instance.analyticsSyncService!.run();
+  await AppDependencies.instance.analyticsSyncService!.run();
   await AppDependencies.instance.dispose();
   exit(0);
 }
