@@ -321,7 +321,6 @@ class AppDependencies {
         _log.info(
           'OneSignal credentials found. Initializing OneSignal client.',
         );
-        
         final oneSignalHttpClient = HttpClient(
           baseUrl: 'https://onesignal.com/api/v1/',
           tokenProvider: () async => null,
@@ -499,6 +498,8 @@ class AppDependencies {
         googleAnalyticsClient: googleAnalyticsClient,
         mixpanelClient: mixpanelClient,
         analyticsMetricMapper: analyticsMetricMapper,
+        engagementRepository: engagementRepository,
+        appReviewRepository: appReviewRepository,
         log: Logger('AnalyticsSyncService'),
       );
 
