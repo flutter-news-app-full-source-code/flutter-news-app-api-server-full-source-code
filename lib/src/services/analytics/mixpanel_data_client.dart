@@ -30,8 +30,6 @@ class MixpanelDataClient implements AnalyticsReportingClient {
     );
     _httpClient = HttpClient(
       baseUrl: 'https://mixpanel.com/api/2.0',
-      // Mixpanel uses Basic Auth with a service account.
-      // We inject the header directly via an interceptor.
       tokenProvider: () async => null,
       interceptors: [
         InterceptorsWrapper(
@@ -52,12 +50,21 @@ class MixpanelDataClient implements AnalyticsReportingClient {
   final Logger _log;
   final DataRepository<Headline> _headlineRepository;
 
+  String _getMetricName(AnalyticsQuery query) {
+    return switch (query) {
+      EventCountQuery(event: final e) => e.name,
+      StandardMetricQuery(metric: final m) => m,
+      RankedListQuery(event: final e) => e.name,
+    };
+  }
+
   @override
   Future<List<DataPoint>> getTimeSeries(
-    String metricName,
+    AnalyticsQuery query,
     DateTime startDate,
     DateTime endDate,
   ) async {
+    final metricName = _getMetricName(query);
     _log.info('Fetching time series for metric "$metricName" from Mixpanel.');
 
     final response = await _httpClient.get<Map<String, dynamic>>(
@@ -97,12 +104,13 @@ class MixpanelDataClient implements AnalyticsReportingClient {
 
   @override
   Future<num> getMetricTotal(
-    String metricName,
+    AnalyticsQuery query,
     DateTime startDate,
     DateTime endDate,
   ) async {
+    final metricName = _getMetricName(query);
     _log.info('Fetching total for metric "$metricName" from Mixpanel.');
-    final timeSeries = await getTimeSeries(metricName, startDate, endDate);
+    final timeSeries = await getTimeSeries(query, startDate, endDate);
     if (timeSeries.isEmpty) return 0;
 
     return timeSeries.map((dp) => dp.value).reduce((a, b) => a + b);
@@ -110,12 +118,12 @@ class MixpanelDataClient implements AnalyticsReportingClient {
 
   @override
   Future<List<RankedListItem>> getRankedList(
-    String dimensionName,
-    String metricName,
+    RankedListQuery query,
     DateTime startDate,
-    DateTime endDate, {
-    int limit = 5,
-  }) async {
+    DateTime endDate,
+  ) async {
+    final metricName = _getMetricName(query);
+    final dimensionName = query.dimension;
     _log.info(
       'Fetching ranked list for dimension "$dimensionName" by metric '
       '"$metricName" from Mixpanel.',
@@ -129,17 +137,17 @@ class MixpanelDataClient implements AnalyticsReportingClient {
         'name': dimensionName,
         'from_date': DateFormat('yyyy-MM-dd').format(startDate),
         'to_date': DateFormat('yyyy-MM-dd').format(endDate),
-        'limit': limit,
+        'limit': query.limit,
       },
     );
 
-    final items = <RankedListItem>[];
+    final rawItems = <RankedListItem>[];
     response.forEach((key, value) {
       if (value is! Map || !value.containsKey('count')) return;
       final count = value['count'];
       if (count is! num) return;
 
-      items.add(
+      rawItems.add(
         RankedListItem(
           entityId: key,
           displayTitle: '',
@@ -148,8 +156,26 @@ class MixpanelDataClient implements AnalyticsReportingClient {
       );
     });
 
-    items.sort((a, b) => b.metricValue.compareTo(a.metricValue));
+    rawItems.sort((a, b) => b.metricValue.compareTo(a.metricValue));
 
-    return items;
+    final headlineIds = rawItems.map((item) => item.entityId).toList();
+    if (headlineIds.isEmpty) return [];
+
+    final paginatedHeadlines = await _headlineRepository.readAll(
+      filter: {
+        '_id': {r'$in': headlineIds},
+      },
+    );
+    final headlineMap = {
+      for (final h in paginatedHeadlines.items) h.id: h.title,
+    };
+
+    return rawItems
+        .map(
+          (item) => item.copyWith(
+            displayTitle: headlineMap[item.entityId] ?? 'Unknown Headline',
+          ),
+        )
+        .toList();
   }
 }
