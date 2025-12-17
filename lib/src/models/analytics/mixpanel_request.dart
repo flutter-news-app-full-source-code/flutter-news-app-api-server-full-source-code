@@ -3,6 +3,18 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'mixpanel_request.g.dart';
 
+/// The time unit for segmenting data in Mixpanel.
+enum MixpanelTimeUnit {
+  /// Segment data by the hour.
+  hour,
+  /// Segment data by the day.
+  day,
+  /// Segment data by the week.
+  week,
+  /// Segment data by the month.
+  month,
+}
+
 /// {@template mixpanel_segmentation_request}
 /// Represents the query parameters for a Mixpanel segmentation request.
 /// {@endtemplate}
@@ -14,7 +26,7 @@ class MixpanelSegmentationRequest extends Equatable {
     required this.event,
     required this.fromDate,
     required this.toDate,
-    this.unit = 'day',
+    this.unit = MixpanelTimeUnit.day,
   });
 
   /// The ID of the Mixpanel project.
@@ -33,7 +45,7 @@ class MixpanelSegmentationRequest extends Equatable {
   final String toDate;
 
   /// The time unit for segmentation (e.g., 'day', 'week').
-  final String unit;
+  final MixpanelTimeUnit unit;
 
   /// Converts this instance to a JSON map for query parameters.
   Map<String, dynamic> toJson() => _$MixpanelSegmentationRequestToJson(this);
@@ -57,16 +69,28 @@ class MixpanelTopEventsRequest extends Equatable {
     required this.limit,
   });
 
+  /// The ID of the Mixpanel project.
   @JsonKey(name: 'project_id')
   final String projectId;
+
+  /// The name of the event to analyze.
   final String event;
+
+  /// The name of the property to get top values for.
   final String name;
+
+  /// The start date in 'YYYY-MM-dd' format.
   @JsonKey(name: 'from_date')
   final String fromDate;
+
+  /// The end date in 'YYYY-MM-dd' format.
   @JsonKey(name: 'to_date')
   final String toDate;
+
+  /// The maximum number of property values to return.
   final int limit;
 
+  /// Converts this instance to a JSON map for query parameters.
   Map<String, dynamic> toJson() => _$MixpanelTopEventsRequestToJson(this);
 
   @override
