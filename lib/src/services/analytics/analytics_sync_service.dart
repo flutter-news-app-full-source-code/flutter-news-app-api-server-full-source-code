@@ -141,6 +141,10 @@ class AnalyticsSyncService {
             query is StandardMetricQuery &&
             query.metric.startsWith('database:');
 
+        final isCalculatedQuery =
+            query is StandardMetricQuery &&
+            query.metric.startsWith('calculated:');
+
         final timeFrames = <KpiTimeFrame, KpiTimeFrameData>{};
         final now = DateTime.now();
 
@@ -155,6 +159,12 @@ class AnalyticsSyncService {
               startDate,
               now,
             );
+          } else if (isCalculatedQuery) {
+            value = await _getCalculatedMetricTotal(
+              query,
+              startDate,
+              now,
+            );
           } else {
             value = await client.getMetricTotal(query, startDate, now);
           }
@@ -164,6 +174,12 @@ class AnalyticsSyncService {
 
           if (isDatabaseQuery) {
             prevValue = await _getDatabaseMetricTotal(
+              query,
+              prevPeriodStartDate,
+              prevPeriodEndDate,
+            );
+          } else if (isCalculatedQuery) {
+            prevValue = await _getCalculatedMetricTotal(
               query,
               prevPeriodStartDate,
               prevPeriodEndDate,
@@ -341,6 +357,47 @@ class AnalyticsSyncService {
         return _sourceRepository.count(filter: filter);
       case 'database:topics':
         return _topicRepository.count(filter: filter);
+      case 'database:sourceFollowers':
+        // This requires aggregation to sum the size of all follower arrays.
+        final pipeline = [
+          {
+            r'$project': {
+              'followerCount': {r'$size': r'$followerIds'},
+            },
+          },
+          {
+            r'$group': {
+              '_id': null,
+              'total': {r'$sum': r'$followerCount'},
+            },
+          },
+        ];
+        final result = await _sourceRepository.aggregate(pipeline: pipeline);
+        return result.first['total'] as num? ?? 0;
+      case 'database:topicFollowers':
+        final pipeline = [
+          {
+            r'$project': {
+              'followerCount': {r'$size': r'$followerIds'},
+            },
+          },
+          {
+            r'$group': {
+              '_id': null,
+              'total': {r'$sum': r'$followerCount'},
+            },
+          },
+        ];
+        final result = await _topicRepository.aggregate(pipeline: pipeline);
+        return result.first['total'] as num? ?? 0;
+      case 'database:reportsPending':
+        return _reportRepository.count(
+          filter: {'status': ModerationStatus.pendingReview.name},
+        );
+      case 'database:reportsResolved':
+        return _reportRepository.count(
+          filter: {'status': ModerationStatus.resolved.name},
+        );
       default:
         _log.warning('Unsupported database metric total: ${query.metric}');
         return 0;
@@ -426,6 +483,41 @@ class AnalyticsSyncService {
     return null;
   }
 
+  /// Calculates a metric that depends on other metrics.
+  Future<num> _getCalculatedMetricTotal(
+    StandardMetricQuery query,
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    switch (query.metric) {
+      case 'calculated:engagementRate':
+        // Engagement Rate = (Total Reactions / Total Views) * 100
+        final totalReactionsQuery = const EventCountQuery(
+          event: AnalyticsEvent.reactionCreated,
+        );
+        final totalViewsQuery = const EventCountQuery(
+          event: AnalyticsEvent.contentViewed,
+        );
+
+        final totalReactions = await getMetricTotal(
+          totalReactionsQuery,
+          startDate,
+          endDate,
+        );
+        final totalViews = await getMetricTotal(
+          totalViewsQuery,
+          startDate,
+          endDate,
+        );
+
+        if (totalViews == 0) return 0;
+        return (totalReactions / totalViews) * 100;
+      default:
+        _log.warning('Unsupported calculated metric: ${query.metric}');
+        return 0;
+    }
+  }
+
   int _daysForKpiTimeFrame(KpiTimeFrame timeFrame) {
     switch (timeFrame) {
       case KpiTimeFrame.day:
@@ -472,11 +564,4 @@ class AnalyticsSyncService {
       id.name.contains('distribution') || id.name.contains('by_')
       ? ChartType.bar
       : ChartType.line;
-}
-
-extension on String {
-  String capitalize() {
-    if (isEmpty) return this;
-    return this[0].toUpperCase() + substring(1);
-  }
 }
