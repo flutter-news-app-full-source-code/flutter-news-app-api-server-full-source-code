@@ -1,22 +1,22 @@
 import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/analytics/analytics_query_builder.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/analytics/analytics.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/analytics/analytics_query_builder.dart';
 import 'package:logging/logging.dart';
 
 /// {@template analytics_sync_service}
-/// The core orchestrator for the background worker.
+/// The core orchestrator for the background analytics worker.
 ///
 /// This service reads the remote config to determine the active provider,
 /// instantiates the correct reporting client, and iterates through all
 /// [KpiCardId], [ChartCardId], and [RankedListCardId] enums.
 ///
-/// For each ID, it fetches the corresponding data from the provider,
-/// transforms it into the appropriate [KpiCardData], [ChartCardData], or
-/// [RankedListCardData] model, and upserts it into the database using the
-/// generic repositories. This service encapsulates the entire ETL (Extract,
-/// Transform, Load) logic for analytics.
+/// For each ID, it fetches the corresponding data from the provider or the
+/// local database, transforms it into the appropriate [KpiCardData],
+/// [ChartCardData], or [RankedListCardData] model, and upserts it into the
+/// database. This service encapsulates the entire ETL (Extract, Transform,
+/// Load) logic for analytics.
 ///
 /// It delegates the construction of complex database queries to an
 /// [AnalyticsQueryBuilder] to keep this service clean and focused on
@@ -34,6 +34,8 @@ class AnalyticsSyncService {
     required DataRepository<Report> reportRepository,
     required DataRepository<Source> sourceRepository,
     required DataRepository<Headline> headlineRepository,
+    required DataRepository<Engagement> engagementRepository,
+    required DataRepository<AppReview> appReviewRepository,
     required AnalyticsReportingClient? googleAnalyticsClient,
     required AnalyticsReportingClient? mixpanelClient,
     required AnalyticsMetricMapper analyticsMetricMapper,
@@ -47,6 +49,8 @@ class AnalyticsSyncService {
        _reportRepository = reportRepository,
        _sourceRepository = sourceRepository,
        _headlineRepository = headlineRepository,
+       _engagementRepository = engagementRepository,
+       _appReviewRepository = appReviewRepository,
        _googleAnalyticsClient = googleAnalyticsClient,
        _mixpanelClient = mixpanelClient,
        _mapper = analyticsMetricMapper,
@@ -63,6 +67,8 @@ class AnalyticsSyncService {
   final DataRepository<Report> _reportRepository;
   final DataRepository<Source> _sourceRepository;
   final DataRepository<Headline> _headlineRepository;
+  final DataRepository<Engagement> _engagementRepository;
+  final DataRepository<AppReview> _appReviewRepository;
   final AnalyticsReportingClient? _googleAnalyticsClient;
   final AnalyticsReportingClient? _mixpanelClient;
   final AnalyticsMetricMapper _mapper;
@@ -109,6 +115,7 @@ class AnalyticsSyncService {
     }
   }
 
+  /// Returns the appropriate analytics client based on the configured provider.
   AnalyticsReportingClient? _getClient(AnalyticsProvider provider) {
     switch (provider) {
       case AnalyticsProvider.firebase:
@@ -120,6 +127,7 @@ class AnalyticsSyncService {
     }
   }
 
+  /// Syncs all KPI cards defined in [KpiCardId].
   Future<void> _syncKpiCards(AnalyticsReportingClient client) async {
     _log.info('Syncing KPI cards...');
     for (final kpiId in KpiCardId.values) {
@@ -140,28 +148,21 @@ class AnalyticsSyncService {
         for (final timeFrame in KpiTimeFrame.values) {
           final days = _daysForKpiTimeFrame(timeFrame);
           final startDate = now.subtract(Duration(days: days));
-          num value;
-
-          if (isDatabaseQuery) {
-            value = await _getDatabaseMetricTotal(
-              query,
-              startDate,
-              now,
-            );
-          } else {
-            value = await client.getMetricTotal(query, startDate, now);
-          }
           final prevPeriodStartDate = now.subtract(Duration(days: days * 2));
           final prevPeriodEndDate = startDate;
+
+          num value;
           num prevValue;
 
           if (isDatabaseQuery) {
+            value = await _getDatabaseMetricTotal(query, startDate, now);
             prevValue = await _getDatabaseMetricTotal(
               query,
               prevPeriodStartDate,
               prevPeriodEndDate,
             );
           } else {
+            value = await client.getMetricTotal(query, startDate, now);
             prevValue = await client.getMetricTotal(
               query,
               prevPeriodStartDate,
@@ -179,10 +180,7 @@ class AnalyticsSyncService {
           timeFrames: timeFrames,
         );
 
-        await _kpiCardRepository.update(
-          id: kpiId.name,
-          item: kpiCard,
-        );
+        await _kpiCardRepository.update(id: kpiId.name, item: kpiCard);
         _log.finer('Successfully synced KPI card: ${kpiId.name}');
       } catch (e, s) {
         _log.severe('Failed to sync KPI card: ${kpiId.name}', e, s);
@@ -190,6 +188,7 @@ class AnalyticsSyncService {
     }
   }
 
+  /// Syncs all Chart cards defined in [ChartCardId].
   Future<void> _syncChartCards(AnalyticsReportingClient client) async {
     _log.info('Syncing Chart cards...');
     for (final chartId in ChartCardId.values) {
@@ -213,11 +212,7 @@ class AnalyticsSyncService {
           List<DataPoint> dataPoints;
 
           if (isDatabaseQuery) {
-            dataPoints = await _getDatabaseTimeSeries(
-              query,
-              startDate,
-              now,
-            );
+            dataPoints = await _getDatabaseTimeSeries(query, startDate, now);
           } else {
             dataPoints = await client.getTimeSeries(query, startDate, now);
           }
@@ -231,10 +226,7 @@ class AnalyticsSyncService {
           timeFrames: timeFrames,
         );
 
-        await _chartCardRepository.update(
-          id: chartId.name,
-          item: chartCard,
-        );
+        await _chartCardRepository.update(id: chartId.name, item: chartCard);
         _log.finer('Successfully synced Chart card: ${chartId.name}');
       } catch (e, s) {
         _log.severe('Failed to sync Chart card: ${chartId.name}', e, s);
@@ -242,6 +234,7 @@ class AnalyticsSyncService {
     }
   }
 
+  /// Syncs all Ranked List cards defined in [RankedListCardId].
   Future<void> _syncRankedListCards(AnalyticsReportingClient client) async {
     _log.info('Syncing Ranked List cards...');
     for (final rankedListId in RankedListCardId.values) {
@@ -268,7 +261,7 @@ class AnalyticsSyncService {
 
           if (isDatabaseQuery) {
             items = await _getDatabaseRankedList(
-              query,
+              query as StandardMetricQuery,
               startDate,
               now,
             );
@@ -305,22 +298,9 @@ class AnalyticsSyncService {
     }
   }
 
-  int _daysForRankedListTimeFrame(RankedListTimeFrame timeFrame) {
-    switch (timeFrame) {
-      case RankedListTimeFrame.day:
-        return 1;
-      case RankedListTimeFrame.week:
-        return 7;
-      case RankedListTimeFrame.month:
-        return 30;
-      case RankedListTimeFrame.year:
-        return 365;
-    }
-  }
-
+  /// Calculates a total for a metric sourced from the local database.
   Future<num> _getDatabaseMetricTotal(
     StandardMetricQuery query,
-    // ignore: avoid_positional_boolean_parameters
     DateTime startDate,
     DateTime now,
   ) async {
@@ -344,9 +324,9 @@ class AnalyticsSyncService {
     }
   }
 
+  /// Fetches and transforms data for a chart sourced from the local database.
   Future<List<DataPoint>> _getDatabaseTimeSeries(
     StandardMetricQuery query,
-    // ignore: avoid_positional_boolean_parameters
     DateTime startDate,
     DateTime endDate,
   ) async {
@@ -365,13 +345,16 @@ class AnalyticsSyncService {
     return results.map(DataPoint.fromMap).toList();
   }
 
+  /// Fetches and transforms data for a ranked list sourced from the local
+  /// database.
   Future<List<RankedListItem>> _getDatabaseRankedList(
     StandardMetricQuery query,
     DateTime startDate,
     DateTime endDate,
   ) async {
-    // This method can be expanded similarly to _getDatabaseTimeSeries
-    // if ranked list queries are extracted to the builder.
+    // The date range is currently unused for these queries as they are
+    // snapshots of all-time data (e.g., total followers). This could be
+    // extended in the future if time-bound ranked lists are needed.
     switch (query.metric) {
       case 'database:sourcesByFollowers':
       case 'database:topicsByFollowers':
@@ -406,19 +389,17 @@ class AnalyticsSyncService {
   }
 
   /// Returns the correct repository based on the metric name.
+  /// This is used to direct database aggregation queries to the right collection.
   DataRepository<dynamic> _getRepoForMetric(String metric) {
-    if (metric.contains('user')) {
-      return _userRepository;
-    }
-    if (metric.contains('report')) {
-      return _reportRepository;
-    }
-    if (metric.contains('reaction')) {
-      return _engagementRepository;
-    }
-    return _headlineRepository; // Default or add more cases.
+    if (metric.contains('user')) return _userRepository;
+    if (metric.contains('report')) return _reportRepository;
+    if (metric.contains('reaction')) return _engagementRepository;
+    if (metric.contains('appReview')) return _appReviewRepository;
+    // Default to headline, source, or topic repos if needed, or add more cases.
+    return _headlineRepository;
   }
 
+  /// Returns the number of days for a given KPI time frame.
   int _daysForKpiTimeFrame(KpiTimeFrame timeFrame) {
     switch (timeFrame) {
       case KpiTimeFrame.day:
@@ -432,6 +413,7 @@ class AnalyticsSyncService {
     }
   }
 
+  /// Returns the number of days for a given Chart time frame.
   int _daysForChartTimeFrame(ChartTimeFrame timeFrame) {
     switch (timeFrame) {
       case ChartTimeFrame.week:
@@ -443,9 +425,24 @@ class AnalyticsSyncService {
     }
   }
 
+  /// Returns the number of days for a given Ranked List time frame.
+  int _daysForRankedListTimeFrame(RankedListTimeFrame timeFrame) {
+    switch (timeFrame) {
+      case RankedListTimeFrame.day:
+        return 1;
+      case RankedListTimeFrame.week:
+        return 7;
+      case RankedListTimeFrame.month:
+        return 30;
+      case RankedListTimeFrame.year:
+        return 365;
+    }
+  }
+
+  /// Calculates the trend as a percentage string.
   String _calculateTrend(num currentValue, num previousValue) {
     if (previousValue == 0) {
-      return currentValue > 0 ? '+100%' : '0%';
+      return currentValue > 0 ? '+100.0%' : '0.0%';
     }
     final percentageChange =
         ((currentValue - previousValue) / previousValue) * 100;
@@ -453,15 +450,17 @@ class AnalyticsSyncService {
         '${percentageChange.toStringAsFixed(1)}%';
   }
 
+  /// Formats an enum name into a human-readable label.
   String _formatLabel(String idName) => idName
-      .replaceAll(RegExp('([A-Z])'), r' $1')
+      .replaceAll(RegExp(r'([A-Z])'), r' $1')
       .trim()
-      .split(' ')
+      .split('_')
       .map((w) => '${w[0].toUpperCase()}${w.substring(1)}')
       .join(' ');
 
+  /// Determines the chart type based on the ID name.
   ChartType _chartTypeForId(ChartCardId id) =>
-      id.name.contains('distribution') || id.name.contains('by_')
+      id.name.contains('distribution') || id.name.contains('By')
       ? ChartType.bar
       : ChartType.line;
 }
@@ -469,13 +468,6 @@ class AnalyticsSyncService {
 /// An extension to capitalize strings.
 extension on String {
   /// Capitalizes the first letter of the string.
-  String capitalize() {
-    if (isEmpty) return this;
-    return this[0].toUpperCase() + substring(1);
-  }
-}
-
-extension on String {
   String capitalize() {
     if (isEmpty) return this;
     return this[0].toUpperCase() + substring(1);
