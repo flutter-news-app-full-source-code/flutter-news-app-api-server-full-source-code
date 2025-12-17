@@ -13,6 +13,7 @@ analyzer:
     cascade_invocations: ignore
     cast_nullable_to_non_nullable: ignore
     specify_nonobvious_property_types: ignore
+    unnecessary_null_checks: ignore
   exclude:
     - build/**
 linter:
