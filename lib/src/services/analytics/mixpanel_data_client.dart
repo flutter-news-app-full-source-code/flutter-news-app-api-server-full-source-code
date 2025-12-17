@@ -50,21 +50,32 @@ class MixpanelDataClient implements AnalyticsReportingClient {
   final Logger _log;
   final DataRepository<Headline> _headlineRepository;
 
-  String _getMetricName(AnalyticsQuery query) {
+  String _getMetricName(MetricQuery query) {
     return switch (query) {
       EventCountQuery(event: final e) => e.name,
       StandardMetricQuery(metric: final m) => m,
-      RankedListQuery(event: final e) => e.name,
     };
   }
 
   @override
   Future<List<DataPoint>> getTimeSeries(
-    AnalyticsQuery query,
+    MetricQuery query,
     DateTime startDate,
     DateTime endDate,
   ) async {
     final metricName = _getMetricName(query);
+    if (metricName.startsWith('database:')) {
+      throw ArgumentError.value(
+        query,
+        'query',
+        'Database queries cannot be handled by MixpanelDataClient.',
+      );
+    }
+    if (metricName == 'activeUsers') {
+      // Mixpanel uses a special name for active users.
+      metricName = '\$active';
+    }
+
     _log.info('Fetching time series for metric "$metricName" from Mixpanel.');
 
     final response = await _httpClient.get<Map<String, dynamic>>(
@@ -104,11 +115,23 @@ class MixpanelDataClient implements AnalyticsReportingClient {
 
   @override
   Future<num> getMetricTotal(
-    AnalyticsQuery query,
+    MetricQuery query,
     DateTime startDate,
     DateTime endDate,
   ) async {
     final metricName = _getMetricName(query);
+    if (metricName.startsWith('database:')) {
+      throw ArgumentError.value(
+        query,
+        'query',
+        'Database queries cannot be handled by MixpanelDataClient.',
+      );
+    }
+    if (metricName == 'activeUsers') {
+      // Mixpanel uses a special name for active users.
+      metricName = '\$active';
+    }
+
     _log.info('Fetching total for metric "$metricName" from Mixpanel.');
     final timeSeries = await getTimeSeries(query, startDate, endDate);
     if (timeSeries.isEmpty) return 0;
@@ -122,7 +145,7 @@ class MixpanelDataClient implements AnalyticsReportingClient {
     DateTime startDate,
     DateTime endDate,
   ) async {
-    final metricName = _getMetricName(query);
+    final metricName = query.event.name;
     final dimensionName = query.dimension;
     _log.info(
       'Fetching ranked list for dimension "$dimensionName" by metric '
