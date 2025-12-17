@@ -7,10 +7,13 @@ part 'mixpanel_request.g.dart';
 enum MixpanelTimeUnit {
   /// Segment data by the hour.
   hour,
+
   /// Segment data by the day.
   day,
+
   /// Segment data by the week.
   week,
+
   /// Segment data by the month.
   month,
 }
