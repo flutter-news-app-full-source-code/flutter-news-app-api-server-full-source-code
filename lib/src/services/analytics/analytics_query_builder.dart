@@ -8,6 +8,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/models/analytic
 /// `AnalyticsSyncService` from the specific implementation details of
 /// database aggregations.
 /// {@endtemplate}
+
 class AnalyticsQueryBuilder {
   /// Creates a MongoDB aggregation pipeline for a given database metric.
   ///
@@ -28,6 +29,49 @@ class AnalyticsQueryBuilder {
         return _buildReactionsByTypePipeline(startDate, endDate);
       case 'database:appReviewFeedback':
         return _buildAppReviewFeedbackPipeline(startDate, endDate);
+      case 'database:sourceFollowers':
+        return _buildFollowersOverTimePipeline('sources', startDate, endDate);
+      case 'database:topicFollowers':
+        return _buildFollowersOverTimePipeline('topics', startDate, endDate);
+      case 'database:avgReportResolutionTime':
+        return _buildAvgReportResolutionTimePipeline(startDate, endDate);
+      case 'database:viewsByTopic':
+        return _buildCategoricalCountPipeline(
+          collection: 'headlines',
+          dateField: 'createdAt',
+          groupByField: r'$topic.name',
+          startDate: startDate,
+          endDate: endDate,
+        );
+      case 'database:headlinesBySource':
+        return _buildCategoricalCountPipeline(
+          collection: 'headlines',
+          dateField: 'createdAt',
+          groupByField: r'$source.name',
+          startDate: startDate,
+          endDate: endDate,
+        );
+      case 'database:sourceEngagementByType':
+        return _buildCategoricalCountPipeline(
+          collection: 'sources',
+          dateField: 'createdAt',
+          groupByField: r'$sourceType',
+          startDate: startDate,
+          endDate: endDate,
+        );
+      case 'database:headlinesByTopic':
+        return _buildCategoricalCountPipeline(
+          collection: 'headlines',
+          dateField: 'createdAt',
+          groupByField: r'$topic.name',
+          startDate: startDate,
+          endDate: endDate,
+        );
+      case 'database:topicEngagement':
+        // This is a placeholder. A real implementation would require a more
+        // complex pipeline, likely joining with an engagements collection.
+        return [];
+      // Ranked List Queries
       case 'database:sourcesByFollowers':
         return _buildRankedByFollowersPipeline('sources');
       case 'database:topicsByFollowers':
@@ -66,8 +110,8 @@ class AnalyticsQueryBuilder {
       {
         r'$match': {
           'createdAt': {
-            r'$gte': startDate.toIso8601String(),
-            r'$lt': endDate.toIso8601String(),
+            r'$gte': startDate.toUtc().toIso8601String(),
+            r'$lt': endDate.toUtc().toIso8601String(),
           },
         },
       },
@@ -92,8 +136,8 @@ class AnalyticsQueryBuilder {
       {
         r'$match': {
           'createdAt': {
-            r'$gte': startDate.toIso8601String(),
-            r'$lt': endDate.toIso8601String(),
+            r'$gte': startDate.toUtc().toIso8601String(),
+            r'$lt': endDate.toUtc().toIso8601String(),
           },
           'reaction': {r'$exists': true},
         },
@@ -120,8 +164,8 @@ class AnalyticsQueryBuilder {
       {
         r'$match': {
           'createdAt': {
-            r'$gte': startDate.toIso8601String(),
-            r'$lt': endDate.toIso8601String(),
+            r'$gte': startDate.toUtc().toIso8601String(),
+            r'$lt': endDate.toUtc().toIso8601String(),
           },
         },
       },
@@ -159,6 +203,113 @@ class AnalyticsQueryBuilder {
           'displayTitle': r'$name',
           'metricValue': r'$followerCount',
         },
+      },
+    ];
+  }
+
+  /// Creates a generic pipeline for counting occurrences of a categorical
+  /// field.
+  List<Map<String, dynamic>> _buildCategoricalCountPipeline({
+    required String collection,
+    required String dateField,
+    required String groupByField,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) {
+    return [
+      {
+        r'$match': {
+          dateField: {
+            r'$gte': startDate.toUtc().toIso8601String(),
+            r'$lt': endDate.toUtc().toIso8601String(),
+          },
+        },
+      },
+      {
+        r'$group': {
+          '_id': groupByField,
+          'count': {r'$sum': 1},
+        },
+      },
+      {
+        r'$project': {
+          'label': r'$_id',
+          'value': r'$count',
+          '_id': 0,
+        },
+      },
+    ];
+  }
+
+  /// Creates a pipeline for tracking follower counts over time.
+  ///
+  /// This is a complex query that is best handled with a dedicated
+  /// "follow_events" collection for perfect historical accuracy. Since that
+  //  does not exist, this implementation returns an empty list to avoid
+  //  providing potentially misleading data. A proper implementation would
+  //  require schema changes and a more complex pipeline.
+  List<Map<String, dynamic>> _buildFollowersOverTimePipeline(
+    String model,
+    DateTime startDate,
+    DateTime endDate,
+  ) {
+    _log.warning(
+      'Followers over time metric for "$model" is not supported due to '
+      'schema limitations. Returning empty data.',
+    );
+    return [];
+  }
+
+  /// Creates a pipeline for calculating the average report resolution time.
+  List<Map<String, dynamic>> _buildAvgReportResolutionTimePipeline(
+    DateTime startDate,
+    DateTime endDate,
+  ) {
+    return [
+      // Match reports resolved within the date range
+      {
+        r'$match': {
+          'status': 'resolved',
+          'updatedAt': {
+            r'$gte': startDate.toUtc().toIso8601String(),
+            r'$lt': endDate.toUtc().toIso8601String(),
+          },
+        },
+      },
+      // Group by the date part of 'updatedAt'
+      {
+        r'$group': {
+          '_id': {
+            r'$dateToString': {
+              'format': '%Y-%m-%d',
+              'date': r'$updatedAt',
+            },
+          },
+          // Calculate the average difference between 'updatedAt' and
+          // 'createdAt' in milliseconds for each day.
+          'avgResolutionTime': {
+            r'$avg': {
+              r'$subtract': [r'$updatedAt', r'$createdAt'],
+            },
+          },
+        },
+      },
+      // Convert the average time from milliseconds to hours
+      {
+        r'$project': {
+          'label': r'$_id',
+          'value': {
+            r'$divide': [
+              r'$avgResolutionTime',
+              3600000, // 1000ms * 60s * 60m
+            ],
+          },
+          '_id': 0,
+        },
+      },
+      // Sort by date
+      {
+        r'$sort': {'label': 1},
       },
     ];
   }
