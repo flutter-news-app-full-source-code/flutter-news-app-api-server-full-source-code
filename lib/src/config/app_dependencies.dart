@@ -457,6 +457,7 @@ class AppDependencies {
       GoogleAnalyticsDataClient? googleAnalyticsClient;
       if (gaPropertyId != null && firebaseAuthenticator != null) {
         googleAnalyticsClient = GoogleAnalyticsDataClient(
+          headlineRepository: headlineRepository,
           propertyId: gaPropertyId,
           firebaseAuthenticator: firebaseAuthenticator!,
           log: Logger('GoogleAnalyticsDataClient'),
@@ -471,6 +472,7 @@ class AppDependencies {
       MixpanelDataClient? mixpanelClient;
       if (mpProjectId != null && mpUser != null && mpSecret != null) {
         mixpanelClient = MixpanelDataClient(
+          headlineRepository: headlineRepository,
           projectId: mpProjectId,
           serviceAccountUsername: mpUser,
           serviceAccountSecret: mpSecret,
@@ -482,13 +484,17 @@ class AppDependencies {
         );
       }
 
+      final analyticsMetricMapper = AnalyticsMetricMapper();
+
       analyticsSyncService = AnalyticsSyncService(
         remoteConfigRepository: remoteConfigRepository,
         kpiCardRepository: kpiCardDataRepository,
         chartCardRepository: chartCardDataRepository,
         rankedListCardRepository: rankedListCardDataRepository,
+        headlineRepository: headlineRepository,
         googleAnalyticsClient: googleAnalyticsClient,
         mixpanelClient: mixpanelClient,
+        analyticsMetricMapper: analyticsMetricMapper,
         log: Logger('AnalyticsSyncService'),
       );
 
