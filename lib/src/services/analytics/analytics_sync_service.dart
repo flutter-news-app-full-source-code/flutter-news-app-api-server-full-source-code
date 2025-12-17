@@ -432,10 +432,13 @@ class AnalyticsSyncService {
     final results = await repo.aggregate(pipeline: pipeline);
     return results.map((e) {
       final label = e['label'].toString();
-      final formattedLabel = label.split(' ').map((word) {
-        if (word.isEmpty) return '';
-        return '${word[0].toUpperCase()}${word.substring(1)}';
-      }).join(' ');
+      final formattedLabel = label
+          .split(' ')
+          .map((word) {
+            if (word.isEmpty) return '';
+            return '${word[0].toUpperCase()}${word.substring(1)}';
+          })
+          .join(' ');
       return DataPoint(label: formattedLabel, value: e['value'] as num);
     }).toList();
   }
@@ -476,8 +479,7 @@ class AnalyticsSyncService {
 
   DataRepository<dynamic>? _getRepositoryForMetric(String metric) {
     if (metric.contains('user')) return _userRepository;
-    if (metric.contains('report') ||
-        metric.contains('reportsByReason')) {
+    if (metric.contains('report') || metric.contains('reportsByReason')) {
       return _reportRepository;
     }
     if (metric.contains('reaction')) return _engagementRepository;
