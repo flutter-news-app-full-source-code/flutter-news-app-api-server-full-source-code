@@ -24,6 +24,9 @@ class AnalyticsSyncService {
     required DataRepository<KpiCardData> kpiCardRepository,
     required DataRepository<ChartCardData> chartCardRepository,
     required DataRepository<RankedListCardData> rankedListCardRepository,
+    required DataRepository<User> userRepository,
+    required DataRepository<Topic> topicRepository,
+    required DataRepository<Source> sourceRepository,
     required DataRepository<Headline> headlineRepository,
     required AnalyticsReportingClient? googleAnalyticsClient,
     required AnalyticsReportingClient? mixpanelClient,
@@ -33,6 +36,9 @@ class AnalyticsSyncService {
        _kpiCardRepository = kpiCardRepository,
        _chartCardRepository = chartCardRepository,
        _rankedListCardRepository = rankedListCardRepository,
+        _userRepository = userRepository,
+        _topicRepository = topicRepository,
+        _sourceRepository = sourceRepository,
        _headlineRepository = headlineRepository,
        _googleAnalyticsClient = googleAnalyticsClient,
        _mixpanelClient = mixpanelClient,
@@ -43,6 +49,9 @@ class AnalyticsSyncService {
   final DataRepository<KpiCardData> _kpiCardRepository;
   final DataRepository<ChartCardData> _chartCardRepository;
   final DataRepository<RankedListCardData> _rankedListCardRepository;
+  final DataRepository<User> _userRepository;
+  final DataRepository<Topic> _topicRepository;
+  final DataRepository<Source> _sourceRepository;
   final DataRepository<Headline> _headlineRepository;
   final AnalyticsReportingClient? _googleAnalyticsClient;
   final AnalyticsReportingClient? _mixpanelClient;
@@ -104,11 +113,14 @@ class AnalyticsSyncService {
     _log.info('Syncing KPI cards...');
     for (final kpiId in KpiCardId.values) {
       try {
-        final query = _analyticsMetricMapper.getKpiQuery(kpiId);
+        final query = _analyticsMetricMapper.getKpiQuery(kpiId) as MetricQuery?;
         if (query == null) {
           _log.finer('No metric mapping for KPI ${kpiId.name}. Skipping.');
           continue;
         }
+
+        final isDatabaseQuery = query is StandardMetricQuery &&
+            query.metric.startsWith('database:');
 
         final timeFrames = <KpiTimeFrame, KpiTimeFrameData>{};
         final now = DateTime.now();
@@ -116,9 +128,20 @@ class AnalyticsSyncService {
         for (final timeFrame in KpiTimeFrame.values) {
           final days = _daysForKpiTimeFrame(timeFrame);
           final startDate = now.subtract(Duration(days: days));
-          final value = await client.getMetricTotal(query, startDate, now);
+          num value;
 
-          final prevStartDate = startDate.subtract(Duration(days: days));
+          if (isDatabaseQuery) {
+            value = await _getDatabaseMetricTotal(
+              query as StandardMetricQuery,
+              startDate,
+              now,
+            );
+          } else {
+            value = await client.getMetricTotal(query, startDate, now);
+          }
+
+          // Trend calculation is not supported for database queries yet.
+          final prevStartDate = now.subtract(Duration(days: days * 2));
           final prevValue = await client.getMetricTotal(
             query,
             prevStartDate,
@@ -150,11 +173,15 @@ class AnalyticsSyncService {
     _log.info('Syncing Chart cards...');
     for (final chartId in ChartCardId.values) {
       try {
-        final query = _analyticsMetricMapper.getChartQuery(chartId);
+        final query = _analyticsMetricMapper.getChartQuery(chartId)
+            as MetricQuery?;
         if (query == null) {
           _log.finer('No metric mapping for Chart ${chartId.name}. Skipping.');
           continue;
         }
+
+        final isDatabaseQuery = query is StandardMetricQuery &&
+            query.metric.startsWith('database:');
 
         final timeFrames = <ChartTimeFrame, List<DataPoint>>{};
         final now = DateTime.now();
@@ -162,7 +189,15 @@ class AnalyticsSyncService {
         for (final timeFrame in ChartTimeFrame.values) {
           final days = _daysForChartTimeFrame(timeFrame);
           final startDate = now.subtract(Duration(days: days));
-          final dataPoints = await client.getTimeSeries(query, startDate, now);
+          List<DataPoint> dataPoints;
+
+          if (isDatabaseQuery) {
+            dataPoints = await _getDatabaseTimeSeries(
+              query as StandardMetricQuery,
+            );
+          } else {
+            dataPoints = await client.getTimeSeries(query, startDate, now);
+          }
           timeFrames[timeFrame] = dataPoints;
         }
 
@@ -189,7 +224,10 @@ class AnalyticsSyncService {
     for (final rankedListId in RankedListCardId.values) {
       try {
         final query = _analyticsMetricMapper.getRankedListQuery(rankedListId);
-        if (query is! RankedListQuery) {
+        final isDatabaseQuery = query is StandardMetricQuery &&
+            query.metric.startsWith('database:');
+
+        if (query == null || (!isDatabaseQuery && query is! RankedListQuery)) {
           _log.finer(
             'No metric mapping for Ranked List ${rankedListId.name}. Skipping.',
           );
@@ -202,7 +240,14 @@ class AnalyticsSyncService {
         for (final timeFrame in RankedListTimeFrame.values) {
           final days = _daysForRankedListTimeFrame(timeFrame);
           final startDate = now.subtract(Duration(days: days));
-          final items = await client.getRankedList(query, startDate, now);
+          List<RankedListItem> items;
+
+          if (isDatabaseQuery) {
+            items =
+                await _getDatabaseRankedList(query as StandardMetricQuery);
+          } else {
+            items = await client.getRankedList(query as RankedListQuery, startDate, now);
+          }
           timeFrames[timeFrame] = items;
         }
 
@@ -229,6 +274,106 @@ class AnalyticsSyncService {
     }
   }
 
+  int _daysForRankedListTimeFrame(RankedListTimeFrame timeFrame) {
+    switch (timeFrame) {
+      case RankedListTimeFrame.day:
+        return 1;
+      case RankedListTimeFrame.week:
+        return 7;
+      case RankedListTimeFrame.month:
+        return 30;
+      case RankedListTimeFrame.year:
+        return 365;
+    }
+  }
+
+  Future<num> _getDatabaseMetricTotal(
+    StandardMetricQuery query,
+    DateTime startDate,
+    DateTime now,
+  ) async {
+    final filter = <String, dynamic>{
+      'createdAt': {
+        r'$gte': startDate.toIso8601String(),
+        r'$lt': now.toIso8601String(),
+      },
+    };
+
+    switch (query.metric) {
+      case 'database:headlines':
+        return _headlineRepository.count(filter: filter);
+      case 'database:sources':
+        return _sourceRepository.count(filter: filter);
+      case 'database:topics':
+        return _topicRepository.count(filter: filter);
+      default:
+        _log.warning('Unsupported database metric total: ${query.metric}');
+        return 0;
+    }
+  }
+
+  Future<List<DataPoint>> _getDatabaseTimeSeries(
+    StandardMetricQuery query,
+  ) async {
+    switch (query.metric) {
+      case 'database:userRoleDistribution':
+        final pipeline = <Map<String, dynamic>>[
+          {
+            r'$group': {'_id': r'$appRole', 'count': {r'$sum': 1}},
+          },
+          {
+            r'$project': {'label': r'$_id', 'value': r'$count', '_id': 0},
+          },
+        ];
+        final results = await _userRepository.aggregate(pipeline: pipeline);
+        return results
+            .map(
+              (e) => DataPoint(
+                label: e['label'] as String,
+                value: e['value'] as num,
+              ),
+            )
+            .toList();
+      default:
+        _log.warning('Unsupported database time series: ${query.metric}');
+        return [];
+    }
+  }
+
+  Future<List<RankedListItem>> _getDatabaseRankedList(
+    StandardMetricQuery query,
+  ) async {
+    switch (query.metric) {
+      case 'database:sourcesByFollowers':
+      case 'database:topicsByFollowers':
+        final isTopics = query.metric.contains('topics');
+        final pipeline = <Map<String, dynamic>>[
+          {
+            r'$project': {
+              'name': 1,
+              'followerCount': {r'$size': r'$followerIds'},
+            },
+          },
+          {r'$sort': {'followerCount': -1}},
+          {r'$limit': 5},
+        ];
+        final repo = isTopics ? _topicRepository : _sourceRepository;
+        final results = await repo.aggregate(pipeline: pipeline);
+        return results
+            .map(
+              (e) => RankedListItem(
+                entityId: e['_id'] as String,
+                displayTitle: e['name'] as String,
+                metricValue: e['followerCount'] as int,
+              ),
+            )
+            .toList();
+      default:
+        _log.warning('Unsupported database ranked list: ${query.metric}');
+        return [];
+    }
+  }
+
   int _daysForKpiTimeFrame(KpiTimeFrame timeFrame) {
     switch (timeFrame) {
       case KpiTimeFrame.day:
@@ -249,19 +394,6 @@ class AnalyticsSyncService {
       case ChartTimeFrame.month:
         return 30;
       case ChartTimeFrame.year:
-        return 365;
-    }
-  }
-
-  int _daysForRankedListTimeFrame(RankedListTimeFrame timeFrame) {
-    switch (timeFrame) {
-      case RankedListTimeFrame.day:
-        return 1;
-      case RankedListTimeFrame.week:
-        return 7;
-      case RankedListTimeFrame.month:
-        return 30;
-      case RankedListTimeFrame.year:
         return 365;
     }
   }
