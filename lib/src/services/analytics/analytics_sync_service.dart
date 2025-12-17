@@ -23,23 +23,29 @@ class AnalyticsSyncService {
     required DataRepository<KpiCardData> kpiCardRepository,
     required DataRepository<ChartCardData> chartCardRepository,
     required DataRepository<RankedListCardData> rankedListCardRepository,
+    required DataRepository<Headline> headlineRepository,
     required AnalyticsReportingClient? googleAnalyticsClient,
     required AnalyticsReportingClient? mixpanelClient,
+    required AnalyticsMetricMapper analyticsMetricMapper,
     required Logger log,
   }) : _remoteConfigRepository = remoteConfigRepository,
        _kpiCardRepository = kpiCardRepository,
        _chartCardRepository = chartCardRepository,
        _rankedListCardRepository = rankedListCardRepository,
+       _headlineRepository = headlineRepository,
        _googleAnalyticsClient = googleAnalyticsClient,
        _mixpanelClient = mixpanelClient,
+       _analyticsMetricMapper = analyticsMetricMapper,
        _log = log;
 
   final DataRepository<RemoteConfig> _remoteConfigRepository;
   final DataRepository<KpiCardData> _kpiCardRepository;
   final DataRepository<ChartCardData> _chartCardRepository;
   final DataRepository<RankedListCardData> _rankedListCardRepository;
+  final DataRepository<Headline> _headlineRepository;
   final AnalyticsReportingClient? _googleAnalyticsClient;
   final AnalyticsReportingClient? _mixpanelClient;
+  final AnalyticsMetricMapper _analyticsMetricMapper;
   final Logger _log;
 
   /// Runs the entire analytics synchronization process.
@@ -72,14 +78,13 @@ class AnalyticsSyncService {
         '"${analyticsConfig.activeProvider.name}".',
       );
 
-      await _syncKpiCards(client);
-      await _syncChartCards(client);
-      await _syncRankedListCards(client);
+      await _syncKpiCards(client, analyticsConfig.activeProvider);
+      await _syncChartCards(client, analyticsConfig.activeProvider);
+      await _syncRankedListCards(client, analyticsConfig.activeProvider);
 
       _log.info('Analytics sync process completed successfully.');
     } catch (e, s) {
       _log.severe('Analytics sync process failed.', e, s);
-      // In a production environment, this might trigger an alert.
     }
   }
 
@@ -90,35 +95,53 @@ class AnalyticsSyncService {
       case AnalyticsProvider.mixpanel:
         return _mixpanelClient;
       case AnalyticsProvider.demo:
-        return null; // Demo is intended for the mobile client demo env.
+        return null;
     }
   }
 
-  Future<void> _syncKpiCards(AnalyticsReportingClient client) async {
+  Future<void> _syncKpiCards(
+    AnalyticsReportingClient client,
+    AnalyticsProvider provider,
+  ) async {
     _log.info('Syncing KPI cards...');
     for (final kpiId in KpiCardId.values) {
       try {
-        // This is a placeholder implementation.
-        // A real implementation would map each kpiId to a specific metric
-        // and fetch data for each time frame.
-        final timeFrames = {
-          KpiTimeFrame.day: const KpiTimeFrameData(value: 0, trend: '0%'),
-          KpiTimeFrame.week: const KpiTimeFrameData(value: 0, trend: '0%'),
-          KpiTimeFrame.month: const KpiTimeFrameData(value: 0, trend: '0%'),
-          KpiTimeFrame.year: const KpiTimeFrameData(value: 0, trend: '0%'),
-        };
+        final metrics = _analyticsMetricMapper.getKpiMetrics(kpiId, provider);
+        if (metrics == null) {
+          _log.finer('No metric mapping for KPI ${kpiId.name}. Skipping.');
+          continue;
+        }
+
+        final timeFrames = <KpiTimeFrame, KpiTimeFrameData>{};
+        final now = DateTime.now();
+
+        for (final timeFrame in KpiTimeFrame.values) {
+          final days = _daysForKpiTimeFrame(timeFrame);
+          final startDate = now.subtract(Duration(days: days));
+          final value = await client.getMetricTotal(
+            metrics.metric,
+            startDate,
+            now,
+          );
+
+          final prevStartDate = startDate.subtract(Duration(days: days));
+          final prevValue = await client.getMetricTotal(
+            metrics.metric,
+            prevStartDate,
+            startDate,
+          );
+
+          final trend = _calculateTrend(value, prevValue);
+          timeFrames[timeFrame] = KpiTimeFrameData(value: value, trend: trend);
+        }
 
         final kpiCard = KpiCardData(
           id: kpiId,
-          label: kpiId.name, // Placeholder label
+          label: _formatLabel(kpiId.name),
           timeFrames: timeFrames,
         );
 
-        await _kpiCardRepository.update(
-          id: kpiId.name,
-          item: kpiCard,
-          upsert: true,
-        );
+        await _kpiCardRepository.update(id: kpiId.name, item: kpiCard);
         _log.finer('Successfully synced KPI card: ${kpiId.name}');
       } catch (e, s) {
         _log.severe('Failed to sync KPI card: ${kpiId.name}', e, s);
@@ -126,29 +149,44 @@ class AnalyticsSyncService {
     }
   }
 
-  Future<void> _syncChartCards(AnalyticsReportingClient client) async {
+  Future<void> _syncChartCards(
+    AnalyticsReportingClient client,
+    AnalyticsProvider provider,
+  ) async {
     _log.info('Syncing Chart cards...');
     for (final chartId in ChartCardId.values) {
       try {
-        // Placeholder implementation
-        final timeFrames = {
-          ChartTimeFrame.week: <DataPoint>[],
-          ChartTimeFrame.month: <DataPoint>[],
-          ChartTimeFrame.year: <DataPoint>[],
-        };
+        final metrics = _analyticsMetricMapper.getChartMetrics(
+          chartId,
+          provider,
+        );
+        if (metrics == null) {
+          _log.finer('No metric mapping for Chart ${chartId.name}. Skipping.');
+          continue;
+        }
+
+        final timeFrames = <ChartTimeFrame, List<DataPoint>>{};
+        final now = DateTime.now();
+
+        for (final timeFrame in ChartTimeFrame.values) {
+          final days = _daysForChartTimeFrame(timeFrame);
+          final startDate = now.subtract(Duration(days: days));
+          final dataPoints = await client.getTimeSeries(
+            metrics.metric,
+            startDate,
+            now,
+          );
+          timeFrames[timeFrame] = dataPoints;
+        }
 
         final chartCard = ChartCardData(
           id: chartId,
-          label: chartId.name, // Placeholder
-          type: ChartType.line, // Placeholder
+          label: _formatLabel(chartId.name),
+          type: _chartTypeForId(chartId),
           timeFrames: timeFrames,
         );
 
-        await _chartCardRepository.update(
-          id: chartId.name,
-          item: chartCard,
-          upsert: true,
-        );
+        await _chartCardRepository.update(id: chartId.name, item: chartCard);
         _log.finer('Successfully synced Chart card: ${chartId.name}');
       } catch (e, s) {
         _log.severe('Failed to sync Chart card: ${chartId.name}', e, s);
@@ -156,28 +194,50 @@ class AnalyticsSyncService {
     }
   }
 
-  Future<void> _syncRankedListCards(AnalyticsReportingClient client) async {
+  Future<void> _syncRankedListCards(
+    AnalyticsReportingClient client,
+    AnalyticsProvider provider,
+  ) async {
     _log.info('Syncing Ranked List cards...');
     for (final rankedListId in RankedListCardId.values) {
       try {
-        // Placeholder implementation
-        final timeFrames = {
-          RankedListTimeFrame.day: <RankedListItem>[],
-          RankedListTimeFrame.week: <RankedListItem>[],
-          RankedListTimeFrame.month: <RankedListItem>[],
-          RankedListTimeFrame.year: <RankedListItem>[],
-        };
+        final metrics = _analyticsMetricMapper.getRankedListMetrics(
+          rankedListId,
+          provider,
+        );
+        if (metrics == null || metrics.dimension == null) {
+          _log.finer(
+            'No metric mapping for Ranked List ${rankedListId.name}. Skipping.',
+          );
+          continue;
+        }
+
+        final timeFrames = <RankedListTimeFrame, List<RankedListItem>>{};
+        final now = DateTime.now();
+
+        for (final timeFrame in RankedListTimeFrame.values) {
+          final days = _daysForRankedListTimeFrame(timeFrame);
+          final startDate = now.subtract(Duration(days: days));
+          final rawItems = await client.getRankedList(
+            metrics.dimension!,
+            metrics.metric,
+            startDate,
+            now,
+          );
+
+          final enrichedItems = await _enrichRankedListItems(rawItems);
+          timeFrames[timeFrame] = enrichedItems;
+        }
 
         final rankedListCard = RankedListCardData(
           id: rankedListId,
-          label: rankedListId.name, // Placeholder
+          label: _formatLabel(rankedListId.name),
           timeFrames: timeFrames,
         );
 
         await _rankedListCardRepository.update(
           id: rankedListId.name,
           item: rankedListCard,
-          upsert: true,
         );
         _log.finer(
           'Successfully synced Ranked List card: ${rankedListId.name}',
@@ -191,4 +251,87 @@ class AnalyticsSyncService {
       }
     }
   }
+
+  Future<List<RankedListItem>> _enrichRankedListItems(
+    List<RankedListItem> items,
+  ) async {
+    if (items.isEmpty) return [];
+
+    final headlineIds = items.map((item) => item.entityId).toList();
+    final paginatedHeadlines = await _headlineRepository.readAll(
+      filter: {
+        '_id': {r'$in': headlineIds},
+      },
+    );
+
+    final headlineMap = {
+      for (final headline in paginatedHeadlines.items) headline.id: headline,
+    };
+
+    return items
+        .map(
+          (item) => item.copyWith(
+            displayTitle: headlineMap[item.entityId]?.title ?? 'Unknown Title',
+          ),
+        )
+        .toList();
+  }
+
+  int _daysForKpiTimeFrame(KpiTimeFrame timeFrame) {
+    switch (timeFrame) {
+      case KpiTimeFrame.day:
+        return 1;
+      case KpiTimeFrame.week:
+        return 7;
+      case KpiTimeFrame.month:
+        return 30;
+      case KpiTimeFrame.year:
+        return 365;
+    }
+  }
+
+  int _daysForChartTimeFrame(ChartTimeFrame timeFrame) {
+    switch (timeFrame) {
+      case ChartTimeFrame.week:
+        return 7;
+      case ChartTimeFrame.month:
+        return 30;
+      case ChartTimeFrame.year:
+        return 365;
+    }
+  }
+
+  int _daysForRankedListTimeFrame(RankedListTimeFrame timeFrame) {
+    switch (timeFrame) {
+      case RankedListTimeFrame.day:
+        return 1;
+      case RankedListTimeFrame.week:
+        return 7;
+      case RankedListTimeFrame.month:
+        return 30;
+      case RankedListTimeFrame.year:
+        return 365;
+    }
+  }
+
+  String _calculateTrend(num currentValue, num previousValue) {
+    if (previousValue == 0) {
+      return currentValue > 0 ? '+100%' : '0%';
+    }
+    final percentageChange =
+        ((currentValue - previousValue) / previousValue) * 100;
+    return '${percentageChange.isNegative ? '' : '+'}'
+        '${percentageChange.toStringAsFixed(1)}%';
+  }
+
+  String _formatLabel(String idName) => idName
+      .replaceAll('_', ' ')
+      .split(' ')
+      .map((w) => '${w[0].toUpperCase()}${w.substring(1)}')
+      .join(' ');
+
+  ChartType _chartTypeForId(ChartCardId id) =>
+      id.name.contains('distribution') || id.name.contains('by_')
+      ? ChartType.bar
+      : ChartType.line;
 }
