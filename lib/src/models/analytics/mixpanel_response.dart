@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
-part 'config/mixpanel_response.g.dart';
+part 'mixpanel_response.g.dart';
 
 /// {@template mixpanel_response}
 /// A generic response wrapper for Mixpanel API calls.
