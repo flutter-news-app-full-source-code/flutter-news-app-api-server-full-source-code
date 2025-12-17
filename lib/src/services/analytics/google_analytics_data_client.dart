@@ -1,6 +1,5 @@
 import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
-import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/analytics/analytics.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/firebase_authenticator.dart';
@@ -37,50 +36,56 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
   final Logger _log;
   final DataRepository<Headline> _headlineRepository;
 
-  String _getMetricName(AnalyticsQuery query) {
+  String _getMetricName(MetricQuery query) {
     return switch (query) {
       EventCountQuery() => 'eventCount',
       StandardMetricQuery(metric: final m) => m,
-      RankedListQuery() => 'eventCount',
     };
   }
 
   @override
   Future<List<DataPoint>> getTimeSeries(
-    AnalyticsQuery query,
+    MetricQuery query,
     DateTime startDate,
     DateTime endDate,
   ) async {
     final metricName = _getMetricName(query);
+    if (metricName.startsWith('database:')) {
+      throw ArgumentError.value(
+        query,
+        'query',
+        'Database queries cannot be handled by GoogleAnalyticsDataClient.',
+      );
+    }
+
     _log.info(
       'Fetching time series for metric "$metricName" from Google Analytics.',
     );
 
-    final requestBody = <String, dynamic>{
-      'dateRanges': const [
-        {
-          'startDate': DateFormat('yyyy-MM-dd').format(startDate),
-          'endDate': DateFormat('yyyy-MM-dd').format(endDate),
-        },
+    final request = RunReportRequest(
+      dateRanges: [
+        GARequestDateRange(
+          startDate: DateFormat('y-MM-dd').format(startDate),
+          endDate: DateFormat('y-MM-dd').format(endDate),
+        ),
       ],
-      'dimensions': [
-        {'name': 'date'},
+      dimensions: const [
+        GARequestDimension(name: 'date'),
       ],
-      'metrics': [
-        {'name': metricName},
+      metrics: [
+        GARequestMetric(name: metricName),
       ],
-    };
+      dimensionFilter: query is EventCountQuery
+          ? GARequestFilterExpression(
+              filter: GARequestFilter(
+                fieldName: 'eventName',
+                stringFilter: GARequestStringFilter(value: query.event.name),
+              ),
+            )
+          : null,
+    );
 
-    if (query is EventCountQuery) {
-      requestBody['dimensionFilter'] = {
-        'filter': {
-          'fieldName': 'eventName',
-          'stringFilter': {'value': query.event.name},
-        },
-      };
-    }
-
-    final response = await _runReport(requestBody);
+    final response = await _runReport(request.toJson());
 
     final rows = response.rows;
     if (rows == null || rows.isEmpty) {
@@ -105,34 +110,41 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
 
   @override
   Future<num> getMetricTotal(
-    AnalyticsQuery query,
+    MetricQuery query,
     DateTime startDate,
     DateTime endDate,
   ) async {
     final metricName = _getMetricName(query);
-    _log.info('Fetching total for metric "$metricName" from Google Analytics.');
-    final requestBody = <String, dynamic>{
-      'dateRanges': [
-        {
-          'startDate': DateFormat('yyyy-MM-dd').format(startDate),
-          'endDate': DateFormat('yyyy-MM-dd').format(endDate),
-        },
-      ],
-      'metrics': [
-        {'name': metricName},
-      ],
-    };
-
-    if (query is EventCountQuery) {
-      requestBody['dimensionFilter'] = {
-        'filter': {
-          'fieldName': 'eventName',
-          'stringFilter': {'value': query.event.name},
-        },
-      };
+    if (metricName.startsWith('database:')) {
+      throw ArgumentError.value(
+        query,
+        'query',
+        'Database queries cannot be handled by GoogleAnalyticsDataClient.',
+      );
     }
 
-    final response = await _runReport(requestBody);
+    _log.info('Fetching total for metric "$metricName" from Google Analytics.');
+    final request = RunReportRequest(
+      dateRanges: [
+        GARequestDateRange(
+          startDate: DateFormat('y-MM-dd').format(startDate),
+          endDate: DateFormat('y-MM-dd').format(endDate),
+        ),
+      ],
+      metrics: [
+        GARequestMetric(name: metricName),
+      ],
+      dimensionFilter: query is EventCountQuery
+          ? GARequestFilterExpression(
+              filter: GARequestFilter(
+                fieldName: 'eventName',
+                stringFilter: GARequestStringFilter(value: query.event.name),
+              ),
+            )
+          : null,
+    );
+
+    final response = await _runReport(request.toJson());
 
     final rows = response.rows;
     if (rows == null || rows.isEmpty) {
@@ -150,36 +162,36 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
     DateTime startDate,
     DateTime endDate,
   ) async {
-    final metricName = _getMetricName(query);
+    final metricName = 'eventCount'; // Ranked lists are always event counts
     final dimensionName = query.dimension;
 
     _log.info(
       'Fetching ranked list for dimension "$dimensionName" by metric '
       '"$metricName" from Google Analytics.',
     );
-    final requestBody = <String, dynamic>{
-      'dateRanges': [
-        {
-          'startDate': DateFormat('yyyy-MM-dd').format(startDate),
-          'endDate': DateFormat('yyyy-MM-dd').format(endDate),
-        },
+    final request = RunReportRequest(
+      dateRanges: [
+        GARequestDateRange(
+          startDate: DateFormat('y-MM-dd').format(startDate),
+          endDate: DateFormat('y-MM-dd').format(endDate),
+        ),
       ],
-      'dimensions': [
-        {'name': dimensionName},
+      dimensions: [
+        GARequestDimension(name: 'customEvent:$dimensionName'),
       ],
-      'metrics': [
-        {'name': metricName},
+      metrics: [
+        GARequestMetric(name: metricName),
       ],
-      'limit': query.limit,
-      'dimensionFilter': {
-        'filter': {
-          'fieldName': 'eventName',
-          'stringFilter': {'value': query.event.name},
-        },
-      },
-    };
+      limit: query.limit,
+      dimensionFilter: GARequestFilterExpression(
+        filter: GARequestFilter(
+          fieldName: 'eventName',
+          stringFilter: GARequestStringFilter(value: query.event.name),
+        ),
+      ),
+    );
 
-    final response = await _runReport(requestBody);
+    final response = await _runReport(request.toJson());
 
     final rows = response.rows;
     if (rows == null || rows.isEmpty) {
