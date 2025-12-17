@@ -28,6 +28,11 @@ class AnalyticsQueryBuilder {
         return _buildReactionsByTypePipeline(startDate, endDate);
       case 'database:appReviewFeedback':
         return _buildAppReviewFeedbackPipeline(startDate, endDate);
+      case 'database:sourcesByFollowers':
+        return _buildRankedByFollowersPipeline('sources');
+      case 'database:topicsByFollowers':
+        return _buildRankedByFollowersPipeline('topics');
+
       default:
         // This case is intentionally left to return null for metrics that
         // are not categorical and are handled by other methods, like simple
@@ -128,6 +133,32 @@ class AnalyticsQueryBuilder {
       },
       {
         r'$project': {'label': r'$_id', 'value': r'$count', '_id': 0},
+      },
+    ];
+  }
+
+  /// Creates a pipeline for ranking items by follower count.
+  List<Map<String, dynamic>> _buildRankedByFollowersPipeline(String model) {
+    // This pipeline calculates the number of followers for each document
+    // by getting the size of the `followerIds` array, sorts them,
+    // and projects them into the RankedListItem shape.
+    return [
+      {
+        r'$project': {
+          'name': 1,
+          'followerCount': {r'$size': r'$followerIds'},
+        },
+      },
+      {
+        r'$sort': {'followerCount': -1},
+      },
+      {r'$limit': 5},
+      {
+        r'$project': {
+          'entityId': r'$_id',
+          'displayTitle': r'$name',
+          'metricValue': r'$followerCount',
+        },
       },
     ];
   }
