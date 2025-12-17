@@ -126,23 +126,21 @@ class AnalyticsMetricMapper {
         const StandardMetricQuery(
           metric: 'database:headlinesBySource',
         ),
-    ChartCardId.contentSourcesFollowersOverTime: const StandardMetricQuery(
-      metric: 'database:sourceFollowers',
-    ),
     ChartCardId.contentSourcesEngagementByType: const StandardMetricQuery(
       metric: 'database:sourceEngagementByType',
     ),
-    // Topics Tab
-    ChartCardId.contentTopicsFollowersOverTime: const StandardMetricQuery(
-      metric: 'database:topicFollowers',
+    ChartCardId.content_sources_status_distribution: const StandardMetricQuery(
+      metric: 'database:sourceStatusDistribution',
     ),
+    // Topics Tab
     ChartCardId.contentTopicsHeadlinesPublishedOverTime:
         const StandardMetricQuery(
           metric: 'database:headlinesByTopic',
         ),
-    ChartCardId.contentTopicsEngagementByTopic: const StandardMetricQuery(
-      metric: 'database:topicEngagement',
-    ),
+    ChartCardId.content_headlines_breaking_news_distribution:
+        const StandardMetricQuery(
+          metric: 'database:breakingNewsDistribution',
+        ),
     // Engagements Tab
     ChartCardId.engagementsReactionsOverTime: const EventCountQuery(
       event: AnalyticsEvent.reactionCreated,
