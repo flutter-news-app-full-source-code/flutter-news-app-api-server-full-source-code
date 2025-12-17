@@ -164,6 +164,7 @@ class AnalyticsSyncService {
               query,
               startDate,
               now,
+              client,
             );
           } else {
             value = await client.getMetricTotal(query, startDate, now);
@@ -183,6 +184,7 @@ class AnalyticsSyncService {
               query,
               prevPeriodStartDate,
               prevPeriodEndDate,
+              client,
             );
           } else {
             prevValue = await client.getMetricTotal(
@@ -429,11 +431,11 @@ class AnalyticsSyncService {
 
     final results = await repo.aggregate(pipeline: pipeline);
     return results.map((e) {
-      final label = e['label'] as String;
-      final formattedLabel = label
-          .replaceAllMapped(RegExp('([A-Z])'), (m) => ' ${m.group(1)}')
-          .trim()
-          .capitalize();
+      final label = e['label'].toString();
+      final formattedLabel = label.split(' ').map((word) {
+        if (word.isEmpty) return '';
+        return '${word[0].toUpperCase()}${word.substring(1)}';
+      }).join(' ');
       return DataPoint(label: formattedLabel, value: e['value'] as num);
     }).toList();
   }
@@ -491,23 +493,24 @@ class AnalyticsSyncService {
     StandardMetricQuery query,
     DateTime startDate,
     DateTime endDate,
+    AnalyticsReportingClient client,
   ) async {
     switch (query.metric) {
       case 'calculated:engagementRate':
         // Engagement Rate = (Total Reactions / Total Views) * 100
-        final totalReactionsQuery = const EventCountQuery(
+        const totalReactionsQuery = EventCountQuery(
           event: AnalyticsEvent.reactionCreated,
         );
-        final totalViewsQuery = const EventCountQuery(
+        const totalViewsQuery = EventCountQuery(
           event: AnalyticsEvent.contentViewed,
         );
 
-        final totalReactions = await getMetricTotal(
+        final totalReactions = await client.getMetricTotal(
           totalReactionsQuery,
           startDate,
           endDate,
         );
-        final totalViews = await getMetricTotal(
+        final totalViews = await client.getMetricTotal(
           totalViewsQuery,
           startDate,
           endDate,
