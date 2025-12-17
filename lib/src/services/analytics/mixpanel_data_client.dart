@@ -20,11 +20,11 @@ class MixpanelDataClient implements AnalyticsReportingClient {
     required String serviceAccountSecret,
     required Logger log,
     required DataRepository<Headline> headlineRepository,
-  })  : _projectId = projectId,
-        _serviceAccountUsername = serviceAccountUsername,
-        _serviceAccountSecret = serviceAccountSecret,
-        _log = log,
-        _headlineRepository = headlineRepository {
+  }) : _projectId = projectId,
+       _serviceAccountUsername = serviceAccountUsername,
+       _serviceAccountSecret = serviceAccountSecret,
+       _log = log,
+       _headlineRepository = headlineRepository {
     final credentials = base64Encode(
       '$_serviceAccountUsername:$_serviceAccountSecret'.codeUnits,
     );
@@ -63,7 +63,7 @@ class MixpanelDataClient implements AnalyticsReportingClient {
     DateTime startDate,
     DateTime endDate,
   ) async {
-    final metricName = _getMetricName(query);
+    var metricName = _getMetricName(query);
     if (metricName.startsWith('database:')) {
       throw ArgumentError.value(
         query,
@@ -78,27 +78,29 @@ class MixpanelDataClient implements AnalyticsReportingClient {
 
     _log.info('Fetching time series for metric "$metricName" from Mixpanel.');
 
+    final request = MixpanelSegmentationRequest(
+      projectId: _projectId,
+      event: metricName,
+      fromDate: DateFormat('yyyy-MM-dd').format(startDate),
+      toDate: DateFormat('yyyy-MM-dd').format(endDate),
+    );
+
     final response = await _httpClient.get<Map<String, dynamic>>(
       '/segmentation',
-      queryParameters: {
-        'project_id': _projectId,
-        'event': metricName,
-        'from_date': DateFormat('yyyy-MM-dd').format(startDate),
-        'to_date': DateFormat('yyyy-MM-dd').format(endDate),
-        'unit': 'day',
-      },
+      queryParameters: request.toJson(),
     );
 
     final segmentationData =
         MixpanelResponse<MixpanelSegmentationData>.fromJson(
-      response,
-      (json) =>
-          MixpanelSegmentationData.fromJson(json as Map<String, dynamic>),
-    ).data;
+          response,
+          (json) =>
+              MixpanelSegmentationData.fromJson(json as Map<String, dynamic>),
+        ).data;
 
     final dataPoints = <DataPoint>[];
     final series = segmentationData.series;
-    final values = segmentationData.values[metricName] ??
+    final values =
+        segmentationData.values[metricName] ??
         segmentationData.values.values.firstOrNull ??
         [];
 
@@ -119,7 +121,7 @@ class MixpanelDataClient implements AnalyticsReportingClient {
     DateTime startDate,
     DateTime endDate,
   ) async {
-    final metricName = _getMetricName(query);
+    var metricName = _getMetricName(query);
     if (metricName.startsWith('database:')) {
       throw ArgumentError.value(
         query,
@@ -152,16 +154,18 @@ class MixpanelDataClient implements AnalyticsReportingClient {
       '"$metricName" from Mixpanel.',
     );
 
+    final request = MixpanelTopEventsRequest(
+      projectId: _projectId,
+      event: metricName,
+      name: dimensionName,
+      fromDate: DateFormat('yyyy-MM-dd').format(startDate),
+      toDate: DateFormat('yyyy-MM-dd').format(endDate),
+      limit: query.limit,
+    );
+
     final response = await _httpClient.get<Map<String, dynamic>>(
       '/events/properties/top',
-      queryParameters: {
-        'project_id': _projectId,
-        'event': metricName,
-        'name': dimensionName,
-        'from_date': DateFormat('yyyy-MM-dd').format(startDate),
-        'to_date': DateFormat('yyyy-MM-dd').format(endDate),
-        'limit': query.limit,
-      },
+      queryParameters: request.toJson(),
     );
 
     final rawItems = <RankedListItem>[];
