@@ -63,7 +63,7 @@ dependency_overrides:
   core:
     git:
       url: https://github.com/flutter-news-app-full-source-code/core.git
-      ref: 962cf6dbc40aeea94e177bae6fb9d84b153f85b7
+      ref: eeb2e42a9fd11b17baf85c24c1c072c71f1317c5
   data_mongodb:
     git:
       url: https://github.com/flutter-news-app-full-source-code/data-mongodb.git
