@@ -2,7 +2,6 @@ import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/analytics/analytics.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/analytics/analytics_query_builder.dart';
 import 'package:logging/logging.dart';
 
 /// {@template analytics_sync_service}
@@ -202,8 +201,7 @@ class AnalyticsSyncService {
     _log.info('Syncing Chart cards...');
     for (final chartId in ChartCardId.values) {
       try {
-        final query =
-            _analyticsMetricMapper.getChartQuery(chartId) as MetricQuery?;
+        final query = _mapper.getChartQuery(chartId);
         if (query == null) {
           _log.finer('No metric mapping for Chart ${chartId.name}. Skipping.');
           continue;
@@ -222,11 +220,7 @@ class AnalyticsSyncService {
           List<DataPoint> dataPoints;
 
           if (isDatabaseQuery) {
-            dataPoints = await _getDatabaseTimeSeries(
-              query,
-              startDate,
-              now,
-            );
+            dataPoints = await _getDatabaseTimeSeries(query, startDate, now);
           } else {
             dataPoints = await client.getTimeSeries(query, startDate, now);
           }
@@ -255,7 +249,7 @@ class AnalyticsSyncService {
     _log.info('Syncing Ranked List cards...');
     for (final rankedListId in RankedListCardId.values) {
       try {
-        final query = _analyticsMetricMapper.getRankedListQuery(rankedListId);
+        final query = _mapper.getRankedListQuery(rankedListId);
         final isDatabaseQuery =
             query is StandardMetricQuery &&
             query.metric.startsWith('database:');
@@ -277,7 +271,7 @@ class AnalyticsSyncService {
 
           if (isDatabaseQuery) {
             items = await _getDatabaseRankedList(
-              query as StandardMetricQuery,
+              query,
               startDate,
               now,
             );
@@ -358,71 +352,33 @@ class AnalyticsSyncService {
     DateTime startDate,
     DateTime endDate,
   ) async {
-    switch (query.metric) {
-      case 'database:userRoleDistribution':
-        final pipeline = <Map<String, dynamic>>[
-          // No date filter needed for role distribution as it's a snapshot.
-          {
-            r'$group': {
-              '_id': r'$appRole',
-              'count': {r'$sum': 1},
-            },
-          },
-          {
-            r'$project': {'label': r'$_id', 'value': r'$count', '_id': 0},
-          },
-        ];
-        final results = await _userRepository.aggregate(pipeline: pipeline);
-        return results
-            .map(
-              (e) => DataPoint(
-                label: e['label'] as String,
-                value: e['value'] as num,
-              ),
-            )
-            .toList();
-      case 'database:reportsByReason':
-        final pipeline = <Map<String, dynamic>>[
-          {
-            r'$match': {
-              'createdAt': {
-                r'$gte': startDate.toIso8601String(),
-                r'$lt': endDate.toIso8601String(),
-              },
-            },
-          },
-          {
-            r'$group': {
-              '_id': r'$reason',
-              'count': {r'$sum': 1},
-            },
-          },
-          {
-            r'$project': {'label': r'$_id', 'value': r'$count', '_id': 0},
-          },
-        ];
-        final results = await _reportRepository.aggregate(pipeline: pipeline);
-        return results
-            .map(
-              (e) => DataPoint(
-                label: (e['label'] as String)
-                    .replaceAllMapped(
-                      RegExp('([A-Z])'),
-                      (match) => ' ${match.group(1)}',
-                    )
-                    .trim()
-                    .capitalize(),
-                value: e['value'] as num,
-              ),
-            )
-            .toList();
+    final pipeline = _queryBuilder.buildPipelineForMetric(
+      query,
+      startDate,
+      endDate,
+    );
 
-      // Add other database time series queries here.
-
-      default:
-        _log.warning('Unsupported database time series: ${query.metric}');
-        return [];
+    if (pipeline == null) {
+      _log.warning('No pipeline for database time series: ${query.metric}');
+      return [];
     }
+
+    // Determine the correct repository based on the metric name.
+    final repo = _getRepositoryForMetric(query.metric);
+    if (repo == null) {
+      _log.severe('No repository found for metric: ${query.metric}');
+      return [];
+    }
+
+    final results = await repo.aggregate(pipeline: pipeline);
+    return results.map((e) {
+      final label = e['label'] as String;
+      final formattedLabel = label
+          .replaceAllMapped(RegExp('([A-Z])'), (m) => ' ${m.group(1)}')
+          .trim()
+          .capitalize();
+      return DataPoint(label: formattedLabel, value: e['value'] as num);
+    }).toList();
   }
 
   Future<List<RankedListItem>> _getDatabaseRankedList(
@@ -430,38 +386,44 @@ class AnalyticsSyncService {
     DateTime startDate,
     DateTime endDate,
   ) async {
-    switch (query.metric) {
-      case 'database:sourcesByFollowers':
-      case 'database:topicsByFollowers':
-        final isTopics = query.metric.contains('topics');
-        final pipeline = <Map<String, dynamic>>[
-          {
-            // No date filter needed for total follower count.
-            r'$project': {
-              'name': 1,
-              'followerCount': {r'$size': r'$followerIds'},
-            },
-          },
-          {
-            r'$sort': {'followerCount': -1},
-          },
-          {r'$limit': 5},
-        ];
-        final repo = isTopics ? _topicRepository : _sourceRepository;
-        final results = await repo.aggregate(pipeline: pipeline);
-        return results
-            .map(
-              (e) => RankedListItem(
-                entityId: e['_id'] as String,
-                displayTitle: e['name'] as String,
-                metricValue: e['followerCount'] as int,
-              ),
-            )
-            .toList();
-      default:
-        _log.warning('Unsupported database ranked list: ${query.metric}');
-        return [];
+    final pipeline = _queryBuilder.buildPipelineForMetric(
+      query,
+      startDate,
+      endDate,
+    );
+
+    if (pipeline == null) {
+      _log.warning('No pipeline for database ranked list: ${query.metric}');
+      return [];
     }
+
+    final repo = _getRepositoryForMetric(query.metric);
+    if (repo == null) {
+      _log.severe('No repository found for metric: ${query.metric}');
+      return [];
+    }
+
+    final results = await repo.aggregate(pipeline: pipeline);
+    return results
+        .map(
+          (e) => RankedListItem(
+            entityId: e['entityId'] as String,
+            displayTitle: e['displayTitle'] as String,
+            metricValue: e['metricValue'] as num,
+          ),
+        )
+        .toList();
+  }
+
+  DataRepository<dynamic>? _getRepositoryForMetric(String metric) {
+    if (metric.contains('user')) return _userRepository;
+    if (metric.contains('report')) return _reportRepository;
+    if (metric.contains('reaction')) return _engagementRepository;
+    if (metric.contains('appReview')) return _appReviewRepository;
+    if (metric.contains('source')) return _sourceRepository;
+    if (metric.contains('topic')) return _topicRepository;
+    if (metric.contains('headline')) return _headlineRepository;
+    return null;
   }
 
   int _daysForKpiTimeFrame(KpiTimeFrame timeFrame) {
