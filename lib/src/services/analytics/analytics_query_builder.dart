@@ -1,4 +1,5 @@
 import 'package:flutter_news_app_api_server_full_source_code/src/models/analytics/analytics.dart';
+import 'package:logging/logging.dart';
 
 /// {@template analytics_query_builder}
 /// A builder class responsible for creating complex MongoDB aggregation
@@ -8,8 +9,9 @@ import 'package:flutter_news_app_api_server_full_source_code/src/models/analytic
 /// `AnalyticsSyncService` from the specific implementation details of
 /// database aggregations.
 /// {@endtemplate}
-
 class AnalyticsQueryBuilder {
+  final _log = Logger('AnalyticsQueryBuilder');
+
   /// Creates a MongoDB aggregation pipeline for a given database metric.
   ///
   /// Returns `null` if the metric is not a supported database query.
@@ -29,10 +31,6 @@ class AnalyticsQueryBuilder {
         return _buildReactionsByTypePipeline(startDate, endDate);
       case 'database:appReviewFeedback':
         return _buildAppReviewFeedbackPipeline(startDate, endDate);
-      case 'database:sourceFollowers':
-        return _buildFollowersOverTimePipeline('sources', startDate, endDate);
-      case 'database:topicFollowers':
-        return _buildFollowersOverTimePipeline('topics', startDate, endDate);
       case 'database:avgReportResolutionTime':
         return _buildAvgReportResolutionTimePipeline(startDate, endDate);
       case 'database:viewsByTopic':
@@ -67,10 +65,22 @@ class AnalyticsQueryBuilder {
           startDate: startDate,
           endDate: endDate,
         );
-      case 'database:topicEngagement':
-        // This is a placeholder. A real implementation would require a more
-        // complex pipeline, likely joining with an engagements collection.
-        return [];
+      case 'database:sourceStatusDistribution':
+        return _buildCategoricalCountPipeline(
+          collection: 'sources',
+          dateField: 'createdAt',
+          groupByField: r'$status',
+          startDate: startDate,
+          endDate: endDate,
+        );
+      case 'database:breakingNewsDistribution':
+        return _buildCategoricalCountPipeline(
+          collection: 'headlines',
+          dateField: 'createdAt',
+          groupByField: r'$isBreaking',
+          startDate: startDate,
+          endDate: endDate,
+        );
       // Ranked List Queries
       case 'database:sourcesByFollowers':
         return _buildRankedByFollowersPipeline('sources');
@@ -239,25 +249,6 @@ class AnalyticsQueryBuilder {
         },
       },
     ];
-  }
-
-  /// Creates a pipeline for tracking follower counts over time.
-  ///
-  /// This is a complex query that is best handled with a dedicated
-  /// "follow_events" collection for perfect historical accuracy. Since that
-  //  does not exist, this implementation returns an empty list to avoid
-  //  providing potentially misleading data. A proper implementation would
-  //  require schema changes and a more complex pipeline.
-  List<Map<String, dynamic>> _buildFollowersOverTimePipeline(
-    String model,
-    DateTime startDate,
-    DateTime endDate,
-  ) {
-    _log.warning(
-      'Followers over time metric for "$model" is not supported due to '
-      'schema limitations. Returning empty data.',
-    );
-    return [];
   }
 
   /// Creates a pipeline for calculating the average report resolution time.
