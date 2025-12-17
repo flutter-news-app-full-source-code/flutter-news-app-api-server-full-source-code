@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:core/core.dart';
+import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/analytics/analytics.dart';
 import 'package:http_client/http_client.dart';
@@ -18,10 +19,12 @@ class MixpanelDataClient implements AnalyticsReportingClient {
     required String serviceAccountUsername,
     required String serviceAccountSecret,
     required Logger log,
-  }) : _projectId = projectId,
-       _serviceAccountUsername = serviceAccountUsername,
-       _serviceAccountSecret = serviceAccountSecret,
-       _log = log {
+    required DataRepository<Headline> headlineRepository,
+  })  : _projectId = projectId,
+        _serviceAccountUsername = serviceAccountUsername,
+        _serviceAccountSecret = serviceAccountSecret,
+        _log = log,
+        _headlineRepository = headlineRepository {
     final credentials = base64Encode(
       '$_serviceAccountUsername:$_serviceAccountSecret'.codeUnits,
     );
@@ -47,6 +50,7 @@ class MixpanelDataClient implements AnalyticsReportingClient {
   final String _serviceAccountSecret;
   late final HttpClient _httpClient;
   final Logger _log;
+  final DataRepository<Headline> _headlineRepository;
 
   @override
   Future<List<DataPoint>> getTimeSeries(
@@ -69,14 +73,16 @@ class MixpanelDataClient implements AnalyticsReportingClient {
 
     final segmentationData =
         MixpanelResponse<MixpanelSegmentationData>.fromJson(
-          response,
-          (json) =>
-              MixpanelSegmentationData.fromJson(json as Map<String, dynamic>),
-        ).data;
+      response,
+      (json) =>
+          MixpanelSegmentationData.fromJson(json as Map<String, dynamic>),
+    ).data;
 
     final dataPoints = <DataPoint>[];
     final series = segmentationData.series;
-    final values = segmentationData.values.values.firstOrNull ?? [];
+    final values = segmentationData.values[metricName] ??
+        segmentationData.values.values.firstOrNull ??
+        [];
 
     for (var i = 0; i < series.length; i++) {
       dataPoints.add(
@@ -95,16 +101,55 @@ class MixpanelDataClient implements AnalyticsReportingClient {
     DateTime startDate,
     DateTime endDate,
   ) async {
-    _log.warning('getMetricTotal for Mixpanel is not implemented.');
-    return 0;
+    _log.info('Fetching total for metric "$metricName" from Mixpanel.');
+    final timeSeries = await getTimeSeries(metricName, startDate, endDate);
+    if (timeSeries.isEmpty) return 0;
+
+    return timeSeries.map((dp) => dp.value).reduce((a, b) => a + b);
   }
 
   @override
   Future<List<RankedListItem>> getRankedList(
     String dimensionName,
     String metricName,
-  ) async {
-    _log.warning('getRankedList for Mixpanel is not implemented.');
-    return [];
+    DateTime startDate,
+    DateTime endDate, {
+    int limit = 5,
+  }) async {
+    _log.info(
+      'Fetching ranked list for dimension "$dimensionName" by metric '
+      '"$metricName" from Mixpanel.',
+    );
+
+    final response = await _httpClient.get<Map<String, dynamic>>(
+      '/events/properties/top',
+      queryParameters: {
+        'project_id': _projectId,
+        'event': metricName,
+        'name': dimensionName,
+        'from_date': DateFormat('yyyy-MM-dd').format(startDate),
+        'to_date': DateFormat('yyyy-MM-dd').format(endDate),
+        'limit': limit,
+      },
+    );
+
+    final items = <RankedListItem>[];
+    response.forEach((key, value) {
+      if (value is! Map || !value.containsKey('count')) return;
+      final count = value['count'];
+      if (count is! num) return;
+
+      items.add(
+        RankedListItem(
+          entityId: key,
+          displayTitle: '',
+          metricValue: count,
+        ),
+      );
+    });
+
+    items.sort((a, b) => b.metricValue.compareTo(a.metricValue));
+
+    return items;
   }
 }
