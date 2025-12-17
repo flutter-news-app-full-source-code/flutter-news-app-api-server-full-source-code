@@ -1,104 +1,153 @@
 import 'package:core/core.dart';
-
-/// A record to hold provider-specific metric and dimension names.
-typedef ProviderMetrics = ({String metric, String? dimension});
+import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
 
 /// {@template analytics_metric_mapper}
-/// A class that maps internal analytics card IDs to provider-specific metrics.
+/// Maps internal analytics card IDs to structured [AnalyticsQuery] objects.
 ///
 /// This centralizes the "dictionary" of what to query for each card,
 /// decoupling the sync service from the implementation details of each
 /// analytics provider.
 /// {@endtemplate}
 class AnalyticsMetricMapper {
-  /// Returns the provider-specific metric and dimension for a given KPI card.
-  ProviderMetrics getKpiMetrics(KpiCardId kpiId, AnalyticsProvider provider) {
-    switch (provider) {
-      case AnalyticsProvider.firebase:
-        return _firebaseKpiMappings[kpiId]!;
-      case AnalyticsProvider.mixpanel:
-        return _mixpanelKpiMappings[kpiId]!;
-      case AnalyticsProvider.demo:
-        throw UnimplementedError('Demo provider does not have metrics.');
-    }
+  /// Returns the query object for a given KPI card.
+  AnalyticsQuery? getKpiQuery(KpiCardId kpiId) {
+    return _kpiQueryMappings[kpiId];
   }
 
-  /// Returns the provider-specific metric and dimension for a given chart card.
-  ProviderMetrics getChartMetrics(
-    ChartCardId chartId,
-    AnalyticsProvider provider,
-  ) {
-    switch (provider) {
-      case AnalyticsProvider.firebase:
-        return _firebaseChartMappings[chartId]!;
-      case AnalyticsProvider.mixpanel:
-        return _mixpanelChartMappings[chartId]!;
-      case AnalyticsProvider.demo:
-        throw UnimplementedError('Demo provider does not have metrics.');
-    }
+  /// Returns the query object for a given chart card.
+  AnalyticsQuery? getChartQuery(ChartCardId chartId) {
+    return _chartQueryMappings[chartId];
   }
 
-  /// Returns the provider-specific metric and dimension for a ranked list.
-  ProviderMetrics getRankedListMetrics(
-    RankedListCardId rankedListId,
-    AnalyticsProvider provider,
-  ) {
-    switch (provider) {
-      case AnalyticsProvider.firebase:
-        return _firebaseRankedListMappings[rankedListId]!;
-      case AnalyticsProvider.mixpanel:
-        return _mixpanelRankedListMappings[rankedListId]!;
-      case AnalyticsProvider.demo:
-        throw UnimplementedError('Demo provider does not have metrics.');
-    }
+  /// Returns the query object for a ranked list.
+  AnalyticsQuery? getRankedListQuery(RankedListCardId rankedListId) {
+    return _rankedListQueryMappings[rankedListId];
   }
 
-  // In a real-world scenario, these mappings would be comprehensive.
-  // For this implementation, we will map a few key examples.
-  // The service will gracefully handle missing mappings.
-
-  static final Map<KpiCardId, ProviderMetrics> _firebaseKpiMappings = {
-    KpiCardId.users_total_registered: (metric: 'eventCount', dimension: null),
-    KpiCardId.users_active_users: (metric: 'activeUsers', dimension: null),
-    KpiCardId.content_headlines_total_views:
-        (metric: 'eventCount', dimension: null),
-    // ... other mappings
+  static final Map<KpiCardId, AnalyticsQuery> _kpiQueryMappings = {
+    // User KPIs
+    KpiCardId.usersTotalRegistered: const EventCountQuery(
+      event: AnalyticsEvent.userRegistered,
+    ),
+    KpiCardId.usersNewRegistrations: const EventCountQuery(
+      event: AnalyticsEvent.userRegistered,
+    ),
+    KpiCardId.usersActiveUsers: const StandardMetricQuery(metric: 'activeUsers'),
+    // Headline KPIs
+    KpiCardId.contentHeadlinesTotalPublished: const StandardMetricQuery(
+      metric: 'database:headlines',
+    ),
+    KpiCardId.contentHeadlinesTotalViews: const EventCountQuery(
+      event: AnalyticsEvent.contentViewed,
+    ),
+    KpiCardId.contentHeadlinesTotalLikes: const EventCountQuery(
+      event: AnalyticsEvent.reactionCreated,
+    ),
+    // Source KPIs
+    KpiCardId.contentSourcesTotalSources: const StandardMetricQuery(
+      metric: 'database:sources',
+    ),
+    KpiCardId.contentSourcesNewSources: const StandardMetricQuery(
+      metric: 'database:sources',
+    ),
+    KpiCardId.contentSourcesTotalFollowers: const StandardMetricQuery(
+      metric: 'database:sourceFollowers',
+    ),
+    // Topic KPIs
+    KpiCardId.contentTopicsTotalTopics: const StandardMetricQuery(
+      metric: 'database:topics',
+    ),
+    KpiCardId.contentTopicsNewTopics: const StandardMetricQuery(
+      metric: 'database:topics',
+    ),
+    KpiCardId.contentTopicsTotalFollowers: const StandardMetricQuery(
+      metric: 'database:topicFollowers',
+    ),
+    // Engagement KPIs
+    KpiCardId.engagementsTotalReactions: const EventCountQuery(
+      event: AnalyticsEvent.reactionCreated,
+    ),
+    KpiCardId.engagementsTotalComments: const EventCountQuery(
+      event: AnalyticsEvent.commentCreated,
+    ),
+    KpiCardId.engagementsAverageEngagementRate: const StandardMetricQuery(
+      metric: 'calculated:engagementRate',
+    ),
+    // Report KPIs
+    KpiCardId.engagementsReportsPending: const StandardMetricQuery(
+      metric: 'database:reportsPending',
+    ),
+    KpiCardId.engagementsReportsResolved: const StandardMetricQuery(
+      metric: 'database:reportsResolved',
+    ),
+    KpiCardId.engagementsReportsAverageResolutionTime: const StandardMetricQuery(
+      metric: 'database:avgReportResolutionTime',
+    ),
+    // App Review KPIs
+    KpiCardId.engagementsAppReviewsTotalFeedback: const EventCountQuery(
+      event: AnalyticsEvent.appReviewPromptResponded,
+    ),
+    KpiCardId.engagementsAppReviewsPositiveFeedback: const EventCountQuery(
+      event: AnalyticsEvent.appReviewPromptResponded,
+    ),
+    KpiCardId.engagementsAppReviewsStoreRequests: const EventCountQuery(
+      event: AnalyticsEvent.appReviewStoreRequested,
+    ),
   };
 
-  static final Map<KpiCardId, ProviderMetrics> _mixpanelKpiMappings = {
-    KpiCardId.users_total_registered:
-        (metric: AnalyticsEvent.userRegistered.name, dimension: null),
-    KpiCardId.users_active_users: (metric: '\$active', dimension: null),
-    KpiCardId.content_headlines_total_views:
-        (metric: AnalyticsEvent.contentViewed.name, dimension: null),
-    // ... other mappings
+  static final Map<ChartCardId, AnalyticsQuery> _chartQueryMappings = {
+    // User Charts
+    ChartCardId.usersRegistrationsOverTime: const EventCountQuery(
+      event: AnalyticsEvent.userRegistered,
+    ),
+    ChartCardId.usersActiveUsersOverTime:
+        const StandardMetricQuery(metric: 'activeUsers'),
+    ChartCardId.usersRoleDistribution: const StandardMetricQuery(
+      metric: 'database:userRoleDistribution',
+    ),
+    // Headline Charts
+    ChartCardId.contentHeadlinesViewsOverTime: const EventCountQuery(
+      event: AnalyticsEvent.contentViewed,
+    ),
+    ChartCardId.contentHeadlinesLikesOverTime: const EventCountQuery(
+      event: AnalyticsEvent.reactionCreated,
+    ),
+    // Other charts are placeholders for now as they require more complex
+    // queries or database-only aggregations not yet implemented.
+    ChartCardId.contentHeadlinesViewsByTopic: null,
+    ChartCardId.contentSourcesHeadlinesPublishedOverTime: null,
+    ChartCardId.contentSourcesFollowersOverTime: null,
+    ChartCardId.contentSourcesEngagementByType: null,
+    ChartCardId.contentTopicsFollowersOverTime: null,
+    ChartCardId.contentTopicsHeadlinesPublishedOverTime: null,
+    ChartCardId.contentTopicsEngagementByTopic: null,
+    ChartCardId.engagementsReactionsOverTime: null,
+    ChartCardId.engagementsCommentsOverTime: null,
+    ChartCardId.engagementsReactionsByType: null,
+    ChartCardId.engagementsReportsSubmittedOverTime: null,
+    ChartCardId.engagementsReportsResolutionTimeOverTime: null,
+    ChartCardId.engagementsReportsByReason: null,
+    ChartCardId.engagementsAppReviewsFeedbackOverTime: null,
+    ChartCardId.engagementsAppReviewsPositiveVsNegative: null,
+    ChartCardId.engagementsAppReviewsStoreRequestsOverTime: null,
   };
 
-  static final Map<ChartCardId, ProviderMetrics> _firebaseChartMappings = {
-    ChartCardId.users_registrations_over_time:
-        (metric: 'eventCount', dimension: 'date'),
-    ChartCardId.users_active_users_over_time:
-        (metric: 'activeUsers', dimension: 'date'),
-    // ... other mappings
-  };
-
-  static final Map<ChartCardId, ProviderMetrics> _mixpanelChartMappings = {
-    ChartCardId.users_registrations_over_time:
-        (metric: AnalyticsEvent.userRegistered.name, dimension: 'date'),
-    ChartCardId.users_active_users_over_time:
-        (metric: '\$active', dimension: 'date'),
-    // ... other mappings
-  };
-
-  static final Map<RankedListCardId, ProviderMetrics>
-      _firebaseRankedListMappings = {
-    RankedListCardId.overview_headlines_most_viewed:
-        (metric: 'eventCount', dimension: 'customEvent:contentId'),
-  };
-
-  static final Map<RankedListCardId, ProviderMetrics>
-      _mixpanelRankedListMappings = {
-    RankedListCardId.overview_headlines_most_viewed:
-        (metric: AnalyticsEvent.contentViewed.name, dimension: 'contentId'),
+  static final Map<RankedListCardId, AnalyticsQuery>
+      _rankedListQueryMappings = {
+    RankedListCardId.overviewHeadlinesMostViewed: const RankedListQuery(
+      event: AnalyticsEvent.contentViewed,
+      dimension: 'contentId',
+    ),
+    RankedListCardId.overviewHeadlinesMostLiked: const RankedListQuery(
+      event: AnalyticsEvent.reactionCreated,
+      dimension: 'contentId',
+    ),
+    // These require database-only aggregations.
+    RankedListCardId.overviewSourcesMostFollowed: const StandardMetricQuery(
+      metric: 'database:sourcesByFollowers',
+    ),
+    RankedListCardId.overviewTopicsMostFollowed: const StandardMetricQuery(
+      metric: 'database:topicsByFollowers',
+    ),
   };
 }
