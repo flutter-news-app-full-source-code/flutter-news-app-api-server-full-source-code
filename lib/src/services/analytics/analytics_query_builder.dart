@@ -21,15 +21,26 @@ class AnalyticsQueryBuilder {
     DateTime endDate,
   ) {
     final metric = query.metric;
+    _log.finer('Building pipeline for database metric: "$metric".');
 
     switch (metric) {
       case 'database:userRoleDistribution':
+        _log.info('Building user role distribution pipeline.');
         return _buildUserRoleDistributionPipeline();
       case 'database:reportsByReason':
+        _log.info(
+          'Building reports by reason pipeline from $startDate to $endDate.',
+        );
         return _buildReportsByReasonPipeline(startDate, endDate);
       case 'database:reactionsByType':
+        _log.info(
+          'Building reactions by type pipeline from $startDate to $endDate.',
+        );
         return _buildReactionsByTypePipeline(startDate, endDate);
       case 'database:appReviewFeedback':
+        _log.info(
+          'Building app review feedback pipeline from $startDate to $endDate.',
+        );
         return _buildAppReviewFeedbackPipeline(startDate, endDate);
       case 'database:avgReportResolutionTime':
         return _buildAvgReportResolutionTimePipeline(startDate, endDate);
@@ -66,6 +77,9 @@ class AnalyticsQueryBuilder {
           endDate: endDate,
         );
       case 'database:sourceStatusDistribution':
+        _log.info(
+          'Building categorical count pipeline for source status distribution.',
+        );
         return _buildCategoricalCountPipeline(
           collection: 'sources',
           dateField: 'createdAt',
@@ -74,6 +88,9 @@ class AnalyticsQueryBuilder {
           endDate: endDate,
         );
       case 'database:breakingNewsDistribution':
+        _log.info(
+          'Building categorical count pipeline for breaking news distribution.',
+        );
         return _buildCategoricalCountPipeline(
           collection: 'headlines',
           dateField: 'createdAt',
@@ -83,8 +100,10 @@ class AnalyticsQueryBuilder {
         );
       // Ranked List Queries
       case 'database:sourcesByFollowers':
+        _log.info('Building ranked list pipeline for sources by followers.');
         return _buildRankedByFollowersPipeline('sources');
       case 'database:topicsByFollowers':
+        _log.info('Building ranked list pipeline for topics by followers.');
         return _buildRankedByFollowersPipeline('topics');
 
       default:
@@ -256,6 +275,10 @@ class AnalyticsQueryBuilder {
     DateTime startDate,
     DateTime endDate,
   ) {
+    _log.info(
+      'Building average report resolution time pipeline from $startDate '
+      'to $endDate.',
+    );
     return [
       // Match reports resolved within the date range
       {
