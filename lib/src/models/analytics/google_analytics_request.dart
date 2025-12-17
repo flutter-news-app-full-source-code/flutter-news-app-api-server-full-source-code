@@ -6,7 +6,7 @@ part 'google_analytics_request.g.dart';
 /// {@template run_report_request}
 /// Represents the request body for the Google Analytics Data API's `runReport`.
 /// {@endtemplate}
-@JsonSerializable(explicitToJson: true)
+@JsonSerializable(explicitToJson: true, includeIfNull: false)
 class RunReportRequest extends Equatable {
   /// {@macro run_report_request}
   const RunReportRequest({
@@ -16,6 +16,10 @@ class RunReportRequest extends Equatable {
     this.dimensionFilter,
     this.limit,
   });
+
+  /// Creates a [RunReportRequest] from JSON data.
+  factory RunReportRequest.fromJson(Map<String, dynamic> json) =>
+      _$RunReportRequestFromJson(json);
 
   /// The date ranges for which to retrieve data.
   final List<GARequestDateRange> dateRanges;
@@ -48,6 +52,10 @@ class GARequestDateRange extends Equatable {
   /// {@macro ga_request_date_range}
   const GARequestDateRange({required this.startDate, required this.endDate});
 
+  /// Creates a [GARequestDateRange] from JSON data.
+  factory GARequestDateRange.fromJson(Map<String, dynamic> json) =>
+      _$GARequestDateRangeFromJson(json);
+
   /// The start date in 'YYYY-MM-DD' format.
   final String startDate;
 
@@ -69,6 +77,10 @@ class GARequestDimension extends Equatable {
   /// {@macro ga_request_dimension}
   const GARequestDimension({required this.name});
 
+  /// Creates a [GARequestDimension] from JSON data.
+  factory GARequestDimension.fromJson(Map<String, dynamic> json) =>
+      _$GARequestDimensionFromJson(json);
+
   /// The name of the dimension.
   final String name;
 
@@ -86,6 +98,10 @@ class GARequestDimension extends Equatable {
 class GARequestMetric extends Equatable {
   /// {@macro ga_request_metric}
   const GARequestMetric({required this.name});
+
+  /// Creates a [GARequestMetric] from JSON data.
+  factory GARequestMetric.fromJson(Map<String, dynamic> json) =>
+      _$GARequestMetricFromJson(json);
 
   /// The name of the metric.
   final String name;
@@ -105,6 +121,10 @@ class GARequestFilterExpression extends Equatable {
   /// {@macro ga_request_filter_expression}
   const GARequestFilterExpression({required this.filter});
 
+  /// Creates a [GARequestFilterExpression] from JSON data.
+  factory GARequestFilterExpression.fromJson(Map<String, dynamic> json) =>
+      _$GARequestFilterExpressionFromJson(json);
+
   /// The filter to apply.
   final GARequestFilter filter;
 
@@ -122,6 +142,10 @@ class GARequestFilterExpression extends Equatable {
 class GARequestFilter extends Equatable {
   /// {@macro ga_request_filter}
   const GARequestFilter({required this.fieldName, required this.stringFilter});
+
+  /// Creates a [GARequestFilter] from JSON data.
+  factory GARequestFilter.fromJson(Map<String, dynamic> json) =>
+      _$GARequestFilterFromJson(json);
 
   /// The name of the field to filter on.
   final String fieldName;
@@ -143,6 +167,10 @@ class GARequestFilter extends Equatable {
 class GARequestStringFilter extends Equatable {
   /// {@macro ga_request_string_filter}
   const GARequestStringFilter({required this.value});
+
+  /// Creates a [GARequestStringFilter] from JSON data.
+  factory GARequestStringFilter.fromJson(Map<String, dynamic> json) =>
+      _$GARequestStringFilterFromJson(json);
 
   /// The value to filter by.
   final String value;
