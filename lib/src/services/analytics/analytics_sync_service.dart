@@ -474,7 +474,10 @@ class AnalyticsSyncService {
 
   DataRepository<dynamic>? _getRepositoryForMetric(String metric) {
     if (metric.contains('user')) return _userRepository;
-    if (metric.contains('report')) return _reportRepository;
+    if (metric.contains('report') ||
+        metric.contains('reportsByReason')) {
+      return _reportRepository;
+    }
     if (metric.contains('reaction')) return _engagementRepository;
     if (metric.contains('appReview')) return _appReviewRepository;
     if (metric.contains('source')) return _sourceRepository;
