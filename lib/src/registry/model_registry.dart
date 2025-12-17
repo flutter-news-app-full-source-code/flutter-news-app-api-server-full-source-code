@@ -398,32 +398,6 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresAuthentication: true,
     ),
   ),
-  'dashboard_summary': ModelConfig<DashboardSummary>(
-    fromJson: DashboardSummary.fromJson,
-    getId: (summary) => summary.id,
-    getOwnerId: null, // Not a user-owned resource
-    // Permissions: Read-only for admins, all other actions unsupported.
-    getCollectionPermission: const ModelActionPermission(
-      type: RequiredPermissionType.unsupported,
-      requiresAuthentication: true,
-    ),
-    getItemPermission: const ModelActionPermission(
-      type: RequiredPermissionType.adminOnly,
-      requiresAuthentication: true,
-    ),
-    postPermission: const ModelActionPermission(
-      type: RequiredPermissionType.unsupported,
-      requiresAuthentication: true,
-    ),
-    putPermission: const ModelActionPermission(
-      type: RequiredPermissionType.unsupported,
-      requiresAuthentication: true,
-    ),
-    deletePermission: const ModelActionPermission(
-      type: RequiredPermissionType.unsupported,
-      requiresAuthentication: true,
-    ),
-  ),
   'push_notification_device': ModelConfig<PushNotificationDevice>(
     fromJson: PushNotificationDevice.fromJson,
     getId: (d) => d.id,
