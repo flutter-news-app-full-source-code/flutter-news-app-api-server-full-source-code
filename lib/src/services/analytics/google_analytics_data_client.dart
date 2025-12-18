@@ -21,18 +21,20 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
     required IFirebaseAuthenticator firebaseAuthenticator,
     required Logger log,
     required DataRepository<Headline> headlineRepository,
+    HttpClient? httpClient,
   }) : _propertyId = propertyId,
        _log = log,
-       _headlineRepository = headlineRepository {
-    _httpClient = HttpClient(
-      baseUrl: 'https://analyticsdata.googleapis.com/v1beta',
-      tokenProvider: firebaseAuthenticator.getAccessToken,
-      logger: _log,
-    );
-  }
+       _headlineRepository = headlineRepository,
+       _httpClient =
+           httpClient ??
+           HttpClient(
+             baseUrl: 'https://analyticsdata.googleapis.com/v1beta',
+             tokenProvider: firebaseAuthenticator.getAccessToken,
+             logger: log,
+           );
 
   final String _propertyId;
-  late final HttpClient _httpClient;
+  final HttpClient _httpClient;
   final Logger _log;
   final DataRepository<Headline> _headlineRepository;
 
