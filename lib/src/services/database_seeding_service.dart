@@ -111,40 +111,49 @@ class DatabaseSeedingService {
       final defaultRemoteConfigId = remoteConfigsFixturesData.first.id;
       final objectId = ObjectId.fromHexString(defaultRemoteConfigId);
 
-      final existingConfig = await remoteConfigCollection.findOne(
-        where.id(objectId),
-      );
+      // Start with the default configuration from the fixtures data.
+      final initialConfig = remoteConfigsFixturesData.first;
+      var featuresConfig = initialConfig.features;
 
-      if (existingConfig == null) {
-        _log.info('No existing RemoteConfig found. Creating initial config.');
-        // Take the default from fixtures
-        final initialConfig = remoteConfigsFixturesData.first;
+      // --- Generic Sanitization for Production/Staging Environments ---
+      // This block ensures that any configuration option with a 'demo'
+      // variant is reset to a sensible, non-demo default. This prevents
+      // 'demo' options from being the default in a real environment.
 
-        // Ensure primaryAdPlatform is not 'demo' for initial setup
-        // since its not intended for any use outside the mobile client.
-        final productionReadyAdConfig = initialConfig.features.ads.copyWith(
-          primaryAdPlatform: AdPlatformType.admob,
-        );
-
-        final productionReadyConfig = initialConfig.copyWith(
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-          features: initialConfig.features.copyWith(
-            ads: productionReadyAdConfig,
+      // Sanitize Ad Platform
+      if (featuresConfig.ads.primaryAdPlatform == AdPlatformType.demo) {
+        featuresConfig = featuresConfig.copyWith(
+          ads: featuresConfig.ads.copyWith(
+            primaryAdPlatform: AdPlatformType.admob, // Default to AdMob
           ),
         );
+      }
 
-        await remoteConfigCollection.insertOne({
-          '_id': objectId,
-          ...productionReadyConfig.toJson()..remove('id'),
-        });
-        _log.info('Initial RemoteConfig created successfully.');
-      } else {
-        _log.info(
-          'RemoteConfig already exists. Skipping creation. '
-          'Schema updates are handled by DatabaseMigrationService.',
+      // Sanitize Analytics Provider
+      if (featuresConfig.analytics.activeProvider == AnalyticsProvider.demo) {
+        featuresConfig = featuresConfig.copyWith(
+          analytics: featuresConfig.analytics.copyWith(
+            activeProvider: AnalyticsProvider.firebase, // Default to Firebase
+          ),
         );
       }
+
+      final productionReadyConfig = initialConfig.copyWith(
+        features: featuresConfig,
+        // Ensure timestamps are set for the initial creation.
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      // Use `updateOne` with `$setOnInsert` to create the document only if it
+      // does not exist. This prevents overwriting an admin's custom changes
+      // on subsequent server restarts.
+      await remoteConfigCollection.updateOne(
+        where.id(objectId),
+        {r'$setOnInsert': productionReadyConfig.toJson()..remove('id')},
+        upsert: true,
+      );
+      _log.info('Ensured RemoteConfig document exists and is sanitized.');
     } on Exception catch (e, s) {
       _log.severe('Failed to seed RemoteConfig.', e, s);
       rethrow;
@@ -158,27 +167,6 @@ class DatabaseSeedingService {
   Future<void> _ensureIndexes() async {
     _log.info('Ensuring database indexes exist...');
     try {
-      /// Text index for searching headlines by title.
-      /// This index supports efficient full-text search queries on the 'title' field
-      /// of headline documents, crucial for the main search functionality.
-      await _db
-          .collection('headlines')
-          .createIndex(keys: {'title': 'text'}, name: 'headlines_text_index');
-
-      /// Text index for searching topics by name.
-      /// This index enables efficient full-text search on the 'name' field of
-      /// topic documents, used for searching topics.
-      await _db
-          .collection('topics')
-          .createIndex(keys: {'name': 'text'}, name: 'topics_text_index');
-
-      /// Text index for searching sources by name.
-      /// This index facilitates efficient full-text search on the 'name' field of
-      /// source documents, used for searching sources.
-      await _db
-          .collection('sources')
-          .createIndex(keys: {'name': 'text'}, name: 'sources_text_index');
-
       /// Index for searching countries by name.
       /// This index supports efficient queries and sorting on the 'name' field
       /// of country documents, particularly for direct country searches.
@@ -325,6 +313,156 @@ class DatabaseSeedingService {
         ],
       });
       _log.info('Ensured indexes for "app_reviews".');
+
+      // Indexes for the users collection
+      await _db.runCommand({
+        'createIndexes': 'users',
+        'indexes': [
+          {
+            // For `users` collection aggregations (e.g., role distribution).
+            'key': {'appRole': 1},
+            'name': 'analytics_user_role_index',
+          },
+        ],
+      });
+      _log.info('Ensured analytics indexes for "users".');
+
+      // Indexes for the reports collection
+      await _db.runCommand({
+        'createIndexes': 'reports',
+        'indexes': [
+          {
+            // Optimizes fetching all reports submitted by a specific user.
+            'key': {'reporterUserId': 1},
+            'name': 'reporterUserId_index',
+          },
+          {
+            // For `reports` collection aggregations (e.g., by reason).
+            'key': {'createdAt': 1, 'reason': 1},
+            'name': 'analytics_report_reason_index',
+          },
+          {
+            // For `reports` collection aggregations (e.g., resolution time).
+            'key': {'status': 1, 'updatedAt': 1},
+            'name': 'analytics_report_resolution_index',
+          },
+        ],
+      });
+      _log.info('Ensured analytics indexes for "reports".');
+
+      // Indexes for the engagements collection
+      await _db.runCommand({
+        'createIndexes': 'engagements',
+        'indexes': [
+          {
+            // Optimizes fetching all engagements for a specific user.
+            'key': {'userId': 1},
+            'name': 'userId_index',
+          },
+          {
+            // Optimizes fetching all engagements for a specific entity.
+            'key': {'entityId': 1, 'entityType': 1},
+            'name': 'entity_index',
+          },
+          {
+            // For `engagements` collection aggregations (e.g., reactions by type).
+            'key': {'createdAt': 1, 'reaction.reactionType': 1},
+            'name': 'analytics_engagement_reaction_type_index',
+          },
+        ],
+      });
+      _log.info('Ensured analytics indexes for "engagements".');
+
+      // Indexes for the headlines collection
+      await _db.runCommand({
+        'createIndexes': 'headlines',
+        'indexes': [
+          {
+            'key': {'title': 'text'},
+            'name': 'headlines_text_index',
+          },
+          {
+            'key': {'createdAt': 1, 'topic.name': 1},
+            'name': 'analytics_headline_topic_index',
+          },
+          {
+            'key': {'createdAt': 1, 'source.name': 1},
+            'name': 'analytics_headline_source_index',
+          },
+          {
+            'key': {'createdAt': 1, 'isBreaking': 1},
+            'name': 'analytics_headline_breaking_index',
+          },
+        ],
+      });
+      _log.info('Ensured analytics indexes for "headlines".');
+
+      // Indexes for the sources collection
+      await _db.runCommand({
+        'createIndexes': 'sources',
+        'indexes': [
+          {
+            'key': {'name': 'text'},
+            'name': 'sources_text_index',
+          },
+          {
+            'key': {'followerIds': 1},
+            'name': 'analytics_source_followers_index',
+          },
+        ],
+      });
+
+      // Indexes for the topics collection
+      await _db.runCommand({
+        'createIndexes': 'topics',
+        'indexes': [
+          {
+            'key': {'name': 'text'},
+            'name': 'topics_text_index',
+          },
+          {
+            'key': {'followerIds': 1},
+            'name': 'analytics_topic_followers_index',
+          },
+        ],
+      });
+
+      // Indexes for the analytics card data collections.
+      // Using runCommand to ensure no default 'unique' field is added, which
+      // is invalid for an _id index. This also ensures the collections exist
+      // on startup.
+      await _db.runCommand({
+        'createIndexes': 'kpi_card_data',
+        'indexes': [
+          {
+            'key': {'_id': 1},
+            'name': 'kpi_card_data_id_index',
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "kpi_card_data".');
+
+      await _db.runCommand({
+        'createIndexes': 'chart_card_data',
+        'indexes': [
+          {
+            'key': {'_id': 1},
+            'name': 'chart_card_data_id_index',
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "chart_card_data".');
+
+      await _db.runCommand({
+        'createIndexes': 'ranked_list_card_data',
+        'indexes': [
+          {
+            'key': {'_id': 1},
+            'name': 'ranked_list_card_data_id_index',
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "ranked_list_card_data".');
 
       _log.info('Database indexes are set up correctly.');
     } on Exception catch (e, s) {

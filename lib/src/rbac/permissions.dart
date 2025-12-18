@@ -133,4 +133,7 @@ abstract class Permissions {
 
   /// Allows updating the user's own app review record.
   static const String appReviewUpdateOwned = 'app_review.update_owned';
+
+  // Analytics Permissions
+  static const String analyticsRead = 'analytics.read';
 }

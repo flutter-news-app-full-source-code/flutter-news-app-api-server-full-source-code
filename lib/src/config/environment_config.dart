@@ -219,4 +219,19 @@ abstract final class EnvironmentConfig {
   ///
   /// The value is read from the `ONESIGNAL_REST_API_KEY` environment variable, if available.
   static String? get oneSignalRestApiKey => _getEnv('ONESIGNAL_REST_API_KEY');
+
+  /// Retrieves the Google Analytics Property ID from the environment.
+  static String? get googleAnalyticsPropertyId =>
+      _getEnv('GOOGLE_ANALYTICS_PROPERTY_ID');
+
+  /// Retrieves the Mixpanel Project ID from the environment.
+  static String? get mixpanelProjectId => _getEnv('MIXPANEL_PROJECT_ID');
+
+  /// Retrieves the Mixpanel Service Account Username from the environment.
+  static String? get mixpanelServiceAccountUsername =>
+      _getEnv('MIXPANEL_SERVICE_ACCOUNT_USERNAME');
+
+  /// Retrieves the Mixpanel Service Account Secret from the environment.
+  static String? get mixpanelServiceAccountSecret =>
+      _getEnv('MIXPANEL_SERVICE_ACCOUNT_SECRET');
 }

@@ -10,10 +10,10 @@ import 'package:email_sendgrid/email_sendgrid.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/database/migrations/all_migrations.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/analytics/analytics.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/dashboard_summary_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/database_migration_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/database_seeding_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/default_user_action_limit_service.dart';
@@ -72,6 +72,9 @@ class AppDependencies {
   pushNotificationDeviceRepository;
   late final DataRepository<RemoteConfig> remoteConfigRepository;
   late final DataRepository<InAppNotification> inAppNotificationRepository;
+  late final DataRepository<KpiCardData> kpiCardDataRepository;
+  late final DataRepository<ChartCardData> chartCardDataRepository;
+  late final DataRepository<RankedListCardData> rankedListCardDataRepository;
 
   late final DataRepository<Engagement> engagementRepository;
   late final DataRepository<Report> reportRepository;
@@ -79,12 +82,12 @@ class AppDependencies {
   late final EmailRepository emailRepository;
 
   // Services
+  late final AnalyticsSyncService analyticsSyncService;
   late final DatabaseMigrationService databaseMigrationService;
   late final TokenBlacklistService tokenBlacklistService;
   late final AuthTokenService authTokenService;
   late final VerificationCodeStorageService verificationCodeStorageService;
   late final AuthService authService;
-  late final DashboardSummaryService dashboardSummaryService;
   late final PermissionService permissionService;
   late final UserActionLimitService userActionLimitService;
   late final RateLimitService rateLimitService;
@@ -232,6 +235,24 @@ class AppDependencies {
         logger: Logger('DataMongodb<InAppNotification>'),
       );
 
+      final kpiCardDataClient = DataMongodb<KpiCardData>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'kpi_card_data',
+        fromJson: KpiCardData.fromJson,
+        toJson: (item) => item.toJson(),
+      );
+      final chartCardDataClient = DataMongodb<ChartCardData>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'chart_card_data',
+        fromJson: ChartCardData.fromJson,
+        toJson: (item) => item.toJson(),
+      );
+      final rankedListCardDataClient = DataMongodb<RankedListCardData>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'ranked_list_card_data',
+        fromJson: RankedListCardData.fromJson,
+        toJson: (item) => item.toJson(),
+      );
       _log.info('Initialized data client for InAppNotification.');
 
       final engagementClient = DataMongodb<Engagement>(
@@ -349,6 +370,13 @@ class AppDependencies {
       engagementRepository = DataRepository(dataClient: engagementClient);
       reportRepository = DataRepository(dataClient: reportClient);
       appReviewRepository = DataRepository(dataClient: appReviewClient);
+      kpiCardDataRepository = DataRepository(dataClient: kpiCardDataClient);
+      chartCardDataRepository = DataRepository(
+        dataClient: chartCardDataClient,
+      );
+      rankedListCardDataRepository = DataRepository(
+        dataClient: rankedListCardDataClient,
+      );
 
       // Configure the HTTP client for SendGrid.
       // The HttpClient's AuthInterceptor will use the tokenProvider to add
@@ -394,11 +422,6 @@ class AppDependencies {
         userContentPreferencesRepository: userContentPreferencesRepository,
         log: Logger('AuthService'),
       );
-      dashboardSummaryService = DashboardSummaryService(
-        headlineRepository: headlineRepository,
-        topicRepository: topicRepository,
-        sourceRepository: sourceRepository,
-      );
       userActionLimitService = DefaultUserActionLimitService(
         remoteConfigRepository: remoteConfigRepository,
         engagementRepository: engagementRepository,
@@ -422,6 +445,69 @@ class AppDependencies {
         firebaseClient: firebasePushNotificationClient,
         oneSignalClient: oneSignalPushNotificationClient,
         log: Logger('DefaultPushNotificationService'),
+      );
+
+      // --- Analytics Services ---
+      final gaPropertyId = EnvironmentConfig.googleAnalyticsPropertyId;
+      final mpProjectId = EnvironmentConfig.mixpanelProjectId;
+      final mpUser = EnvironmentConfig.mixpanelServiceAccountUsername;
+      final mpSecret = EnvironmentConfig.mixpanelServiceAccountSecret;
+
+      GoogleAnalyticsDataClient? googleAnalyticsClient;
+      if (gaPropertyId != null && firebaseAuthenticator != null) {
+        final googleAnalyticsHttpClient = HttpClient(
+          baseUrl: 'https://analyticsdata.googleapis.com/v1beta',
+          tokenProvider: firebaseAuthenticator!.getAccessToken,
+          logger: Logger('GoogleAnalyticsHttpClient'),
+        );
+
+        googleAnalyticsClient = GoogleAnalyticsDataClient(
+          headlineRepository: headlineRepository,
+          propertyId: gaPropertyId,
+          firebaseAuthenticator: firebaseAuthenticator!,
+          log: Logger('GoogleAnalyticsDataClient'),
+          httpClient: googleAnalyticsHttpClient,
+        );
+      } else {
+        _log.warning(
+          'Google Analytics client could not be initialized due to missing '
+          'property ID or Firebase authenticator.',
+        );
+      }
+
+      MixpanelDataClient? mixpanelClient;
+      if (mpProjectId != null && mpUser != null && mpSecret != null) {
+        mixpanelClient = MixpanelDataClient(
+          headlineRepository: headlineRepository,
+          projectId: mpProjectId,
+          serviceAccountUsername: mpUser,
+          serviceAccountSecret: mpSecret,
+          log: Logger('MixpanelDataClient'),
+        );
+      } else {
+        _log.warning(
+          'Mixpanel client could not be initialized due to missing credentials.',
+        );
+      }
+
+      final analyticsMetricMapper = AnalyticsMetricMapper();
+
+      analyticsSyncService = AnalyticsSyncService(
+        remoteConfigRepository: remoteConfigRepository,
+        kpiCardRepository: kpiCardDataRepository,
+        chartCardRepository: chartCardDataRepository,
+        rankedListCardRepository: rankedListCardDataRepository,
+        userRepository: userRepository,
+        topicRepository: topicRepository,
+        sourceRepository: sourceRepository,
+        reportRepository: reportRepository,
+        headlineRepository: headlineRepository,
+        googleAnalyticsClient: googleAnalyticsClient,
+        mixpanelClient: mixpanelClient,
+        analyticsMetricMapper: analyticsMetricMapper,
+        engagementRepository: engagementRepository,
+        appReviewRepository: appReviewRepository,
+        log: Logger('AnalyticsSyncService'),
       );
 
       _log.info('Application dependencies initialized successfully.');
@@ -459,7 +545,7 @@ class AppDependencies {
     await _mongoDbConnectionManager.close();
     tokenBlacklistService.dispose();
     rateLimitService.dispose();
-    countryQueryService.dispose(); // Dispose the new service
+    countryQueryService.dispose();
 
     // Reset the completer to allow for re-initialization (e.g., in tests).
     _initCompleter = null;
