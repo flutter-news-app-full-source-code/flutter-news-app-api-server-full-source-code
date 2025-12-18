@@ -49,7 +49,7 @@ void main() {
         const query = EventCountQuery(event: AnalyticsEvent.contentViewed);
         final mockResponse = {
           'data': {
-            'series': [],
+            'series': <String>[],
             'values': <String, dynamic>{},
           },
         };
@@ -86,7 +86,7 @@ void main() {
           ),
         ).thenAnswer(
           (_) async => {
-            'data': {'series': [], 'values': <String, dynamic>{}},
+            'data': {'series': <String>[], 'values': <String, dynamic>{}},
           },
         );
 
@@ -158,7 +158,7 @@ void main() {
         const query = EventCountQuery(event: AnalyticsEvent.contentViewed);
         final mockResponse = {
           'data': {
-            'series': [],
+            'series': <String>[],
             'values': <String, dynamic>{},
           },
         };
