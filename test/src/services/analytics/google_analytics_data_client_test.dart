@@ -65,8 +65,8 @@ void main() {
 
         when(
           () => mockHttpClient.post<Map<String, dynamic>>(
-            any(),
-            data: any(named: 'data'),
+            any<String>(),
+            data: any<dynamic>(named: 'data'),
           ),
         ).thenAnswer((_) async => mockApiResponse);
 
@@ -109,8 +109,8 @@ void main() {
 
           when(
             () => mockHttpClient.post<Map<String, dynamic>>(
-              any(),
-              data: any(named: 'data'),
+              any<String>(),
+              data: any<dynamic>(named: 'data'),
             ),
           ).thenAnswer((_) async => mockApiResponse);
 
@@ -132,7 +132,7 @@ void main() {
           verify(
             () => mockHttpClient.post<Map<String, dynamic>>(
               '/properties/$propertyId:runReport',
-              data: any(named: 'data'),
+              data: any<dynamic>(named: 'data'),
             ),
           ).called(1);
         },
@@ -142,12 +142,14 @@ void main() {
     group('getMetricTotal', () {
       test('returns 0 for empty API response', () async {
         // ARRANGE: Mock an empty response
-        final mockApiResponse = {'rows': []}; // Empty 'rows'
+        final mockApiResponse = {
+          'rows': <Map<String, dynamic>>[],
+        }; // Empty 'rows'
 
         when(
           () => mockHttpClient.post<Map<String, dynamic>>(
-            any(),
-            data: any(named: 'data'),
+            any<String>(),
+            data: any<dynamic>(named: 'data'),
           ),
         ).thenAnswer((_) async => mockApiResponse);
 
@@ -175,8 +177,8 @@ void main() {
 
         when(
           () => mockHttpClient.post<Map<String, dynamic>>(
-            any(),
-            data: any(named: 'data'),
+            any<String>(),
+            data: any<dynamic>(named: 'data'),
           ),
         ).thenAnswer((_) async => mockApiResponse);
 
@@ -197,8 +199,8 @@ void main() {
 
         when(
           () => mockHttpClient.post<Map<String, dynamic>>(
-            any(),
-            data: any(named: 'data'),
+            any<String>(),
+            data: any<dynamic>(named: 'data'),
           ),
         ).thenAnswer((_) async => mockApiResponse);
 
@@ -309,12 +311,14 @@ void main() {
           when(
             () => mockHttpClient.post<Map<String, dynamic>>(
               any(),
-              data: any(named: 'data'),
+              data: any<dynamic>(named: 'data'),
             ),
           ).thenAnswer((_) async => mockGaApiResponse);
 
           when(
-            () => mockHeadlineRepository.readAll(filter: any(named: 'filter')),
+            () => mockHeadlineRepository.readAll(
+              filter: any<Map<String, dynamic>>(named: 'filter'),
+            ),
           ).thenAnswer((_) async => mockHeadlines);
 
           // ACT
