@@ -13,9 +13,7 @@ MixpanelSegmentationRequest _$MixpanelSegmentationRequestFromJson(
   event: json['event'] as String,
   fromDate: json['from_date'] as String,
   toDate: json['to_date'] as String,
-  unit:
-      $enumDecodeNullable(_$MixpanelTimeUnitEnumMap, json['unit']) ??
-      MixpanelTimeUnit.day,
+  unit: $enumDecodeNullable(_$MixpanelTimeUnitEnumMap, json['unit']),
 );
 
 Map<String, dynamic> _$MixpanelSegmentationRequestToJson(
@@ -25,7 +23,7 @@ Map<String, dynamic> _$MixpanelSegmentationRequestToJson(
   'event': instance.event,
   'from_date': instance.fromDate,
   'to_date': instance.toDate,
-  'unit': _$MixpanelTimeUnitEnumMap[instance.unit]!,
+  'unit': _$MixpanelTimeUnitEnumMap[instance.unit],
 };
 
 const _$MixpanelTimeUnitEnumMap = {

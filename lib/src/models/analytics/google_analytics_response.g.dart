@@ -22,6 +22,12 @@ RunReportResponse _$RunReportResponseFromJson(Map<String, dynamic> json) =>
 GARow _$GARowFromJson(Map<String, dynamic> json) =>
     $checkedCreate('GARow', json, ($checkedConvert) {
       final val = GARow(
+        metricValues: $checkedConvert(
+          'metricValues',
+          (v) => (v as List<dynamic>)
+              .map((e) => GAMetricValue.fromJson(e as Map<String, dynamic>))
+              .toList(),
+        ),
         dimensionValues: $checkedConvert(
           'dimensionValues',
           (v) =>
@@ -31,12 +37,6 @@ GARow _$GARowFromJson(Map<String, dynamic> json) =>
                   )
                   .toList() ??
               [],
-        ),
-        metricValues: $checkedConvert(
-          'metricValues',
-          (v) => (v as List<dynamic>)
-              .map((e) => GAMetricValue.fromJson(e as Map<String, dynamic>))
-              .toList(),
         ),
       );
       return val;
