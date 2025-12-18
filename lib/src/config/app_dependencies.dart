@@ -455,11 +455,18 @@ class AppDependencies {
 
       GoogleAnalyticsDataClient? googleAnalyticsClient;
       if (gaPropertyId != null && firebaseAuthenticator != null) {
+        final googleAnalyticsHttpClient = HttpClient(
+          baseUrl: 'https://analyticsdata.googleapis.com/v1beta',
+          tokenProvider: firebaseAuthenticator!.getAccessToken,
+          logger: Logger('GoogleAnalyticsHttpClient'),
+        );
+
         googleAnalyticsClient = GoogleAnalyticsDataClient(
           headlineRepository: headlineRepository,
           propertyId: gaPropertyId,
           firebaseAuthenticator: firebaseAuthenticator!,
           log: Logger('GoogleAnalyticsDataClient'),
+          httpClient: googleAnalyticsHttpClient,
         );
       } else {
         _log.warning(
