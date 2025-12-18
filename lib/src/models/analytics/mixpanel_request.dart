@@ -29,7 +29,7 @@ class MixpanelSegmentationRequest extends Equatable {
     required this.event,
     required this.fromDate,
     required this.toDate,
-    this.unit = MixpanelTimeUnit.day,
+    this.unit,
   });
 
   /// Creates a [MixpanelSegmentationRequest] from a JSON object.
@@ -49,13 +49,13 @@ class MixpanelSegmentationRequest extends Equatable {
   final String toDate;
 
   /// The time unit for segmentation (e.g., 'day', 'week').
-  final MixpanelTimeUnit unit;
+  final MixpanelTimeUnit? unit;
 
   /// Converts this instance to a JSON map for query parameters.
   Map<String, dynamic> toJson() => _$MixpanelSegmentationRequestToJson(this);
 
   @override
-  List<Object> get props => [projectId, event, fromDate, toDate, unit];
+  List<Object?> get props => [projectId, event, fromDate, toDate, unit];
 }
 
 /// {@template mixpanel_top_events_request}
