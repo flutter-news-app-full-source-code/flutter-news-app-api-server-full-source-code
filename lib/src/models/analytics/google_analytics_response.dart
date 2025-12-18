@@ -36,12 +36,13 @@ class RunReportResponse extends Equatable {
 )
 class GARow extends Equatable {
   /// {@macro ga_row}
-  const GARow({required this.dimensionValues, required this.metricValues});
+  const GARow({this.dimensionValues = const [], required this.metricValues});
 
   /// Creates a [GARow] from JSON data.
   factory GARow.fromJson(Map<String, dynamic> json) => _$GARowFromJson(json);
 
   /// The values of the dimensions in this row.
+  @JsonKey(defaultValue: [])
   final List<GADimensionValue> dimensionValues;
 
   /// The values of the metrics in this row.
