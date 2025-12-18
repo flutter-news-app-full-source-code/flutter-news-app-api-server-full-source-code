@@ -141,6 +141,7 @@ void main() {
           event: 'contentViewed',
           fromDate: '2024-01-01',
           toDate: '2024-01-07',
+          unit: MixpanelTimeUnit.day,
         );
 
         verify(
