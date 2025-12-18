@@ -80,24 +80,6 @@ abstract final class EnvironmentConfig {
     'DATABASE_URL',
   );
 
-  /// Retrieves the test database connection URI from the environment.
-  ///
-  /// It first looks for a `TEST_DATABASE_URL` variable. If not found, it
-  /// derives a test URL by appending `_test` to the production database name.
-  /// This ensures tests run on an isolated database.
-  static String get testDatabaseUrl {
-    final testUrl = _env['TEST_DATABASE_URL'];
-    if (testUrl != null && testUrl.isNotEmpty) {
-      return testUrl;
-    }
-
-    // Fallback: construct from production URL
-    final prodUrl = databaseUrl;
-    final uri = Uri.parse(prodUrl);
-    final newPath = '${uri.path}_test';
-    return uri.replace(path: newPath).toString();
-  }
-
   static String _getRequiredEnv(String key) {
     final value = _env[key];
     if (value == null || value.isEmpty) {
