@@ -36,7 +36,7 @@ class RunReportResponse extends Equatable {
 )
 class GARow extends Equatable {
   /// {@macro ga_row}
-  const GARow({this.dimensionValues = const [], required this.metricValues});
+  const GARow({required this.metricValues, this.dimensionValues = const []});
 
   /// Creates a [GARow] from JSON data.
   factory GARow.fromJson(Map<String, dynamic> json) => _$GARowFromJson(json);
