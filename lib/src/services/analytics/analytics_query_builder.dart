@@ -76,6 +76,14 @@ class AnalyticsQueryBuilder {
           startDate: startDate,
           endDate: endDate,
         );
+      case 'database:topicEngagement':
+        return _buildCategoricalCountPipeline(
+          collection: 'headlines',
+          dateField: 'createdAt',
+          groupByField: r'$topic.name',
+          startDate: startDate,
+          endDate: endDate,
+        );
       case 'database:sourceStatusDistribution':
         _log.info(
           'Building categorical count pipeline for source status distribution.',
@@ -231,6 +239,7 @@ class AnalyticsQueryBuilder {
           'entityId': r'$_id',
           'displayTitle': r'$name',
           'metricValue': r'$followerCount',
+          '_id': 0,
         },
       },
     ];
