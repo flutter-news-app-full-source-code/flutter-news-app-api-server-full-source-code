@@ -110,13 +110,13 @@ A complete, multi-provider notification engine empowers you to engage users with
 <details>
 <summary><strong>📊 Insightful Analytics Engine</strong></summary>
 
-### 📈 A Powerful, Provider-Agnostic Analytics Pipeline
-A complete, multi-provider analytics engine that transforms raw user interaction data into insightful, aggregated metrics for your dashboard.
-- **Automated Data ETL:** A standalone worker process runs on a schedule to Extract, Transform, and Load data from your chosen analytics provider (Google Analytics or Mixpanel). It fetches raw data, processes it into structured KPI and chart models, and stores it in the database.
+### 📈 A Unified Business Intelligence Engine
+A complete, multi-provider analytics engine that transforms raw data from both external services and your own application database into insightful, aggregated metrics for your dashboard.
+- **Dual-Source ETL:** A standalone worker process runs on a schedule to perform a full Extract, Transform, and Load (ETL) operation. It pulls behavioral data from your chosen analytics provider (Google Analytics or Mixpanel) and combines it with operational data by running direct, complex aggregations against the application's own database.
 - **High-Performance Dashboard:** The web dashboard reads this pre-aggregated data, resulting in near-instant load times for all analytics charts and metrics. This architecture avoids slow, direct, on-the-fly queries from the client to the analytics provider.
 - **Provider-Agnostic Design:** The engine is built on a provider-agnostic interface. You can switch between Google Analytics and Mixpanel via a simple configuration change, without altering any code.
 - **Extensible & Scalable:** Adding new charts or KPIs is as simple as defining a new mapping. The system is designed to be easily extended to track new metrics as your application evolves.
-> **Your Advantage:** Get a complete, production-grade analytics pipeline out of the box. Deliver a fast, responsive dashboard experience and gain deep insights into user behavior, all built on a scalable and maintainable foundation.
+> **Your Advantage:** Get a complete, production-grade BI pipeline out of the box. Deliver a fast, responsive dashboard and gain a holistic view of your business by combining user behavior analytics with real-time operational metrics—a capability that external analytics tools alone cannot provide.
 
 </details>
 
@@ -124,7 +124,6 @@ A complete, multi-provider analytics engine that transforms raw user interaction
 <summary><strong>🏗️ Architecture & Infrastructure</strong></summary>
 
 ### 🚀 High-Performance by Design
-Built on a modern, minimalist foundation to ensure low latency and excellent performance.
 - **Dart Frog Core:** Leverages the high-performance Dart Frog framework for a fast, efficient, and scalable backend.
 - **Clean, Layered Architecture:** A strict separation of concerns into distinct layers makes the codebase clean, maintainable, and easy to reason about.
 > **Your Advantage:** Your backend is built on a solid, modern foundation that is both powerful and a pleasure to work with, reducing maintenance overhead.
