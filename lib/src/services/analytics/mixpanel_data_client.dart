@@ -22,8 +22,6 @@ class MixpanelDataClient implements AnalyticsReportingClient {
     required DataRepository<Headline> headlineRepository,
     HttpClient? httpClient,
   }) : _projectId = projectId,
-       _serviceAccountUsername = serviceAccountUsername,
-       _serviceAccountSecret = serviceAccountSecret,
        _log = log,
        _headlineRepository = headlineRepository,
        _httpClient =
@@ -35,8 +33,6 @@ class MixpanelDataClient implements AnalyticsReportingClient {
            );
 
   final String _projectId;
-  final String _serviceAccountUsername;
-  final String _serviceAccountSecret;
   late final HttpClient _httpClient;
   final Logger _log;
   final DataRepository<Headline> _headlineRepository;
