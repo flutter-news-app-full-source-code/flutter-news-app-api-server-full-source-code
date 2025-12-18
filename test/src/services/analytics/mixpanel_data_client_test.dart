@@ -44,6 +44,67 @@ void main() {
         );
       });
 
+      test('returns empty list for empty API response', () async {
+        // ARRANGE
+        const query = EventCountQuery(event: AnalyticsEvent.contentViewed);
+        final mockResponse = {
+          'data': {
+            'series': [],
+            'values': <String, dynamic>{},
+          },
+        };
+
+        when(
+          () => mockHttpClient.get<Map<String, dynamic>>(
+            any(),
+            queryParameters: any(named: 'queryParameters'),
+          ),
+        ).thenAnswer((_) async => mockResponse);
+
+        // ACT
+        final result = await mixpanelClient.getTimeSeries(
+          query,
+          startDate,
+          endDate,
+        );
+
+        // ASSERT
+        expect(result, isA<List<DataPoint>>());
+        expect(result, isEmpty);
+      });
+
+      test('correctly fetches time series for activeUsers metric', () async {
+        // ARRANGE
+        const query = StandardMetricQuery(metric: 'activeUsers');
+        // Mixpanel uses a special metric name for active users
+        const expectedEventName = r'$active';
+
+        when(
+          () => mockHttpClient.get<Map<String, dynamic>>(
+            any(),
+            queryParameters: any(named: 'queryParameters'),
+          ),
+        ).thenAnswer(
+          (_) async => {
+            'data': {'series': [], 'values': <String, dynamic>{}},
+          },
+        );
+
+        // ACT
+        await mixpanelClient.getTimeSeries(query, startDate, endDate);
+
+        // ASSERT: Verify the correct event name was used in the request
+        final captured = verify(
+          () => mockHttpClient.get<Map<String, dynamic>>(
+            any(),
+            queryParameters: captureAny(named: 'queryParameters'),
+          ),
+        ).captured;
+
+        final request = captured.first as Map<String, dynamic>;
+        expect(request['event'], expectedEventName);
+      });
+
       test('correctly fetches and parses time series data', () async {
         const query = EventCountQuery(event: AnalyticsEvent.contentViewed);
         final mockResponse = {
@@ -92,6 +153,34 @@ void main() {
     });
 
     group('getMetricTotal', () {
+      test('returns 0 for empty API response', () async {
+        // ARRANGE
+        const query = EventCountQuery(event: AnalyticsEvent.contentViewed);
+        final mockResponse = {
+          'data': {
+            'series': [],
+            'values': <String, dynamic>{},
+          },
+        };
+
+        when(
+          () => mockHttpClient.get<Map<String, dynamic>>(
+            any(),
+            queryParameters: any(named: 'queryParameters'),
+          ),
+        ).thenAnswer((_) async => mockResponse);
+
+        // ACT
+        final total = await mixpanelClient.getMetricTotal(
+          query,
+          startDate,
+          endDate,
+        );
+
+        // ASSERT
+        expect(total, 0);
+      });
+
       test('correctly calculates total from time series', () async {
         const query = EventCountQuery(event: AnalyticsEvent.contentViewed);
         final mockResponse = {
@@ -121,6 +210,33 @@ void main() {
     });
 
     group('getRankedList', () {
+      test('returns empty list for empty API response', () async {
+        // ARRANGE
+        const query = RankedListQuery(
+          event: AnalyticsEvent.contentViewed,
+          dimension: 'contentId',
+        );
+        final mockMixpanelResponse = <String, dynamic>{}; // Empty map
+
+        when(
+          () => mockHttpClient.get<Map<String, dynamic>>(
+            any(),
+            queryParameters: any(named: 'queryParameters'),
+          ),
+        ).thenAnswer((_) async => mockMixpanelResponse);
+
+        // ACT
+        final result = await mixpanelClient.getRankedList(
+          query,
+          startDate,
+          endDate,
+        );
+
+        // ASSERT
+        expect(result, isA<List<RankedListItem>>());
+        expect(result, isEmpty);
+      });
+
       test('correctly fetches and enriches ranked list data', () async {
         const query = RankedListQuery(
           event: AnalyticsEvent.contentViewed,
