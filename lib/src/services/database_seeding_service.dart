@@ -111,40 +111,49 @@ class DatabaseSeedingService {
       final defaultRemoteConfigId = remoteConfigsFixturesData.first.id;
       final objectId = ObjectId.fromHexString(defaultRemoteConfigId);
 
-      final existingConfig = await remoteConfigCollection.findOne(
-        where.id(objectId),
-      );
+      // Start with the default configuration from the fixtures data.
+      final initialConfig = remoteConfigsFixturesData.first;
+      var featuresConfig = initialConfig.features;
 
-      if (existingConfig == null) {
-        _log.info('No existing RemoteConfig found. Creating initial config.');
-        // Take the default from fixtures
-        final initialConfig = remoteConfigsFixturesData.first;
+      // --- Generic Sanitization for Production/Staging Environments ---
+      // This block ensures that any configuration option with a 'demo'
+      // variant is reset to a sensible, non-demo default. This prevents
+      // 'demo' options from being the default in a real environment.
 
-        // Ensure primaryAdPlatform is not 'demo' for initial setup
-        // since its not intended for any use outside the mobile client.
-        final productionReadyAdConfig = initialConfig.features.ads.copyWith(
-          primaryAdPlatform: AdPlatformType.admob,
-        );
-
-        final productionReadyConfig = initialConfig.copyWith(
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-          features: initialConfig.features.copyWith(
-            ads: productionReadyAdConfig,
+      // Sanitize Ad Platform
+      if (featuresConfig.ads.primaryAdPlatform == AdPlatformType.demo) {
+        featuresConfig = featuresConfig.copyWith(
+          ads: featuresConfig.ads.copyWith(
+            primaryAdPlatform: AdPlatformType.admob, // Default to AdMob
           ),
         );
+      }
 
-        await remoteConfigCollection.insertOne({
-          '_id': objectId,
-          ...productionReadyConfig.toJson()..remove('id'),
-        });
-        _log.info('Initial RemoteConfig created successfully.');
-      } else {
-        _log.info(
-          'RemoteConfig already exists. Skipping creation. '
-          'Schema updates are handled by DatabaseMigrationService.',
+      // Sanitize Analytics Provider
+      if (featuresConfig.analytics.activeProvider == AnalyticsProvider.demo) {
+        featuresConfig = featuresConfig.copyWith(
+          analytics: featuresConfig.analytics.copyWith(
+            activeProvider: AnalyticsProvider.firebase, // Default to Firebase
+          ),
         );
       }
+
+      final productionReadyConfig = initialConfig.copyWith(
+        features: featuresConfig,
+        // Ensure timestamps are set for the initial creation.
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      // Use `updateOne` with `$setOnInsert` to create the document only if it
+      // does not exist. This prevents overwriting an admin's custom changes
+      // on subsequent server restarts.
+      await remoteConfigCollection.updateOne(
+        where.id(objectId),
+        {r'$setOnInsert': productionReadyConfig.toJson()..remove('id')},
+        upsert: true,
+      );
+      _log.info('Ensured RemoteConfig document exists and is sanitized.');
     } on Exception catch (e, s) {
       _log.severe('Failed to seed RemoteConfig.', e, s);
       rethrow;
