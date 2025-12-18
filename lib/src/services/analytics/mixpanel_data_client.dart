@@ -167,7 +167,11 @@ class MixpanelDataClient implements AnalyticsReportingClient {
         segmentationData.values.values.first.isEmpty) {
       return 0;
     }
-    return segmentationData.values.values.first.first;
+    // Sum all values in the first (and typically only) list of values.
+    return segmentationData.values.values.first.fold<num>(
+      0,
+      (previousValue, element) => previousValue + (element as num),
+    );
   }
 
   @override
