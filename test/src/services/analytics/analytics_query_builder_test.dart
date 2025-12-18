@@ -26,7 +26,7 @@ void main() {
 
     group('Categorical Queries', () {
       const query = StandardMetricQuery(
-        metric: 'database:userRoleDistribution',
+        metric: 'database:users:userRoleDistribution',
       );
 
       test(
@@ -55,7 +55,9 @@ void main() {
       );
 
       test('builds correct pipeline for reportsByReason (time-bound)', () {
-        const query = StandardMetricQuery(metric: 'database:reportsByReason');
+        const query = StandardMetricQuery(
+          metric: 'database:reports:byReason',
+        );
         final pipeline = queryBuilder.buildPipelineForMetric(
           query,
           startDate,
@@ -86,7 +88,9 @@ void main() {
       });
 
       test('builds correct pipeline for reactionsByType (time-bound)', () {
-        const query = StandardMetricQuery(metric: 'database:reactionsByType');
+        const query = StandardMetricQuery(
+          metric: 'database:engagements:reactionsByType',
+        );
         final pipeline = queryBuilder.buildPipelineForMetric(
           query,
           startDate,
@@ -118,7 +122,9 @@ void main() {
       });
 
       test('builds correct pipeline for appReviewFeedback (time-bound)', () {
-        const query = StandardMetricQuery(metric: 'database:appReviewFeedback');
+        const query = StandardMetricQuery(
+          metric: 'database:app_reviews:feedback',
+        );
         final pipeline = queryBuilder.buildPipelineForMetric(
           query,
           startDate,
@@ -149,7 +155,9 @@ void main() {
       });
 
       test('builds correct pipeline for topicEngagement (time-bound)', () {
-        const query = StandardMetricQuery(metric: 'database:topicEngagement');
+        const query = StandardMetricQuery(
+          metric: 'database:headlines:topicEngagement',
+        );
         final pipeline = queryBuilder.buildPipelineForMetric(
           query,
           startDate,
@@ -183,7 +191,7 @@ void main() {
     group('Ranked List Queries', () {
       test('builds correct pipeline for sourcesByFollowers', () {
         const query = StandardMetricQuery(
-          metric: 'database:sourcesByFollowers',
+          metric: 'database:sources:byFollowers',
         );
         final pipeline = queryBuilder.buildPipelineForMetric(
           query,
@@ -217,7 +225,7 @@ void main() {
 
       test('builds correct pipeline for topicsByFollowers', () {
         const query = StandardMetricQuery(
-          metric: 'database:topicsByFollowers',
+          metric: 'database:topics:byFollowers',
         );
         final pipeline = queryBuilder.buildPipelineForMetric(
           query,
@@ -253,7 +261,7 @@ void main() {
     group('Complex Aggregation Queries', () {
       test('builds correct pipeline for avgReportResolutionTime', () {
         const query = StandardMetricQuery(
-          metric: 'database:avgReportResolutionTime',
+          metric: 'database:reports:avgResolutionTime',
         );
         final pipeline = queryBuilder.buildPipelineForMetric(
           query,
