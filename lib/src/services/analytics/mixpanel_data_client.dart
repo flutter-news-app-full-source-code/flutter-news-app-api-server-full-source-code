@@ -93,6 +93,7 @@ class MixpanelDataClient implements AnalyticsReportingClient {
       event: metricName,
       fromDate: DateFormat('yyyy-MM-dd').format(startDate),
       toDate: DateFormat('yyyy-MM-dd').format(endDate),
+      unit: MixpanelTimeUnit.day,
     );
 
     final response = await _httpClient.get<Map<String, dynamic>>(
@@ -142,17 +143,19 @@ class MixpanelDataClient implements AnalyticsReportingClient {
 
     _log.info('Fetching total for metric "$metricName" from Mixpanel.');
 
-    // To get a single total, we call the segmentation endpoint *without* the 'unit' parameter.
-    final queryParameters = {
-      'project_id': _projectId,
-      'event': metricName,
-      'from_date': DateFormat('yyyy-MM-dd').format(startDate),
-      'to_date': DateFormat('yyyy-MM-dd').format(endDate),
-    };
+    // To get a single total, we call the segmentation endpoint without the 'unit'
+    // parameter. The MixpanelSegmentationRequest model supports this by having
+    // a nullable 'unit'.
+    final request = MixpanelSegmentationRequest(
+      projectId: _projectId,
+      event: metricName,
+      fromDate: DateFormat('yyyy-MM-dd').format(startDate),
+      toDate: DateFormat('yyyy-MM-dd').format(endDate),
+    );
 
     final response = await _httpClient.get<Map<String, dynamic>>(
       '/segmentation',
-      queryParameters: queryParameters,
+      queryParameters: request.toJson(),
     );
 
     final segmentationData =
