@@ -114,8 +114,7 @@ A complete, multi-provider notification engine empowers you to engage users with
 A complete, multi-provider analytics engine that transforms raw data from both external services and your own application database into insightful, aggregated metrics for your dashboard.
 - **Dual-Source ETL:** A standalone worker process runs on a schedule to perform a full Extract, Transform, and Load (ETL) operation. It pulls behavioral data from your chosen analytics provider (Google Analytics or Mixpanel) and combines it with operational data by running direct, complex aggregations against the application's own database.
 - **High-Performance Dashboard:** The web dashboard reads this pre-aggregated data, resulting in near-instant load times for all analytics charts and metrics. This architecture avoids slow, direct, on-the-fly queries from the client to the analytics provider.
-- **Provider-Agnostic Design:** The engine is built on a provider-agnostic interface. You can switch between Google Analytics and Mixpanel via a simple configuration change, without altering any code.
-- **Extensible & Scalable:** Adding new charts or KPIs is as simple as defining a new mapping. The system is designed to be easily extended to track new metrics as your application evolves.
+- **Provider-Agnostic & Extensible:** The engine is built on a clean, abstract interface, decoupling the core logic from any specific provider. Switch between Google Analytics and Mixpanel with a simple configuration change, or integrate a new provider by implementing a single, well-defined contract. Adding new charts or KPIs is as simple as defining a new metric mapping.
 > **Your Advantage:** Get a complete, production-grade BI pipeline out of the box. Deliver a fast, responsive dashboard and gain a holistic view of your business by combining user behavior analytics with real-time operational metrics—a capability that external analytics tools alone cannot provide.
 
 </details>
