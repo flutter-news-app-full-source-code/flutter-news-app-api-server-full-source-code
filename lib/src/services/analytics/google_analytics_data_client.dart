@@ -97,8 +97,8 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
 
     return rows
         .map((row) {
-          final dateStr = row.dimensionValues.first.value;
-          final valueStr = row.metricValues.first.value;
+          final dateStr = row.dimensionValues.firstOrNull?.value;
+          final valueStr = row.metricValues.firstOrNull?.value;
           if (dateStr == null || valueStr == null) return null;
 
           return DataPoint(
@@ -154,7 +154,7 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
       return 0;
     }
 
-    final valueStr = rows.first.metricValues.first.value;
+    final valueStr = rows.firstOrNull?.metricValues.firstOrNull?.value;
     return num.tryParse(valueStr ?? '0') ?? 0.0;
   }
 
@@ -203,8 +203,8 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
 
     final rawItems = <RankedListItem>[];
     for (final row in rows) {
-      final entityId = row.dimensionValues.first.value;
-      final metricValueStr = row.metricValues.first.value;
+      final entityId = row.dimensionValues.firstOrNull?.value;
+      final metricValueStr = row.metricValues.firstOrNull?.value;
       if (entityId == null || metricValueStr == null) continue;
 
       final metricValue = num.tryParse(metricValueStr) ?? 0;
