@@ -24,9 +24,13 @@ GARow _$GARowFromJson(Map<String, dynamic> json) =>
       final val = GARow(
         dimensionValues: $checkedConvert(
           'dimensionValues',
-          (v) => (v as List<dynamic>)
-              .map((e) => GADimensionValue.fromJson(e as Map<String, dynamic>))
-              .toList(),
+          (v) =>
+              (v as List<dynamic>?)
+                  ?.map(
+                    (e) => GADimensionValue.fromJson(e as Map<String, dynamic>),
+                  )
+                  .toList() ??
+              [],
         ),
         metricValues: $checkedConvert(
           'metricValues',
