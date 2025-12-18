@@ -108,15 +108,15 @@ void main() {
           ads: const AdConfig(
             enabled: false,
             primaryAdPlatform: AdPlatformType.admob,
-            platformAdIdentifiers: const {},
+            platformAdIdentifiers: {},
             feedAdConfiguration: FeedAdConfiguration(
               enabled: false,
               adType: AdType.banner,
-              visibleTo: const {},
+              visibleTo: {},
             ),
             navigationAdConfiguration: NavigationAdConfiguration(
               enabled: false,
-              visibleTo: const {},
+              visibleTo: {},
             ),
           ),
           analytics: AnalyticsConfig(
@@ -128,11 +128,11 @@ void main() {
           pushNotifications: const PushNotificationConfig(
             enabled: false,
             primaryProvider: PushNotificationProvider.firebase,
-            deliveryConfigs: const {},
+            deliveryConfigs: {},
           ),
           feed: const FeedConfig(
             itemClickBehavior: FeedItemClickBehavior.internalNavigation,
-            decorators: const {},
+            decorators: {},
           ),
           community: const CommunityConfig(
             enabled: false,
@@ -158,13 +158,13 @@ void main() {
         ),
         user: const UserConfig(
           limits: UserLimitsConfig(
-            followedItems: const {},
-            savedHeadlines: const {},
-            savedHeadlineFilters: const {},
-            savedSourceFilters: const {},
-            commentsPerDay: const {},
-            reactionsPerDay: const {},
-            reportsPerDay: const {},
+            followedItems: {},
+            savedHeadlines: {},
+            savedHeadlineFilters: {},
+            savedSourceFilters: {},
+            commentsPerDay: {},
+            reactionsPerDay: {},
+            reportsPerDay: {},
           ),
         ),
       );
