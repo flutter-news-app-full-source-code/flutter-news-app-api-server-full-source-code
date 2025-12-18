@@ -375,7 +375,7 @@ class AnalyticsSyncService {
           },
         ];
         final result = await _sourceRepository.aggregate(pipeline: pipeline);
-        return result.first['total'] as num? ?? 0;
+        return result.firstOrNull?['total'] as num? ?? 0;
       case 'database:topics:followers':
         final pipeline = [
           {
@@ -391,7 +391,7 @@ class AnalyticsSyncService {
           },
         ];
         final result = await _topicRepository.aggregate(pipeline: pipeline);
-        return result.first['total'] as num? ?? 0;
+        return result.firstOrNull?['total'] as num? ?? 0;
       case 'database:reports:pending':
         return _reportRepository.count(
           filter: {'status': ModerationStatus.pendingReview.name},
@@ -431,7 +431,9 @@ class AnalyticsSyncService {
 
     final results = await repo.aggregate(pipeline: pipeline);
     return results.map((e) {
-      final label = e['label'].toString();
+      final label = e['label']?.toString() ?? 'Unknown';
+      final value = (e['value'] as num?) ?? 0;
+
       final formattedLabel = label
           .split(' ')
           .map((word) {
@@ -439,7 +441,7 @@ class AnalyticsSyncService {
             return '${word[0].toUpperCase()}${word.substring(1)}';
           })
           .join(' ');
-      return DataPoint(label: formattedLabel, value: e['value'] as num);
+      return DataPoint(label: formattedLabel, value: value);
     }).toList();
   }
 
@@ -467,13 +469,23 @@ class AnalyticsSyncService {
 
     final results = await repo.aggregate(pipeline: pipeline);
     return results
-        .map(
-          (e) => RankedListItem(
-            entityId: e['entityId'] as String,
-            displayTitle: e['displayTitle'] as String,
-            metricValue: e['metricValue'] as num,
-          ),
-        )
+        .map((e) {
+          final entityId = e['entityId'] as String?;
+          final displayTitle = e['displayTitle'] as String?;
+          final metricValue = e['metricValue'] as num?;
+
+          if (entityId == null || displayTitle == null || metricValue == null) {
+            _log.warning('Skipping ranked list item with missing data: $e');
+            return null;
+          }
+
+          return RankedListItem(
+            entityId: entityId,
+            displayTitle: displayTitle,
+            metricValue: metricValue,
+          );
+        })
+        .whereType<RankedListItem>()
         .toList();
   }
 
