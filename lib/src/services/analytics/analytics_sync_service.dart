@@ -353,13 +353,13 @@ class AnalyticsSyncService {
     };
 
     switch (query.metric) {
-      case 'database:headlines':
+      case 'database:headlines:count':
         return _headlineRepository.count(filter: filter);
-      case 'database:sources':
+      case 'database:sources:count':
         return _sourceRepository.count(filter: filter);
-      case 'database:topics':
+      case 'database:topics:count':
         return _topicRepository.count(filter: filter);
-      case 'database:sourceFollowers':
+      case 'database:sources:followers':
         // This requires aggregation to sum the size of all follower arrays.
         final pipeline = [
           {
@@ -376,7 +376,7 @@ class AnalyticsSyncService {
         ];
         final result = await _sourceRepository.aggregate(pipeline: pipeline);
         return result.first['total'] as num? ?? 0;
-      case 'database:topicFollowers':
+      case 'database:topics:followers':
         final pipeline = [
           {
             r'$project': {
@@ -392,11 +392,11 @@ class AnalyticsSyncService {
         ];
         final result = await _topicRepository.aggregate(pipeline: pipeline);
         return result.first['total'] as num? ?? 0;
-      case 'database:reportsPending':
+      case 'database:reports:pending':
         return _reportRepository.count(
           filter: {'status': ModerationStatus.pendingReview.name},
         );
-      case 'database:reportsResolved':
+      case 'database:reports:resolved':
         return _reportRepository.count(
           filter: {'status': ModerationStatus.resolved.name},
         );
@@ -478,16 +478,31 @@ class AnalyticsSyncService {
   }
 
   DataRepository<dynamic>? _getRepositoryForMetric(String metric) {
-    if (metric.contains('user')) return _userRepository;
-    if (metric.contains('report') || metric.contains('reportsByReason')) {
-      return _reportRepository;
+    final parts = metric.split(':');
+    if (parts.length < 2 || parts[0] != 'database') {
+      _log.warning('Invalid or non-database metric format: $metric');
+      return null;
     }
-    if (metric.contains('reaction')) return _engagementRepository;
-    if (metric.contains('appReview')) return _appReviewRepository;
-    if (metric.contains('source')) return _sourceRepository;
-    if (metric.contains('topic')) return _topicRepository;
-    if (metric.contains('headline')) return _headlineRepository;
-    return null;
+    final collectionName = parts[1];
+
+    // A map for reliable, non-ambiguous repository lookup.
+    final repositoryMap = <String, DataRepository<dynamic>>{
+      'users': _userRepository,
+      'reports': _reportRepository,
+      'engagements': _engagementRepository,
+      'app_reviews': _appReviewRepository,
+      'sources': _sourceRepository,
+      'topics': _topicRepository,
+      'headlines': _headlineRepository,
+    };
+
+    final repo = repositoryMap[collectionName];
+    if (repo == null) {
+      _log.severe(
+        'No repository found for collection: "$collectionName" in metric "$metric".',
+      );
+    }
+    return repo;
   }
 
   /// Calculates a metric that depends on other metrics.
