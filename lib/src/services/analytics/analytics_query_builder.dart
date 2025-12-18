@@ -24,27 +24,27 @@ class AnalyticsQueryBuilder {
     _log.finer('Building pipeline for database metric: "$metric".');
 
     switch (metric) {
-      case 'database:userRoleDistribution':
+      case 'database:users:userRoleDistribution':
         _log.info('Building user role distribution pipeline.');
         return _buildUserRoleDistributionPipeline();
-      case 'database:reportsByReason':
+      case 'database:reports:byReason':
         _log.info(
           'Building reports by reason pipeline from $startDate to $endDate.',
         );
         return _buildReportsByReasonPipeline(startDate, endDate);
-      case 'database:reactionsByType':
+      case 'database:engagements:reactionsByType':
         _log.info(
           'Building reactions by type pipeline from $startDate to $endDate.',
         );
         return _buildReactionsByTypePipeline(startDate, endDate);
-      case 'database:appReviewFeedback':
+      case 'database:app_reviews:feedback':
         _log.info(
           'Building app review feedback pipeline from $startDate to $endDate.',
         );
         return _buildAppReviewFeedbackPipeline(startDate, endDate);
-      case 'database:avgReportResolutionTime':
+      case 'database:reports:avgResolutionTime':
         return _buildAvgReportResolutionTimePipeline(startDate, endDate);
-      case 'database:viewsByTopic':
+      case 'database:headlines:viewsByTopic':
         return _buildCategoricalCountPipeline(
           collection: 'headlines',
           dateField: 'createdAt',
@@ -52,7 +52,7 @@ class AnalyticsQueryBuilder {
           startDate: startDate,
           endDate: endDate,
         );
-      case 'database:headlinesBySource':
+      case 'database:headlines:bySource':
         return _buildCategoricalCountPipeline(
           collection: 'headlines',
           dateField: 'createdAt',
@@ -60,7 +60,7 @@ class AnalyticsQueryBuilder {
           startDate: startDate,
           endDate: endDate,
         );
-      case 'database:sourceEngagementByType':
+      case 'database:sources:engagementByType':
         return _buildCategoricalCountPipeline(
           collection: 'sources',
           dateField: 'createdAt',
@@ -68,7 +68,7 @@ class AnalyticsQueryBuilder {
           startDate: startDate,
           endDate: endDate,
         );
-      case 'database:headlinesByTopic':
+      case 'database:headlines:byTopic':
         return _buildCategoricalCountPipeline(
           collection: 'headlines',
           dateField: 'createdAt',
@@ -76,7 +76,7 @@ class AnalyticsQueryBuilder {
           startDate: startDate,
           endDate: endDate,
         );
-      case 'database:topicEngagement':
+      case 'database:headlines:topicEngagement':
         return _buildCategoricalCountPipeline(
           collection: 'headlines',
           dateField: 'createdAt',
@@ -84,7 +84,7 @@ class AnalyticsQueryBuilder {
           startDate: startDate,
           endDate: endDate,
         );
-      case 'database:sourceStatusDistribution':
+      case 'database:sources:statusDistribution':
         _log.info(
           'Building categorical count pipeline for source status distribution.',
         );
@@ -95,7 +95,7 @@ class AnalyticsQueryBuilder {
           startDate: startDate,
           endDate: endDate,
         );
-      case 'database:breakingNewsDistribution':
+      case 'database:headlines:breakingNewsDistribution':
         _log.info(
           'Building categorical count pipeline for breaking news distribution.',
         );
@@ -107,10 +107,10 @@ class AnalyticsQueryBuilder {
           endDate: endDate,
         );
       // Ranked List Queries
-      case 'database:sourcesByFollowers':
+      case 'database:sources:byFollowers':
         _log.info('Building ranked list pipeline for sources by followers.');
         return _buildRankedByFollowersPipeline('sources');
-      case 'database:topicsByFollowers':
+      case 'database:topics:byFollowers':
         _log.info('Building ranked list pipeline for topics by followers.');
         return _buildRankedByFollowersPipeline('topics');
 
