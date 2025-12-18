@@ -39,7 +39,7 @@ class AnalyticsMetricMapper {
     ),
     // Headline KPIs
     KpiCardId.contentHeadlinesTotalPublished: const StandardMetricQuery(
-      metric: 'database:headlines',
+      metric: 'database:headlines:count',
     ),
     KpiCardId.contentHeadlinesTotalViews: const EventCountQuery(
       event: AnalyticsEvent.contentViewed,
@@ -49,23 +49,23 @@ class AnalyticsMetricMapper {
     ),
     // Source KPIs
     KpiCardId.contentSourcesTotalSources: const StandardMetricQuery(
-      metric: 'database:sources',
+      metric: 'database:sources:count',
     ),
     KpiCardId.contentSourcesNewSources: const StandardMetricQuery(
-      metric: 'database:sources',
+      metric: 'database:sources:count',
     ),
     KpiCardId.contentSourcesTotalFollowers: const StandardMetricQuery(
-      metric: 'database:sourceFollowers',
+      metric: 'database:sources:followers',
     ),
     // Topic KPIs
     KpiCardId.contentTopicsTotalTopics: const StandardMetricQuery(
-      metric: 'database:topics',
+      metric: 'database:topics:count',
     ),
     KpiCardId.contentTopicsNewTopics: const StandardMetricQuery(
-      metric: 'database:topics',
+      metric: 'database:topics:count',
     ),
     KpiCardId.contentTopicsTotalFollowers: const StandardMetricQuery(
-      metric: 'database:topicFollowers',
+      metric: 'database:topics:followers',
     ),
     // Engagement KPIs
     KpiCardId.engagementsTotalReactions: const EventCountQuery(
@@ -79,14 +79,14 @@ class AnalyticsMetricMapper {
     ),
     // Report KPIs
     KpiCardId.engagementsReportsPending: const StandardMetricQuery(
-      metric: 'database:reportsPending',
+      metric: 'database:reports:pending',
     ),
     KpiCardId.engagementsReportsResolved: const StandardMetricQuery(
-      metric: 'database:reportsResolved',
+      metric: 'database:reports:resolved',
     ),
     KpiCardId.engagementsReportsAverageResolutionTime:
         const StandardMetricQuery(
-          metric: 'database:avgReportResolutionTime',
+          metric: 'database:reports:avgResolutionTime',
         ),
     // App Review KPIs
     KpiCardId.engagementsAppReviewsTotalFeedback: const EventCountQuery(
@@ -109,7 +109,7 @@ class AnalyticsMetricMapper {
       metric: 'activeUsers',
     ),
     ChartCardId.usersRoleDistribution: const StandardMetricQuery(
-      metric: 'database:userRoleDistribution',
+      metric: 'database:users:userRoleDistribution',
     ),
     // Headline Charts
     ChartCardId.contentHeadlinesViewsOverTime: const EventCountQuery(
@@ -119,30 +119,30 @@ class AnalyticsMetricMapper {
       event: AnalyticsEvent.reactionCreated,
     ),
     ChartCardId.contentHeadlinesViewsByTopic: const StandardMetricQuery(
-      metric: 'database:viewsByTopic',
+      metric: 'database:headlines:viewsByTopic',
     ),
     // Sources Tab
     ChartCardId.contentSourcesHeadlinesPublishedOverTime:
         const StandardMetricQuery(
-          metric: 'database:headlinesBySource',
+          metric: 'database:headlines:bySource',
         ),
     ChartCardId.contentSourcesEngagementByType: const StandardMetricQuery(
-      metric: 'database:sourceEngagementByType',
+      metric: 'database:sources:engagementByType',
     ),
     ChartCardId.contentSourcesStatusDistribution: const StandardMetricQuery(
-      metric: 'database:sourceStatusDistribution',
+      metric: 'database:sources:statusDistribution',
     ),
     // Topics Tab
     ChartCardId.contentTopicsHeadlinesPublishedOverTime:
         const StandardMetricQuery(
-          metric: 'database:headlinesByTopic',
+          metric: 'database:headlines:byTopic',
         ),
     ChartCardId.contentTopicsEngagementByTopic: const StandardMetricQuery(
-      metric: 'database:topicEngagement',
+      metric: 'database:headlines:topicEngagement',
     ),
     ChartCardId.contentHeadlinesBreakingNewsDistribution:
         const StandardMetricQuery(
-          metric: 'database:breakingNewsDistribution',
+          metric: 'database:headlines:breakingNewsDistribution',
         ),
     // Engagements Tab
     ChartCardId.engagementsReactionsOverTime: const EventCountQuery(
@@ -152,16 +152,16 @@ class AnalyticsMetricMapper {
       event: AnalyticsEvent.commentCreated,
     ),
     ChartCardId.engagementsReactionsByType: const StandardMetricQuery(
-      metric: 'database:reactionsByType',
+      metric: 'database:engagements:reactionsByType',
     ),
     // Reports Tab
     ChartCardId.engagementsReportsSubmittedOverTime: const EventCountQuery(
       event: AnalyticsEvent.reportSubmitted,
     ),
     ChartCardId.engagementsReportsResolutionTimeOverTime:
-        const StandardMetricQuery(metric: 'database:avgReportResolutionTime'),
+        const StandardMetricQuery(metric: 'database:reports:avgResolutionTime'),
     ChartCardId.engagementsReportsByReason: const StandardMetricQuery(
-      metric: 'database:reportsByReason',
+      metric: 'database:reports:byReason',
     ),
     // App Reviews Tab
     ChartCardId.engagementsAppReviewsFeedbackOverTime: const EventCountQuery(
@@ -169,7 +169,7 @@ class AnalyticsMetricMapper {
     ),
     ChartCardId.engagementsAppReviewsPositiveVsNegative:
         const StandardMetricQuery(
-          metric: 'database:appReviewFeedback',
+          metric: 'database:app_reviews:feedback',
         ),
     ChartCardId.engagementsAppReviewsStoreRequestsOverTime:
         const EventCountQuery(
@@ -189,10 +189,10 @@ class AnalyticsMetricMapper {
         ),
         // These require database-only aggregations.
         RankedListCardId.overviewSourcesMostFollowed: const StandardMetricQuery(
-          metric: 'database:sourcesByFollowers',
+          metric: 'database:sources:byFollowers',
         ),
         RankedListCardId.overviewTopicsMostFollowed: const StandardMetricQuery(
-          metric: 'database:topicsByFollowers',
+          metric: 'database:topics:byFollowers',
         ),
       };
 }
