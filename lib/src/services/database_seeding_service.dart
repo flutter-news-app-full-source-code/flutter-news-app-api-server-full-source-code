@@ -418,32 +418,41 @@ class DatabaseSeedingService {
         ],
       });
 
-      // Indexes for analytics card data collections.
-      // These simple indexes on the `_id` field ensure the collections are
-      // created on startup, even if they are empty, preventing potential
-      // issues with services that might expect them to exist.
-      await _db
-          .collection('kpi_card_data')
-          .createIndex(
-            keys: {'_id': 1},
-            name: 'kpi_card_data_id_index',
-          );
+      // Indexes for the analytics card data collections.
+      // Using runCommand to ensure no default 'unique' field is added, which
+      // is invalid for an _id index. This also ensures the collections exist
+      // on startup.
+      await _db.runCommand({
+        'createIndexes': 'kpi_card_data',
+        'indexes': [
+          {
+            'key': {'_id': 1},
+            'name': 'kpi_card_data_id_index',
+          },
+        ],
+      });
       _log.info('Ensured indexes for "kpi_card_data".');
 
-      await _db
-          .collection('chart_card_data')
-          .createIndex(
-            keys: {'_id': 1},
-            name: 'chart_card_data_id_index',
-          );
+      await _db.runCommand({
+        'createIndexes': 'chart_card_data',
+        'indexes': [
+          {
+            'key': {'_id': 1},
+            'name': 'chart_card_data_id_index',
+          },
+        ],
+      });
       _log.info('Ensured indexes for "chart_card_data".');
 
-      await _db
-          .collection('ranked_list_card_data')
-          .createIndex(
-            keys: {'_id': 1},
-            name: 'ranked_list_card_data_id_index',
-          );
+      await _db.runCommand({
+        'createIndexes': 'ranked_list_card_data',
+        'indexes': [
+          {
+            'key': {'_id': 1},
+            'name': 'ranked_list_card_data_id_index',
+          },
+        ],
+      });
       _log.info('Ensured indexes for "ranked_list_card_data".');
 
       _log.info('Database indexes are set up correctly.');
