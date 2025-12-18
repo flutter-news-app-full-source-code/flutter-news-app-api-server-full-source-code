@@ -82,7 +82,7 @@ class AppDependencies {
   late final EmailRepository emailRepository;
 
   // Services
-  late final AnalyticsSyncService? analyticsSyncService;
+  late final AnalyticsSyncService analyticsSyncService;
   late final DatabaseMigrationService databaseMigrationService;
   late final TokenBlacklistService tokenBlacklistService;
   late final AuthTokenService authTokenService;
