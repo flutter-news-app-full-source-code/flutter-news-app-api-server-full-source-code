@@ -5,7 +5,7 @@
 </div>
 
 <p align="center">
-<img src="https://img.shields.io/badge/coverage-_%25-red?style=for-the-badge" alt="coverage">
+<img src="https://img.shields.io/badge/coverage-43%25-green?style=for-the-badge" alt="coverage">
 <a href="https://flutter-news-app-full-source-code.github.io/docs/api-server/local-setup/"><img src="https://img.shields.io/badge/DOCUMENTATION-READ-slategray?style=for-the-badge" alt="Documentation: Read"></a>
 </p>
 <p align="center">
