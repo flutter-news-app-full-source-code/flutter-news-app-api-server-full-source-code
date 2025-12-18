@@ -398,6 +398,72 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresAuthentication: true,
     ),
   ),
+  'kpi_card_data': ModelConfig<KpiCardData>(
+    fromJson: KpiCardData.fromJson,
+    getId: (d) => d.id.name,
+    getOwnerId: null, // System-owned resource
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.analyticsRead,
+    ),
+    getItemPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.analyticsRead,
+    ),
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+  ),
+  'chart_card_data': ModelConfig<ChartCardData>(
+    fromJson: ChartCardData.fromJson,
+    getId: (d) => d.id.name,
+    getOwnerId: null, // System-owned resource
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.analyticsRead,
+    ),
+    getItemPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.analyticsRead,
+    ),
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+  ),
+  'ranked_list_card_data': ModelConfig<RankedListCardData>(
+    fromJson: RankedListCardData.fromJson,
+    getId: (d) => d.id.name,
+    getOwnerId: null, // System-owned resource
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.analyticsRead,
+    ),
+    getItemPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.analyticsRead,
+    ),
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+  ),
   'push_notification_device': ModelConfig<PushNotificationDevice>(
     fromJson: PushNotificationDevice.fromJson,
     getId: (d) => d.id,
