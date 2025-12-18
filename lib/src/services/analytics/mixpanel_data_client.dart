@@ -109,10 +109,7 @@ class MixpanelDataClient implements AnalyticsReportingClient {
 
     final dataPoints = <DataPoint>[];
     final series = segmentationData.series;
-    final values =
-        segmentationData.values[metricName] ??
-        segmentationData.values.values.firstOrNull ??
-        [];
+    final values = segmentationData.values[metricName] ?? [];
 
     for (var i = 0; i < series.length; i++) {
       dataPoints.add(
@@ -140,15 +137,37 @@ class MixpanelDataClient implements AnalyticsReportingClient {
       );
     }
     if (metricName == 'activeUsers') {
-      // Mixpanel uses a special name for active users.
       metricName = r'$active';
     }
 
     _log.info('Fetching total for metric "$metricName" from Mixpanel.');
-    final timeSeries = await getTimeSeries(query, startDate, endDate);
-    if (timeSeries.isEmpty) return 0;
 
-    return timeSeries.map((dp) => dp.value).reduce((a, b) => a + b);
+    // To get a single total, we call the segmentation endpoint *without* the 'unit' parameter.
+    final queryParameters = {
+      'project_id': _projectId,
+      'event': metricName,
+      'from_date': DateFormat('yyyy-MM-dd').format(startDate),
+      'to_date': DateFormat('yyyy-MM-dd').format(endDate),
+    };
+
+    final response = await _httpClient.get<Map<String, dynamic>>(
+      '/segmentation',
+      queryParameters: queryParameters,
+    );
+
+    final segmentationData =
+        MixpanelResponse<MixpanelSegmentationData>.fromJson(
+          response,
+          (json) =>
+              MixpanelSegmentationData.fromJson(json as Map<String, dynamic>),
+        ).data;
+
+    // The response for a total value has a single entry in the 'values' map.
+    if (segmentationData.values.values.isEmpty ||
+        segmentationData.values.values.first.isEmpty) {
+      return 0;
+    }
+    return segmentationData.values.values.first.first;
   }
 
   @override
