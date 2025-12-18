@@ -20,15 +20,36 @@ class MixpanelDataClient implements AnalyticsReportingClient {
     required String serviceAccountSecret,
     required Logger log,
     required DataRepository<Headline> headlineRepository,
+    HttpClient? httpClient,
   }) : _projectId = projectId,
        _serviceAccountUsername = serviceAccountUsername,
        _serviceAccountSecret = serviceAccountSecret,
        _log = log,
-       _headlineRepository = headlineRepository {
-    final credentials = base64Encode(
-      '$_serviceAccountUsername:$_serviceAccountSecret'.codeUnits,
-    );
-    _httpClient = HttpClient(
+       _headlineRepository = headlineRepository,
+       _httpClient =
+           httpClient ??
+           _createDefaultHttpClient(
+             serviceAccountUsername,
+             serviceAccountSecret,
+             log,
+           );
+
+  final String _projectId;
+  final String _serviceAccountUsername;
+  final String _serviceAccountSecret;
+  late final HttpClient _httpClient;
+  final Logger _log;
+  final DataRepository<Headline> _headlineRepository;
+
+  // A private static method to create the default HttpClient.
+  // This keeps the constructor clean and allows for easy test injection.
+  static HttpClient _createDefaultHttpClient(
+    String username,
+    String secret,
+    Logger log,
+  ) {
+    final credentials = base64Encode('$username:$secret'.codeUnits);
+    return HttpClient(
       baseUrl: 'https://mixpanel.com/api/2.0',
       tokenProvider: () async => null,
       interceptors: [
@@ -39,16 +60,9 @@ class MixpanelDataClient implements AnalyticsReportingClient {
           },
         ),
       ],
-      logger: _log,
+      logger: log,
     );
   }
-
-  final String _projectId;
-  final String _serviceAccountUsername;
-  final String _serviceAccountSecret;
-  late final HttpClient _httpClient;
-  final Logger _log;
-  final DataRepository<Headline> _headlineRepository;
 
   String _getMetricName(MetricQuery query) {
     return switch (query) {
