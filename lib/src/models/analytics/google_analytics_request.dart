@@ -6,7 +6,11 @@ part 'google_analytics_request.g.dart';
 /// {@template run_report_request}
 /// Represents the request body for the Google Analytics Data API's `runReport`.
 /// {@endtemplate}
-@JsonSerializable(explicitToJson: true, includeIfNull: false)
+@JsonSerializable(
+  explicitToJson: true,
+  includeIfNull: false,
+  checked: true,
+)
 class RunReportRequest extends Equatable {
   /// {@macro run_report_request}
   const RunReportRequest({
@@ -40,6 +44,7 @@ class RunReportRequest extends Equatable {
   Map<String, dynamic> toJson() => _$RunReportRequestToJson(this);
 
   @override
+  @JsonKey(includeToJson: false)
   List<Object?> get props => [
     dateRanges,
     dimensions,
@@ -52,7 +57,11 @@ class RunReportRequest extends Equatable {
 /// {@template ga_request_date_range}
 /// Represents a date range for a Google Analytics report request.
 /// {@endtemplate}
-@JsonSerializable()
+@JsonSerializable(
+  explicitToJson: true,
+  includeIfNull: false,
+  checked: true,
+)
 class GARequestDateRange extends Equatable {
   /// {@macro ga_request_date_range}
   const GARequestDateRange({required this.startDate, required this.endDate});
@@ -71,13 +80,18 @@ class GARequestDateRange extends Equatable {
   Map<String, dynamic> toJson() => _$GARequestDateRangeToJson(this);
 
   @override
+  @JsonKey(includeToJson: false)
   List<Object> get props => [startDate, endDate];
 }
 
 /// {@template ga_request_dimension}
 /// Represents a dimension to include in a Google Analytics report request.
 /// {@endtemplate}
-@JsonSerializable()
+@JsonSerializable(
+  explicitToJson: true,
+  includeIfNull: false,
+  checked: true,
+)
 class GARequestDimension extends Equatable {
   /// {@macro ga_request_dimension}
   const GARequestDimension({required this.name});
@@ -93,13 +107,18 @@ class GARequestDimension extends Equatable {
   Map<String, dynamic> toJson() => _$GARequestDimensionToJson(this);
 
   @override
+  @JsonKey(includeToJson: false)
   List<Object> get props => [name];
 }
 
 /// {@template ga_request_metric}
 /// Represents a metric to include in a Google Analytics report request.
 /// {@endtemplate}
-@JsonSerializable()
+@JsonSerializable(
+  explicitToJson: true,
+  includeIfNull: false,
+  checked: true,
+)
 class GARequestMetric extends Equatable {
   /// {@macro ga_request_metric}
   const GARequestMetric({required this.name});
@@ -115,13 +134,18 @@ class GARequestMetric extends Equatable {
   Map<String, dynamic> toJson() => _$GARequestMetricToJson(this);
 
   @override
+  @JsonKey(includeToJson: false)
   List<Object> get props => [name];
 }
 
 /// {@template ga_request_filter_expression}
 /// Represents a filter expression for a Google Analytics report request.
 /// {@endtemplate}
-@JsonSerializable(explicitToJson: true)
+@JsonSerializable(
+  explicitToJson: true,
+  includeIfNull: false,
+  checked: true,
+)
 class GARequestFilterExpression extends Equatable {
   /// {@macro ga_request_filter_expression}
   const GARequestFilterExpression({required this.filter});
@@ -137,13 +161,18 @@ class GARequestFilterExpression extends Equatable {
   Map<String, dynamic> toJson() => _$GARequestFilterExpressionToJson(this);
 
   @override
+  @JsonKey(includeToJson: false)
   List<Object> get props => [filter];
 }
 
 /// {@template ga_request_filter}
 /// Represents a filter for a specific field in a Google Analytics request.
 /// {@endtemplate}
-@JsonSerializable(explicitToJson: true)
+@JsonSerializable(
+  explicitToJson: true,
+  includeIfNull: false,
+  checked: true,
+)
 class GARequestFilter extends Equatable {
   /// {@macro ga_request_filter}
   const GARequestFilter({required this.fieldName, required this.stringFilter});
@@ -162,13 +191,18 @@ class GARequestFilter extends Equatable {
   Map<String, dynamic> toJson() => _$GARequestFilterToJson(this);
 
   @override
+  @JsonKey(includeToJson: false)
   List<Object> get props => [fieldName, stringFilter];
 }
 
 /// {@template ga_request_string_filter}
 /// Represents a string filter in a Google Analytics request.
 /// {@endtemplate}
-@JsonSerializable()
+@JsonSerializable(
+  explicitToJson: true,
+  includeIfNull: false,
+  checked: true,
+)
 class GARequestStringFilter extends Equatable {
   /// {@macro ga_request_string_filter}
   const GARequestStringFilter({required this.value});
@@ -184,5 +218,6 @@ class GARequestStringFilter extends Equatable {
   Map<String, dynamic> toJson() => _$GARequestStringFilterToJson(this);
 
   @override
+  @JsonKey(includeToJson: false)
   List<Object> get props => [value];
 }
