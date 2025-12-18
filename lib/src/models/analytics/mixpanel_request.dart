@@ -21,7 +21,7 @@ enum MixpanelTimeUnit {
 /// {@template mixpanel_segmentation_request}
 /// Represents the query parameters for a Mixpanel segmentation request.
 /// {@endtemplate}
-@JsonSerializable(createFactory: false)
+@JsonSerializable(fieldRename: FieldRename.snake)
 class MixpanelSegmentationRequest extends Equatable {
   /// {@macro mixpanel_segmentation_request}
   const MixpanelSegmentationRequest({
@@ -32,19 +32,20 @@ class MixpanelSegmentationRequest extends Equatable {
     this.unit = MixpanelTimeUnit.day,
   });
 
+  /// Creates a [MixpanelSegmentationRequest] from a JSON object.
+  factory MixpanelSegmentationRequest.fromJson(Map<String, dynamic> json) =>
+      _$MixpanelSegmentationRequestFromJson(json);
+
   /// The ID of the Mixpanel project.
-  @JsonKey(name: 'project_id')
   final String projectId;
 
   /// The name of the event to segment.
   final String event;
 
   /// The start date in 'YYYY-MM-DD' format.
-  @JsonKey(name: 'from_date')
   final String fromDate;
 
   /// The end date in 'YYYY-MM-DD' format.
-  @JsonKey(name: 'to_date')
   final String toDate;
 
   /// The time unit for segmentation (e.g., 'day', 'week').
@@ -60,7 +61,7 @@ class MixpanelSegmentationRequest extends Equatable {
 /// {@template mixpanel_top_events_request}
 /// Represents the query parameters for a Mixpanel top events/properties request.
 /// {@endtemplate}
-@JsonSerializable(createFactory: false)
+@JsonSerializable(fieldRename: FieldRename.snake)
 class MixpanelTopEventsRequest extends Equatable {
   /// {@macro mixpanel_top_events_request}
   const MixpanelTopEventsRequest({
@@ -72,8 +73,11 @@ class MixpanelTopEventsRequest extends Equatable {
     required this.limit,
   });
 
+  /// Creates a [MixpanelTopEventsRequest] from a JSON object.
+  factory MixpanelTopEventsRequest.fromJson(Map<String, dynamic> json) =>
+      _$MixpanelTopEventsRequestFromJson(json);
+
   /// The ID of the Mixpanel project.
-  @JsonKey(name: 'project_id')
   final String projectId;
 
   /// The name of the event to analyze.
@@ -83,11 +87,9 @@ class MixpanelTopEventsRequest extends Equatable {
   final String name;
 
   /// The start date in 'YYYY-MM-dd' format.
-  @JsonKey(name: 'from_date')
   final String fromDate;
 
   /// The end date in 'YYYY-MM-dd' format.
-  @JsonKey(name: 'to_date')
   final String toDate;
 
   /// The maximum number of property values to return.
