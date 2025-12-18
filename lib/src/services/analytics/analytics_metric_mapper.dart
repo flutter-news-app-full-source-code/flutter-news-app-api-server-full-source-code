@@ -137,6 +137,9 @@ class AnalyticsMetricMapper {
         const StandardMetricQuery(
           metric: 'database:headlinesByTopic',
         ),
+    ChartCardId.contentTopicsEngagementByTopic: const StandardMetricQuery(
+      metric: 'database:topicEngagement',
+    ),
     ChartCardId.contentHeadlinesBreakingNewsDistribution:
         const StandardMetricQuery(
           metric: 'database:breakingNewsDistribution',
