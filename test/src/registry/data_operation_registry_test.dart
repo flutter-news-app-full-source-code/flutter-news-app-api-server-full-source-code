@@ -23,6 +23,7 @@ void main() {
           entityType: EngageableType.headline,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          reaction: const Reaction(reactionType: ReactionType.like),
         ),
       );
       registerFallbackValue(

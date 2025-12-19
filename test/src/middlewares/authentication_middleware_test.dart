@@ -30,10 +30,10 @@ void main() {
         capturedUser = context.read<User?>();
         return Response(body: 'ok');
       };
-
-      // Reset capturedUser before each test
-      setUp(() => capturedUser = null);
     });
+
+    // Reset capturedUser before each test
+    setUp(() => capturedUser = null);
 
     test('provides user when token is valid', () async {
       const token = 'valid-token';

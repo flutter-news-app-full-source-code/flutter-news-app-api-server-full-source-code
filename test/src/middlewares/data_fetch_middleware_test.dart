@@ -79,10 +79,10 @@ void main() {
         capturedItem = context.read<FetchedItem<dynamic>>();
         return Response(body: 'ok');
       };
-
-      // Reset captured item before each test
-      setUp(() => capturedItem = null);
     });
+
+    // Reset captured item before each test
+    setUp(() => capturedItem = null);
 
     test('fetches item and provides it to context', () async {
       const modelName = 'headline';

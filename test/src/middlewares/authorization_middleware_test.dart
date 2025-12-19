@@ -16,6 +16,10 @@ void main() {
     late User standardUser;
     late User adminUser;
 
+    setUpAll(() {
+      registerFallbackValue(createTestUser(id: 'fallback-user'));
+    });
+
     setUp(() {
       mockPermissionService = MockPermissionService();
       handler = (context) => Response(body: 'ok');

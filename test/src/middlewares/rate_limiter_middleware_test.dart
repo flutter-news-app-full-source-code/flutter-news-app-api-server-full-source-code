@@ -12,6 +12,10 @@ void main() {
     late RateLimitService mockRateLimitService;
     late Handler handler;
 
+    setUpAll(() {
+      registerFallbackValue(const Duration(seconds: 1));
+    });
+
     setUp(() {
       mockRateLimitService = MockRateLimitService();
       handler = (context) => Response(body: 'ok');
