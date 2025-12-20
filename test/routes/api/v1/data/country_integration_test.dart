@@ -23,6 +23,10 @@ void main() {
     late String standardToken;
     late Country country;
 
+    setUpAll(() {
+      registerSharedFallbackValues();
+    });
+
     setUp(() {
       mockRepo = MockDataRepository<Country>();
       mockAuthTokenService = MockAuthTokenService();
