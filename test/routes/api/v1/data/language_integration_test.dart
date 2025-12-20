@@ -19,6 +19,23 @@ void main() {
     late String standardToken;
     late Language language;
 
+    setUpAll(() {
+      registerSharedFallbackValues();
+      registerFallbackValue(const PaginationOptions());
+      registerFallbackValue(const SortOption('createdAt'));
+      registerFallbackValue(
+        Language(
+          id: 'fallback-id',
+          code: 'en',
+          name: 'English',
+          nativeName: 'English',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          status: ContentStatus.active,
+        ),
+      );
+    });
+
     setUp(() {
       mockRepo = MockDataRepository<Language>();
       mockAuthTokenService = MockAuthTokenService();
