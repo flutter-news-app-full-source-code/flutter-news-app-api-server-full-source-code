@@ -20,6 +20,13 @@ void main() {
     late String adminToken;
     late String standardToken;
 
+    setUpAll(() {
+      registerSharedFallbackValues();
+      registerFallbackValue(const PaginationOptions());
+      registerFallbackValue(const SortOption('createdAt'));
+      registerFallbackValue(createTestUser(id: 'fallback'));
+    });
+
     setUp(() {
       mockUserRepository = MockUserRepository();
       mockAuthTokenService = MockAuthTokenService();

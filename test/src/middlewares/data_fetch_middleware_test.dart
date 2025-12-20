@@ -15,6 +15,8 @@ void main() {
     late Headline headline;
     FetchedItem<dynamic>? capturedItem;
 
+    setUpAll(registerSharedFallbackValues);
+
     setUp(() {
       mockRegistry = MockDataOperationRegistry();
       headline = Headline(

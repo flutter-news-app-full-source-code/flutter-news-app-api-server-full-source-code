@@ -17,6 +17,7 @@ void main() {
     late User adminUser;
 
     setUpAll(() {
+      registerSharedFallbackValues();
       registerFallbackValue(createTestUser(id: 'fallback-user'));
     });
 
@@ -50,9 +51,8 @@ void main() {
           getCollectionPermission: const ModelActionPermission(
             type: RequiredPermissionType.specificPermission,
             permission: Permissions.headlineRead,
-            requiresAuthentication: true, // This is key
+            requiresAuthentication: true,
           ),
-          // Other permissions don't matter for this test
           getItemPermission: const ModelActionPermission(
             type: RequiredPermissionType.unsupported,
           ),
@@ -67,13 +67,23 @@ void main() {
           ),
         );
 
-        final context = createMockRequestContext(
-          authenticatedUser: null, // No user
-          modelConfig: modelConfig,
-          modelName: 'headline',
-          permissionService: mockPermissionService,
-          path: '/api/v1/data',
-        );
+        // We need to ensure context.read<User?>() returns null.
+        // createMockRequestContext doesn't provide User? if null.
+        // So we manually mock the context for this specific case to ensure control.
+        final context = MockRequestContext();
+        final request = MockRequest();
+        final uri = Uri.parse('http://localhost/api/v1/data');
+        when(() => context.request).thenReturn(request);
+        when(() => request.method).thenReturn(HttpMethod.get);
+        when(() => request.uri).thenReturn(uri);
+        when(() => context.read<User?>()).thenReturn(null);
+        when(() => context.read<String>()).thenReturn('headline');
+        when(
+          () => context.read<ModelConfig<dynamic>>(),
+        ).thenReturn(modelConfig);
+        when(
+          () => context.read<PermissionService>(),
+        ).thenReturn(mockPermissionService);
 
         final middleware = authorizationMiddleware()(handler);
 
@@ -92,9 +102,8 @@ void main() {
           getId: (rc) => rc.id,
           getItemPermission: const ModelActionPermission(
             type: RequiredPermissionType.none,
-            requiresAuthentication: false, // Publicly accessible
+            requiresAuthentication: false,
           ),
-          // Other permissions
           getCollectionPermission: const ModelActionPermission(
             type: RequiredPermissionType.unsupported,
           ),
@@ -109,13 +118,21 @@ void main() {
           ),
         );
 
-        final context = createMockRequestContext(
-          authenticatedUser: null, // No user
-          modelConfig: modelConfig,
-          modelName: 'remote_config',
-          permissionService: mockPermissionService,
-          path: '/api/v1/data/some-id',
-        );
+        // Manually mock for null user scenario
+        final context = MockRequestContext();
+        final request = MockRequest();
+        final uri = Uri.parse('http://localhost/api/v1/data/some-id');
+        when(() => context.request).thenReturn(request);
+        when(() => request.method).thenReturn(HttpMethod.get);
+        when(() => request.uri).thenReturn(uri);
+        when(() => context.read<User?>()).thenReturn(null);
+        when(() => context.read<String>()).thenReturn('remote_config');
+        when(
+          () => context.read<ModelConfig<dynamic>>(),
+        ).thenReturn(modelConfig);
+        when(
+          () => context.read<PermissionService>(),
+        ).thenReturn(mockPermissionService);
 
         final middleware = authorizationMiddleware()(handler);
         final response = await middleware(context);
@@ -152,7 +169,7 @@ void main() {
           standardUser,
           Permissions.headlineCreate,
         ),
-      ).thenReturn(false); // User cannot create
+      ).thenReturn(false);
 
       final context = createMockRequestContext(
         method: HttpMethod.post,
@@ -172,7 +189,7 @@ void main() {
       final context = createMockRequestContext(
         method: HttpMethod.post,
         authenticatedUser: adminUser,
-        modelConfig: modelRegistry['headline'], // post is adminOnly
+        modelConfig: modelRegistry['headline'],
         modelName: 'headline',
         permissionService: mockPermissionService,
         path: '/api/v1/data',
@@ -188,7 +205,7 @@ void main() {
       final context = createMockRequestContext(
         method: HttpMethod.post,
         authenticatedUser: adminUser,
-        modelConfig: modelRegistry['language'], // post is unsupported
+        modelConfig: modelRegistry['language'],
         modelName: 'language',
         permissionService: mockPermissionService,
         path: '/api/v1/data',

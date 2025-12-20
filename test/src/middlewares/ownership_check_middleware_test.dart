@@ -17,6 +17,8 @@ void main() {
     late User adminUser;
     late AppSettings userOwnedItem;
 
+    setUpAll(registerSharedFallbackValues);
+
     setUp(() {
       mockPermissionService = MockPermissionService();
       handler = (context) => Response(body: 'ok');

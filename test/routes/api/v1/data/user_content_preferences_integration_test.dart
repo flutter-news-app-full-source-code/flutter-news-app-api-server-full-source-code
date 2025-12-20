@@ -27,6 +27,24 @@ void main() {
     late UserContentPreferences standardUserPrefs;
     late UserContentPreferences otherUserPrefs;
 
+    setUpAll(() {
+      registerSharedFallbackValues();
+      registerFallbackValue(const PaginationOptions());
+      registerFallbackValue(const SortOption('createdAt'));
+      registerFallbackValue(createTestUser(id: 'fallback'));
+      registerFallbackValue(
+        const UserContentPreferences(
+          id: 'fallback-id',
+          followedCountries: [],
+          followedSources: [],
+          followedTopics: [],
+          savedHeadlines: [],
+          savedHeadlineFilters: [],
+          savedSourceFilters: [],
+        ),
+      );
+    });
+
     setUp(() {
       mockRepo = MockDataRepository<UserContentPreferences>();
       mockAuthTokenService = MockAuthTokenService();

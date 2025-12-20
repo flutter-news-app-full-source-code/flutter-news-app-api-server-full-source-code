@@ -22,6 +22,23 @@ void main() {
 
     late Topic topic;
 
+    setUpAll(() {
+      registerSharedFallbackValues();
+      registerFallbackValue(const PaginationOptions());
+      registerFallbackValue(const SortOption('createdAt'));
+      registerFallbackValue(
+        Topic(
+          id: 'fallback-id',
+          name: 'Fallback Topic',
+          description: 'Fallback Description',
+          iconUrl: 'http://fallback.com/icon.png',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          status: ContentStatus.active,
+        ),
+      );
+    });
+
     setUp(() {
       mockRepo = MockDataRepository<Topic>();
       mockAuthTokenService = MockAuthTokenService();

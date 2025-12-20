@@ -23,6 +23,24 @@ void main() {
 
     late Report report;
 
+    setUpAll(() {
+      registerSharedFallbackValues();
+      registerFallbackValue(const PaginationOptions());
+      registerFallbackValue(const SortOption('createdAt'));
+      registerFallbackValue(createTestUser(id: 'fallback'));
+      registerFallbackValue(
+        Report(
+          id: 'fallback-id',
+          reporterUserId: 'fallback-user',
+          entityType: ReportableEntity.headline,
+          entityId: 'fallback-entity',
+          reason: 'spam',
+          status: ModerationStatus.pendingReview,
+          createdAt: DateTime.now(),
+        ),
+      );
+    });
+
     setUp(() {
       mockRepo = MockDataRepository<Report>();
       mockAuthTokenService = MockAuthTokenService();

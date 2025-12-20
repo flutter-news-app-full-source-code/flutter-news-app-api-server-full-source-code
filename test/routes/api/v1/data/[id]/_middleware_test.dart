@@ -18,6 +18,11 @@ void main() {
     late DataOperationRegistry mockRegistry;
     late PermissionService mockPermissionService;
 
+    setUpAll(() {
+      registerSharedFallbackValues();
+      registerFallbackValue(createTestUser(id: 'fallback'));
+    });
+
     setUp(() {
       handler = (context) => Response(body: 'ok');
       standardUser = createTestUser(id: 'user-id');
@@ -82,6 +87,7 @@ void main() {
       mockPermissionService = MockPermissionService();
 
       // Default stubs
+      // PermissionService.isAdmin takes a positional User argument
       when(() => mockPermissionService.isAdmin(any())).thenReturn(false);
       when(
         () => mockRegistry.itemFetchers,

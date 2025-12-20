@@ -13,6 +13,7 @@ void main() {
     late User standardUser;
 
     setUpAll(() {
+      registerSharedFallbackValues();
       registerFallbackValue(MockRequestContext());
       registerFallbackValue(createTestUser(id: 'id'));
       registerFallbackValue(
@@ -53,7 +54,10 @@ void main() {
         mockUserActionLimitService = MockUserActionLimitService();
 
         when(
-          () => mockEngagementRepository.readAll(filter: any(named: 'filter')),
+          () => mockEngagementRepository.readAll(
+            filter: any(named: 'filter'),
+            userId: any(named: 'userId'),
+          ),
         ).thenAnswer(
           (_) async => const PaginatedResponse(
             items: [],
@@ -81,10 +85,12 @@ void main() {
             entityType: EngageableType.headline,
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
+            reaction: const Reaction(reactionType: ReactionType.like),
           );
 
           final context = createMockRequestContext(
             authenticatedUser: standardUser,
+            userActionLimitService: mockUserActionLimitService,
           );
 
           expect(
@@ -103,10 +109,14 @@ void main() {
           entityType: EngageableType.headline,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          reaction: const Reaction(reactionType: ReactionType.like),
         );
 
         when(
-          () => mockEngagementRepository.readAll(filter: any(named: 'filter')),
+          () => mockEngagementRepository.readAll(
+            filter: any(named: 'filter'),
+            userId: any(named: 'userId'),
+          ),
         ).thenAnswer(
           (_) async => PaginatedResponse(
             items: [engagement],
@@ -118,6 +128,7 @@ void main() {
         final context = createMockRequestContext(
           authenticatedUser: standardUser,
           engagementRepository: mockEngagementRepository,
+          userActionLimitService: mockUserActionLimitService,
         );
 
         expect(
@@ -135,6 +146,7 @@ void main() {
           entityType: EngageableType.headline,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          reaction: const Reaction(reactionType: ReactionType.like),
         );
 
         when(

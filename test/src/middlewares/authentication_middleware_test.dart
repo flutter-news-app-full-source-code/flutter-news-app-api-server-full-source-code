@@ -14,6 +14,8 @@ void main() {
     late User user;
     User? capturedUser;
 
+    setUpAll(registerSharedFallbackValues);
+
     setUp(() {
       mockAuthTokenService = MockAuthTokenService();
       user = User(
@@ -114,26 +116,61 @@ void main() {
 
   group('requireAuthentication', () {
     test('throws UnauthorizedException when user is null', () {
-      final context = createMockRequestContext(authenticatedUser: null);
-      Response handler(context) => Response(body: 'should not be called');
+      // We explicitly pass authenticatedUser: null, but createMockRequestContext
+      // doesn't provide User? if it's null.
+      // However, TestRequestContext mocks read<User?> to return null by default if not provided?
+      // No, mocktail throws if not stubbed.
+      // We need to ensure context.read<User?>() returns null.
+      // createMockRequestContext doesn't provide it if null.
+      // But requireAuthentication calls context.read<User?>().
+      // We must provide it as null.
+      // Since createMockRequestContext helper logic is:
+      // if (authenticatedUser != null) { provide... }
+      // We need to manually stub it or update helper.
+      // Actually, dart_frog_test's TestRequestContext might not support providing null easily via helper.
+      // Let's rely on the fact that if we don't provide it, read<User?> might throw or return null depending on implementation.
+      // But wait, requireAuthentication reads User?.
+      // Let's update the test to use a context where we know User? is null.
+      // The helper doesn't provide it if null.
+      // So we need to manually provide null or let it fail?
+      // Actually, let's just use the helper. If it fails, we fix the helper.
+      // In dart_frog, reading a non-existent provider throws StateError.
+      // But `authenticationProvider` provides `User?` (nullable).
+      // If `authenticationProvider` ran before `requireAuthentication`, `User?` would be in context (as null).
+      // Here we are testing `requireAuthentication` in isolation.
+      // We should assume `User?` is provided.
+
+      // We can't use createMockRequestContext to provide null easily with current logic.
+      // Let's just use a raw TestRequestContext here or modify helper.
+      // Easier: modify helper to allow providing null explicitly?
+      // Or just assume the middleware stack usually has authenticationProvider.
+      // For this unit test, we can just mock it.
+
+      final context = MockRequestContext();
+      when(() => context.read<User?>()).thenReturn(null);
+
+      Response handler(RequestContext context) =>
+          Response(body: 'should not be called');
       final middleware = requireAuthentication()(handler);
 
       expect(() => middleware(context), throwsA(isA<UnauthorizedException>()));
     });
 
-    test('calls handler and provides non-nullable User when user exists', () {
-      final user = createTestUser(id: 'user-id');
-      final context = createMockRequestContext(authenticatedUser: user);
-      Response handler(RequestContext context) {
-        // Verify that the context now provides a non-nullable User
-        expect(context.read<User>(), equals(user));
-        return Response(body: 'ok');
-      }
+    test(
+      'calls handler and provides non-nullable User when user exists',
+      () async {
+        final user = createTestUser(id: 'user-id');
+        final context = createMockRequestContext(authenticatedUser: user);
+        Response handler(RequestContext context) {
+          // Verify that the context now provides a non-nullable User
+          expect(context.read<User>(), equals(user));
+          return Response(body: 'ok');
+        }
 
-      final middleware = requireAuthentication()(handler);
-
-      final response = middleware(context);
-      expect(response, completion(isA<Response>()));
-    });
+        final middleware = requireAuthentication()(handler);
+        final response = await middleware(context);
+        expect(response, isA<Response>());
+      },
+    );
   });
 }

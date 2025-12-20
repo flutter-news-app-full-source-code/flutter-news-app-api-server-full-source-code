@@ -22,6 +22,43 @@ void main() {
 
     late Source source;
 
+    setUpAll(() {
+      registerSharedFallbackValues();
+      registerFallbackValue(const PaginationOptions());
+      registerFallbackValue(const SortOption('createdAt'));
+      registerFallbackValue(
+        Source(
+          id: 'fallback-id',
+          name: 'Fallback Source',
+          description: 'Fallback Description',
+          url: 'http://fallback.com',
+          logoUrl: 'http://fallback.com/logo.png',
+          sourceType: SourceType.blog,
+          language: Language(
+            id: 'en',
+            code: 'en',
+            name: 'English',
+            nativeName: 'English',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: ContentStatus.active,
+          ),
+          headquarters: Country(
+            id: 'us',
+            isoCode: 'US',
+            name: 'USA',
+            flagUrl: 'flag',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: ContentStatus.active,
+          ),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          status: ContentStatus.active,
+        ),
+      );
+    });
+
     setUp(() {
       mockRepo = MockDataRepository<Source>();
       mockAuthTokenService = MockAuthTokenService();

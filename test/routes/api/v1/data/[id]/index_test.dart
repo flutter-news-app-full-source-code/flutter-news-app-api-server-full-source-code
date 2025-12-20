@@ -17,7 +17,9 @@ void main() {
     const headlineId = 'headline-id';
 
     setUpAll(() {
+      registerSharedFallbackValues();
       registerFallbackValue(MockRequestContext());
+      registerFallbackValue(createTestUser(id: 'fallback'));
     });
 
     setUp(() {
