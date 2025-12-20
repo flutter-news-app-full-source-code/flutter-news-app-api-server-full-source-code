@@ -22,6 +22,19 @@ void main() {
 
     late AppReview appReview;
 
+    setUpAll(() {
+      registerSharedFallbackValues();
+      registerFallbackValue(
+        AppReview(
+          id: 'fallback-id',
+          userId: 'fallback-user-id',
+          feedback: AppReviewFeedback.positive,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
+    });
+
     setUp(() {
       mockRepo = MockDataRepository<AppReview>();
       mockAuthTokenService = MockAuthTokenService();
