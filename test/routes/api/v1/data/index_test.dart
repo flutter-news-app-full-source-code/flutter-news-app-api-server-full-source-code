@@ -14,6 +14,7 @@ void main() {
     late User standardUser;
 
     setUpAll(() {
+      registerSharedFallbackValues();
       registerFallbackValue(MockRequestContext());
     });
 
