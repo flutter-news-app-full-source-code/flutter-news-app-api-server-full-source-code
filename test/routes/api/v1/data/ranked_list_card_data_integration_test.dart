@@ -22,6 +22,19 @@ void main() {
 
     late RankedListCardData rankedListCard;
 
+    setUpAll(() {
+      registerSharedFallbackValues();
+      registerFallbackValue(const PaginationOptions());
+      registerFallbackValue(const SortOption('createdAt'));
+      registerFallbackValue(
+        const RankedListCardData(
+          id: RankedListCardId.overviewHeadlinesMostViewed,
+          label: 'Fallback',
+          timeFrames: {},
+        ),
+      );
+    });
+
     setUp(() {
       mockRepo = MockDataRepository<RankedListCardData>();
       mockAuthTokenService = MockAuthTokenService();
