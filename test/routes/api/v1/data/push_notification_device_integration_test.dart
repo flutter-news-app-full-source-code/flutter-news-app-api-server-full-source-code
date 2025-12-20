@@ -21,6 +21,20 @@ void main() {
     late String adminToken;
     late String standardToken;
 
+    setUpAll(() {
+      registerSharedFallbackValues();
+      registerFallbackValue(
+        PushNotificationDevice(
+          id: 'fallback-id',
+          userId: 'fallback-user',
+          platform: DevicePlatform.ios,
+          providerTokens: const {},
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
+    });
+
     setUp(() {
       mockRepo = MockDataRepository<PushNotificationDevice>();
       mockAuthTokenService = MockAuthTokenService();
@@ -111,14 +125,18 @@ void main() {
     });
 
     group('GET /api/v1/data/:id?model=push_notification_device', () {
-      final device = PushNotificationDevice(
-        id: 'device-1',
-        userId: standardUser.id,
-        platform: DevicePlatform.ios,
-        providerTokens: const {},
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
+      late PushNotificationDevice device;
+
+      setUp(() {
+        device = PushNotificationDevice(
+          id: 'device-1',
+          userId: standardUser.id,
+          platform: DevicePlatform.ios,
+          providerTokens: const {},
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      });
 
       test('returns 200 for owner', () async {
         when(
@@ -154,16 +172,17 @@ void main() {
     });
 
     group('DELETE /api/v1/data/:id?model=push_notification_device', () {
-      final device = PushNotificationDevice(
-        id: 'device-1',
-        userId: standardUser.id,
-        platform: DevicePlatform.ios,
-        providerTokens: const {},
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
+      late PushNotificationDevice device;
 
       setUp(() {
+        device = PushNotificationDevice(
+          id: 'device-1',
+          userId: standardUser.id,
+          platform: DevicePlatform.ios,
+          providerTokens: const {},
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
         when(
           () => mockRepo.read(id: device.id),
         ).thenAnswer((_) async => device);
