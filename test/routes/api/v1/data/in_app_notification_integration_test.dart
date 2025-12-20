@@ -22,6 +22,27 @@ void main() {
 
     late InAppNotification notification;
 
+    setUpAll(() {
+      registerSharedFallbackValues();
+      registerFallbackValue(const PaginationOptions());
+      registerFallbackValue(const SortOption('createdAt'));
+      registerFallbackValue(
+        InAppNotification(
+          id: 'fallback-id',
+          userId: 'fallback-user-id',
+          payload: const PushNotificationPayload(
+            title: 'Fallback',
+            notificationId: 'n1',
+            notificationType:
+                PushNotificationSubscriptionDeliveryType.breakingOnly,
+            contentType: ContentType.headline,
+            contentId: 'h1',
+          ),
+          createdAt: DateTime.now(),
+        ),
+      );
+    });
+
     setUp(() {
       mockRepo = MockDataRepository<InAppNotification>();
       mockAuthTokenService = MockAuthTokenService();
