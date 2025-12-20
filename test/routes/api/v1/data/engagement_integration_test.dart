@@ -24,6 +24,22 @@ void main() {
 
     late Engagement engagement;
 
+    setUpAll(() {
+      registerSharedFallbackValues();
+      registerFallbackValue(createTestUser(id: 'fallback'));
+      registerFallbackValue(
+        Engagement(
+          id: 'fallback-id',
+          userId: 'fallback-user',
+          entityId: 'fallback-entity',
+          entityType: EngageableType.headline,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          reaction: const Reaction(reactionType: ReactionType.like),
+        ),
+      );
+    });
+
     setUp(() {
       mockRepo = MockDataRepository<Engagement>();
       mockAuthTokenService = MockAuthTokenService();
