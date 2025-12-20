@@ -20,6 +20,71 @@ void main() {
     late String adminToken;
     late String standardToken;
 
+    setUpAll(() {
+      registerSharedFallbackValues();
+      registerFallbackValue(const PaginationOptions());
+      registerFallbackValue(const SortOption('createdAt'));
+      registerFallbackValue(
+        Headline(
+          id: 'fallback-id',
+          title: 'Fallback Title',
+          url: 'http://fallback.com',
+          imageUrl: 'http://fallback.com/image.png',
+          source: Source(
+            id: 's1',
+            name: 'Source',
+            description: 'Desc',
+            url: 'url',
+            logoUrl: 'logo',
+            sourceType: SourceType.blog,
+            language: Language(
+              id: 'en',
+              code: 'en',
+              name: 'English',
+              nativeName: 'English',
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+              status: ContentStatus.active,
+            ),
+            headquarters: Country(
+              id: 'us',
+              isoCode: 'US',
+              name: 'USA',
+              flagUrl: 'flag',
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+              status: ContentStatus.active,
+            ),
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: ContentStatus.active,
+          ),
+          eventCountry: Country(
+            id: 'us',
+            isoCode: 'US',
+            name: 'USA',
+            flagUrl: 'flag',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: ContentStatus.active,
+          ),
+          topic: Topic(
+            id: 't1',
+            name: 'Topic',
+            description: 'Desc',
+            iconUrl: 'icon',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: ContentStatus.active,
+          ),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          status: ContentStatus.active,
+          isBreaking: false,
+        ),
+      );
+    });
+
     setUp(() {
       mockHeadlineRepository = MockHeadlineRepository();
       mockAuthTokenService = MockAuthTokenService();
