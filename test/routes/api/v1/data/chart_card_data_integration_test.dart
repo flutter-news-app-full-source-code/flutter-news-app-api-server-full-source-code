@@ -22,6 +22,10 @@ void main() {
 
     late ChartCardData chartCard;
 
+    setUpAll(() {
+      registerSharedFallbackValues();
+    });
+
     setUp(() {
       mockRepo = MockDataRepository<ChartCardData>();
       mockAuthTokenService = MockAuthTokenService();
