@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
@@ -9,6 +11,8 @@ import 'package:test/test.dart';
 import '../../../../../routes/api/v1/data/_middleware.dart' as middleware;
 import '../../../../src/helpers/test_helpers.dart';
 
+class MockHttpConnectionInfo extends Mock implements HttpConnectionInfo {}
+
 void main() {
   group('data route middleware', () {
     late Handler handler;
@@ -18,6 +22,7 @@ void main() {
     late RateLimitService mockRateLimitService;
 
     setUpAll(() {
+      registerSharedFallbackValues();
       registerFallbackValue(createTestUser(id: 'fallback-user'));
     });
 
@@ -28,9 +33,13 @@ void main() {
       mockPermissionService = MockPermissionService();
       mockRateLimitService = MockRateLimitService();
 
+      // PermissionService.hasPermission takes positional arguments (User, String)
       when(
         () => mockPermissionService.hasPermission(any(), any()),
       ).thenReturn(true);
+      // Ensure isAdmin returns false by default to avoid Null boolean errors
+      when(() => mockPermissionService.isAdmin(any())).thenReturn(false);
+      
       when(
         () => mockRateLimitService.checkRequest(
           key: any(named: 'key'),
@@ -53,7 +62,9 @@ void main() {
     test('throws BadRequestException if model is invalid', () {
       final context = createMockRequestContext(
         queryParams: {'model': 'invalid_model'},
-      ).provide<ModelRegistryMap>(() => modelRegistryMap);
+      );
+      // Note: createMockRequestContext already provides ModelRegistryMap.
+      // We don't need to provide it again unless we want to override it.
 
       final composedMiddleware = middleware.middleware(handler);
 
@@ -65,13 +76,25 @@ void main() {
 
     test('throws UnauthorizedException if auth is required and user is not '
         'provided', () {
-      // 'headline' GET collection requires authentication
+      // 'headline' GET collection requires authentication.
+      // We use createMockRequestContext but explicitly do NOT provide an authenticatedUser.
+      // This simulates an unauthenticated request.
+      
       final context = createMockRequestContext(
         queryParams: {'model': 'headline'},
-        authenticatedUser: null,
+        // authenticatedUser is null by default
         permissionService: mockPermissionService,
-      ).provide<ModelRegistryMap>(() => modelRegistryMap);
+        rateLimitService: mockRateLimitService,
+      );
 
+      // We need to ensure the IP extraction works for unauthenticated rate limiting
+      // or bypass it. createMockRequestContext sets up a basic request.
+      // However, _dataRateLimiterMiddleware tries to get IP if user is null.
+      // The TestRequestContext request might not have connectionInfo.
+      // But wait, _conditionalAuthenticationMiddleware runs BEFORE rate limiter.
+      // It checks permissions. If auth is required and missing, it throws UnauthorizedException.
+      // So rate limiter is never reached.
+      
       final composedMiddleware = middleware.middleware(handler);
 
       expect(
@@ -92,7 +115,7 @@ void main() {
         authenticatedUser: standardUser,
         permissionService: mockPermissionService,
         rateLimitService: mockRateLimitService,
-      ).provide<ModelRegistryMap>(() => modelRegistryMap);
+      );
 
       final composedMiddleware = middleware.middleware(handler);
 
@@ -109,7 +132,7 @@ void main() {
         authenticatedUser: standardUser,
         permissionService: mockPermissionService,
         rateLimitService: mockRateLimitService,
-      ).provide<ModelRegistryMap>(() => modelRegistryMap);
+      );
 
       final composedMiddleware = middleware.middleware(handler);
       final response = await composedMiddleware(context);
@@ -120,13 +143,30 @@ void main() {
 
     test('allows public access when configured', () async {
       // 'remote_config' GET item does not require authentication
+      
+      // Mock the request and connection info to avoid Null check operator error
+      final mockRequest = MockRequest();
+      final mockConnectionInfo = MockHttpConnectionInfo();
+      final uri = Uri.parse('http://localhost/api/v1/data/some-id?model=remote_config');
+
+      when(() => mockConnectionInfo.remoteAddress).thenReturn(InternetAddress.loopbackIPv4);
+      when(() => mockRequest.connectionInfo).thenReturn(mockConnectionInfo);
+      when(() => mockRequest.method).thenReturn(HttpMethod.get);
+      when(() => mockRequest.uri).thenReturn(uri);
+      when(() => mockRequest.headers).thenReturn({});
+      
+      // We need to ensure the context uses this mock request.
+      // createMockRequestContext helper creates a TestRequestContext which creates its own Request.
+      // We need to pass our mock request to it.
+      
       final context = createMockRequestContext(
+        request: mockRequest,
+        path: '/api/v1/data/some-id',
         queryParams: {'model': 'remote_config'},
-        authenticatedUser: null, // No user
+        // No authenticated user
         permissionService: mockPermissionService,
         rateLimitService: mockRateLimitService,
-        path: '/api/v1/data/some-id', // Simulate item request
-      ).provide<ModelRegistryMap>(() => modelRegistryMap);
+      );
 
       final composedMiddleware = middleware.middleware(handler);
       final response = await composedMiddleware(context);
