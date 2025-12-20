@@ -25,6 +25,36 @@ void main() {
     late AppSettings standardUserSettings;
     late AppSettings otherUserSettings;
 
+    setUpAll(() {
+      registerSharedFallbackValues();
+      registerFallbackValue(
+        AppSettings(
+          id: 'fallback-id',
+          language: Language(
+            id: 'en',
+            code: 'en',
+            name: 'English',
+            nativeName: 'English',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: ContentStatus.active,
+          ),
+          displaySettings: const DisplaySettings(
+            baseTheme: AppBaseTheme.system,
+            accentTheme: AppAccentTheme.defaultBlue,
+            fontFamily: 'SystemDefault',
+            textScaleFactor: AppTextScaleFactor.medium,
+            fontWeight: AppFontWeight.regular,
+          ),
+          feedSettings: const FeedSettings(
+            feedItemDensity: FeedItemDensity.standard,
+            feedItemImageStyle: FeedItemImageStyle.smallThumbnail,
+            feedItemClickBehavior: FeedItemClickBehavior.defaultBehavior,
+          ),
+        ),
+      );
+    });
+
     setUp(() {
       mockAppSettingsRepository = MockDataRepository<AppSettings>();
       mockAuthTokenService = MockAuthTokenService();
