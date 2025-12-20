@@ -22,6 +22,19 @@ void main() {
 
     late KpiCardData kpiCard;
 
+    setUpAll(() {
+      registerSharedFallbackValues();
+      registerFallbackValue(const PaginationOptions());
+      registerFallbackValue(const SortOption('createdAt'));
+      registerFallbackValue(
+        const KpiCardData(
+          id: KpiCardId.usersTotalRegistered,
+          label: 'Fallback',
+          timeFrames: {},
+        ),
+      );
+    });
+
     setUp(() {
       mockRepo = MockDataRepository<KpiCardData>();
       mockAuthTokenService = MockAuthTokenService();
