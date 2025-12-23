@@ -94,6 +94,18 @@ Say goodbye to risky manual database updates. A professional, versioned migratio
 </details>
 
 <details>
+<summary><strong>💰 Monetization & Subscriptions</strong></summary>
+
+### 💳 Robust Subscription Engine
+A complete backend infrastructure for managing in-app subscriptions and entitlements.
+- **Multi-Provider Support:** Built-in support for Apple App Store, Google Play Store, and Stripe, unified under a single "Entitlement" interface.
+- **Server-Side Validation:** Securely validates purchase receipts directly with providers, preventing client-side spoofing and fraud.
+- **Webhook Synchronization:** Acts as a "State Machine," listening for server-to-server webhooks to automatically handle renewals, cancellations, and billing issues in real-time.
+> **Your Advantage:** A secure, compliant, and low-maintenance monetization system that ensures you get paid and users get the features they bought.
+
+</details>
+
+<details>
 <summary><strong>📲 User Engagement & Notifications</strong></summary>
 
 ### 🔔 A Dynamic, Multi-Channel Notification Engine
