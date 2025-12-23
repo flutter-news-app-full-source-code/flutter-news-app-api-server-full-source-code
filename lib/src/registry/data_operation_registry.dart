@@ -7,7 +7,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/own
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/subscription_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/payment/subscription_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
 import 'package:logging/logging.dart';
@@ -115,6 +115,8 @@ class DataOperationRegistry {
           c.read<DataRepository<User>>().read(id: id, userId: null),
       'app_settings': (c, id) =>
           c.read<DataRepository<AppSettings>>().read(id: id, userId: null),
+      'user_context': (c, id) =>
+          c.read<DataRepository<UserContext>>().read(id: id, userId: null),
       'user_content_preferences': (c, id) => c
           .read<DataRepository<UserContentPreferences>>()
           .read(id: id, userId: null),
@@ -556,6 +558,9 @@ class DataOperationRegistry {
       'app_settings': (c, id, item, uid) => c
           .read<DataRepository<AppSettings>>()
           .update(id: id, item: item as AppSettings, userId: uid),
+      'user_context': (c, id, item, uid) => c
+          .read<DataRepository<UserContext>>()
+          .update(id: id, item: item as UserContext, userId: uid),
       'user_content_preferences': (context, id, item, uid) async {
         _log.info(
           'Executing custom updater for user_content_preferences ID: $id.',
