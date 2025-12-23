@@ -48,7 +48,7 @@ class DefaultUserActionLimitService implements UserActionLimitService {
       savedHeadlineFiltersLimit,
       savedSourceFiltersLimit,
     ) = _getPreferenceLimitsForRole(
-      user.appRole,
+      user.tier,
       limits,
     );
 
@@ -139,7 +139,7 @@ class DefaultUserActionLimitService implements UserActionLimitService {
           // This indicates a misconfiguration in RemoteConfig if a deliveryType is expected but not present.
           _log.severe(
             'Notification limit for type ${deliveryType.name} not configured for '
-            'role ${user.appRole} in savedHeadlineFiltersLimit. Denying request.',
+            ' tier: ${user.tier} in savedHeadlineFiltersLimit. Denying request.',
           );
           throw ForbiddenException(
             'Notification limits for ${deliveryType.name} are not configured '
@@ -211,30 +211,30 @@ class DefaultUserActionLimitService implements UserActionLimitService {
     SavedFilterLimits savedSourceFiltersLimit,
   )
   _getPreferenceLimitsForRole(
-    AppUserRole role,
+    AccessTier tier,
     UserLimitsConfig limits,
   ) {
-    final followedItemsLimit = limits.followedItems[role];
+    final followedItemsLimit = limits.followedItems[tier];
     if (followedItemsLimit == null) {
-      throw StateError('Followed items limit not configured for role: $role');
+      throw StateError('Followed items limit not configured for tier: $tier');
     }
 
-    final savedHeadlinesLimit = limits.savedHeadlines[role];
+    final savedHeadlinesLimit = limits.savedHeadlines[tier];
     if (savedHeadlinesLimit == null) {
-      throw StateError('Saved headlines limit not configured for role: $role');
+      throw StateError('Saved headlines limit not configured for tier: $tier');
     }
 
-    final savedHeadlineFiltersLimit = limits.savedHeadlineFilters[role];
+    final savedHeadlineFiltersLimit = limits.savedHeadlineFilters[tier];
     if (savedHeadlineFiltersLimit == null) {
       throw StateError(
-        'Saved headline filters limit not configured for role: $role',
+        'Saved headline filters limit not configured for tier: $tier',
       );
     }
 
-    final savedSourceFiltersLimit = limits.savedSourceFilters[role];
+    final savedSourceFiltersLimit = limits.savedSourceFilters[tier];
     if (savedSourceFiltersLimit == null) {
       throw StateError(
-        'Saved source filters limit not configured for role: $role',
+        'Saved source filters limit not configured for tier: $tier',
       );
     }
 
@@ -258,19 +258,19 @@ class DefaultUserActionLimitService implements UserActionLimitService {
     final limits = remoteConfig.user.limits;
 
     // --- 1. Check Reaction Limit ---
-    final reactionsLimit = limits.reactionsPerDay[user.appRole];
+    final reactionsLimit = limits.reactionsPerDay[user.tier];
     if (reactionsLimit == null) {
       throw StateError(
-        'Reactions per day limit not configured for role: ${user.appRole}',
+        'Reactions per day limit not configured for tier: ${user.tier}',
       );
     }
 
     // --- 1. Check Reaction Limit (only if a reaction is present) ---
     if (engagement.reaction != null) {
-      final reactionsLimit = limits.reactionsPerDay[user.appRole];
+      final reactionsLimit = limits.reactionsPerDay[user.tier];
       if (reactionsLimit == null) {
         throw StateError(
-          'Reactions per day limit not configured for role: ${user.appRole}',
+          'Reactions per day limit not configured for tier: ${user.tier}',
         );
       }
 
@@ -298,10 +298,10 @@ class DefaultUserActionLimitService implements UserActionLimitService {
 
     // --- 2. Check Comment Limit (only if a comment is present) ---
     if (engagement.comment != null) {
-      final commentsLimit = limits.commentsPerDay[user.appRole];
+      final commentsLimit = limits.commentsPerDay[user.tier];
       if (commentsLimit == null) {
         throw StateError(
-          'Comments per day limit not configured for role: ${user.appRole}',
+          'Comments per day limit not configured for tier: ${user.tier}',
         );
       }
 
@@ -340,10 +340,10 @@ class DefaultUserActionLimitService implements UserActionLimitService {
     );
     final limits = remoteConfig.user.limits;
 
-    final reportsLimit = limits.reportsPerDay[user.appRole];
+    final reportsLimit = limits.reportsPerDay[user.tier];
     if (reportsLimit == null) {
       throw StateError(
-        'Reports per day limit not configured for role: ${user.appRole}',
+        'Reports per day limit not configured for tier: ${user.tier}',
       );
     }
 
