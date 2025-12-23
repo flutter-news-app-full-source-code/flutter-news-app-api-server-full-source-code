@@ -17,7 +17,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/countr
 import 'package:flutter_news_app_api_server_full_source_code/src/services/database_migration_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/database_seeding_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/default_user_action_limit_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/firebase_authenticator.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/firebase_push_notification_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/jwt_auth_token_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_rate_limit_service.dart';
@@ -27,6 +27,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/onesig
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/subscription_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/verification_code_storage_service.dart';
@@ -65,12 +66,14 @@ class AppDependencies {
   late final DataRepository<Country> countryRepository;
   late final DataRepository<Language> languageRepository;
   late final DataRepository<User> userRepository;
+  late final DataRepository<UserContext> userContextRepository;
   late final DataRepository<AppSettings> appSettingsRepository;
   late final DataRepository<UserContentPreferences>
   userContentPreferencesRepository;
   late final DataRepository<PushNotificationDevice>
   pushNotificationDeviceRepository;
   late final DataRepository<RemoteConfig> remoteConfigRepository;
+  late final DataRepository<UserSubscription> userSubscriptionRepository;
   late final DataRepository<InAppNotification> inAppNotificationRepository;
   late final DataRepository<KpiCardData> kpiCardDataRepository;
   late final DataRepository<ChartCardData> chartCardDataRepository;
@@ -93,9 +96,12 @@ class AppDependencies {
   late final RateLimitService rateLimitService;
   late final CountryQueryService countryQueryService;
   late final IPushNotificationService pushNotificationService;
-  late final IFirebaseAuthenticator? firebaseAuthenticator;
+  late final IGoogleAuthService? googleAuthService;
   late final IPushNotificationClient? firebasePushNotificationClient;
   late final IPushNotificationClient? oneSignalPushNotificationClient;
+  late final AppStoreServerClient appStoreServerClient;
+  late final GooglePlayClient googlePlayClient;
+  late final SubscriptionService subscriptionService;
 
   /// Initializes all application dependencies.
   ///
@@ -196,6 +202,13 @@ class AppDependencies {
         toJson: (item) => item.toJson(),
         logger: Logger('DataMongodb<User>'),
       );
+      final userContextClient = DataMongodb<UserContext>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'user_contexts',
+        fromJson: UserContext.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<UserContext>'),
+      );
       final appSettingsClient = DataMongodb<AppSettings>(
         connectionManager: _mongoDbConnectionManager,
         modelName: 'app_settings',
@@ -216,6 +229,13 @@ class AppDependencies {
         fromJson: RemoteConfig.fromJson,
         toJson: (item) => item.toJson(),
         logger: Logger('DataMongodb<RemoteConfig>'),
+      );
+      final userSubscriptionClient = DataMongodb<UserSubscription>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'user_subscriptions',
+        fromJson: UserSubscription.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<UserSubscription>'),
       );
 
       // Initialize Data Clients for Push Notifications
@@ -290,13 +310,15 @@ class AppDependencies {
           fcmClientEmail != null &&
           fcmPrivateKey != null) {
         _log.info('Firebase credentials found. Initializing Firebase client.');
-        firebaseAuthenticator = FirebaseAuthenticator(
-          log: Logger('FirebaseAuthenticator'),
+        googleAuthService = GoogleAuthService(
+          log: Logger('GoogleAuthService'),
         );
 
         final firebaseHttpClient = HttpClient(
           baseUrl: 'https://fcm.googleapis.com/v1/projects/$fcmProjectId/',
-          tokenProvider: firebaseAuthenticator!.getAccessToken,
+          tokenProvider: () => googleAuthService!.getAccessToken(
+            scope: 'https://www.googleapis.com/auth/cloud-platform',
+          ),
           logger: Logger('FirebasePushNotificationClient'),
         );
 
@@ -309,7 +331,7 @@ class AppDependencies {
         _log.warning(
           'One or more Firebase credentials not found. Firebase push notifications will be disabled.',
         );
-        firebaseAuthenticator = null;
+        googleAuthService = null;
         firebasePushNotificationClient = null;
       }
 
@@ -354,6 +376,7 @@ class AppDependencies {
       countryRepository = DataRepository(dataClient: countryClient);
       languageRepository = DataRepository(dataClient: languageClient);
       userRepository = DataRepository(dataClient: userClient);
+      userContextRepository = DataRepository(dataClient: userContextClient);
       appSettingsRepository = DataRepository(
         dataClient: appSettingsClient,
       );
@@ -362,6 +385,9 @@ class AppDependencies {
       );
       remoteConfigRepository = DataRepository(dataClient: remoteConfigClient);
       pushNotificationDeviceRepository = DataRepository(
+        dataClient: pushNotificationDeviceClient,
+      );
+      userSubscriptionRepository = DataRepository(
         dataClient: pushNotificationDeviceClient,
       );
       inAppNotificationRepository = DataRepository(
@@ -419,6 +445,7 @@ class AppDependencies {
         permissionService: permissionService,
         emailRepository: emailRepository,
         appSettingsRepository: appSettingsRepository,
+        userContextRepository: userContextRepository,
         userContentPreferencesRepository: userContentPreferencesRepository,
         log: Logger('AuthService'),
       );
@@ -447,6 +474,35 @@ class AppDependencies {
         log: Logger('DefaultPushNotificationService'),
       );
 
+      // --- Subscription Services ---
+      appStoreServerClient = AppStoreServerClient(
+        log: Logger('AppStoreServerClient'),
+      );
+
+      // Google Play Client requires the GoogleAuthService which might be null
+      // if credentials weren't provided. We handle this gracefully.
+      if (googleAuthService != null) {
+        googlePlayClient = GooglePlayClient(
+          googleAuthService: googleAuthService!,
+          log: Logger('GooglePlayClient'),
+        );
+      } else {
+        _log.warning(
+          'Google Auth Service not available. Google Play Client disabled.',
+        );
+        // We still instantiate it to avoid null checks everywhere, but it will fail if used.
+        // In a real app, we might use a NullObject pattern or throw earlier.
+      }
+
+      subscriptionService = SubscriptionService(
+        userSubscriptionRepository: userSubscriptionRepository,
+        userRepository: userRepository,
+        appStoreClient: appStoreServerClient,
+        googlePlayClient:
+            googlePlayClient, // Warning: Might be uninitialized if auth failed
+        log: Logger('SubscriptionService'),
+      );
+
       // --- Analytics Services ---
       final gaPropertyId = EnvironmentConfig.googleAnalyticsPropertyId;
       final mpProjectId = EnvironmentConfig.mixpanelProjectId;
@@ -454,17 +510,18 @@ class AppDependencies {
       final mpSecret = EnvironmentConfig.mixpanelServiceAccountSecret;
 
       GoogleAnalyticsDataClient? googleAnalyticsClient;
-      if (gaPropertyId != null && firebaseAuthenticator != null) {
+      if (gaPropertyId != null && googleAuthService != null) {
         final googleAnalyticsHttpClient = HttpClient(
           baseUrl: 'https://analyticsdata.googleapis.com/v1beta',
-          tokenProvider: firebaseAuthenticator!.getAccessToken,
+          tokenProvider: () => googleAuthService!.getAccessToken(
+            scope: 'https://www.googleapis.com/auth/analytics.readonly',
+          ),
           logger: Logger('GoogleAnalyticsHttpClient'),
         );
 
         googleAnalyticsClient = GoogleAnalyticsDataClient(
           headlineRepository: headlineRepository,
           propertyId: gaPropertyId,
-          firebaseAuthenticator: firebaseAuthenticator!,
           log: Logger('GoogleAnalyticsDataClient'),
           httpClient: googleAnalyticsHttpClient,
         );
