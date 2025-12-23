@@ -314,6 +314,19 @@ class DatabaseSeedingService {
       });
       _log.info('Ensured indexes for "app_reviews".');
 
+      // Indexes for the user_contexts collection
+      await _db.runCommand({
+        'createIndexes': 'user_contexts',
+        'indexes': [
+          {
+            'key': {'userId': 1},
+            'name': 'userId_index',
+            'unique': true,
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "user_contexts".');
+
       // Indexes for the users collection
       await _db.runCommand({
         'createIndexes': 'users',
@@ -486,7 +499,7 @@ class DatabaseSeedingService {
 
     final usersCollection = _db.collection('users');
     final existingAdmin = await usersCollection.findOne(
-      where.eq('dashboardRole', DashboardUserRole.admin.name),
+      where.eq('role', UserRole.admin.name),
     );
 
     // Case 1: An admin exists.
@@ -517,15 +530,10 @@ class DatabaseSeedingService {
     final newAdminUser = User(
       id: newAdminId.oid,
       email: overrideEmail,
-      appRole: AppUserRole.standardUser,
-      dashboardRole: DashboardUserRole.admin,
+      isAnonymous: false,
+      role: UserRole.admin,
+      tier: AccessTier.premium,
       createdAt: DateTime.now(),
-      feedDecoratorStatus: Map.fromEntries(
-        FeedDecoratorType.values.map(
-          (type) =>
-              MapEntry(type, const UserFeedDecoratorStatus(isCompleted: false)),
-        ),
-      ),
     );
 
     await usersCollection.insertOne({
@@ -543,6 +551,9 @@ class DatabaseSeedingService {
   Future<void> _deleteUserAndData(ObjectId userId) async {
     await _db.collection('users').deleteOne(where.eq('_id', userId));
     await _db.collection('app_settings').deleteOne(where.eq('_id', userId));
+    await _db
+        .collection('user_contexts')
+        .deleteOne(where.eq('userId', userId.oid));
     await _db
         .collection('user_content_preferences')
         .deleteOne(where.eq('_id', userId));
@@ -591,5 +602,19 @@ class DatabaseSeedingService {
       '_id': userId,
       ...defaultUserPreferences.toJson()..remove('id'),
     });
+
+    // Create a default UserContext for the new user.
+    final defaultUserContext = UserContext(
+      userId: userId.oid,
+      feedDecoratorStatus: Map.fromEntries(
+        FeedDecoratorType.values.map(
+          (type) =>
+              MapEntry(type, const UserFeedDecoratorStatus(isCompleted: false)),
+        ),
+      ),
+    );
+    await _db
+        .collection('user_contexts')
+        .insertOne(defaultUserContext.toJson());
   }
 }
