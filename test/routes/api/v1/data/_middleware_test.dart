@@ -39,7 +39,7 @@ void main() {
       ).thenReturn(true);
       // Ensure isAdmin returns false by default to avoid Null boolean errors
       when(() => mockPermissionService.isAdmin(any())).thenReturn(false);
-      
+
       when(
         () => mockRateLimitService.checkRequest(
           key: any(named: 'key'),
@@ -79,7 +79,7 @@ void main() {
       // 'headline' GET collection requires authentication.
       // We use createMockRequestContext but explicitly do NOT provide an authenticatedUser.
       // This simulates an unauthenticated request.
-      
+
       final context = createMockRequestContext(
         queryParams: {'model': 'headline'},
         // authenticatedUser is null by default
@@ -94,7 +94,7 @@ void main() {
       // But wait, _conditionalAuthenticationMiddleware runs BEFORE rate limiter.
       // It checks permissions. If auth is required and missing, it throws UnauthorizedException.
       // So rate limiter is never reached.
-      
+
       final composedMiddleware = middleware.middleware(handler);
 
       expect(
@@ -143,22 +143,26 @@ void main() {
 
     test('allows public access when configured', () async {
       // 'remote_config' GET item does not require authentication
-      
+
       // Mock the request and connection info to avoid Null check operator error
       final mockRequest = MockRequest();
       final mockConnectionInfo = MockHttpConnectionInfo();
-      final uri = Uri.parse('http://localhost/api/v1/data/some-id?model=remote_config');
+      final uri = Uri.parse(
+        'http://localhost/api/v1/data/some-id?model=remote_config',
+      );
 
-      when(() => mockConnectionInfo.remoteAddress).thenReturn(InternetAddress.loopbackIPv4);
+      when(
+        () => mockConnectionInfo.remoteAddress,
+      ).thenReturn(InternetAddress.loopbackIPv4);
       when(() => mockRequest.connectionInfo).thenReturn(mockConnectionInfo);
       when(() => mockRequest.method).thenReturn(HttpMethod.get);
       when(() => mockRequest.uri).thenReturn(uri);
       when(() => mockRequest.headers).thenReturn({});
-      
+
       // We need to ensure the context uses this mock request.
       // createMockRequestContext helper creates a TestRequestContext which creates its own Request.
       // We need to pass our mock request to it.
-      
+
       final context = createMockRequestContext(
         request: mockRequest,
         path: '/api/v1/data/some-id',

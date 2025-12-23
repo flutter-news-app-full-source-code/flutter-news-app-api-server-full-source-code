@@ -631,8 +631,7 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     // Users can read their own subscription status
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
-      permission: Permissions
-          .userReadOwned, 
+      permission: Permissions.userReadOwned,
       requiresOwnershipCheck: true,
       requiresAuthentication: true,
     ),
