@@ -292,7 +292,7 @@ class AuthService {
           createdAt: DateTime.now(),
         );
         user = await _userRepository.create(item: user);
-        _log.info('Created new user: ${user.id} with appRole: ${user.appRole}');
+        _log.info('Created new user: ${user.id} with tier: ${user.tier}');
 
         // Ensure default documents are created for the new user.
         await _ensureUserDataExists(user);
