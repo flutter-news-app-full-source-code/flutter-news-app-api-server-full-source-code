@@ -1,9 +1,9 @@
 import 'package:core/core.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 
-// --- App Role Permissions ---
+// --- Access Tier Permissions (for App Users) ---
 
-final Set<String> _appGuestUserPermissions = {
+final Set<String> _guestTierPermissions = {
   Permissions.headlineRead,
   Permissions.topicRead,
   Permissions.sourceRead,
@@ -13,11 +13,6 @@ final Set<String> _appGuestUserPermissions = {
   Permissions.appSettingsUpdateOwned,
   Permissions.userContentPreferencesReadOwned,
   Permissions.userContentPreferencesUpdateOwned,
-  Permissions.remoteConfigRead,
-  // Allows a user to update their own User object. This is essential for
-  // features like updating the `feedActionStatus` (e.g., when a user
-  // dismisses an in-feed prompt, etc). The endpoint handler ensures only
-  // non-sensitive fields can be modified.
   Permissions.userUpdateOwned,
 
   // Allow all app users to register and unregister their devices for push
@@ -43,20 +38,25 @@ final Set<String> _appGuestUserPermissions = {
   Permissions.appReviewUpdateOwned,
 };
 
-final Set<String> _appStandardUserPermissions = {
-  ..._appGuestUserPermissions,
+final Set<String> _standardTierPermissions = {
+  ..._guestTierPermissions,
   Permissions.userReadOwned,
   Permissions.userDeleteOwned,
 };
 
-final Set<String> _appPremiumUserPermissions = {
-  ..._appStandardUserPermissions,
-  // Future premium-only permissions can be added here.
+final Set<String> _premiumTierPermissions = {
+  ..._standardTierPermissions,
+  // Bypassing limits is a premium feature.
+  Permissions.userPreferenceBypassLimits,
 };
 
-// --- Dashboard Role Permissions ---
+// --- User Role Permissions (for Admin/Dashboard Users) ---
 
-final Set<String> _dashboardPublisherPermissions = {
+final Set<String> _userRolePermissions = {
+  // All authenticated users, regardless of role, can read public config.
+  Permissions.remoteConfigRead,
+};
+final Set<String> _publisherRolePermissions = {
   // Publishers need to read all content types to manage them effectively.
   Permissions.headlineRead,
   Permissions.topicRead,
@@ -78,8 +78,8 @@ final Set<String> _dashboardPublisherPermissions = {
   Permissions.pushNotificationSendBreakingNews,
 };
 
-final Set<String> _dashboardAdminPermissions = {
-  ..._dashboardPublisherPermissions,
+final Set<String> _adminRolePermissions = {
+  ..._publisherRolePermissions,
   Permissions.topicCreate,
   Permissions.topicUpdate,
   Permissions.topicDelete,
@@ -101,25 +101,22 @@ final Set<String> _dashboardAdminPermissions = {
   Permissions.remoteConfigCreate,
   Permissions.remoteConfigUpdate,
   Permissions.remoteConfigDelete,
-  Permissions.userPreferenceBypassLimits,
 
   // Analytics
   Permissions.analyticsRead,
 };
 
-/// Defines the mapping between user roles (both app and dashboard) and the
-/// permissions they possess.
+/// Defines the mapping between user roles and access tiers to the permissions
+/// they possess.
 ///
-/// The `PermissionService` will look up a user's `appRole` and
-/// `dashboardRole` in this map and combine the resulting permission sets to
-/// determine their total access rights.
+/// The `PermissionService` will look up a user's `role` and `tier` in this
+/// map and combine the resulting permission sets to determine their total
+/// access rights.
 final Map<Enum, Set<String>> rolePermissions = {
-  // App Roles
-  AppUserRole.guestUser: _appGuestUserPermissions,
-  AppUserRole.standardUser: _appStandardUserPermissions,
-  AppUserRole.premiumUser: _appPremiumUserPermissions,
-  // Dashboard Roles
-  DashboardUserRole.none: {},
-  DashboardUserRole.publisher: _dashboardPublisherPermissions,
-  DashboardUserRole.admin: _dashboardAdminPermissions,
+  AccessTier.guest: _guestTierPermissions,
+  AccessTier.standard: _standardTierPermissions,
+  AccessTier.premium: _premiumTierPermissions,
+  UserRole.user: _userRolePermissions,
+  UserRole.publisher: _publisherRolePermissions,
+  UserRole.admin: _adminRolePermissions,
 };
