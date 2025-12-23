@@ -7,6 +7,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/own
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/subscription_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
 import 'package:logging/logging.dart';
@@ -138,6 +139,8 @@ class DataOperationRegistry {
       'ranked_list_card_data': (c, id) => c
           .read<DataRepository<RankedListCardData>>()
           .read(id: id, userId: null),
+      'user_subscription': (c, id) =>
+          c.read<DataRepository<UserSubscription>>().read(id: id, userId: null),
     });
 
     // --- Register "Read All" Readers ---
@@ -241,6 +244,11 @@ class DataOperationRegistry {
             filter: f,
             sort: s,
             pagination: p,
+          ),
+      'user_subscription': (c, uid, f, s, p) =>
+          c.read<DataRepository<UserSubscription>>().readAll(
+            userId: uid,
+            filter: f,
           ),
     });
 
@@ -423,6 +431,17 @@ class DataOperationRegistry {
 
         return context.read<DataRepository<AppReview>>().create(item: item);
       },
+      'purchase_transaction': (context, item, uid) async {
+        _log.info('Executing custom creator for purchase_transaction.');
+        final authenticatedUser = context.read<User>();
+        final transaction = item as PurchaseTransaction;
+        final subscriptionService = context.read<SubscriptionService>();
+
+        return subscriptionService.verifyAndProcessPurchase(
+          user: authenticatedUser,
+          transaction: transaction,
+        );
+      },
     });
 
     // --- Register Item Updaters ---
@@ -480,7 +499,8 @@ class DataOperationRegistry {
           // admin is allowed to change applied from the request.
           final permissibleUpdate = userToUpdate.copyWith(
             appRole: requestedUpdateUser.appRole,
-            dashboardRole: requestedUpdateUser.dashboardRole,
+            // Admins can now also update the tier manually if needed
+            tier: requestedUpdateUser.tier,
           );
 
           // If the user from the request is not identical to the one with
@@ -491,7 +511,7 @@ class DataOperationRegistry {
               'Admin ${authenticatedUser.id} attempted to update unauthorized fields for user $id.',
             );
             throw const ForbiddenException(
-              'Administrators can only update "appRole" and "dashboardRole" via this endpoint.',
+              'Administrators can only update "appRole" and "tier" via this endpoint.',
             );
           }
           _log.finer('Admin update for user $id validation passed.');
