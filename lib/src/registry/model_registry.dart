@@ -338,6 +338,32 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       // during account deletion, not via a direct DELETE to /api/v1/data.
     ),
   ),
+  'user_context': ModelConfig<UserContext>(
+    fromJson: UserContext.fromJson,
+    getId: (c) => c.userId, // The ID is the userId
+    getOwnerId: (dynamic item) => (item as UserContext).userId,
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    getItemPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.userReadOwned, // Re-use user read permission
+      requiresOwnershipCheck: true,
+      requiresAuthentication: true,
+    ),
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.userUpdateOwned, // Re-use user update permission
+      requiresOwnershipCheck: true,
+      requiresAuthentication: true,
+    ),
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+  ),
   'user_content_preferences': ModelConfig<UserContentPreferences>(
     fromJson: UserContentPreferences.fromJson,
     getId: (p) => p.id,
