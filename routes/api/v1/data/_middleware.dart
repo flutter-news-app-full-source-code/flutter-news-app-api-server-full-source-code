@@ -135,10 +135,9 @@ Middleware _conditionalAuthenticationMiddleware() {
         // If authentication is required, apply the requireAuthentication middleware.
         return requireAuthentication()(handler)(context);
       } else {
-        // If authentication is not required, simply pass the request through.
-        // Also provide a null User to the context for consistency,
-        // so downstream middleware can always read User?
-        return handler(context.provide<User?>(() => null));
+        // If authentication is not required, simply pass the request through,
+        // preserving any existing authenticated user in the context.
+        return handler(context);
       }
     };
   };

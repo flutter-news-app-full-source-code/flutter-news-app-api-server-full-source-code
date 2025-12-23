@@ -112,7 +112,13 @@ Future<Response> _handlePost(RequestContext context) async {
 
   _logger.info('Handling POST request for model "$modelName".');
 
-  final requestBody = await context.request.json() as Map<String, dynamic>?;
+  Map<String, dynamic>? requestBody;
+  try {
+    requestBody = await context.request.json() as Map<String, dynamic>?;
+  } on FormatException {
+    throw const BadRequestException('Invalid JSON in request body.');
+  }
+
   if (requestBody == null) {
     throw const BadRequestException('Missing or invalid request body.');
   }
@@ -133,7 +139,7 @@ Future<Response> _handlePost(RequestContext context) async {
   dynamic itemToCreate;
   try {
     itemToCreate = modelConfig.fromJson(requestBody);
-  } on TypeError catch (e) {
+  } catch (e) {
     throw BadRequestException(
       'Invalid request body: Missing or invalid required field(s). $e',
     );

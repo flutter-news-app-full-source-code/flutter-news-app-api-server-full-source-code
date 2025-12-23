@@ -59,7 +59,13 @@ Future<Response> _handlePut(RequestContext context, String id) async {
 
   _logger.info('Handling PUT request for model "$modelName", id "$id".');
 
-  final requestBody = await context.request.json() as Map<String, dynamic>?;
+  Map<String, dynamic>? requestBody;
+  try {
+    requestBody = await context.request.json() as Map<String, dynamic>?;
+  } on FormatException {
+    throw const BadRequestException('Invalid JSON in request body.');
+  }
+
   if (requestBody == null) {
     throw const BadRequestException('Missing or invalid request body.');
   }
@@ -83,8 +89,8 @@ Future<Response> _handlePut(RequestContext context, String id) async {
     // For all other models, deserialize the body into a model instance.
     try {
       itemToUpdate = modelConfig.fromJson(requestBody);
-    } on TypeError catch (e, s) {
-      _logger.warning('Deserialization TypeError in PUT /data/[id]', e, s);
+    } catch (e, s) {
+      _logger.warning('Deserialization Error in PUT /data/[id]', e, s);
       throw const BadRequestException(
         'Invalid request body: Missing or invalid required field(s).',
       );

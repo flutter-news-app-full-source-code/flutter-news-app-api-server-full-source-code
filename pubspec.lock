@@ -210,6 +210,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.2.5"
+  dart_frog_test:
+    dependency: "direct dev"
+    description:
+      name: dart_frog_test
+      sha256: "950c86712f55874eb8103f5e8b83fb8bd9d073a7aeed8cd4612c945e569c77f8"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.2"
   dart_jsonwebtoken:
     dependency: "direct main"
     description:
