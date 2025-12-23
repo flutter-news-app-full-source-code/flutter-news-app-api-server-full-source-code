@@ -234,4 +234,26 @@ abstract final class EnvironmentConfig {
   /// Retrieves the Mixpanel Service Account Secret from the environment.
   static String? get mixpanelServiceAccountSecret =>
       _getEnv('MIXPANEL_SERVICE_ACCOUNT_SECRET');
+
+  /// Retrieves the Apple App Store Connect Issuer ID.
+  static String? get appleAppStoreIssuerId =>
+      _getEnv('APPLE_APP_STORE_ISSUER_ID');
+
+  /// Retrieves the Apple App Store Connect Key ID.
+  static String? get appleAppStoreKeyId => _getEnv('APPLE_APP_STORE_KEY_ID');
+
+  /// Retrieves the Apple App Store Connect Private Key.
+  static String? get appleAppStorePrivateKey =>
+      _getEnv('APPLE_APP_STORE_PRIVATE_KEY');
+
+  /// Retrieves the Apple Bundle ID.
+  static String? get appleBundleId => _getEnv('APPLE_BUNDLE_ID');
+
+  /// Retrieves the Google Play Package Name.
+  static String? get googlePlayPackageName =>
+      _getEnv('GOOGLE_PLAY_PACKAGE_NAME');
+
+  /// Retrieves the Stripe Webhook Signing Secret.
+  static String? get stripeWebhookSigningSecret =>
+      _getEnv('STRIPE_WEBHOOK_SIGNING_SECRET');
 }
