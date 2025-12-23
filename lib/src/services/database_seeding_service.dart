@@ -327,6 +327,20 @@ class DatabaseSeedingService {
       });
       _log.info('Ensured indexes for "user_contexts".');
 
+      // Indexes for the user_subscriptions collection
+      await _db.runCommand({
+        'createIndexes': 'user_subscriptions',
+        'indexes': [
+          {
+            'key': {'userId': 1},
+            'name': 'userId_index',
+            // A user can technically have multiple records (expired + active),
+            // so we don't enforce uniqueness here, but we index for speed.
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "user_subscriptions".');
+
       // Indexes for the users collection
       await _db.runCommand({
         'createIndexes': 'users',
