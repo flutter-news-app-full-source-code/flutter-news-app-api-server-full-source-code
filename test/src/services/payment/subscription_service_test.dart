@@ -222,6 +222,10 @@ void main() {
       });
 
       test('throws BadRequestException for Stripe provider', () {
+        when(
+          () => mockIdempotencyService.isEventProcessed(any()),
+        ).thenAnswer((_) async => false);
+
         final stripeTransaction = transaction.copyWith(
           provider: StoreProvider.stripe,
         );

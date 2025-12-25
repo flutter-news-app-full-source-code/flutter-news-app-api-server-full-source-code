@@ -17,6 +17,12 @@ void main() {
     late IdempotencyService service;
     const eventId = 'test-event-id';
 
+    setUpAll(() {
+      registerFallbackValue(
+        IdempotencyRecord(id: 'fallback', createdAt: DateTime.now()),
+      );
+    });
+
     setUp(() {
       mockRepository = MockDataRepository<IdempotencyRecord>();
       mockLogger = MockLogger();
