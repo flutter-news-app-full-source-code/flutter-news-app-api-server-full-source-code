@@ -34,6 +34,12 @@ class GooglePlayClient {
   ///
   /// [subscriptionId] is the product ID (e.g., 'premium_monthly').
   /// [purchaseToken] is the token provided by the mobile app after purchase.
+  ///
+  /// Returns a [Map] containing the subscription resource resource.
+  /// Key fields include:
+  /// - `expiryTimeMillis`: The time at which the subscription will expire.
+  /// - `paymentState`: The payment state of the subscription.
+  /// - `autoRenewing`: Whether the subscription will auto-renew.
   Future<Map<String, dynamic>> getSubscription({
     required String subscriptionId,
     required String purchaseToken,
