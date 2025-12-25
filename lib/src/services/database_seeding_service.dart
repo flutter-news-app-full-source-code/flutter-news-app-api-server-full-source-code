@@ -491,6 +491,19 @@ class DatabaseSeedingService {
       });
       _log.info('Ensured indexes for "ranked_list_card_data".');
 
+      // Indexes for idempotency_records
+      await _db.runCommand({
+        'createIndexes': 'idempotency_records',
+        'indexes': [
+          {
+            'key': {'createdAt': 1},
+            'name': 'createdAt_ttl_index',
+            'expireAfterSeconds': 86400 * 7, // 7 days retention
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "idempotency_records".');
+
       _log.info('Database indexes are set up correctly.');
     } on Exception catch (e, s) {
       _log.severe('Failed to create database indexes.', e, s);
