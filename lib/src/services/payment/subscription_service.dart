@@ -1,9 +1,8 @@
-import 'dart:convert';
-
 import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/payment/app_store_server_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/payment/google_play_client.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/enums/enums.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/payment/apple_notification_payload.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/payment/google_subscription_notification.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/payment/idempotency_service.dart';
@@ -56,21 +55,16 @@ class SubscriptionService {
     );
 
     // 1. Idempotency Check
-    // We use the providerReceipt (purchase token/transaction ID) as the key.
     if (await _idempotencyService.isEventProcessed(
       transaction.providerReceipt,
     )) {
       _log.info(
         'Transaction ${transaction.providerReceipt} already processed. Returning existing subscription.',
       );
-      final existing = await _userSubscriptionRepository.readAll(
-        filter: {'userId': user.id},
-      );
-      if (existing.items.isNotEmpty) {
-        return existing.items.first;
+      final existing = await _findSubscriptionByUserId(user.id);
+      if (existing != null) {
+        return existing;
       }
-      // If processed but no subscription found, we might need to re-process
-      // or throw. For safety, we proceed to re-verify.
       _log.warning(
         'Idempotency record found but no subscription exists. Re-processing.',
       );
@@ -78,37 +72,36 @@ class SubscriptionService {
 
     DateTime? expiryDate;
     String? originalTransactionId;
+    bool willAutoRenew = true;
 
     // 2. Validate with Provider
     if (transaction.provider == StoreProvider.apple) {
-      // For Apple, the providerReceipt is the originalTransactionId
-      originalTransactionId = transaction.providerReceipt;
-      final response = await _appStoreClient.getAllSubscriptionStatuses(
-        originalTransactionId,
+      final appleResponse = await _appStoreClient.getAllSubscriptionStatuses(
+        transaction.providerReceipt,
       );
 
-      // In a real implementation, we would parse the 'signedTransactionInfo'
-      // from the response using _appStoreClient.decodeJws().
-      // For this phase, we assume validity if the API call succeeds.
-      // TODO: Extract authoritative expiry from JWS.
-      expiryDate = DateTime.now().add(const Duration(days: 30));
+      final lastTransaction = appleResponse.data.first.lastTransactions.first;
+      final decodedTransaction = _appStoreClient.decodeTransaction(
+        lastTransaction.signedTransactionInfo,
+      );
+
+      expiryDate = decodedTransaction.expiresDate;
+      originalTransactionId = decodedTransaction.originalTransactionId;
     } else if (transaction.provider == StoreProvider.google) {
-      final response = await _googlePlayClient.getSubscription(
+      final googlePurchase = await _googlePlayClient.getSubscription(
         subscriptionId: transaction.planId,
         purchaseToken: transaction.providerReceipt,
       );
-      // Google returns 'expiryTimeMillis' as a string
-      final expiryMillis = int.tryParse(
-        response['expiryTimeMillis'] as String? ?? '',
-      );
+
+      final expiryMillis = int.tryParse(googlePurchase.expiryTimeMillis);
       if (expiryMillis != null) {
         expiryDate = DateTime.fromMillisecondsSinceEpoch(
           expiryMillis,
           isUtc: true,
         );
       }
-      originalTransactionId =
-          transaction.providerReceipt; // Use token as ID for Google
+      willAutoRenew = googlePurchase.autoRenewing;
+      originalTransactionId = transaction.providerReceipt;
     } else {
       throw const BadRequestException('Unsupported store provider.');
     }
@@ -120,17 +113,7 @@ class SubscriptionService {
     }
 
     // 3. Update/Create UserSubscription
-    UserSubscription? currentSubscription;
-    try {
-      final subscriptions = await _userSubscriptionRepository.readAll(
-        filter: {'userId': user.id},
-      );
-      if (subscriptions.items.isNotEmpty) {
-        currentSubscription = subscriptions.items.first;
-      }
-    } catch (_) {
-      // Ignore errors, assume no subscription
-    }
+    final currentSubscription = await _findSubscriptionByUserId(user.id);
 
     final newStatus = expiryDate.isAfter(DateTime.now())
         ? SubscriptionStatus.active
@@ -139,11 +122,11 @@ class SubscriptionService {
     final subscriptionData = UserSubscription(
       id: currentSubscription?.id ?? ObjectId().oid,
       userId: user.id,
-      tier: AccessTier.premium, // Assuming all purchases grant premium for now
+      tier: AccessTier.premium,
       status: newStatus,
       provider: transaction.provider,
       validUntil: expiryDate,
-      willAutoRenew: true, // Default assumption until webhook updates it
+      willAutoRenew: willAutoRenew,
       originalTransactionId: originalTransactionId ?? '',
     );
 
@@ -179,65 +162,67 @@ class SubscriptionService {
   Future<void> handleAppleNotification(AppleNotificationPayload payload) async {
     _log.info('Processing Apple Notification: ${payload.notificationUUID}');
 
-    // 1. Idempotency Check
     if (await _idempotencyService.isEventProcessed(payload.notificationUUID)) {
-      _log.info('Apple notification ${payload.notificationUUID} already processed.');
+      _log.info(
+        'Apple notification ${payload.notificationUUID} already processed.',
+      );
       return;
     }
 
-    // 2. Extract Data
-    // The payload.data contains the signed info. We need to decode the
-    // transaction info to get the originalTransactionId.
-    final transactionInfo = _appStoreClient.decodeJws(
+    final transactionInfo = _appStoreClient.decodeTransaction(
       payload.data.signedTransactionInfo,
     );
-    final originalTransactionId = transactionInfo['originalTransactionId'] as String?;
-    final expiresDate = transactionInfo['expiresDate'] as int?;
+    final originalTransactionId = transactionInfo.originalTransactionId;
 
-    if (originalTransactionId == null) {
-      _log.warning('Apple notification missing originalTransactionId.');
-      return;
-    }
-
-    // 3. Find User Subscription
-    final subscriptions = await _userSubscriptionRepository.readAll(
-      filter: {'originalTransactionId': originalTransactionId},
+    final subscription = await _findSubscriptionByOriginalTransactionId(
+      originalTransactionId,
     );
-
-    if (subscriptions.items.isEmpty) {
-      _log.warning('No subscription found for Apple ID: $originalTransactionId');
+    if (subscription == null) {
+      _log.warning(
+        'No subscription found for Apple ID: $originalTransactionId',
+      );
       return;
     }
 
-    final subscription = subscriptions.items.first;
     final user = await _userRepository.read(id: subscription.userId);
-
-    // 4. Update State based on Notification Type
     UserSubscription updatedSubscription = subscription;
     User updatedUser = user;
 
     switch (payload.notificationType) {
-      case 'DID_RENEW':
-      case 'SUBSCRIBED':
-        if (expiresDate != null) {
-          updatedSubscription = subscription.copyWith(
-            status: SubscriptionStatus.active,
-            validUntil: DateTime.fromMillisecondsSinceEpoch(expiresDate),
-          );
-          updatedUser = user.copyWith(tier: AccessTier.premium);
-        }
-        break;
-      case 'EXPIRED':
-      case 'DID_FAIL_TO_RENEW':
+      case AppleNotificationType.didRenew:
+      case AppleNotificationType.subscribed:
+        updatedSubscription = subscription.copyWith(
+          status: SubscriptionStatus.active,
+          validUntil: transactionInfo.expiresDate,
+        );
+        updatedUser = user.copyWith(tier: AccessTier.premium);
+      case AppleNotificationType.expired:
+      case AppleNotificationType.didFailToRenew:
+      case AppleNotificationType.gracePeriodExpired:
         updatedSubscription = subscription.copyWith(
           status: SubscriptionStatus.expired,
+          willAutoRenew: false,
         );
         updatedUser = user.copyWith(tier: AccessTier.standard);
-        break;
-      // Handle other types (REFUND, etc.) as needed
+      case AppleNotificationType.revoke:
+        updatedSubscription = subscription.copyWith(
+          status: SubscriptionStatus.revoked,
+          willAutoRenew: false,
+        );
+        updatedUser = user.copyWith(tier: AccessTier.standard);
+      case AppleNotificationType.didChangeRenewalStatus:
+        if (payload.subtype == AppleNotificationSubtype.autoRenewDisabled) {
+          updatedSubscription = subscription.copyWith(willAutoRenew: false);
+        } else if (payload.subtype ==
+            AppleNotificationSubtype.autoRenewEnabled) {
+          updatedSubscription = subscription.copyWith(willAutoRenew: true);
+        }
+      default:
+        _log.info(
+          'Unhandled Apple notification type: ${payload.notificationType.name}',
+        );
     }
 
-    // 5. Persist Changes
     if (updatedSubscription != subscription) {
       await _userSubscriptionRepository.update(
         id: subscription.id,
@@ -249,7 +234,6 @@ class SubscriptionService {
       await _userRepository.update(id: user.id, item: updatedUser);
     }
 
-    // 6. Record Idempotency
     await _idempotencyService.recordEvent(payload.notificationUUID);
     _log.info('Successfully processed Apple notification.');
   }
@@ -268,41 +252,31 @@ class SubscriptionService {
       return;
     }
 
-    // 1. Idempotency Check
-    // Google doesn't provide a unique event ID in the payload, so we create
-    // a composite key from the timestamp and purchase token.
     final eventId = '${payload.eventTimeMillis}_${subDetails.purchaseToken}';
     if (await _idempotencyService.isEventProcessed(eventId)) {
       _log.info('Google notification $eventId already processed.');
       return;
     }
 
-    // 2. Verify with Google API
-    // The notification itself is just a signal. We must call the API to get
-    // the authoritative state.
     try {
-      final response = await _googlePlayClient.getSubscription(
+      final googlePurchase = await _googlePlayClient.getSubscription(
         subscriptionId: subDetails.subscriptionId,
         purchaseToken: subDetails.purchaseToken,
       );
 
-      // 3. Find User Subscription
-      // We search by the purchase token (which we store as originalTransactionId for Google)
-      final subscriptions = await _userSubscriptionRepository.readAll(
-        filter: {'originalTransactionId': subDetails.purchaseToken},
+      final subscription = await _findSubscriptionByOriginalTransactionId(
+        subDetails.purchaseToken,
       );
-
-      if (subscriptions.items.isEmpty) {
-        _log.warning('No subscription found for Google Token: ${subDetails.purchaseToken}');
+      if (subscription == null) {
+        _log.warning(
+          'No subscription found for Google Token: ${subDetails.purchaseToken}',
+        );
         return;
       }
 
-      final subscription = subscriptions.items.first;
       final user = await _userRepository.read(id: subscription.userId);
-
-      // 4. Update State
-      final expiryMillis = int.tryParse(response['expiryTimeMillis'] as String? ?? '');
-      final DateTime? expiryDate = expiryMillis != null
+      final expiryMillis = int.tryParse(googlePurchase.expiryTimeMillis);
+      final expiryDate = expiryMillis != null
           ? DateTime.fromMillisecondsSinceEpoch(expiryMillis, isUtc: true)
           : null;
 
@@ -313,16 +287,17 @@ class SubscriptionService {
         updatedSubscription = subscription.copyWith(
           status: SubscriptionStatus.active,
           validUntil: expiryDate,
+          willAutoRenew: googlePurchase.autoRenewing,
         );
         updatedUser = user.copyWith(tier: AccessTier.premium);
       } else {
         updatedSubscription = subscription.copyWith(
           status: SubscriptionStatus.expired,
+          willAutoRenew: false,
         );
         updatedUser = user.copyWith(tier: AccessTier.standard);
       }
 
-      // 5. Persist Changes
       if (updatedSubscription != subscription) {
         await _userSubscriptionRepository.update(
           id: subscription.id,
@@ -334,14 +309,35 @@ class SubscriptionService {
         await _userRepository.update(id: user.id, item: updatedUser);
       }
 
-      // 6. Record Idempotency
       await _idempotencyService.recordEvent(eventId);
       _log.info('Successfully processed Google notification.');
-
     } catch (e) {
       _log.severe('Failed to verify Google subscription state: $e');
-      // We do NOT record idempotency here so we can retry on failure.
       rethrow;
+    }
+  }
+
+  Future<UserSubscription?> _findSubscriptionByUserId(String userId) async {
+    try {
+      final subscriptions = await _userSubscriptionRepository.readAll(
+        filter: {'userId': userId},
+      );
+      return subscriptions.items.isNotEmpty ? subscriptions.items.first : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<UserSubscription?> _findSubscriptionByOriginalTransactionId(
+    String originalTransactionId,
+  ) async {
+    try {
+      final subscriptions = await _userSubscriptionRepository.readAll(
+        filter: {'originalTransactionId': originalTransactionId},
+      );
+      return subscriptions.items.isNotEmpty ? subscriptions.items.first : null;
+    } catch (e) {
+      return null;
     }
   }
 }
