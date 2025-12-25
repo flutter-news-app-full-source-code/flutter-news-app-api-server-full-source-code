@@ -5,9 +5,8 @@ import 'package:flutter_news_app_api_server_full_source_code/src/rbac/role_permi
 /// Service responsible for checking if a user has a specific permission.
 ///
 /// This service uses the predefined [rolePermissions] map to determine a user's
-/// access rights based on their `appRole` and `dashboardRole`. It also
-/// includes an explicit check for the `admin` role, granting them all
-/// permissions.
+/// access rights based on their `role` and `tier`. It also includes an explicit
+/// check for the `admin` role, granting them all permissions.
 /// {@endtemplate}
 class PermissionService {
   /// {@macro permission_service}
@@ -33,7 +32,7 @@ class PermissionService {
     return totalPermissions.contains(permission);
   }
 
-  /// Checks if the given [user] has the `admin` dashboard role.
+  /// Checks if the given [user] has the `admin` role.
   ///
   /// This is a convenience method for checks that are strictly limited
   /// to administrators, bypassing the permission map.
