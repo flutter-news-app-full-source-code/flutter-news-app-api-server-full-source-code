@@ -27,12 +27,11 @@ void main() {
       standardUser = User(
         id: 'user-id',
         email: 'test@example.com',
-        appRole: AppUserRole.standardUser,
-        dashboardRole: DashboardUserRole.none,
-        feedDecoratorStatus: const {},
+        role: UserRole.user,
+        tier: AccessTier.standard,
         createdAt: DateTime.now(),
       );
-      adminUser = standardUser.copyWith(dashboardRole: DashboardUserRole.admin);
+      adminUser = standardUser.copyWith(role: UserRole.admin);
 
       // Default stubs
       when(
