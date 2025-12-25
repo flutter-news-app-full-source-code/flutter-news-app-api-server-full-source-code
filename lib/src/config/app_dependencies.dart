@@ -19,14 +19,13 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/countr
 import 'package:flutter_news_app_api_server_full_source_code/src/services/database_migration_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/database_seeding_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/default_user_action_limit_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/firebase_push_notification_client.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/jwt_auth_token_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_rate_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_verification_code_storage_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/onesignal_push_notification_client.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/payment/idempotency_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/payment/payment.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
@@ -517,8 +516,8 @@ class AppDependencies {
         userSubscriptionRepository: userSubscriptionRepository,
         userRepository: userRepository,
         appStoreClient: appStoreServerClient,
-        googlePlayClient:
-            googlePlayClient, // Warning: Might be uninitialized if auth failed
+        googlePlayClient: googlePlayClient,
+        idempotencyService: idempotencyService,
         log: Logger('SubscriptionService'),
       );
 
@@ -540,6 +539,7 @@ class AppDependencies {
 
         googleAnalyticsClient = GoogleAnalyticsDataClient(
           headlineRepository: headlineRepository,
+          firebaseAuthenticator: googleAuthService!,
           propertyId: gaPropertyId,
           log: Logger('GoogleAnalyticsDataClient'),
           httpClient: googleAnalyticsHttpClient,
