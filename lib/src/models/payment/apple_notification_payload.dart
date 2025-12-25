@@ -14,11 +14,7 @@ class AppleNotificationPayload extends Equatable {
   /// {@macro apple_notification_payload}
   const AppleNotificationPayload({
     required this.notificationType,
-    this.subtype,
-    required this.notificationUUID,
-    required this.data,
-    required this.version,
-    required this.signedDate,
+    required this.notificationUUID, required this.data, required this.version, required this.signedDate, this.subtype,
   });
 
   /// Creates an [AppleNotificationPayload] from JSON data.
@@ -69,8 +65,7 @@ class AppleNotificationData extends Equatable {
     required this.signedTransactionInfo,
     required this.signedRenewalInfo,
     required this.bundleId,
-    this.bundleVersion,
-    required this.environment,
+    required this.environment, this.bundleVersion,
   });
 
   /// Creates an [AppleNotificationData] from JSON data.
