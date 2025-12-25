@@ -10,7 +10,7 @@ import 'package:test/test.dart';
 
 class MockHttpClient extends Mock implements HttpClient {}
 
-class MockFirebaseAuthenticator extends Mock implements IGoogleAuthService {}
+class MockGoogleAuthService extends Mock implements IGoogleAuthService {}
 
 class MockHeadlineRepository extends Mock implements DataRepository<Headline> {}
 
@@ -18,7 +18,7 @@ void main() {
   group('GoogleAnalyticsDataClient', () {
     late GoogleAnalyticsDataClient client;
     late MockHttpClient mockHttpClient;
-    late MockFirebaseAuthenticator mockAuthenticator;
+    late MockGoogleAuthService mockAuthenticator;
     late MockHeadlineRepository mockHeadlineRepository;
     late DateTime startDate;
     late DateTime endDate;
@@ -27,7 +27,7 @@ void main() {
 
     setUp(() {
       mockHttpClient = MockHttpClient();
-      mockAuthenticator = MockFirebaseAuthenticator();
+      mockAuthenticator = MockGoogleAuthService();
       mockHeadlineRepository = MockHeadlineRepository();
       startDate = DateTime.utc(2024, 1, 1);
       endDate = DateTime.utc(2024, 1, 7);
@@ -42,7 +42,7 @@ void main() {
 
       // Stub the authenticator
       when(
-        () => mockAuthenticator.getAccessToken(),
+        () => mockAuthenticator.getAccessToken(scope: any(named: 'scope')),
       ).thenAnswer((_) async => 'test-token');
 
       // Register fallback values
