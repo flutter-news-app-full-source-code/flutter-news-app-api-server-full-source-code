@@ -1,6 +1,9 @@
 import 'package:flutter_news_app_api_server_full_source_code/src/models/analytics/analytics.dart';
 import 'package:logging/logging.dart';
 
+// TODO(fulleni): Implement 'database:users:userTierDistribution' pipeline to aggregate users by 'tier' (AccessTier).
+// This is critical for understanding the monetization funnel (Guest vs. Standard vs. Premium).
+
 /// {@template analytics_query_builder}
 /// A builder class responsible for creating complex MongoDB aggregation
 /// pipelines for analytics queries.
