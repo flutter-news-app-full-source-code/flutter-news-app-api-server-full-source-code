@@ -1,5 +1,7 @@
 import 'package:core/core.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/payment/apple_subscription_response.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/payment/apple_transaction_decoded_payload.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/util/apple_jws_validator.dart';
 import 'package:http_client/http_client.dart';
 import 'package:jose/jose.dart';
@@ -16,14 +18,13 @@ class AppStoreServerClient {
   AppStoreServerClient({
     required Logger log,
     HttpClient? httpClient,
-  }) : _log = log,
-       _httpClient =
-           httpClient ??
-           HttpClient(
-             baseUrl: 'https://api.storekit.itunes.apple.com/inApps/v1',
-             tokenProvider: () async =>
-                 null, // Auth is handled per-request via JWT
-           ) {
+  })  : _log = log,
+        _httpClient = httpClient ??
+            HttpClient(
+              baseUrl: 'https://api.storekit.itunes.apple.com/inApps/v1',
+              tokenProvider: () async =>
+                  null, // Auth is handled per-request via JWT
+            ) {
     _jwsValidator = AppleJwsValidator(log: log);
   }
 
@@ -75,7 +76,7 @@ class AppStoreServerClient {
   ///
   /// This endpoint returns the status of all subscriptions in the subscription
   /// group.
-  Future<Map<String, dynamic>> getAllSubscriptionStatuses(
+  Future<AppleSubscriptionResponse> getAllSubscriptionStatuses(
     String originalTransactionId,
   ) async {
     final token = _generateJwt();
@@ -86,12 +87,7 @@ class AppStoreServerClient {
           headers: {'Authorization': 'Bearer $token'},
         ),
       );
-      
-      // Note: The response from this endpoint is NOT a JWS. It's a JSON object
-      // containing lists of JWS strings (lastTransactions).
-      // We return the raw map here, and the SubscriptionService will use
-      // the JWS validator to decode the specific transaction fields.
-      return response;
+      return AppleSubscriptionResponse.fromJson(response);
     } on HttpException catch (e) {
       if (e is NotFoundException) {
         _log.warning(
@@ -111,8 +107,10 @@ class AppStoreServerClient {
     }
   }
 
-  /// Decodes a JWS string (e.g., signedTransactionInfo) using the validator.
-  Map<String, dynamic> decodeJws(String jws) {
-    return _jwsValidator.decode(jws);
+  /// Decodes a JWS string (e.g., signedTransactionInfo) using the validator
+  /// and returns a strongly-typed payload.
+  AppleTransactionDecodedPayload decodeTransaction(String jws) {
+    final decodedMap = _jwsValidator.decode(jws);
+    return AppleTransactionDecodedPayload.fromJson(decodedMap);
   }
 }
