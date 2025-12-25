@@ -98,7 +98,7 @@ Say goodbye to risky manual database updates. A professional, versioned migratio
 
 ### 💳 Robust Subscription Engine
 A complete, zero-trust backend infrastructure for managing in-app subscriptions and entitlements.
-- **Multi-Provider Support:** Built-in support for Apple App Store, Google Play Store, and Stripe, unified under a single "Entitlement" interface.
+- **Multi-Provider Support:** Built-in support for Apple App Store and Google Play Store, unified under a single "Entitlement" interface.
 - **Zero-Trust Validation:** Every purchase is cryptographically verified directly with Apple and Google servers before any entitlement is granted, eliminating client-side receipt spoofing.
 - **Idempotent State Machine:** A dedicated idempotency layer ensures that every transaction and webhook event is processed exactly once, preventing duplicate entitlements or race conditions during network retries.
 - **Real-Time Webhook Synchronization:** The system acts as an authoritative source of truth, listening for server-to-server webhooks to instantly reflect renewals, cancellations, and billing issues, ensuring the user's status is always accurate.
