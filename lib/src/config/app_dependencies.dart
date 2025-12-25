@@ -102,8 +102,8 @@ class AppDependencies {
   late final IGoogleAuthService? googleAuthService;
   late final IPushNotificationClient? firebasePushNotificationClient;
   late final IPushNotificationClient? oneSignalPushNotificationClient;
-  late final AppStoreServerClient appStoreServerClient;
-  late final GooglePlayClient googlePlayClient;
+  late final AppStoreServerClient? appStoreServerClient;
+  late final GooglePlayClient? googlePlayClient;
   late final SubscriptionService subscriptionService;
   late final IdempotencyService idempotencyService;
 
@@ -493,9 +493,18 @@ class AppDependencies {
       );
 
       // --- Subscription Services ---
-      appStoreServerClient = AppStoreServerClient(
-        log: Logger('AppStoreServerClient'),
-      );
+      if (EnvironmentConfig.appleAppStoreIssuerId != null &&
+          EnvironmentConfig.appleAppStoreKeyId != null &&
+          EnvironmentConfig.appleAppStorePrivateKey != null) {
+        appStoreServerClient = AppStoreServerClient(
+          log: Logger('AppStoreServerClient'),
+        );
+      } else {
+        _log.warning(
+          'Apple App Store credentials not found. App Store Client disabled.',
+        );
+        appStoreServerClient = null;
+      }
 
       // Google Play Client requires the GoogleAuthService which might be null
       // if credentials weren't provided. We handle this gracefully.
@@ -508,8 +517,7 @@ class AppDependencies {
         _log.warning(
           'Google Auth Service not available. Google Play Client disabled.',
         );
-        // We still instantiate it to avoid null checks everywhere, but it will fail if used.
-        // In a real app, we might use a NullObject pattern or throw earlier.
+        googlePlayClient = null;
       }
 
       subscriptionService = SubscriptionService(

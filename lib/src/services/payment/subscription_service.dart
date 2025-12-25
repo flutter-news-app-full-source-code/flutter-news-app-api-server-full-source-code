@@ -22,8 +22,8 @@ class SubscriptionService {
   const SubscriptionService({
     required DataRepository<UserSubscription> userSubscriptionRepository,
     required DataRepository<User> userRepository,
-    required AppStoreServerClient appStoreClient,
-    required GooglePlayClient googlePlayClient,
+    required AppStoreServerClient? appStoreClient,
+    required GooglePlayClient? googlePlayClient,
     required IdempotencyService idempotencyService,
     required Logger log,
   }) : _userSubscriptionRepository = userSubscriptionRepository,
@@ -35,8 +35,8 @@ class SubscriptionService {
 
   final DataRepository<UserSubscription> _userSubscriptionRepository;
   final DataRepository<User> _userRepository;
-  final AppStoreServerClient _appStoreClient;
-  final GooglePlayClient _googlePlayClient;
+  final AppStoreServerClient? _appStoreClient;
+  final GooglePlayClient? _googlePlayClient;
   final IdempotencyService _idempotencyService;
   final Logger _log;
 
@@ -76,7 +76,10 @@ class SubscriptionService {
 
     // 2. Validate with Provider
     if (transaction.provider == StoreProvider.apple) {
-      final appleResponse = await _appStoreClient.getAllSubscriptionStatuses(
+      if (_appStoreClient == null) {
+        throw const ServerException('App Store Client is not initialized.');
+      }
+      final appleResponse = await _appStoreClient!.getAllSubscriptionStatuses(
         transaction.providerReceipt,
       );
 
@@ -88,14 +91,17 @@ class SubscriptionService {
       );
       final lastTransaction = group.lastTransactions.first;
 
-      final decodedTransaction = _appStoreClient.decodeTransaction(
+      final decodedTransaction = _appStoreClient!.decodeTransaction(
         lastTransaction.signedTransactionInfo,
       );
 
       expiryDate = decodedTransaction.expiresDate;
       originalTransactionId = decodedTransaction.originalTransactionId;
     } else if (transaction.provider == StoreProvider.google) {
-      final googlePurchase = await _googlePlayClient.getSubscription(
+      if (_googlePlayClient == null) {
+        throw const ServerException('Google Play Client is not initialized.');
+      }
+      final googlePurchase = await _googlePlayClient!.getSubscription(
         subscriptionId: transaction.planId,
         purchaseToken: transaction.providerReceipt,
       );
@@ -169,6 +175,11 @@ class SubscriptionService {
   Future<void> handleAppleNotification(AppleNotificationPayload payload) async {
     _log.info('Processing Apple Notification: ${payload.notificationUUID}');
 
+    if (_appStoreClient == null) {
+      _log.warning('App Store Client not initialized. Ignoring notification.');
+      return;
+    }
+
     if (await _idempotencyService.isEventProcessed(payload.notificationUUID)) {
       _log.info(
         'Apple notification ${payload.notificationUUID} already processed.',
@@ -176,7 +187,7 @@ class SubscriptionService {
       return;
     }
 
-    final transactionInfo = _appStoreClient.decodeTransaction(
+    final transactionInfo = _appStoreClient!.decodeTransaction(
       payload.data.signedTransactionInfo,
     );
     final originalTransactionId = transactionInfo.originalTransactionId;
@@ -248,6 +259,13 @@ class SubscriptionService {
   ) async {
     _log.info('Processing Google Notification...');
 
+    if (_googlePlayClient == null) {
+      _log.warning(
+        'Google Play Client not initialized. Ignoring notification.',
+      );
+      return;
+    }
+
     final subDetails = payload.subscriptionNotification;
     if (subDetails == null) {
       _log.info('Notification is not a subscription event. Ignoring.');
@@ -261,7 +279,7 @@ class SubscriptionService {
     }
 
     try {
-      final googlePurchase = await _googlePlayClient.getSubscription(
+      final googlePurchase = await _googlePlayClient!.getSubscription(
         subscriptionId: subDetails.subscriptionId,
         purchaseToken: subDetails.purchaseToken,
       );
