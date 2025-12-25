@@ -4,10 +4,10 @@ import 'package:test/test.dart';
 
 void main() {
   group('AppleSubscriptionResponse', () {
-    final response = AppleSubscriptionResponse(
+    const response = AppleSubscriptionResponse(
       environment: AppleEnvironment.production,
       bundleId: 'com.example',
-      data: const [
+      data: [
         AppleSubscriptionGroupItem(
           subscriptionGroupIdentifier: 'group-1',
           lastTransactions: [
@@ -23,10 +23,10 @@ void main() {
     );
 
     test('supports value equality', () {
-      final response2 = AppleSubscriptionResponse(
+      const response2 = AppleSubscriptionResponse(
         environment: AppleEnvironment.production,
         bundleId: 'com.example',
-        data: const [
+        data: [
           AppleSubscriptionGroupItem(
             subscriptionGroupIdentifier: 'group-1',
             lastTransactions: [
@@ -56,9 +56,9 @@ void main() {
                 'status': 1,
                 'signedRenewalInfo': 'renew-1',
                 'signedTransactionInfo': 'trans-1',
-              }
+              },
             ],
-          }
+          },
         ],
       };
       expect(AppleSubscriptionResponse.fromJson(json), equals(response));

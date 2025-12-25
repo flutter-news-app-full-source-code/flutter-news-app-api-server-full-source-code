@@ -4,13 +4,16 @@ import 'package:test/test.dart';
 void main() {
   group('GoogleNotificationType', () {
     test('contains expected values', () {
-      expect(GoogleNotificationType.values, containsAll([
-        GoogleNotificationType.subscriptionRecovered,
-        GoogleNotificationType.subscriptionRenewed,
-        GoogleNotificationType.subscriptionCanceled,
-        GoogleNotificationType.subscriptionPurchased,
-        GoogleNotificationType.subscriptionExpired,
-      ]));
+      expect(
+        GoogleNotificationType.values,
+        containsAll([
+          GoogleNotificationType.subscriptionRecovered,
+          GoogleNotificationType.subscriptionRenewed,
+          GoogleNotificationType.subscriptionCanceled,
+          GoogleNotificationType.subscriptionPurchased,
+          GoogleNotificationType.subscriptionExpired,
+        ]),
+      );
     });
   });
 }

@@ -4,14 +4,17 @@ import 'package:test/test.dart';
 void main() {
   group('AppleNotificationSubtype', () {
     test('contains expected values', () {
-      expect(AppleNotificationSubtype.values, containsAll([
-        AppleNotificationSubtype.initialBuy,
-        AppleNotificationSubtype.resubscribe,
-        AppleNotificationSubtype.downgrade,
-        AppleNotificationSubtype.upgrade,
-        AppleNotificationSubtype.autoRenewEnabled,
-        AppleNotificationSubtype.autoRenewDisabled,
-      ]));
+      expect(
+        AppleNotificationSubtype.values,
+        containsAll([
+          AppleNotificationSubtype.initialBuy,
+          AppleNotificationSubtype.resubscribe,
+          AppleNotificationSubtype.downgrade,
+          AppleNotificationSubtype.upgrade,
+          AppleNotificationSubtype.autoRenewEnabled,
+          AppleNotificationSubtype.autoRenewDisabled,
+        ]),
+      );
     });
   });
 }
