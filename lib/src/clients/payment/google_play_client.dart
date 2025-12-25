@@ -1,5 +1,6 @@
 import 'package:core/core.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/payment/google_subscription_purchase.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:http_client/http_client.dart';
 import 'package:logging/logging.dart';
@@ -35,12 +36,8 @@ class GooglePlayClient {
   /// [subscriptionId] is the product ID (e.g., 'premium_monthly').
   /// [purchaseToken] is the token provided by the mobile app after purchase.
   ///
-  /// Returns a [Map] containing the subscription resource resource.
-  /// Key fields include:
-  /// - `expiryTimeMillis`: The time at which the subscription will expire.
-  /// - `paymentState`: The payment state of the subscription.
-  /// - `autoRenewing`: Whether the subscription will auto-renew.
-  Future<Map<String, dynamic>> getSubscription({
+  /// Returns a strongly-typed [GoogleSubscriptionPurchase] object.
+  Future<GoogleSubscriptionPurchase> getSubscription({
     required String subscriptionId,
     required String purchaseToken,
   }) async {
@@ -55,7 +52,7 @@ class GooglePlayClient {
       final response = await _httpClient.get<Map<String, dynamic>>(
         '/applications/$packageName/purchases/subscriptions/$subscriptionId/tokens/$purchaseToken',
       );
-      return response;
+      return GoogleSubscriptionPurchase.fromJson(response);
     } on HttpException catch (e) {
       if (e is NotFoundException) {
         _log.warning(
