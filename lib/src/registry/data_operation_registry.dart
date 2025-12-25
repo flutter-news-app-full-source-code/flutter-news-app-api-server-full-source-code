@@ -479,8 +479,8 @@ class DataOperationRegistry {
       // security and architectural consistency.
       //
       // It enforces the following rules:
-      // 1. Admins can ONLY update a user's `appRole` and `dashboardRole`.
-      // 2. Regular users can ONLY update their own `feedDecoratorStatus`.
+      // 1. Admins can ONLY update a user's `role` and `tier`.
+      // 2. Regular users can ONLY update their own `name` and `photoUrl`.
       //
       // This logic correctly handles a full `User` object in the request body,
       // aligning with the DataRepository contract. It works by comparing the
@@ -529,9 +529,29 @@ class DataOperationRegistry {
             'Regular user ${authenticatedUser.id} is updating their own profile.',
           );
 
-          // Regular users are not permitted to update the core User object.
-          throw const ForbiddenException(
-            'This endpoint is restricted to administrators.',
+          // Create a version of the original user with only the fields a
+          // regular user is allowed to change applied from the request.
+          // Regular users can only update 'name' and 'photoUrl'.
+          // Critical fields like 'email', 'role', 'tier', 'isAnonymous' are
+          // immutable via this endpoint.
+          final permissibleUpdate = userToUpdate.copyWith(
+            name: requestedUpdateUser.name,
+            photoUrl: requestedUpdateUser.photoUrl,
+          );
+
+          // If the user from the request is not identical to the one with
+          // only permissible changes, it means an unauthorized field was
+          // modified.
+          if (requestedUpdateUser != permissibleUpdate) {
+            _log.warning(
+              'User ${authenticatedUser.id} attempted to update unauthorized fields.',
+            );
+            throw const ForbiddenException(
+              'You can only update "name" and "photoUrl" via this endpoint.',
+            );
+          }
+          _log.finer(
+            'Regular user update for user $id validation passed.',
           );
         }
 
