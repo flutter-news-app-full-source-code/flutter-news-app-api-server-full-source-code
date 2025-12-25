@@ -47,7 +47,7 @@ class DefaultUserActionLimitService implements UserActionLimitService {
       savedHeadlinesLimit,
       savedHeadlineFiltersLimit,
       savedSourceFiltersLimit,
-    ) = _getPreferenceLimitsForRole(
+    ) = _getPreferenceLimitsForTier(
       user.tier,
       limits,
     );
@@ -210,7 +210,7 @@ class DefaultUserActionLimitService implements UserActionLimitService {
     SavedFilterLimits savedHeadlineFiltersLimit,
     SavedFilterLimits savedSourceFiltersLimit,
   )
-  _getPreferenceLimitsForRole(
+  _getPreferenceLimitsForTier(
     AccessTier tier,
     UserLimitsConfig limits,
   ) {
