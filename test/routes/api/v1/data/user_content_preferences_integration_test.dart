@@ -53,7 +53,7 @@ void main() {
       adminUser = createTestUser(
         id: 'admin-id',
         email: 'admin@test.com',
-        dashboardRole: DashboardUserRole.admin,
+        role: UserRole.admin,
       );
       standardUser = createTestUser(
         id: 'standard-id',

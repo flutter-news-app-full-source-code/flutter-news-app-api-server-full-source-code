@@ -34,7 +34,7 @@ void main() {
       adminUser = createTestUser(
         id: 'admin-id',
         email: 'admin@test.com',
-        dashboardRole: DashboardUserRole.admin,
+        role: UserRole.admin,
       );
       standardUser = createTestUser(
         id: 'standard-id',
@@ -141,9 +141,9 @@ void main() {
         ).thenAnswer((_) async => standardUser);
       });
 
-      test('returns 200 for admin updating another user role', () async {
+      test('returns 200 for admin updating another user tier', () async {
         final updatedUser = standardUser.copyWith(
-          appRole: AppUserRole.premiumUser,
+          tier: AccessTier.premium,
         );
 
         when(
@@ -161,7 +161,7 @@ void main() {
 
         expect(response.statusCode, 200);
         final body = jsonDecode(await response.body());
-        expect(body['data']['appRole'], 'premiumUser');
+        expect(body['data']['tier'], 'premium');
       });
 
       test('returns 403 for admin updating a non-role field', () async {
@@ -177,14 +177,10 @@ void main() {
       });
 
       test(
-        'returns 200 for standard user updating their feedDecoratorStatus',
+        'returns 200 for standard user updating their name',
         () async {
           final updatedUser = standardUser.copyWith(
-            feedDecoratorStatus: {
-              FeedDecoratorType.rateApp: const UserFeedDecoratorStatus(
-                isCompleted: true,
-              ),
-            },
+            name: 'Updated Name',
           );
 
           when(
@@ -203,15 +199,15 @@ void main() {
           expect(response.statusCode, 200);
           final body = jsonDecode(await response.body());
           expect(
-            body['data']['feedDecoratorStatus']['rateApp']['isCompleted'],
-            isTrue,
+            body['data']['name'],
+            'Updated Name',
           );
         },
       );
 
-      test('returns 403 for standard user updating their own role', () async {
+      test('returns 403 for standard user updating their own tier', () async {
         final updatedUser = standardUser.copyWith(
-          appRole: AppUserRole.premiumUser,
+          tier: AccessTier.premium,
         );
 
         final response = await api.put(
@@ -225,11 +221,7 @@ void main() {
 
       test('returns 403 for standard user updating another user', () async {
         final updatedUser = adminUser.copyWith(
-          feedDecoratorStatus: {
-            FeedDecoratorType.rateApp: const UserFeedDecoratorStatus(
-              isCompleted: true,
-            ),
-          },
+          name: 'Hacker',
         );
 
         // Need to mock the fetch for the other user

@@ -23,9 +23,7 @@ void main() {
     late String standardToken;
     late Country country;
 
-    setUpAll(() {
-      registerSharedFallbackValues();
-    });
+    setUpAll(registerSharedFallbackValues);
 
     setUp(() {
       mockRepo = MockDataRepository<Country>();
@@ -35,10 +33,9 @@ void main() {
       standardUser = User(
         id: 'standard-id',
         email: 'standard@test.com',
-        appRole: AppUserRole.standardUser,
-        dashboardRole: DashboardUserRole.none,
+        role: UserRole.user,
+        tier: AccessTier.standard,
         createdAt: DateTime.now(),
-        feedDecoratorStatus: const {},
       );
       standardToken = 'standard-token';
 
