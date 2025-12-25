@@ -6,7 +6,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_t
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
-import '../../../../src/helpers/test_helpers.dart';
+import '../../../../../test/src/helpers/test_helpers.dart';
 import 'test_api.dart';
 
 void main() {

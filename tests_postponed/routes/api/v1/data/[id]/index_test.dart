@@ -7,7 +7,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
 import '../../../../../../routes/api/v1/data/[id]/index.dart' as route;
-import '../../../../../src/helpers/test_helpers.dart';
+import '../../../../../../test/src/helpers/test_helpers.dart';
 
 void main() {
   group('/api/v1/data/[id] (item)', () {

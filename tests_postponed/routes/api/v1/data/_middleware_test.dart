@@ -8,7 +8,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
 import '../../../../../routes/api/v1/data/_middleware.dart' as middleware;
-import '../../../../src/helpers/test_helpers.dart';
+import '../../../../../test/src/helpers/test_helpers.dart';
 
 class MockHttpConnectionInfo extends Mock implements HttpConnectionInfo {}
 

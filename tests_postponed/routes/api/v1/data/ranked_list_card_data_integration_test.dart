@@ -6,13 +6,13 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_t
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
-import '../../../../src/helpers/test_helpers.dart';
+import '../../../../../test/src/helpers/test_helpers.dart';
 import 'test_api.dart';
 
 void main() {
-  group('KpiCardData Integration Tests', () {
+  group('RankedListCardData Integration Tests', () {
     late TestApi api;
-    late MockDataRepository<KpiCardData> mockRepo;
+    late MockDataRepository<RankedListCardData> mockRepo;
     late MockAuthTokenService mockAuthTokenService;
 
     late User adminUser;
@@ -20,15 +20,15 @@ void main() {
     late String adminToken;
     late String standardToken;
 
-    late KpiCardData kpiCard;
+    late RankedListCardData rankedListCard;
 
     setUpAll(() {
       registerSharedFallbackValues();
       registerFallbackValue(const PaginationOptions());
       registerFallbackValue(const SortOption('createdAt'));
       registerFallbackValue(
-        const KpiCardData(
-          id: KpiCardId.usersTotalRegistered,
+        const RankedListCardData(
+          id: RankedListCardId.overviewHeadlinesMostViewed,
           label: 'Fallback',
           timeFrames: {},
         ),
@@ -36,7 +36,7 @@ void main() {
     });
 
     setUp(() {
-      mockRepo = MockDataRepository<KpiCardData>();
+      mockRepo = MockDataRepository<RankedListCardData>();
       mockAuthTokenService = MockAuthTokenService();
 
       adminUser = createTestUser(
@@ -59,22 +59,28 @@ void main() {
         () => mockAuthTokenService.validateToken(standardToken),
       ).thenAnswer((_) async => standardUser);
 
-      kpiCard = const KpiCardData(
-        id: KpiCardId.usersTotalRegistered,
-        label: 'Total Users',
+      rankedListCard = const RankedListCardData(
+        id: RankedListCardId.overviewHeadlinesMostViewed,
+        label: 'Most Viewed',
         timeFrames: {
-          KpiTimeFrame.day: KpiTimeFrameData(value: 10, trend: '+10%'),
+          RankedListTimeFrame.week: [
+            RankedListItem(
+              entityId: 'h1',
+              displayTitle: 'Headline 1',
+              metricValue: 100,
+            ),
+          ],
         },
       );
 
       api = TestApi.from(
         (context) => context
-            .provide<DataRepository<KpiCardData>>(() => mockRepo)
+            .provide<DataRepository<RankedListCardData>>(() => mockRepo)
             .provide<AuthTokenService>(() => mockAuthTokenService),
       );
     });
 
-    group('GET /api/v1/data?model=kpi_card_data', () {
+    group('GET /api/v1/data?model=ranked_list_card_data', () {
       test('returns 200 for admin user', () async {
         when(
           () => mockRepo.readAll(
@@ -84,14 +90,14 @@ void main() {
           ),
         ).thenAnswer(
           (_) async => PaginatedResponse(
-            items: [kpiCard],
+            items: [rankedListCard],
             cursor: null,
             hasMore: false,
           ),
         );
 
         final response = await api.get(
-          '/api/v1/data?model=kpi_card_data',
+          '/api/v1/data?model=ranked_list_card_data',
           headers: {'Authorization': 'Bearer $adminToken'},
         );
 
@@ -100,7 +106,7 @@ void main() {
 
       test('returns 403 for standard user', () async {
         final response = await api.get(
-          '/api/v1/data?model=kpi_card_data',
+          '/api/v1/data?model=ranked_list_card_data',
           headers: {'Authorization': 'Bearer $standardToken'},
         );
 
@@ -108,14 +114,14 @@ void main() {
       });
     });
 
-    group('GET /api/v1/data/:id?model=kpi_card_data', () {
+    group('GET /api/v1/data/:id?model=ranked_list_card_data', () {
       test('returns 200 for admin user', () async {
         when(
-          () => mockRepo.read(id: kpiCard.id.name),
-        ).thenAnswer((_) async => kpiCard);
+          () => mockRepo.read(id: rankedListCard.id.name),
+        ).thenAnswer((_) async => rankedListCard);
 
         final response = await api.get(
-          '/api/v1/data/${kpiCard.id.name}?model=kpi_card_data',
+          '/api/v1/data/${rankedListCard.id.name}?model=ranked_list_card_data',
           headers: {'Authorization': 'Bearer $adminToken'},
         );
 
@@ -124,7 +130,7 @@ void main() {
 
       test('returns 403 for standard user', () async {
         final response = await api.get(
-          '/api/v1/data/${kpiCard.id.name}?model=kpi_card_data',
+          '/api/v1/data/${rankedListCard.id.name}?model=ranked_list_card_data',
           headers: {'Authorization': 'Bearer $standardToken'},
         );
 
@@ -132,16 +138,14 @@ void main() {
       });
     });
 
-    group('POST /api/v1/data?model=kpi_card_data', () {
+    group('POST /api/v1/data?model=ranked_list_card_data', () {
       test('returns 403 (unsupported)', () async {
         final response = await api.post(
-          '/api/v1/data?model=kpi_card_data',
+          '/api/v1/data?model=ranked_list_card_data',
           headers: {'Authorization': 'Bearer $adminToken'},
-          body: jsonEncode(kpiCard.toJson()),
+          body: jsonEncode(rankedListCard.toJson()),
         );
 
-        // Expect 403 because the action is marked as unsupported in ModelRegistry,
-        // and AuthorizationMiddleware throws ForbiddenException for unsupported actions.
         expect(response.statusCode, 403);
       });
     });

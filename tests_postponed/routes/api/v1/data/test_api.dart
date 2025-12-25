@@ -8,7 +8,7 @@ import '../../../../../routes/api/v1/data/[id]/_middleware.dart'
 import '../../../../../routes/api/v1/data/[id]/index.dart' as item_index;
 import '../../../../../routes/api/v1/data/_middleware.dart' as data_middleware;
 import '../../../../../routes/api/v1/data/index.dart' as index;
-import '../../../../src/helpers/test_helpers.dart';
+import '../../../../../test/src/helpers/test_helpers.dart';
 
 class TestApi {
   TestApi.from(this.contextBuilder);
