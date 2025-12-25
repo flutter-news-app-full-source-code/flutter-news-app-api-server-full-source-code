@@ -17,6 +17,8 @@ abstract final class EnvironmentConfig {
   // resilient to current working directory issues.
   static final DotEnv _env = _loadEnv();
 
+  static final Map<String, String> _overrides = {};
+
   /// Helper method to load the .env file more robustly.
   ///
   /// It searches for the .env file starting from the current directory
@@ -61,6 +63,10 @@ abstract final class EnvironmentConfig {
   }
 
   static String? _getEnv(String key) {
+    if (_overrides.containsKey(key)) {
+      return _overrides[key];
+    }
+
     final value = _env[key];
     if (value == null || value.isEmpty) {
       _log.warning('$key not found or is empty in environment variables.');
@@ -68,6 +74,14 @@ abstract final class EnvironmentConfig {
     }
 
     return value;
+  }
+
+  static void _setOverride(String key, String? value) {
+    if (value == null) {
+      _overrides.remove(key);
+    } else {
+      _overrides[key] = value;
+    }
   }
 
   /// Retrieves the database connection URI from the environment.
@@ -239,17 +253,31 @@ abstract final class EnvironmentConfig {
   static String? get appleAppStoreIssuerId =>
       _getEnv('APPLE_APP_STORE_ISSUER_ID');
 
+  static set appleAppStoreIssuerId(String? value) =>
+      _setOverride('APPLE_APP_STORE_ISSUER_ID', value);
+
   /// Retrieves the Apple App Store Connect Key ID.
   static String? get appleAppStoreKeyId => _getEnv('APPLE_APP_STORE_KEY_ID');
+
+  static set appleAppStoreKeyId(String? value) =>
+      _setOverride('APPLE_APP_STORE_KEY_ID', value);
 
   /// Retrieves the Apple App Store Connect Private Key.
   static String? get appleAppStorePrivateKey =>
       _getEnv('APPLE_APP_STORE_PRIVATE_KEY');
 
+  static set appleAppStorePrivateKey(String? value) =>
+      _setOverride('APPLE_APP_STORE_PRIVATE_KEY', value);
+
   /// Retrieves the Apple Bundle ID.
   static String? get appleBundleId => _getEnv('APPLE_BUNDLE_ID');
+  static set appleBundleId(String? value) =>
+      _setOverride('APPLE_BUNDLE_ID', value);
 
   /// Retrieves the Google Play Package Name.
   static String? get googlePlayPackageName =>
       _getEnv('GOOGLE_PLAY_PACKAGE_NAME');
+
+  static set googlePlayPackageName(String? value) =>
+      _setOverride('GOOGLE_PLAY_PACKAGE_NAME', value);
 }
