@@ -42,18 +42,16 @@ void main() {
       standardUser = User(
         id: 'standard-id',
         email: 'standard@test.com',
-        appRole: AppUserRole.standardUser,
-        dashboardRole: DashboardUserRole.none,
+        role: UserRole.user,
+        tier: AccessTier.standard,
         createdAt: DateTime.now(),
-        feedDecoratorStatus: const {},
       );
       otherUser = User(
         id: 'other-id',
         email: 'other@test.com',
-        appRole: AppUserRole.standardUser,
-        dashboardRole: DashboardUserRole.none,
+        role: UserRole.user,
+        tier: AccessTier.guest,
         createdAt: DateTime.now(),
-        feedDecoratorStatus: const {},
       );
 
       standardToken = 'standard-token';
