@@ -7,8 +7,10 @@ import 'package:data_mongodb/data_mongodb.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:email_repository/email_repository.dart';
 import 'package:email_sendgrid/email_sendgrid.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/clients/clients.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/database/migrations/all_migrations.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/payment/idempotency_record.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/analytics/analytics.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_service.dart';
@@ -24,10 +26,11 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/mongod
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_verification_code_storage_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/onesignal_push_notification_client.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/payment/idempotency_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/payment/payment.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/subscription_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/verification_code_storage_service.dart';
@@ -78,6 +81,7 @@ class AppDependencies {
   late final DataRepository<KpiCardData> kpiCardDataRepository;
   late final DataRepository<ChartCardData> chartCardDataRepository;
   late final DataRepository<RankedListCardData> rankedListCardDataRepository;
+  late final DataRepository<IdempotencyRecord> idempotencyRepository;
 
   late final DataRepository<Engagement> engagementRepository;
   late final DataRepository<Report> reportRepository;
@@ -102,6 +106,7 @@ class AppDependencies {
   late final AppStoreServerClient appStoreServerClient;
   late final GooglePlayClient googlePlayClient;
   late final SubscriptionService subscriptionService;
+  late final IdempotencyService idempotencyService;
 
   /// Initializes all application dependencies.
   ///
@@ -236,6 +241,14 @@ class AppDependencies {
         fromJson: UserSubscription.fromJson,
         toJson: (item) => item.toJson(),
         logger: Logger('DataMongodb<UserSubscription>'),
+      );
+
+      final idempotencyClient = DataMongodb<IdempotencyRecord>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'idempotency_records',
+        fromJson: IdempotencyRecord.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<IdempotencyRecord>'),
       );
 
       // Initialize Data Clients for Push Notifications
@@ -388,7 +401,7 @@ class AppDependencies {
         dataClient: pushNotificationDeviceClient,
       );
       userSubscriptionRepository = DataRepository(
-        dataClient: pushNotificationDeviceClient,
+        dataClient: userSubscriptionClient,
       );
       inAppNotificationRepository = DataRepository(
         dataClient: inAppNotificationClient,
@@ -403,6 +416,7 @@ class AppDependencies {
       rankedListCardDataRepository = DataRepository(
         dataClient: rankedListCardDataClient,
       );
+      idempotencyRepository = DataRepository(dataClient: idempotencyClient);
 
       // Configure the HTTP client for SendGrid.
       // The HttpClient's AuthInterceptor will use the tokenProvider to add
@@ -472,6 +486,11 @@ class AppDependencies {
         firebaseClient: firebasePushNotificationClient,
         oneSignalClient: oneSignalPushNotificationClient,
         log: Logger('DefaultPushNotificationService'),
+      );
+
+      idempotencyService = IdempotencyService(
+        repository: idempotencyRepository,
+        log: Logger('IdempotencyService'),
       );
 
       // --- Subscription Services ---
