@@ -33,7 +33,7 @@ class AppleJwsValidator {
         throw const FormatException('JWS payload is empty or not JSON.');
       }
 
-      return payload.jsonContent!;
+      return payload.jsonContent! as Map<String, dynamic>;
     } catch (e, s) {
       _log.severe('Failed to decode Apple JWS', e, s);
       throw const ServerException('Invalid Apple JWS payload.');
