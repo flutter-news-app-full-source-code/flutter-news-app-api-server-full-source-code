@@ -79,7 +79,7 @@ class SubscriptionService {
       if (_appStoreClient == null) {
         throw const ServerException('App Store Client is not initialized.');
       }
-      final appleResponse = await _appStoreClient!.getAllSubscriptionStatuses(
+      final appleResponse = await _appStoreClient.getAllSubscriptionStatuses(
         transaction.providerReceipt,
       );
 
@@ -91,7 +91,7 @@ class SubscriptionService {
       );
       final lastTransaction = group.lastTransactions.first;
 
-      final decodedTransaction = _appStoreClient!.decodeTransaction(
+      final decodedTransaction = _appStoreClient.decodeTransaction(
         lastTransaction.signedTransactionInfo,
       );
 
@@ -101,7 +101,7 @@ class SubscriptionService {
       if (_googlePlayClient == null) {
         throw const ServerException('Google Play Client is not initialized.');
       }
-      final googlePurchase = await _googlePlayClient!.getSubscription(
+      final googlePurchase = await _googlePlayClient.getSubscription(
         subscriptionId: transaction.planId,
         purchaseToken: transaction.providerReceipt,
       );
@@ -187,7 +187,7 @@ class SubscriptionService {
       return;
     }
 
-    final transactionInfo = _appStoreClient!.decodeTransaction(
+    final transactionInfo = _appStoreClient.decodeTransaction(
       payload.data.signedTransactionInfo,
     );
     final originalTransactionId = transactionInfo.originalTransactionId;
@@ -279,7 +279,7 @@ class SubscriptionService {
     }
 
     try {
-      final googlePurchase = await _googlePlayClient!.getSubscription(
+      final googlePurchase = await _googlePlayClient.getSubscription(
         subscriptionId: subDetails.subscriptionId,
         purchaseToken: subDetails.purchaseToken,
       );
