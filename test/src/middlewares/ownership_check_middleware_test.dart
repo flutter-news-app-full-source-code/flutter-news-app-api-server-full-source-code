@@ -31,7 +31,7 @@ void main() {
       );
       adminUser = createTestUser(
         id: 'admin-id',
-        dashboardRole: DashboardUserRole.admin,
+        role: UserRole.admin,
       );
 
       userOwnedItem = AppSettings(
