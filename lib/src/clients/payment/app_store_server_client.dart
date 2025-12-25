@@ -18,13 +18,14 @@ class AppStoreServerClient {
   AppStoreServerClient({
     required Logger log,
     HttpClient? httpClient,
-  })  : _log = log,
-        _httpClient = httpClient ??
-            HttpClient(
-              baseUrl: 'https://api.storekit.itunes.apple.com/inApps/v1',
-              tokenProvider: () async =>
-                  null, // Auth is handled per-request via JWT
-            ) {
+  }) : _log = log,
+       _httpClient =
+           httpClient ??
+           HttpClient(
+             baseUrl: 'https://api.storekit.itunes.apple.com/inApps/v1',
+             tokenProvider: () async =>
+                 null, // Auth is handled per-request via JWT
+           ) {
     _jwsValidator = AppleJwsValidator(log: log);
   }
 

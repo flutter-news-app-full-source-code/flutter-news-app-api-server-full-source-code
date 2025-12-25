@@ -49,13 +49,13 @@ class AppleNotificationPayload extends Equatable {
 
   @override
   List<Object?> get props => [
-        notificationType,
-        subtype,
-        notificationUUID,
-        data,
-        version,
-        signedDate,
-      ];
+    notificationType,
+    subtype,
+    notificationUUID,
+    data,
+    version,
+    signedDate,
+  ];
 }
 
 /// {@template apple_notification_data}
@@ -97,12 +97,12 @@ class AppleNotificationData extends Equatable {
 
   @override
   List<Object?> get props => [
-        signedTransactionInfo,
-        signedRenewalInfo,
-        bundleId,
-        bundleVersion,
-        environment,
-      ];
+    signedTransactionInfo,
+    signedRenewalInfo,
+    bundleId,
+    bundleVersion,
+    environment,
+  ];
 }
 
 DateTime _dateTimeFromMilliseconds(int ms) =>

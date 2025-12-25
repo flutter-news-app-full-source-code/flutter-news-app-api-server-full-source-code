@@ -58,15 +58,15 @@ class AppleTransactionDecodedPayload extends Equatable {
 
   @override
   List<Object?> get props => [
-        originalTransactionId,
-        transactionId,
-        productId,
-        purchaseDate,
-        originalPurchaseDate,
-        expiresDate,
-        type,
-        inAppOwnershipType,
-      ];
+    originalTransactionId,
+    transactionId,
+    productId,
+    purchaseDate,
+    originalPurchaseDate,
+    expiresDate,
+    type,
+    inAppOwnershipType,
+  ];
 }
 
 DateTime _dateTimeFromMilliseconds(int ms) =>

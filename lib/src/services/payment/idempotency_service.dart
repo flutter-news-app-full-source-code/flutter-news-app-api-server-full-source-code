@@ -12,8 +12,8 @@ class IdempotencyService {
   const IdempotencyService({
     required DataRepository<IdempotencyRecord> repository,
     required Logger log,
-  })  : _repository = repository,
-        _log = log;
+  }) : _repository = repository,
+       _log = log;
 
   final DataRepository<IdempotencyRecord> _repository;
   final Logger _log;

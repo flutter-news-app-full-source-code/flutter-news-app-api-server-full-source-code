@@ -105,9 +105,9 @@ class AppleLastTransactionItem extends Equatable {
 
   @override
   List<Object?> get props => [
-        originalTransactionId,
-        status,
-        signedRenewalInfo,
-        signedTransactionInfo,
-      ];
+    originalTransactionId,
+    status,
+    signedRenewalInfo,
+    signedTransactionInfo,
+  ];
 }

@@ -44,12 +44,12 @@ class GoogleSubscriptionNotification extends Equatable {
 
   @override
   List<Object?> get props => [
-        version,
-        packageName,
-        eventTimeMillis,
-        subscriptionNotification,
-        testNotification,
-      ];
+    version,
+    packageName,
+    eventTimeMillis,
+    subscriptionNotification,
+    testNotification,
+  ];
 }
 
 /// {@template google_subscription_details}
@@ -87,11 +87,11 @@ class GoogleSubscriptionDetails extends Equatable {
 
   @override
   List<Object?> get props => [
-        version,
-        notificationType,
-        purchaseToken,
-        subscriptionId,
-      ];
+    version,
+    notificationType,
+    purchaseToken,
+    subscriptionId,
+  ];
 }
 
 /// {@template google_test_notification}
