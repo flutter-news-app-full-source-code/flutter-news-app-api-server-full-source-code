@@ -26,13 +26,8 @@ class PermissionService {
       return true;
     }
 
-    // Get the permission sets for the user's app and dashboard roles.
-    final appPermissions = rolePermissions[user.appRole] ?? const <String>{};
-    final dashboardPermissions =
-        rolePermissions[user.dashboardRole] ?? const <String>{};
-
-    // Combine the permissions from both roles.
-    final totalPermissions = {...appPermissions, ...dashboardPermissions};
+    // Get the permission set for the user's role.
+    final totalPermissions = rolePermissions[user.role] ?? const <String>{};
 
     // Check if the combined set contains the required permission.
     return totalPermissions.contains(permission);
@@ -45,6 +40,6 @@ class PermissionService {
   ///
   /// - [user]: The authenticated user.
   bool isAdmin(User user) {
-    return user.dashboardRole == DashboardUserRole.admin;
+    return user.role == UserRole.admin;
   }
 }
