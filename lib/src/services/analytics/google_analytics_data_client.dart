@@ -2,7 +2,7 @@ import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/analytics/analytics.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/firebase_authenticator.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:http_client/http_client.dart';
 import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
@@ -18,7 +18,7 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
   /// {@macro google_analytics_data_client}
   GoogleAnalyticsDataClient({
     required String propertyId,
-    required IFirebaseAuthenticator firebaseAuthenticator,
+    required IGoogleAuthService firebaseAuthenticator,
     required Logger log,
     required DataRepository<Headline> headlineRepository,
     HttpClient? httpClient,
@@ -29,7 +29,9 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
            httpClient ??
            HttpClient(
              baseUrl: 'https://analyticsdata.googleapis.com/v1beta',
-             tokenProvider: firebaseAuthenticator.getAccessToken,
+             tokenProvider: () => firebaseAuthenticator.getAccessToken(
+               scope: 'https://www.googleapis.com/auth/analytics.readonly',
+             ),
              logger: log,
            );
 
@@ -164,7 +166,7 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
     DateTime startDate,
     DateTime endDate,
   ) async {
-    const metricName = 'eventCount'; // Ranked lists are always event counts
+    const metricName = 'eventCount';
     final dimensionName = query.dimension;
 
     _log.info(

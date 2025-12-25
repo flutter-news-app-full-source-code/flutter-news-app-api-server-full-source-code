@@ -176,22 +176,138 @@ void main() {
     group('User Updater', () {
       late MockUserRepository mockUserRepository;
       late User userToUpdate;
+      late User adminUser;
 
       setUp(() {
         mockUserRepository = MockUserRepository();
-        userToUpdate = createTestUser(id: 'user-id');
+        userToUpdate = User(
+          id: 'user-id',
+          email: 'test@example.com',
+          role: UserRole.user,
+          tier: AccessTier.standard,
+          createdAt: DateTime.now(),
+        );
+        adminUser = User(
+          id: 'admin-id',
+          email: 'admin@example.com',
+          role: UserRole.admin,
+          tier: AccessTier.premium,
+          createdAt: DateTime.now(),
+        );
       });
 
       test(
-        'throws ForbiddenException when regular user updates roles',
+        'throws ForbiddenException when regular user attempts to update tier',
         () async {
           final updater = registry.itemUpdaters['user']!;
           final requestBody = userToUpdate
-              .copyWith(appRole: AppUserRole.premiumUser)
+              .copyWith(tier: AccessTier.premium) // Attempt upgrade
               .toJson();
 
           final context = createMockRequestContext(
             authenticatedUser: standardUser,
+            userRepository: mockUserRepository,
+            permissionService: const PermissionService(),
+            fetchedItem: FetchedItem(userToUpdate),
+          );
+
+          expect(
+            () => updater(context, userToUpdate.id, requestBody, null),
+            throwsA(isA<ForbiddenException>()),
+          );
+        },
+      );
+
+      test(
+        'throws ForbiddenException when regular user attempts to update role',
+        () async {
+          final updater = registry.itemUpdaters['user']!;
+          final requestBody = userToUpdate
+              .copyWith(role: UserRole.admin) // Attempt admin escalation
+              .toJson();
+
+          final context = createMockRequestContext(
+            authenticatedUser: standardUser,
+            userRepository: mockUserRepository,
+            permissionService: const PermissionService(),
+            fetchedItem: FetchedItem(userToUpdate),
+          );
+
+          expect(
+            () => updater(context, userToUpdate.id, requestBody, null),
+            throwsA(isA<ForbiddenException>()),
+          );
+        },
+      );
+
+      test('succeeds when regular user updates their own name', () async {
+        final updater = registry.itemUpdaters['user']!;
+        final updatedUser = userToUpdate.copyWith(name: 'New Name');
+        final requestBody = updatedUser.toJson();
+
+        when(
+          () => mockUserRepository.update(
+            id: userToUpdate.id,
+            item: updatedUser,
+            userId: any(named: 'userId'),
+          ),
+        ).thenAnswer((_) async => updatedUser);
+
+        final context = createMockRequestContext(
+          authenticatedUser: standardUser,
+          userRepository: mockUserRepository,
+          permissionService: const PermissionService(),
+          fetchedItem: FetchedItem(userToUpdate),
+        );
+
+        final result = await updater(
+          context,
+          userToUpdate.id,
+          requestBody,
+          null,
+        );
+        expect(result, equals(updatedUser));
+      });
+
+      test('succeeds when admin updates user tier', () async {
+        final updater = registry.itemUpdaters['user']!;
+        final updatedUser = userToUpdate.copyWith(tier: AccessTier.premium);
+        final requestBody = updatedUser.toJson();
+
+        when(
+          () => mockUserRepository.update(
+            id: userToUpdate.id,
+            item: updatedUser,
+            userId: any(named: 'userId'),
+          ),
+        ).thenAnswer((_) async => updatedUser);
+
+        final context = createMockRequestContext(
+          authenticatedUser: adminUser,
+          userRepository: mockUserRepository,
+          permissionService: const PermissionService(),
+          fetchedItem: FetchedItem(userToUpdate),
+        );
+
+        final result = await updater(
+          context,
+          userToUpdate.id,
+          requestBody,
+          null,
+        );
+        expect(result, equals(updatedUser));
+      });
+
+      test(
+        'throws ForbiddenException when admin attempts to update user name',
+        () async {
+          final updater = registry.itemUpdaters['user']!;
+          final requestBody = userToUpdate
+              .copyWith(name: 'Admin Changed Name')
+              .toJson();
+
+          final context = createMockRequestContext(
+            authenticatedUser: adminUser,
             userRepository: mockUserRepository,
             permissionService: const PermissionService(),
             fetchedItem: FetchedItem(userToUpdate),

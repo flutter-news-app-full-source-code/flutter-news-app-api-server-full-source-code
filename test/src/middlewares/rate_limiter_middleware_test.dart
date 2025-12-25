@@ -12,9 +12,7 @@ void main() {
     late RateLimitService mockRateLimitService;
     late Handler handler;
 
-    setUpAll(() {
-      registerSharedFallbackValues();
-    });
+    setUpAll(registerSharedFallbackValues);
 
     setUp(() {
       mockRateLimitService = MockRateLimitService();

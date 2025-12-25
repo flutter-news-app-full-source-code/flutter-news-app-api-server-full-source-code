@@ -13,35 +13,32 @@ void main() {
 
     // Helper to create a user with specific roles
     User createUser({
-      AppUserRole appRole = AppUserRole.guestUser,
-      DashboardUserRole dashboardRole = DashboardUserRole.none,
+      UserRole role = UserRole.user,
+      AccessTier tier = AccessTier.standard,
     }) {
       return User(
         id: 'user-id',
         email: 'test@example.com',
-        appRole: appRole,
-        dashboardRole: dashboardRole,
-        feedDecoratorStatus: const {},
+        role: role,
+        tier: tier,
         createdAt: DateTime.now(),
       );
     }
 
-    test('isAdmin returns true for admin dashboard role', () {
-      final adminUser = createUser(dashboardRole: DashboardUserRole.admin);
+    test('isAdmin returns true for admin role', () {
+      final adminUser = createUser(role: UserRole.admin);
       expect(permissionService.isAdmin(adminUser), isTrue);
     });
 
-    test('isAdmin returns false for non-admin dashboard roles', () {
-      final publisherUser = createUser(
-        dashboardRole: DashboardUserRole.publisher,
-      );
-      final standardUser = createUser(dashboardRole: DashboardUserRole.none);
+    test('isAdmin returns false for non-admin roles', () {
+      final publisherUser = createUser(role: UserRole.publisher);
+      final standardUser = createUser(role: UserRole.user);
       expect(permissionService.isAdmin(publisherUser), isFalse);
       expect(permissionService.isAdmin(standardUser), isFalse);
     });
 
     test('admin user has all permissions implicitly', () {
-      final adminUser = createUser(dashboardRole: DashboardUserRole.admin);
+      final adminUser = createUser(role: UserRole.admin);
       // Test a permission that only admins have
       expect(
         permissionService.hasPermission(adminUser, Permissions.userUpdate),
@@ -60,11 +57,9 @@ void main() {
     });
 
     test(
-      'publisher user has publisher permissions but not admin permissions',
+      'publisher user has publisher permissions but not admin-only permissions',
       () {
-        final publisherUser = createUser(
-          dashboardRole: DashboardUserRole.publisher,
-        );
+        final publisherUser = createUser(role: UserRole.publisher);
         expect(
           permissionService.hasPermission(
             publisherUser,
@@ -83,9 +78,9 @@ void main() {
     );
 
     test(
-      'standard app user has app permissions but not dashboard permissions',
+      'standard user has standard tier permissions but not publisher permissions',
       () {
-        final standardUser = createUser(appRole: AppUserRole.standardUser);
+        final standardUser = createUser(tier: AccessTier.standard);
         expect(
           permissionService.hasPermission(
             standardUser,
@@ -103,10 +98,10 @@ void main() {
       },
     );
 
-    test('user with combined roles has combined permissions', () {
+    test('user with combined role and tier has combined permissions', () {
       final user = createUser(
-        appRole: AppUserRole.standardUser,
-        dashboardRole: DashboardUserRole.publisher,
+        tier: AccessTier.standard,
+        role: UserRole.publisher,
       );
       // Has app permission
       expect(
@@ -126,8 +121,8 @@ void main() {
     });
 
     test('returns false for a permission the user does not have', () {
-      final guestUser = createUser(appRole: AppUserRole.guestUser);
-      // Guests can read headlines but not create them
+      final guestUser = createUser(tier: AccessTier.guest);
+      // Guests can read headlines (public) but not create them
       expect(
         permissionService.hasPermission(guestUser, Permissions.headlineRead),
         isTrue,

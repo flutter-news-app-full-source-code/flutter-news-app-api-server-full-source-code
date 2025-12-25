@@ -37,7 +37,7 @@ void main() {
       });
 
       test('fromJson handles null rows gracefully', () {
-        final json = <String, dynamic>{}; // Empty JSON
+        final json = <String, dynamic>{};
         final response = RunReportResponse.fromJson(json);
         expect(response.rows, isNull);
       });

@@ -2,7 +2,7 @@ import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/analytics/analytics_query.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/analytics/analytics.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/firebase_authenticator.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:http_client/http_client.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
@@ -10,8 +10,7 @@ import 'package:test/test.dart';
 
 class MockHttpClient extends Mock implements HttpClient {}
 
-class MockFirebaseAuthenticator extends Mock
-    implements IFirebaseAuthenticator {}
+class MockGoogleAuthService extends Mock implements IGoogleAuthService {}
 
 class MockHeadlineRepository extends Mock implements DataRepository<Headline> {}
 
@@ -19,7 +18,7 @@ void main() {
   group('GoogleAnalyticsDataClient', () {
     late GoogleAnalyticsDataClient client;
     late MockHttpClient mockHttpClient;
-    late MockFirebaseAuthenticator mockAuthenticator;
+    late MockGoogleAuthService mockAuthenticator;
     late MockHeadlineRepository mockHeadlineRepository;
     late DateTime startDate;
     late DateTime endDate;
@@ -28,7 +27,7 @@ void main() {
 
     setUp(() {
       mockHttpClient = MockHttpClient();
-      mockAuthenticator = MockFirebaseAuthenticator();
+      mockAuthenticator = MockGoogleAuthService();
       mockHeadlineRepository = MockHeadlineRepository();
       startDate = DateTime.utc(2024, 1, 1);
       endDate = DateTime.utc(2024, 1, 7);
@@ -43,7 +42,7 @@ void main() {
 
       // Stub the authenticator
       when(
-        () => mockAuthenticator.getAccessToken(),
+        () => mockAuthenticator.getAccessToken(scope: any(named: 'scope')),
       ).thenAnswer((_) async => 'test-token');
 
       // Register fallback values
@@ -61,7 +60,7 @@ void main() {
 
       test('returns empty list for empty API response', () async {
         // ARRANGE: Mock an empty response
-        final mockApiResponse = <String, dynamic>{}; // No 'rows' key
+        final mockApiResponse = <String, dynamic>{};
 
         when(
           () => mockHttpClient.post<Map<String, dynamic>>(
@@ -144,7 +143,7 @@ void main() {
         // ARRANGE: Mock an empty response
         final mockApiResponse = {
           'rows': <Map<String, dynamic>>[],
-        }; // Empty 'rows'
+        };
 
         when(
           () => mockHttpClient.post<Map<String, dynamic>>(

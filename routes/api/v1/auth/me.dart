@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:core/core.dart'; // For User, SuccessApiResponse etc.
+import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/helpers/response_helper.dart';
 

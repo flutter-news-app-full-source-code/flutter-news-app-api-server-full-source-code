@@ -11,7 +11,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/firebase_authenticator.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
@@ -174,8 +174,8 @@ Handler middleware(Handler handler) {
                 ),
               )
               .use(
-                provider<IFirebaseAuthenticator?>(
-                  (_) => deps.firebaseAuthenticator,
+                provider<IGoogleAuthService?>(
+                  (_) => deps.googleAuthService,
                 ),
               )
               .use(provider<EmailRepository>((_) => deps.emailRepository))

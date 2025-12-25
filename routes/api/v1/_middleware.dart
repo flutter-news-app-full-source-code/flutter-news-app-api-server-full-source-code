@@ -1,4 +1,4 @@
-import 'dart:io' show Platform; // To read environment variables
+import 'dart:io' show Platform;
 
 import 'package:dart_frog/dart_frog.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/authentication_middleware.dart';

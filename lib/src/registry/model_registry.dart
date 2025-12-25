@@ -287,8 +287,8 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       type: RequiredPermissionType.unsupported,
     ),
     // User updates are handled by a custom updater in DataOperationRegistry.
-    // - Admins can update roles (`appRole`, `dashboardRole`).
-    // - Users can update their own `feedDecoratorStatus` and `email`.
+    // - Admins can update roles (`role`, `tier`).
+    // - Users can update their own `name` and `photoUrl`.
     // The `userUpdateOwned` permission, combined with the ownership check,
     // provides the entry point for both admins (who bypass ownership checks)
     // and users to target a user object for an update.
@@ -336,6 +336,32 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresAuthentication: true,
       // Deletion of AppSettings is handled by the authentication service
       // during account deletion, not via a direct DELETE to /api/v1/data.
+    ),
+  ),
+  'user_context': ModelConfig<UserContext>(
+    fromJson: UserContext.fromJson,
+    getId: (c) => c.userId, // The ID is the userId
+    getOwnerId: (dynamic item) => (item as UserContext).userId,
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    getItemPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.userReadOwned, // Re-use user read permission
+      requiresOwnershipCheck: true,
+      requiresAuthentication: true,
+    ),
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.userUpdateOwned, // Re-use user update permission
+      requiresOwnershipCheck: true,
+      requiresAuthentication: true,
+    ),
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
     ),
   ),
   'user_content_preferences': ModelConfig<UserContentPreferences>(
@@ -619,6 +645,55 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.appReviewUpdateOwned,
       requiresOwnershipCheck: true,
+    ),
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+  ),
+  'user_subscription': ModelConfig<UserSubscription>(
+    fromJson: UserSubscription.fromJson,
+    getId: (s) => s.id,
+    getOwnerId: (dynamic item) => (item as UserSubscription).userId,
+    // Users can read their own subscription status
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.userReadOwned,
+      requiresOwnershipCheck: true,
+      requiresAuthentication: true,
+    ),
+    getItemPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.userReadOwned,
+      requiresOwnershipCheck: true,
+      requiresAuthentication: true,
+    ),
+    // Creation/Update/Delete is handled by the system (SubscriptionService), not via API
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+  ),
+  'purchase_transaction': ModelConfig<PurchaseTransaction>(
+    fromJson: PurchaseTransaction.fromJson,
+    getId: (_) => '', // DTO doesn't have an ID
+    getOwnerId: null,
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    getItemPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.none,
+      requiresAuthentication: true,
+    ), // Authenticated users can post purchases
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
     ),
     deletePermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported,

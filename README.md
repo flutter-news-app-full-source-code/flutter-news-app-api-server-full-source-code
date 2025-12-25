@@ -5,7 +5,7 @@
 </div>
 
 <p align="center">
-<img src="https://img.shields.io/badge/coverage-53%25-green?style=for-the-badge" alt="coverage">
+<img src="https://img.shields.io/badge/coverage-60%25-green?style=for-the-badge" alt="coverage">
 <a href="https://flutter-news-app-full-source-code.github.io/docs/api-server/local-setup/"><img src="https://img.shields.io/badge/DOCUMENTATION-READ-slategray?style=for-the-badge" alt="Documentation: Read"></a>
 </p>
 <p align="center">
@@ -91,6 +91,20 @@ Say goodbye to risky manual database updates. A professional, versioned migratio
 - **Traceable to Source:** Each migration is versioned and directly linked to the pull request that initiated it, providing a clear, auditable history of every change.
 > **Your Advantage:** Deploy with confidence. This robust system eliminates an entire class of deployment errors, ensuring your data models evolve gracefully and reliably with full traceability.
 
+</details>
+
+<details>
+<summary><strong>💰 Monetization & Subscriptions</strong></summary>
+
+### 💳 Robust Subscription Engine
+A complete, zero-trust backend infrastructure for managing in-app subscriptions and entitlements.
+- **Multi-Provider Support:** Built-in support for Apple App Store and Google Play Store, unified under a single "Entitlement" interface.
+- **Zero-Trust Validation:** Every purchase is cryptographically verified directly with Apple and Google servers before any entitlement is granted, eliminating client-side receipt spoofing.
+- **Idempotent State Machine:** A dedicated idempotency layer ensures that every transaction and webhook event is processed exactly once, preventing duplicate entitlements or race conditions during network retries.
+- **Real-Time Webhook Synchronization:** The system acts as an authoritative source of truth, listening for server-to-server webhooks to instantly reflect renewals, cancellations, and billing issues, ensuring the user's status is always accurate.
+- **Type-Safe Integration:** Built with strongly-typed models for all provider interactions, eliminating fragile JSON parsing and ensuring long-term maintainability.
+> **Your Advantage:** A secure, compliant, and battle-hardened monetization system that protects your revenue and guarantees a consistent experience for your subscribers.
+ 
 </details>
 
 <details>

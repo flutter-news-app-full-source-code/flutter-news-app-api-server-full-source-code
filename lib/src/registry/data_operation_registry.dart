@@ -7,6 +7,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/own
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/payment/subscription_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
 import 'package:logging/logging.dart';
@@ -114,6 +115,8 @@ class DataOperationRegistry {
           c.read<DataRepository<User>>().read(id: id, userId: null),
       'app_settings': (c, id) =>
           c.read<DataRepository<AppSettings>>().read(id: id, userId: null),
+      'user_context': (c, id) =>
+          c.read<DataRepository<UserContext>>().read(id: id, userId: null),
       'user_content_preferences': (c, id) => c
           .read<DataRepository<UserContentPreferences>>()
           .read(id: id, userId: null),
@@ -138,6 +141,8 @@ class DataOperationRegistry {
       'ranked_list_card_data': (c, id) => c
           .read<DataRepository<RankedListCardData>>()
           .read(id: id, userId: null),
+      'user_subscription': (c, id) =>
+          c.read<DataRepository<UserSubscription>>().read(id: id, userId: null),
     });
 
     // --- Register "Read All" Readers ---
@@ -241,6 +246,11 @@ class DataOperationRegistry {
             filter: f,
             sort: s,
             pagination: p,
+          ),
+      'user_subscription': (c, uid, f, s, p) =>
+          c.read<DataRepository<UserSubscription>>().readAll(
+            userId: uid,
+            filter: f,
           ),
     });
 
@@ -423,6 +433,23 @@ class DataOperationRegistry {
 
         return context.read<DataRepository<AppReview>>().create(item: item);
       },
+      'purchase_transaction': (context, item, uid) async {
+        _log.info('Executing custom creator for purchase_transaction.');
+        final authenticatedUser = context.read<User>();
+        final transaction = item as PurchaseTransaction;
+        final subscriptionService = context.read<SubscriptionService>();
+
+        if (transaction.provider == StoreProvider.stripe) {
+          throw const BadRequestException(
+            'Stripe payments are not supported for digital goods.',
+          );
+        }
+
+        return subscriptionService.verifyAndProcessPurchase(
+          user: authenticatedUser,
+          transaction: transaction,
+        );
+      },
     });
 
     // --- Register Item Updaters ---
@@ -452,8 +479,8 @@ class DataOperationRegistry {
       // security and architectural consistency.
       //
       // It enforces the following rules:
-      // 1. Admins can ONLY update a user's `appRole` and `dashboardRole`.
-      // 2. Regular users can ONLY update their own `feedDecoratorStatus`.
+      // 1. Admins can ONLY update a user's `role` and `tier`.
+      // 2. Regular users can ONLY update their own `name` and `photoUrl`.
       //
       // This logic correctly handles a full `User` object in the request body,
       // aligning with the DataRepository contract. It works by comparing the
@@ -479,8 +506,8 @@ class DataOperationRegistry {
           // Create a version of the original user with only the fields an
           // admin is allowed to change applied from the request.
           final permissibleUpdate = userToUpdate.copyWith(
-            appRole: requestedUpdateUser.appRole,
-            dashboardRole: requestedUpdateUser.dashboardRole,
+            role: requestedUpdateUser.role,
+            tier: requestedUpdateUser.tier,
           );
 
           // If the user from the request is not identical to the one with
@@ -488,10 +515,12 @@ class DataOperationRegistry {
           // modified.
           if (requestedUpdateUser != permissibleUpdate) {
             _log.warning(
-              'Admin ${authenticatedUser.id} attempted to update unauthorized fields for user $id.',
+              'Admin ${authenticatedUser.id} attempted to update unauthorized '
+              'fields for user $id.',
             );
             throw const ForbiddenException(
-              'Administrators can only update "appRole" and "dashboardRole" via this endpoint.',
+              'Administrators can only update "role" and "tier" via this '
+              'endpoint.',
             );
           }
           _log.finer('Admin update for user $id validation passed.');
@@ -502,8 +531,12 @@ class DataOperationRegistry {
 
           // Create a version of the original user with only the fields a
           // regular user is allowed to change applied from the request.
+          // Regular users can only update 'name' and 'photoUrl'.
+          // Critical fields like 'email', 'role', 'tier', 'isAnonymous' are
+          // immutable via this endpoint.
           final permissibleUpdate = userToUpdate.copyWith(
-            feedDecoratorStatus: requestedUpdateUser.feedDecoratorStatus,
+            name: requestedUpdateUser.name,
+            photoUrl: requestedUpdateUser.photoUrl,
           );
 
           // If the user from the request is not identical to the one with
@@ -514,7 +547,7 @@ class DataOperationRegistry {
               'User ${authenticatedUser.id} attempted to update unauthorized fields.',
             );
             throw const ForbiddenException(
-              'You can only update "feedDecoratorStatus" via this endpoint.',
+              'You can only update "name" and "photoUrl" via this endpoint.',
             );
           }
           _log.finer(
@@ -536,6 +569,9 @@ class DataOperationRegistry {
       'app_settings': (c, id, item, uid) => c
           .read<DataRepository<AppSettings>>()
           .update(id: id, item: item as AppSettings, userId: uid),
+      'user_context': (c, id, item, uid) => c
+          .read<DataRepository<UserContext>>()
+          .update(id: id, item: item as UserContext, userId: uid),
       'user_content_preferences': (context, id, item, uid) async {
         _log.info(
           'Executing custom updater for user_content_preferences ID: $id.',

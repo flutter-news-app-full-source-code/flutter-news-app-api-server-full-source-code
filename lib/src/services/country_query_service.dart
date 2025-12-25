@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:collection'; // Added for SplayTreeMap
+import 'dart:collection';
 import 'dart:convert';
 
 import 'package:core/core.dart';
@@ -105,7 +105,7 @@ class CountryQueryService {
 
       return response;
     } on HttpException {
-      rethrow; // Propagate known HTTP exceptions
+      rethrow;
     } catch (e, s) {
       _log.severe('Error fetching filtered countries: $e', e, s);
       throw OperationFailedException(

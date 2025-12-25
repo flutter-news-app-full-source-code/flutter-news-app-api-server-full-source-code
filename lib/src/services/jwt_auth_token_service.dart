@@ -50,10 +50,10 @@ class JwtAuthTokenService implements AuthTokenService {
           'iss': issuer, // Issuer
           'jti': ObjectId().oid, // JWT ID (for potential blacklisting)
           // Custom claims (optional, include what's useful)
-          'email': user.email, // Kept for convenience
-          // Embed the new enum-based roles. Use .name for string value.
-          'appRole': user.appRole.name,
-          'dashboardRole': user.dashboardRole.name,
+          'email': user.email,
+          'role': user.role.name, // role for permissions
+          'tier': user.tier.name, // AccessTier for entitlements
+          'isAnonymous': user.isAnonymous,
         },
         issuer: issuer,
         subject: user.id,

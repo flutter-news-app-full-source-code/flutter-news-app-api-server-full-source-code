@@ -14,6 +14,8 @@ class MockAnalyticsReportingClient extends Mock
 
 class MockAnalyticsMetricMapper extends Mock implements AnalyticsMetricMapper {}
 
+class MockSubscriptionConfig extends Mock implements SubscriptionConfig {}
+
 void main() {
   group('AnalyticsSyncService', () {
     late AnalyticsSyncService service;
@@ -155,6 +157,7 @@ void main() {
               isPositiveFeedbackFollowUpEnabled: false,
             ),
           ),
+          subscription: MockSubscriptionConfig(),
         ),
         user: const UserConfig(
           limits: UserLimitsConfig(
@@ -203,7 +206,7 @@ void main() {
       when(() => mockMapper.getKpiQuery(kpiId)).thenReturn(query);
       when(
         () => mockAnalyticsClient.getMetricTotal(any(), any(), any()),
-      ).thenAnswer((_) async => 100); // Current period value
+      ).thenAnswer((_) async => 100);
       when(
         () => mockKpiCardRepo.update(
           id: any(named: 'id'),

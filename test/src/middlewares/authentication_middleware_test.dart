@@ -21,9 +21,8 @@ void main() {
       user = User(
         id: 'user-id',
         email: 'test@example.com',
-        appRole: AppUserRole.standardUser,
-        dashboardRole: DashboardUserRole.none,
-        feedDecoratorStatus: const {},
+        role: UserRole.user,
+        tier: AccessTier.standard,
         createdAt: DateTime.now(),
       );
 

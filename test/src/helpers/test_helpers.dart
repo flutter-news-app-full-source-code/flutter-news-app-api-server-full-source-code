@@ -55,10 +55,9 @@ void registerSharedFallbackValues() {
     User(
       id: 'fallback-user-id',
       email: 'fallback@example.com',
-      appRole: AppUserRole.standardUser,
-      dashboardRole: DashboardUserRole.none,
+      role: UserRole.user,
+      tier: AccessTier.standard,
       createdAt: DateTime.now(),
-      feedDecoratorStatus: const {},
     ),
   );
   registerFallbackValue(
@@ -288,15 +287,14 @@ RequestContext createMockRequestContext({
 User createTestUser({
   String id = 'user-id',
   String email = 'test@example.com',
-  AppUserRole appRole = AppUserRole.standardUser,
-  DashboardUserRole dashboardRole = DashboardUserRole.none,
+  UserRole role = UserRole.user,
+  AccessTier tier = AccessTier.standard,
 }) {
   return User(
     id: id,
     email: email,
-    appRole: appRole,
-    dashboardRole: dashboardRole,
+    role: role,
+    tier: tier,
     createdAt: DateTime.now(),
-    feedDecoratorStatus: const {},
   );
 }

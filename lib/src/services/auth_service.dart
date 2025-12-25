@@ -27,12 +27,14 @@ class AuthService {
     required VerificationCodeStorageService verificationCodeStorageService,
     required EmailRepository emailRepository,
     required DataRepository<AppSettings> appSettingsRepository,
+    required DataRepository<UserContext> userContextRepository,
     required DataRepository<UserContentPreferences>
     userContentPreferencesRepository,
     required PermissionService permissionService,
     required Logger log,
   }) : _userRepository = userRepository,
        _authTokenService = authTokenService,
+       _userContextRepository = userContextRepository,
        _verificationCodeStorageService = verificationCodeStorageService,
        _permissionService = permissionService,
        _emailRepository = emailRepository,
@@ -43,6 +45,7 @@ class AuthService {
   final DataRepository<User> _userRepository;
   final AuthTokenService _authTokenService;
   final VerificationCodeStorageService _verificationCodeStorageService;
+  final DataRepository<UserContext> _userContextRepository;
   final EmailRepository _emailRepository;
   final DataRepository<AppSettings> _appSettingsRepository;
   final DataRepository<UserContentPreferences>
@@ -178,7 +181,7 @@ class AuthService {
     // This is a fire-and-forget operation; we don't want to block the
     // login if invalidation fails, but we should log any errors.
     if (authenticatedUser != null &&
-        authenticatedUser.appRole == AppUserRole.guestUser &&
+        authenticatedUser.isAnonymous &&
         currentToken != null) {
       unawaited(
         _authTokenService.invalidateToken(currentToken).catchError((e, s) {
@@ -192,8 +195,7 @@ class AuthService {
     }
 
     // 3. Check if the sign-in is initiated from an authenticated guest session.
-    if (authenticatedUser != null &&
-        authenticatedUser.appRole == AppUserRole.guestUser) {
+    if (authenticatedUser != null && authenticatedUser.isAnonymous) {
       _log.info(
         'Guest user ${authenticatedUser.id} is attempting to sign in with email $email.',
       );
@@ -284,20 +286,13 @@ class AuthService {
         user = User(
           id: ObjectId().oid,
           email: email,
-          appRole: AppUserRole.standardUser,
-          dashboardRole: DashboardUserRole.none,
+          isAnonymous: false,
+          role: UserRole.user,
+          tier: AccessTier.standard,
           createdAt: DateTime.now(),
-          feedDecoratorStatus: Map.fromEntries(
-            FeedDecoratorType.values.map(
-              (type) => MapEntry(
-                type,
-                const UserFeedDecoratorStatus(isCompleted: false),
-              ),
-            ),
-          ),
         );
         user = await _userRepository.create(item: user);
-        _log.info('Created new user: ${user.id} with appRole: ${user.appRole}');
+        _log.info('Created new user: ${user.id} with tier: ${user.tier}');
 
         // Ensure default documents are created for the new user.
         await _ensureUserDataExists(user);
@@ -344,17 +339,10 @@ class AuthService {
         // Use a unique placeholder email for anonymous users to satisfy the
         // non-nullable email constraint.
         email: '$newId@anonymous.com',
-        appRole: AppUserRole.guestUser,
-        dashboardRole: DashboardUserRole.none,
+        isAnonymous: true,
+        role: UserRole.user,
+        tier: AccessTier.guest,
         createdAt: DateTime.now(),
-        feedDecoratorStatus: Map.fromEntries(
-          FeedDecoratorType.values.map(
-            (type) => MapEntry(
-              type,
-              const UserFeedDecoratorStatus(isCompleted: false),
-            ),
-          ),
-        ),
       );
       user = await _userRepository.create(item: user);
       _log.info('Created anonymous user: ${user.id}');
@@ -453,6 +441,7 @@ class AuthService {
       await _appSettingsRepository.delete(id: userId, userId: userId);
       _log.info('Deleted AppSettings for user ${userToDelete.id}.');
 
+      await _userContextRepository.delete(id: userId, userId: userId);
       await _userContentPreferencesRepository.delete(
         id: userId,
         userId: userId,
@@ -572,6 +561,26 @@ class AuthService {
         userId: user.id,
       );
     }
+
+    // Check for UserContext
+    try {
+      await _userContextRepository.read(id: user.id, userId: user.id);
+    } on NotFoundException {
+      _log.info(
+        'UserContext not found for user ${user.id}. Creating with defaults.',
+      );
+      final defaultUserContext = UserContext(
+        userId: user.id,
+        feedDecoratorStatus: {
+          for (final type in FeedDecoratorType.values)
+            type: const UserFeedDecoratorStatus(isCompleted: false),
+        },
+      );
+      await _userContextRepository.create(
+        item: defaultUserContext,
+        userId: user.id,
+      );
+    }
   }
 
   /// Converts a guest user to a new permanent standard user.
@@ -590,7 +599,8 @@ class AuthService {
     // 1. Update the guest user's details to make them permanent.
     final updatedUser = guestUser.copyWith(
       email: verifiedEmail,
-      appRole: AppUserRole.standardUser,
+      isAnonymous: false,
+      tier: AccessTier.standard,
     );
 
     final permanentUser = await _userRepository.update(

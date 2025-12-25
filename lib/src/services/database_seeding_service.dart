@@ -314,13 +314,40 @@ class DatabaseSeedingService {
       });
       _log.info('Ensured indexes for "app_reviews".');
 
+      // Indexes for the user_contexts collection
+      await _db.runCommand({
+        'createIndexes': 'user_contexts',
+        'indexes': [
+          {
+            'key': {'userId': 1},
+            'name': 'userId_index',
+            'unique': true,
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "user_contexts".');
+
+      // Indexes for the user_subscriptions collection
+      await _db.runCommand({
+        'createIndexes': 'user_subscriptions',
+        'indexes': [
+          {
+            'key': {'userId': 1},
+            'name': 'userId_index',
+            // A user can technically have multiple records (expired + active),
+            // so we don't enforce uniqueness here, but we index for speed.
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "user_subscriptions".');
+
       // Indexes for the users collection
       await _db.runCommand({
         'createIndexes': 'users',
         'indexes': [
           {
             // For `users` collection aggregations (e.g., role distribution).
-            'key': {'appRole': 1},
+            'key': {'role': 1},
             'name': 'analytics_user_role_index',
           },
         ],
@@ -464,6 +491,19 @@ class DatabaseSeedingService {
       });
       _log.info('Ensured indexes for "ranked_list_card_data".');
 
+      // Indexes for idempotency_records
+      await _db.runCommand({
+        'createIndexes': 'idempotency_records',
+        'indexes': [
+          {
+            'key': {'createdAt': 1},
+            'name': 'createdAt_ttl_index',
+            'expireAfterSeconds': 86400 * 7, // 7 days retention
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "idempotency_records".');
+
       _log.info('Database indexes are set up correctly.');
     } on Exception catch (e, s) {
       _log.severe('Failed to create database indexes.', e, s);
@@ -485,8 +525,9 @@ class DatabaseSeedingService {
     }
 
     final usersCollection = _db.collection('users');
+
     final existingAdmin = await usersCollection.findOne(
-      where.eq('dashboardRole', DashboardUserRole.admin.name),
+      where.eq('role', UserRole.admin.name),
     );
 
     // Case 1: An admin exists.
@@ -517,15 +558,10 @@ class DatabaseSeedingService {
     final newAdminUser = User(
       id: newAdminId.oid,
       email: overrideEmail,
-      appRole: AppUserRole.standardUser,
-      dashboardRole: DashboardUserRole.admin,
+      isAnonymous: false,
+      role: UserRole.admin,
+      tier: AccessTier.premium,
       createdAt: DateTime.now(),
-      feedDecoratorStatus: Map.fromEntries(
-        FeedDecoratorType.values.map(
-          (type) =>
-              MapEntry(type, const UserFeedDecoratorStatus(isCompleted: false)),
-        ),
-      ),
     );
 
     await usersCollection.insertOne({
@@ -543,6 +579,9 @@ class DatabaseSeedingService {
   Future<void> _deleteUserAndData(ObjectId userId) async {
     await _db.collection('users').deleteOne(where.eq('_id', userId));
     await _db.collection('app_settings').deleteOne(where.eq('_id', userId));
+    await _db
+        .collection('user_contexts')
+        .deleteOne(where.eq('userId', userId.oid));
     await _db
         .collection('user_content_preferences')
         .deleteOne(where.eq('_id', userId));
@@ -591,5 +630,19 @@ class DatabaseSeedingService {
       '_id': userId,
       ...defaultUserPreferences.toJson()..remove('id'),
     });
+
+    // Create a default UserContext for the new user.
+    final defaultUserContext = UserContext(
+      userId: userId.oid,
+      feedDecoratorStatus: Map.fromEntries(
+        FeedDecoratorType.values.map(
+          (type) =>
+              MapEntry(type, const UserFeedDecoratorStatus(isCompleted: false)),
+        ),
+      ),
+    );
+    await _db
+        .collection('user_contexts')
+        .insertOne(defaultUserContext.toJson());
   }
 }

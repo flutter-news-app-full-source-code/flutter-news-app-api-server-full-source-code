@@ -5,9 +5,8 @@ import 'package:flutter_news_app_api_server_full_source_code/src/rbac/role_permi
 /// Service responsible for checking if a user has a specific permission.
 ///
 /// This service uses the predefined [rolePermissions] map to determine a user's
-/// access rights based on their `appRole` and `dashboardRole`. It also
-/// includes an explicit check for the `admin` role, granting them all
-/// permissions.
+/// access rights based on their `role` and `tier`. It also includes an explicit
+/// check for the `admin` role, granting them all permissions.
 /// {@endtemplate}
 class PermissionService {
   /// {@macro permission_service}
@@ -26,25 +25,21 @@ class PermissionService {
       return true;
     }
 
-    // Get the permission sets for the user's app and dashboard roles.
-    final appPermissions = rolePermissions[user.appRole] ?? const <String>{};
-    final dashboardPermissions =
-        rolePermissions[user.dashboardRole] ?? const <String>{};
-
-    // Combine the permissions from both roles.
-    final totalPermissions = {...appPermissions, ...dashboardPermissions};
+    // Get the permission set for the user's role.
+    final rolePerms = rolePermissions[user.role] ?? const <String>{};
+    final tierPerms = rolePermissions[user.tier] ?? const <String>{};
 
     // Check if the combined set contains the required permission.
-    return totalPermissions.contains(permission);
+    return rolePerms.contains(permission) || tierPerms.contains(permission);
   }
 
-  /// Checks if the given [user] has the `admin` dashboard role.
+  /// Checks if the given [user] has the `admin` role.
   ///
   /// This is a convenience method for checks that are strictly limited
   /// to administrators, bypassing the permission map.
   ///
   /// - [user]: The authenticated user.
   bool isAdmin(User user) {
-    return user.dashboardRole == DashboardUserRole.admin;
+    return user.role == UserRole.admin;
   }
 }

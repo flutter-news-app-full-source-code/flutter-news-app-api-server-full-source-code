@@ -106,7 +106,7 @@ class InMemoryTokenBlacklistService implements TokenBlacklistService {
     try {
       final expiry = blacklistStore[jti];
       if (expiry == null) {
-        return false; // Not in blacklist
+        return false;
       }
 
       final isExpired = DateTime.now().isAfter(expiry);
@@ -115,7 +115,7 @@ class InMemoryTokenBlacklistService implements TokenBlacklistService {
         // Cleanup will eventually remove it.
         return false;
       }
-      return true; // It's in the blacklist and not expired
+      return true;
     } catch (e) {
       _log.severe('Error checking blacklist for jti $jti: $e');
       throw OperationFailedException('Failed to check token blacklist: $e');
@@ -128,7 +128,7 @@ class InMemoryTokenBlacklistService implements TokenBlacklistService {
       _log.warning('Attempted cleanup on disposed service.');
       return;
     }
-    await Future<void>.delayed(Duration.zero); // Simulate async
+    await Future<void>.delayed(Duration.zero);
     final now = DateTime.now();
     final expiredKeys = <String>[];
 
