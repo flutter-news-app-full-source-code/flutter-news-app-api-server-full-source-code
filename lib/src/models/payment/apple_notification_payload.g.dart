@@ -14,10 +14,6 @@ AppleNotificationPayload _$AppleNotificationPayloadFromJson(
       'notificationType',
       (v) => $enumDecode(_$AppleNotificationTypeEnumMap, v),
     ),
-    subtype: $checkedConvert(
-      'subtype',
-      (v) => $enumDecodeNullable(_$AppleNotificationSubtypeEnumMap, v),
-    ),
     notificationUUID: $checkedConvert('notificationUUID', (v) => v as String),
     data: $checkedConvert(
       'data',
@@ -27,6 +23,10 @@ AppleNotificationPayload _$AppleNotificationPayloadFromJson(
     signedDate: $checkedConvert(
       'signedDate',
       (v) => _dateTimeFromMilliseconds((v as num).toInt()),
+    ),
+    subtype: $checkedConvert(
+      'subtype',
+      (v) => $enumDecodeNullable(_$AppleNotificationSubtypeEnumMap, v),
     ),
   );
   return val;
@@ -91,11 +91,11 @@ AppleNotificationData _$AppleNotificationDataFromJson(
     ),
     signedRenewalInfo: $checkedConvert('signedRenewalInfo', (v) => v as String),
     bundleId: $checkedConvert('bundleId', (v) => v as String),
-    bundleVersion: $checkedConvert('bundleVersion', (v) => v as String?),
     environment: $checkedConvert(
       'environment',
       (v) => $enumDecode(_$AppleEnvironmentEnumMap, v),
     ),
+    bundleVersion: $checkedConvert('bundleVersion', (v) => v as String?),
   );
   return val;
 });
