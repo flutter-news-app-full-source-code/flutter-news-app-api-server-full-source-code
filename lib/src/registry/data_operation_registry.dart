@@ -506,8 +506,7 @@ class DataOperationRegistry {
           // Create a version of the original user with only the fields an
           // admin is allowed to change applied from the request.
           final permissibleUpdate = userToUpdate.copyWith(
-            appRole: requestedUpdateUser.appRole,
-            // Admins can now also update the tier manually if needed
+            role: requestedUpdateUser.role,
             tier: requestedUpdateUser.tier,
           );
 
@@ -516,10 +515,12 @@ class DataOperationRegistry {
           // modified.
           if (requestedUpdateUser != permissibleUpdate) {
             _log.warning(
-              'Admin ${authenticatedUser.id} attempted to update unauthorized fields for user $id.',
+              'Admin ${authenticatedUser.id} attempted to update unauthorized '
+              'fields for user $id.',
             );
             throw const ForbiddenException(
-              'Administrators can only update "appRole" and "tier" via this endpoint.',
+              'Administrators can only update "role" and "tier" via this '
+              'endpoint.',
             );
           }
           _log.finer('Admin update for user $id validation passed.');
@@ -528,25 +529,9 @@ class DataOperationRegistry {
             'Regular user ${authenticatedUser.id} is updating their own profile.',
           );
 
-          // Create a version of the original user with only the fields a
-          // regular user is allowed to change applied from the request.
-          final permissibleUpdate = userToUpdate.copyWith(
-            feedDecoratorStatus: requestedUpdateUser.feedDecoratorStatus,
-          );
-
-          // If the user from the request is not identical to the one with
-          // only permissible changes, it means an unauthorized field was
-          // modified.
-          if (requestedUpdateUser != permissibleUpdate) {
-            _log.warning(
-              'User ${authenticatedUser.id} attempted to update unauthorized fields.',
-            );
-            throw const ForbiddenException(
-              'You can only update "feedDecoratorStatus" via this endpoint.',
-            );
-          }
-          _log.finer(
-            'Regular user update for user $id validation passed.',
+          // Regular users are not permitted to update the core User object.
+          throw const ForbiddenException(
+            'This endpoint is restricted to administrators.',
           );
         }
 
