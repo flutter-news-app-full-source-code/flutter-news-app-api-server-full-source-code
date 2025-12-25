@@ -1,5 +1,6 @@
 import 'package:core/core.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/util/apple_jws_validator.dart';
 import 'package:http_client/http_client.dart';
 import 'package:jose/jose.dart';
 import 'package:logging/logging.dart';
@@ -22,10 +23,13 @@ class AppStoreServerClient {
              baseUrl: 'https://api.storekit.itunes.apple.com/inApps/v1',
              tokenProvider: () async =>
                  null, // Auth is handled per-request via JWT
-           );
+           ) {
+    _jwsValidator = AppleJwsValidator(log: log);
+  }
 
   final Logger _log;
   final HttpClient _httpClient;
+  late final AppleJwsValidator _jwsValidator;
 
   /// Generates a signed JWT (ES256) for App Store Server API authentication.
   String _generateJwt() {
@@ -82,6 +86,11 @@ class AppStoreServerClient {
           headers: {'Authorization': 'Bearer $token'},
         ),
       );
+      
+      // Note: The response from this endpoint is NOT a JWS. It's a JSON object
+      // containing lists of JWS strings (lastTransactions).
+      // We return the raw map here, and the SubscriptionService will use
+      // the JWS validator to decode the specific transaction fields.
       return response;
     } on HttpException catch (e) {
       if (e is NotFoundException) {
@@ -100,5 +109,10 @@ class AppStoreServerClient {
         'Failed to verify subscription with Apple.',
       );
     }
+  }
+
+  /// Decodes a JWS string (e.g., signedTransactionInfo) using the validator.
+  Map<String, dynamic> decodeJws(String jws) {
+    return _jwsValidator.decode(jws);
   }
 }
