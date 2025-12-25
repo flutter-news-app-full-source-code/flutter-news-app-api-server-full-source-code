@@ -93,6 +93,20 @@ void main() {
                 isPositiveFeedbackFollowUpEnabled: false,
               ),
             ),
+            subscription: SubscriptionConfig(
+              enabled: false,
+              enabledProviders: [],
+              monthlyPlan: PlanDetails(
+                enabled: true,
+                isRecommended: false,
+                appleProductId: 'monthly_ios',
+              ),
+              annualPlan: PlanDetails(
+                enabled: true,
+                isRecommended: true,
+                appleProductId: 'annual_ios',
+              ),
+            ),
           ),
           user: const UserConfig(
             limits: UserLimitsConfig(
@@ -117,7 +131,7 @@ void main() {
       adminUser = createTestUser(
         id: 'admin-id',
         email: 'admin@test.com',
-        dashboardRole: DashboardUserRole.admin,
+        role: UserRole.admin,
       );
 
       adminToken = 'admin-token';
@@ -192,6 +206,20 @@ void main() {
               eligiblePositiveInteractions: [],
               isNegativeFeedbackFollowUpEnabled: false,
               isPositiveFeedbackFollowUpEnabled: false,
+            ),
+          ),
+          subscription: SubscriptionConfig(
+            enabled: false,
+            enabledProviders: [],
+            monthlyPlan: PlanDetails(
+              enabled: true,
+              isRecommended: false,
+              appleProductId: 'monthly_ios',
+            ),
+            annualPlan: PlanDetails(
+              enabled: true,
+              isRecommended: true,
+              appleProductId: 'annual_ios',
             ),
           ),
         ),
