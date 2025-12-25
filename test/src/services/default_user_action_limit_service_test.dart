@@ -141,6 +141,8 @@ void main() {
                 pinned: 1,
                 notificationSubscriptions: {
                   PushNotificationSubscriptionDeliveryType.breakingOnly: 1,
+                  PushNotificationSubscriptionDeliveryType.dailyDigest: 1,
+                  PushNotificationSubscriptionDeliveryType.weeklyRoundup: 1,
                 },
               ),
             },
@@ -200,6 +202,96 @@ void main() {
             ),
             followedSources: const [],
             followedTopics: const [],
+            savedHeadlines: const [],
+            savedHeadlineFilters: const [],
+            savedSourceFilters: const [],
+          );
+
+          await expectLater(
+            service.checkUserContentPreferencesLimits(
+              user: standardUser,
+              updatedPreferences: preferences,
+            ),
+            throwsA(isA<ForbiddenException>()),
+          );
+        },
+      );
+
+      test(
+        'throws ForbiddenException when followed sources exceed limit',
+        () async {
+          // Limit is 5
+          final preferences = UserContentPreferences(
+            id: standardUser.id,
+            followedCountries: const [],
+            followedSources: List.generate(
+              6,
+              (i) => Source(
+                id: '$i',
+                name: 'Source $i',
+                description: '',
+                url: '',
+                logoUrl: '',
+                sourceType: SourceType.blog,
+                language: Language(
+                  id: 'l',
+                  code: 'en',
+                  name: 'English',
+                  nativeName: 'English',
+                  createdAt: DateTime.now(),
+                  updatedAt: DateTime.now(),
+                  status: ContentStatus.active,
+                ),
+                headquarters: Country(
+                  id: 'c',
+                  isoCode: 'US',
+                  name: 'US',
+                  flagUrl: '',
+                  createdAt: DateTime.now(),
+                  updatedAt: DateTime.now(),
+                  status: ContentStatus.active,
+                ),
+                createdAt: DateTime.now(),
+                updatedAt: DateTime.now(),
+                status: ContentStatus.active,
+              ),
+            ),
+            followedTopics: const [],
+            savedHeadlines: const [],
+            savedHeadlineFilters: const [],
+            savedSourceFilters: const [],
+          );
+
+          await expectLater(
+            service.checkUserContentPreferencesLimits(
+              user: standardUser,
+              updatedPreferences: preferences,
+            ),
+            throwsA(isA<ForbiddenException>()),
+          );
+        },
+      );
+
+      test(
+        'throws ForbiddenException when followed topics exceed limit',
+        () async {
+          // Limit is 5
+          final preferences = UserContentPreferences(
+            id: standardUser.id,
+            followedCountries: const [],
+            followedSources: const [],
+            followedTopics: List.generate(
+              6,
+              (i) => Topic(
+                id: '$i',
+                name: 'Topic $i',
+                description: '',
+                iconUrl: '',
+                createdAt: DateTime.now(),
+                updatedAt: DateTime.now(),
+                status: ContentStatus.active,
+              ),
+            ),
             savedHeadlines: const [],
             savedHeadlineFilters: const [],
             savedSourceFilters: const [],
@@ -401,6 +493,126 @@ void main() {
                 },
               ),
             ),
+            savedSourceFilters: const [],
+          );
+
+          await expectLater(
+            service.checkUserContentPreferencesLimits(
+              user: standardUser,
+              updatedPreferences: preferences,
+            ),
+            throwsA(isA<ForbiddenException>()),
+          );
+        },
+      );
+
+      test(
+        'throws ForbiddenException when saved source filters total exceed limit',
+        () async {
+          // Limit is 2
+          final preferences = UserContentPreferences(
+            id: standardUser.id,
+            followedCountries: const [],
+            followedSources: const [],
+            followedTopics: const [],
+            savedHeadlines: const [],
+            savedHeadlineFilters: const [],
+            savedSourceFilters: List.generate(
+              3,
+              (i) => SavedSourceFilter(
+                id: '$i',
+                userId: standardUser.id,
+                name: 'Source Filter $i',
+                criteria: const SourceFilterCriteria(
+                  sourceTypes: [],
+                  languages: [],
+                  countries: [],
+                ),
+                isPinned: false,
+              ),
+            ),
+          );
+
+          await expectLater(
+            service.checkUserContentPreferencesLimits(
+              user: standardUser,
+              updatedPreferences: preferences,
+            ),
+            throwsA(isA<ForbiddenException>()),
+          );
+        },
+      );
+
+      test(
+        'throws ForbiddenException when saved source filters pinned exceed limit',
+        () async {
+          // Pinned limit is 1
+          final preferences = UserContentPreferences(
+            id: standardUser.id,
+            followedCountries: const [],
+            followedSources: const [],
+            followedTopics: const [],
+            savedHeadlines: const [],
+            savedHeadlineFilters: const [],
+            savedSourceFilters: List.generate(
+              2,
+              (i) => SavedSourceFilter(
+                id: '$i',
+                userId: standardUser.id,
+                name: 'Source Filter $i',
+                criteria: const SourceFilterCriteria(
+                  sourceTypes: [],
+                  languages: [],
+                  countries: [],
+                ),
+                isPinned: true,
+              ),
+            ),
+          );
+
+          await expectLater(
+            service.checkUserContentPreferencesLimits(
+              user: standardUser,
+              updatedPreferences: preferences,
+            ),
+            throwsA(isA<ForbiddenException>()),
+          );
+        },
+      );
+
+      test(
+        'throws ForbiddenException when notification limit configuration is missing',
+        () async {
+          // Setup a malformed config where dailyDigest is missing
+          final malformedConfig = mockRemoteConfig.copyWith(
+            user: UserConfig(
+              limits: mockRemoteConfig.user.limits.copyWith(
+                savedHeadlineFilters: {
+                  AccessTier.standard: const SavedFilterLimits(
+                    total: 2,
+                    pinned: 1,
+                    notificationSubscriptions: {
+                      PushNotificationSubscriptionDeliveryType.breakingOnly: 1,
+                      // Missing dailyDigest and weeklyRoundup
+                    },
+                  ),
+                },
+              ),
+            ),
+          );
+
+          when(
+            () => mockRemoteConfigRepository.read(id: any(named: 'id')),
+          ).thenAnswer((_) async => malformedConfig);
+
+          // Even with empty preferences, the service checks config validity
+          final preferences = UserContentPreferences(
+            id: standardUser.id,
+            followedCountries: const [],
+            followedSources: const [],
+            followedTopics: const [],
+            savedHeadlines: const [],
+            savedHeadlineFilters: const [],
             savedSourceFilters: const [],
           );
 
