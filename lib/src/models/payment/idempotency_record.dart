@@ -1,4 +1,3 @@
-import 'package:core/core.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
@@ -26,12 +25,9 @@ class IdempotencyRecord extends Equatable {
       _$IdempotencyRecordFromJson(json);
 
   /// The unique identifier for the event (e.g., transactionId, eventId).
-  /// This maps to the `_id` field in MongoDB.
-  @JsonKey(name: '_id')
   final String id;
 
   /// The timestamp when this record was created (processed).
-  @DateTimeConverter()
   final DateTime createdAt;
 
   /// Converts this [IdempotencyRecord] instance to JSON data.
