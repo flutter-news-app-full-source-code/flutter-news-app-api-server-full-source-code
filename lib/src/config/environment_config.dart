@@ -252,8 +252,4 @@ abstract final class EnvironmentConfig {
   /// Retrieves the Google Play Package Name.
   static String? get googlePlayPackageName =>
       _getEnv('GOOGLE_PLAY_PACKAGE_NAME');
-
-  /// Retrieves the Stripe Webhook Signing Secret.
-  static String? get stripeWebhookSigningSecret =>
-      _getEnv('STRIPE_WEBHOOK_SIGNING_SECRET');
 }
