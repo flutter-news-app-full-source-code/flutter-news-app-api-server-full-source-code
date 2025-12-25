@@ -84,7 +84,7 @@ class SubscriptionService {
       );
 
       // Find the relevant transaction
-      final group = appleResponse.data.firstWhere(
+      final group = appleResponse.data.singleWhere(
         (group) => group.lastTransactions.any(
           (t) => t.originalTransactionId == transaction.providerReceipt,
         ),
