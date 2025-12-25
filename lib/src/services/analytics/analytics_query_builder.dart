@@ -128,7 +128,7 @@ class AnalyticsQueryBuilder {
     return [
       {
         r'$group': {
-          '_id': r'$appRole',
+          '_id': r'$role',
           'count': {r'$sum': 1},
         },
       },

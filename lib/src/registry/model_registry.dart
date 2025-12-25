@@ -287,8 +287,8 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       type: RequiredPermissionType.unsupported,
     ),
     // User updates are handled by a custom updater in DataOperationRegistry.
-    // - Admins can update roles (`appRole`, `dashboardRole`).
-    // - Users can update their own `feedDecoratorStatus` and `email`.
+    // - Admins can update roles (`role`, `tier`).
+    // - Users can update their own `name` and `photoUrl`.
     // The `userUpdateOwned` permission, combined with the ownership check,
     // provides the entry point for both admins (who bypass ownership checks)
     // and users to target a user object for an update.

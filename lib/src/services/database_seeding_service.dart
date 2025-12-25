@@ -347,7 +347,7 @@ class DatabaseSeedingService {
         'indexes': [
           {
             // For `users` collection aggregations (e.g., role distribution).
-            'key': {'appRole': 1},
+            'key': {'role': 1},
             'name': 'analytics_user_role_index',
           },
         ],
@@ -525,6 +525,7 @@ class DatabaseSeedingService {
     }
 
     final usersCollection = _db.collection('users');
+
     final existingAdmin = await usersCollection.findOne(
       where.eq('role', UserRole.admin.name),
     );
