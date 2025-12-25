@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/enums/enums.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
@@ -72,8 +73,8 @@ class GoogleSubscriptionDetails extends Equatable {
   /// The version of the notification.
   final String version;
 
-  /// The type of notification (e.g., 1 for RECOVERED, 2 for RENEWED).
-  final int notificationType;
+  /// The type of notification.
+  final GoogleNotificationType notificationType;
 
   /// The token provided to the user's device when the subscription was purchased.
   final String purchaseToken;
