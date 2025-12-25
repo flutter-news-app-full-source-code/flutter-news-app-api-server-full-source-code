@@ -29,7 +29,9 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
            httpClient ??
            HttpClient(
              baseUrl: 'https://analyticsdata.googleapis.com/v1beta',
-             tokenProvider: firebaseAuthenticator.getAccessToken,
+             tokenProvider: () => firebaseAuthenticator.getAccessToken(
+               scope: 'https://www.googleapis.com/auth/analytics.readonly',
+             ),
              logger: log,
            );
 
