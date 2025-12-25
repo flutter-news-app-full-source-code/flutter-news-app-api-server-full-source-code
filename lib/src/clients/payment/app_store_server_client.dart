@@ -114,4 +114,9 @@ class AppStoreServerClient {
     final decodedMap = _jwsValidator.decode(jws);
     return AppleTransactionDecodedPayload.fromJson(decodedMap);
   }
+
+  /// Decodes a JWS string into a Map.
+  Map<String, dynamic> decodeJws(String jws) {
+    return _jwsValidator.decode(jws);
+  }
 }
