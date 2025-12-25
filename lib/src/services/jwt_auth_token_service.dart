@@ -51,7 +51,7 @@ class JwtAuthTokenService implements AuthTokenService {
           'jti': ObjectId().oid, // JWT ID (for potential blacklisting)
           // Custom claims (optional, include what's useful)
           'email': user.email,
-          'role': user.role.name, // UserRole for permissions
+          'role': user.role.name, // role for permissions
           'tier': user.tier.name, // AccessTier for entitlements
           'isAnonymous': user.isAnonymous,
         },

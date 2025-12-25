@@ -203,7 +203,7 @@ void main() {
       when(() => mockMapper.getKpiQuery(kpiId)).thenReturn(query);
       when(
         () => mockAnalyticsClient.getMetricTotal(any(), any(), any()),
-      ).thenAnswer((_) async => 100); // Current period value
+      ).thenAnswer((_) async => 100);
       when(
         () => mockKpiCardRepo.update(
           id: any(named: 'id'),

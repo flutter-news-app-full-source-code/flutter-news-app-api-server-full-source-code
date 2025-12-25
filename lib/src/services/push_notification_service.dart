@@ -261,7 +261,7 @@ class DefaultPushNotificationService implements IPushNotificationService {
         '${headline.id}.',
       );
     } on HttpException {
-      rethrow; // Propagate known HTTP exceptions
+      rethrow;
     } catch (e, s) {
       _log.severe(
         'Failed to send breaking news notification for headline '
@@ -289,7 +289,7 @@ class DefaultPushNotificationService implements IPushNotificationService {
     PushNotificationProvider provider,
   ) async {
     if (invalidTokens.isEmpty) {
-      return; // Nothing to clean up.
+      return;
     }
 
     _log.info(

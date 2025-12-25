@@ -166,7 +166,7 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
     DateTime startDate,
     DateTime endDate,
   ) async {
-    const metricName = 'eventCount'; // Ranked lists are always event counts
+    const metricName = 'eventCount';
     final dimensionName = query.dimension;
 
     _log.info(

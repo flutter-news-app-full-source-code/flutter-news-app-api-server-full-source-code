@@ -217,7 +217,7 @@ void main() {
           event: AnalyticsEvent.contentViewed,
           dimension: 'contentId',
         );
-        final mockMixpanelResponse = <String, dynamic>{}; // Empty map
+        final mockMixpanelResponse = <String, dynamic>{};
 
         when(
           () => mockHttpClient.get<Map<String, dynamic>>(

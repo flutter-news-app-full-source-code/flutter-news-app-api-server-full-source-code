@@ -69,7 +69,7 @@ int _mapExceptionToStatusCode(HttpException exception) {
   // Special case for rate limiting
   if (exception is ForbiddenException &&
       exception.message.contains('too many requests')) {
-    return 429; // Too Many Requests
+    return 429;
   }
 
   return switch (exception) {

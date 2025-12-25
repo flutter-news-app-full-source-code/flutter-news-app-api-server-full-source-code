@@ -66,8 +66,7 @@ void main() {
     });
 
     test('allows access when ownership check is not required', () async {
-      final modelConfig =
-          modelRegistry['headline']!; // GET item doesn't require ownership
+      final modelConfig = modelRegistry['headline']!;
 
       final context = createMockRequestContext(
         authenticatedUser: otherUser,
@@ -86,8 +85,7 @@ void main() {
     test(
       'allows access for admin user even if ownership check is required',
       () async {
-        final modelConfig =
-            modelRegistry['app_settings']!; // Requires ownership
+        final modelConfig = modelRegistry['app_settings']!;
 
         final context = createMockRequestContext(
           authenticatedUser: adminUser,
@@ -105,7 +103,7 @@ void main() {
     );
 
     test('allows access when user is the owner', () async {
-      final modelConfig = modelRegistry['app_settings']!; // Requires ownership
+      final modelConfig = modelRegistry['app_settings']!;
 
       final context = createMockRequestContext(
         authenticatedUser: ownerUser,
@@ -122,7 +120,7 @@ void main() {
     });
 
     test('throws ForbiddenException when user is not the owner', () {
-      final modelConfig = modelRegistry['app_settings']!; // Requires ownership
+      final modelConfig = modelRegistry['app_settings']!;
 
       final context = createMockRequestContext(
         authenticatedUser: otherUser, // A different user

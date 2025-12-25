@@ -60,7 +60,7 @@ void main() {
 
       test('returns empty list for empty API response', () async {
         // ARRANGE: Mock an empty response
-        final mockApiResponse = <String, dynamic>{}; // No 'rows' key
+        final mockApiResponse = <String, dynamic>{};
 
         when(
           () => mockHttpClient.post<Map<String, dynamic>>(
@@ -143,7 +143,7 @@ void main() {
         // ARRANGE: Mock an empty response
         final mockApiResponse = {
           'rows': <Map<String, dynamic>>[],
-        }; // Empty 'rows'
+        };
 
         when(
           () => mockHttpClient.post<Map<String, dynamic>>(

@@ -33,9 +33,8 @@ Middleware authorizationMiddleware() {
       // might provide null for public routes.
       final user = context.read<User?>();
       final permissionService = context.read<PermissionService>();
-      final modelName = context.read<String>(); // Provided by data/_middleware
-      final modelConfig = context
-          .read<ModelConfig<dynamic>>(); // Provided by data/_middleware
+      final modelName = context.read<String>();
+      final modelConfig = context.read<ModelConfig<dynamic>>();
       final method = context.request.method;
 
       // Determine if the request is for the collection or an item

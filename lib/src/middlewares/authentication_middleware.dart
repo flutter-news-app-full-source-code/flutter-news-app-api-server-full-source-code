@@ -41,7 +41,7 @@ Middleware authenticationProvider() {
 
       if (authHeader != null && authHeader.startsWith('Bearer ')) {
         // Extract the token string
-        final token = authHeader.substring(7); // Length of 'Bearer '
+        final token = authHeader.substring(7);
         _log.finer('Extracted Bearer token.');
         try {
           _log.finer('Attempting to validate token...');
@@ -63,11 +63,11 @@ Middleware authenticationProvider() {
           _log.warning('Token validation failed.', e);
           // Let the error propagate if needed, or handle specific cases.
           // For now, we treat validation errors as resulting in no user.
-          user = null; // Keep user null if HttpException occurred
+          user = null;
         } catch (e, s) {
           // Catch unexpected errors during validation
           _log.severe('Unexpected error during token validation.', e, s);
-          user = null; // Keep user null if unexpected error occurred
+          user = null;
         }
       } else {
         _log.finer('No valid Bearer token found in header.');

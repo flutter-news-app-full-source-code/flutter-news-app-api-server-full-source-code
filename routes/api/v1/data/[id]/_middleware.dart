@@ -23,5 +23,5 @@ Handler middleware(Handler handler) {
   // `dataFetchMiddleware`.
   return handler
       .use(ownershipCheckMiddleware()) // Runs second
-      .use(dataFetchMiddleware()); // Runs first
+      .use(dataFetchMiddleware());
 }
