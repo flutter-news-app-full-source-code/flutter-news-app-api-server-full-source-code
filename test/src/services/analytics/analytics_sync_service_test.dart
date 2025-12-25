@@ -14,6 +14,8 @@ class MockAnalyticsReportingClient extends Mock
 
 class MockAnalyticsMetricMapper extends Mock implements AnalyticsMetricMapper {}
 
+class MockSubscriptionConfig extends Mock implements SubscriptionConfig {}
+
 void main() {
   group('AnalyticsSyncService', () {
     late AnalyticsSyncService service;
@@ -155,6 +157,7 @@ void main() {
               isPositiveFeedbackFollowUpEnabled: false,
             ),
           ),
+          subscription: MockSubscriptionConfig(),
         ),
         user: const UserConfig(
           limits: UserLimitsConfig(
