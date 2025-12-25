@@ -72,7 +72,7 @@ class SubscriptionService {
 
     DateTime? expiryDate;
     String? originalTransactionId;
-    bool willAutoRenew = true;
+    var willAutoRenew = true;
 
     // 2. Validate with Provider
     if (transaction.provider == StoreProvider.apple) {
@@ -80,7 +80,14 @@ class SubscriptionService {
         transaction.providerReceipt,
       );
 
-      final lastTransaction = appleResponse.data.first.lastTransactions.first;
+      // Find the relevant transaction
+      final group = appleResponse.data.firstWhere(
+        (group) => group.lastTransactions.any(
+          (t) => t.originalTransactionId == transaction.providerReceipt,
+        ),
+      );
+      final lastTransaction = group.lastTransactions.first;
+
       final decodedTransaction = _appStoreClient.decodeTransaction(
         lastTransaction.signedTransactionInfo,
       );
@@ -127,7 +134,7 @@ class SubscriptionService {
       provider: transaction.provider,
       validUntil: expiryDate,
       willAutoRenew: willAutoRenew,
-      originalTransactionId: originalTransactionId ?? '',
+      originalTransactionId: originalTransactionId,
     );
 
     if (currentSubscription != null) {
@@ -185,8 +192,8 @@ class SubscriptionService {
     }
 
     final user = await _userRepository.read(id: subscription.userId);
-    UserSubscription updatedSubscription = subscription;
-    User updatedUser = user;
+    var updatedSubscription = subscription;
+    var updatedUser = user;
 
     switch (payload.notificationType) {
       case AppleNotificationType.didRenew:
@@ -199,14 +206,9 @@ class SubscriptionService {
       case AppleNotificationType.expired:
       case AppleNotificationType.didFailToRenew:
       case AppleNotificationType.gracePeriodExpired:
-        updatedSubscription = subscription.copyWith(
-          status: SubscriptionStatus.expired,
-          willAutoRenew: false,
-        );
-        updatedUser = user.copyWith(tier: AccessTier.standard);
       case AppleNotificationType.revoke:
         updatedSubscription = subscription.copyWith(
-          status: SubscriptionStatus.revoked,
+          status: SubscriptionStatus.expired,
           willAutoRenew: false,
         );
         updatedUser = user.copyWith(tier: AccessTier.standard);
@@ -280,8 +282,8 @@ class SubscriptionService {
           ? DateTime.fromMillisecondsSinceEpoch(expiryMillis, isUtc: true)
           : null;
 
-      UserSubscription updatedSubscription = subscription;
-      User updatedUser = user;
+      var updatedSubscription = subscription;
+      var updatedUser = user;
 
       if (expiryDate != null && expiryDate.isAfter(DateTime.now())) {
         updatedSubscription = subscription.copyWith(
