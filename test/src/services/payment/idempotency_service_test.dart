@@ -28,11 +28,12 @@ void main() {
 
     group('isEventProcessed', () {
       test('returns true when repository finds the record', () async {
-        when(() => mockRepository.read(id: eventId, userId: null))
-            .thenAnswer((_) async => IdempotencyRecord(
-                  id: eventId,
-                  createdAt: DateTime.now(),
-                ));
+        when(() => mockRepository.read(id: eventId, userId: null)).thenAnswer(
+          (_) async => IdempotencyRecord(
+            id: eventId,
+            createdAt: DateTime.now(),
+          ),
+        );
 
         final result = await service.isEventProcessed(eventId);
 
@@ -41,8 +42,9 @@ void main() {
       });
 
       test('returns false when repository throws NotFoundException', () async {
-        when(() => mockRepository.read(id: eventId, userId: null))
-            .thenThrow(const NotFoundException('Not found'));
+        when(
+          () => mockRepository.read(id: eventId, userId: null),
+        ).thenThrow(const NotFoundException('Not found'));
 
         final result = await service.isEventProcessed(eventId);
 
@@ -50,8 +52,9 @@ void main() {
       });
 
       test('rethrows ServerException on other repository errors', () async {
-        when(() => mockRepository.read(id: eventId, userId: null))
-            .thenThrow(const ServerException('DB down'));
+        when(
+          () => mockRepository.read(id: eventId, userId: null),
+        ).thenThrow(const ServerException('DB down'));
 
         expect(
           () => service.isEventProcessed(eventId),
@@ -62,26 +65,29 @@ void main() {
 
     group('recordEvent', () {
       test('calls repository.create with correct IdempotencyRecord', () async {
-        when(() => mockRepository.create(item: any(named: 'item')))
-            .thenAnswer((_) async => IdempotencyRecord(
-                  id: eventId,
-                  createdAt: DateTime.now(),
-                ));
+        when(() => mockRepository.create(item: any(named: 'item'))).thenAnswer(
+          (_) async => IdempotencyRecord(
+            id: eventId,
+            createdAt: DateTime.now(),
+          ),
+        );
 
         await service.recordEvent(eventId);
 
         final captured =
-            verify(() => mockRepository.create(item: captureAny(named: 'item')))
-                .captured
-                .first as IdempotencyRecord;
+            verify(
+                  () => mockRepository.create(item: captureAny(named: 'item')),
+                ).captured.first
+                as IdempotencyRecord;
 
         expect(captured.id, eventId);
         expect(captured.createdAt, isA<DateTime>());
       });
 
       test('does not rethrow when repository.create fails', () async {
-        when(() => mockRepository.create(item: any(named: 'item')))
-            .thenThrow(const ServerException('DB down'));
+        when(
+          () => mockRepository.create(item: any(named: 'item')),
+        ).thenThrow(const ServerException('DB down'));
 
         // Expect no exception to be thrown from the service method itself.
         await expectLater(service.recordEvent(eventId), completes);
@@ -91,4 +97,3 @@ void main() {
     });
   });
 }
-

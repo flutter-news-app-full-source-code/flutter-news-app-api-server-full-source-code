@@ -23,7 +23,8 @@ void main() {
       expect(
         uniqueValues.length,
         equals(permissionValues.length),
-        reason: 'Duplicate permission strings found. Permissions must be unique.',
+        reason:
+            'Duplicate permission strings found. Permissions must be unique.',
       );
     });
 
@@ -35,13 +36,14 @@ void main() {
             declaration.isConst) {
           final value =
               classMirror.getField(declaration.simpleName).reflectee as String;
-          
+
           // Regex enforces: lowercase_resource.lowercase_action
           // e.g., "headline.read", "user_profile.update"
           expect(
-            value, 
+            value,
             matches(RegExp(r'^[a-z_]+\.[a-z_]+$')),
-            reason: 'Permission "$value" does not match format "resource.action"',
+            reason:
+                'Permission "$value" does not match format "resource.action"',
           );
         }
       }

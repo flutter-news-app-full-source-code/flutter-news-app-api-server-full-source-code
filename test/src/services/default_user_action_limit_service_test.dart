@@ -116,7 +116,7 @@ void main() {
               eligiblePositiveInteractions: [], // const implied
               isNegativeFeedbackFollowUpEnabled: false,
               isPositiveFeedbackFollowUpEnabled: false,
-            ), 
+            ),
           ),
           subscription: SubscriptionConfig(
             enabled: false,

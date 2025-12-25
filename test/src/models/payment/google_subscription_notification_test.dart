@@ -44,7 +44,10 @@ void main() {
         },
         'testNotification': null,
       };
-      expect(GoogleSubscriptionNotification.fromJson(json), equals(notification));
+      expect(
+        GoogleSubscriptionNotification.fromJson(json),
+        equals(notification),
+      );
     });
 
     test('toJson serializes correctly', () {
