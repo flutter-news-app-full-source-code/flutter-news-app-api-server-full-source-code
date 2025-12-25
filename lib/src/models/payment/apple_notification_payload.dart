@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/enums/payment/payment.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
@@ -13,7 +14,7 @@ class AppleNotificationPayload extends Equatable {
   /// {@macro apple_notification_payload}
   const AppleNotificationPayload({
     required this.notificationType,
-    required this.subtype,
+    this.subtype,
     required this.notificationUUID,
     required this.data,
     required this.version,
@@ -24,11 +25,11 @@ class AppleNotificationPayload extends Equatable {
   factory AppleNotificationPayload.fromJson(Map<String, dynamic> json) =>
       _$AppleNotificationPayloadFromJson(json);
 
-  /// The type of notification (e.g., SUBSCRIBED, DID_RENEW).
-  final String notificationType;
+  /// The type of notification.
+  final AppleNotificationType notificationType;
 
-  /// The subtype of the notification (e.g., INITIAL_BUY, AUTO_RENEW_ENABLED).
-  final String? subtype;
+  /// The subtype of the notification.
+  final AppleNotificationSubtype? subtype;
 
   /// The unique identifier for this notification.
   final String notificationUUID;
@@ -40,7 +41,8 @@ class AppleNotificationPayload extends Equatable {
   final String version;
 
   /// The date the notification was signed.
-  final int signedDate;
+  @JsonKey(fromJson: _dateTimeFromMilliseconds, toJson: _dateTimeToMilliseconds)
+  final DateTime signedDate;
 
   /// Converts this [AppleNotificationPayload] instance to JSON data.
   Map<String, dynamic> toJson() => _$AppleNotificationPayloadToJson(this);
@@ -67,7 +69,7 @@ class AppleNotificationData extends Equatable {
     required this.signedTransactionInfo,
     required this.signedRenewalInfo,
     required this.bundleId,
-    required this.bundleVersion,
+    this.bundleVersion,
     required this.environment,
   });
 
@@ -88,7 +90,7 @@ class AppleNotificationData extends Equatable {
   final String? bundleVersion;
 
   /// The environment (Sandbox or Production).
-  final String environment;
+  final AppleEnvironment environment;
 
   /// Converts this [AppleNotificationData] instance to JSON data.
   Map<String, dynamic> toJson() => _$AppleNotificationDataToJson(this);
@@ -102,3 +104,8 @@ class AppleNotificationData extends Equatable {
         environment,
       ];
 }
+
+DateTime _dateTimeFromMilliseconds(int ms) =>
+    DateTime.fromMillisecondsSinceEpoch(ms);
+
+int _dateTimeToMilliseconds(DateTime dt) => dt.millisecondsSinceEpoch;
