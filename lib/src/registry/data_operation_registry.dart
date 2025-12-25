@@ -439,6 +439,12 @@ class DataOperationRegistry {
         final transaction = item as PurchaseTransaction;
         final subscriptionService = context.read<SubscriptionService>();
 
+        if (transaction.provider == StoreProvider.stripe) {
+          throw const BadRequestException(
+            'Stripe payments are not supported for digital goods.',
+          );
+        }
+
         return subscriptionService.verifyAndProcessPurchase(
           user: authenticatedUser,
           transaction: transaction,
