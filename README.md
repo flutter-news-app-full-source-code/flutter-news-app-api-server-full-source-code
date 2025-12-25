@@ -97,12 +97,14 @@ Say goodbye to risky manual database updates. A professional, versioned migratio
 <summary><strong>💰 Monetization & Subscriptions</strong></summary>
 
 ### 💳 Robust Subscription Engine
-A complete backend infrastructure for managing in-app subscriptions and entitlements.
+A complete, zero-trust backend infrastructure for managing in-app subscriptions and entitlements.
 - **Multi-Provider Support:** Built-in support for Apple App Store, Google Play Store, and Stripe, unified under a single "Entitlement" interface.
-- **Server-Side Validation:** Securely validates purchase receipts directly with providers, preventing client-side spoofing and fraud.
-- **Webhook Synchronization:** Acts as a "State Machine," listening for server-to-server webhooks to automatically handle renewals, cancellations, and billing issues in real-time.
-> **Your Advantage:** A secure, compliant, and low-maintenance monetization system that ensures you get paid and users get the features they bought.
-
+- **Zero-Trust Validation:** Every purchase is cryptographically verified directly with Apple and Google servers before any entitlement is granted, eliminating client-side receipt spoofing.
+- **Idempotent State Machine:** A dedicated idempotency layer ensures that every transaction and webhook event is processed exactly once, preventing duplicate entitlements or race conditions during network retries.
+- **Real-Time Webhook Synchronization:** The system acts as an authoritative source of truth, listening for server-to-server webhooks to instantly reflect renewals, cancellations, and billing issues, ensuring the user's status is always accurate.
+- **Type-Safe Integration:** Built with strongly-typed models for all provider interactions, eliminating fragile JSON parsing and ensuring long-term maintainability.
+> **Your Advantage:** A secure, compliant, and battle-hardened monetization system that protects your revenue and guarantees a consistent experience for your subscribers.
+ 
 </details>
 
 <details>
