@@ -26,10 +26,11 @@ class PermissionService {
     }
 
     // Get the permission set for the user's role.
-    final totalPermissions = rolePermissions[user.role] ?? const <String>{};
+    final rolePerms = rolePermissions[user.role] ?? const <String>{};
+    final tierPerms = rolePermissions[user.tier] ?? const <String>{};
 
     // Check if the combined set contains the required permission.
-    return totalPermissions.contains(permission);
+    return rolePerms.contains(permission) || tierPerms.contains(permission);
   }
 
   /// Checks if the given [user] has the `admin` role.
