@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_registry.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
@@ -17,7 +16,6 @@ void main() {
   group('data route middleware', () {
     late Handler handler;
     late User standardUser;
-    late ModelRegistryMap modelRegistryMap;
     late PermissionService mockPermissionService;
     late RateLimitService mockRateLimitService;
 
@@ -29,7 +27,6 @@ void main() {
     setUp(() {
       handler = (context) => Response(body: 'ok');
       standardUser = createTestUser(id: 'user-id');
-      modelRegistryMap = modelRegistry;
       mockPermissionService = MockPermissionService();
       mockRateLimitService = MockRateLimitService();
 
