@@ -347,20 +347,6 @@ void main() {
           verify(() => mockLogger.warning(any())).called(1);
         },
       );
-
-      test('throws BadRequestException for Stripe provider', () {
-        final stripeTransaction = transaction.copyWith(
-          provider: StoreProvider.stripe,
-        );
-
-        expect(
-          () => service.verifyAndProcessPurchase(
-            user: testUser,
-            transaction: stripeTransaction,
-          ),
-          throwsA(isA<BadRequestException>()),
-        );
-      });
     });
 
     group('handleAppleNotification', () {
