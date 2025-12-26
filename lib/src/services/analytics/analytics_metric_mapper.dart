@@ -98,6 +98,16 @@ class AnalyticsMetricMapper {
     KpiCardId.engagementsAppReviewsStoreRequests: const EventCountQuery(
       event: AnalyticsEvent.appReviewStoreRequested,
     ),
+    // Subscription KPIs
+    KpiCardId.subscriptionsActiveCount: const StandardMetricQuery(
+      metric: 'database:user_subscription:active_count',
+    ),
+    KpiCardId.subscriptionsCanceledCount: const StandardMetricQuery(
+      metric: 'database:user_subscription:canceled_count',
+    ),
+    KpiCardId.subscriptionsExpiredCount: const StandardMetricQuery(
+      metric: 'database:user_subscription:expired_count',
+    ),
   };
 
   static final Map<ChartCardId, MetricQuery> _chartQueryMappings = {
@@ -108,8 +118,8 @@ class AnalyticsMetricMapper {
     ChartCardId.usersActiveUsersOverTime: const StandardMetricQuery(
       metric: 'activeUsers',
     ),
-    ChartCardId.usersRoleDistribution: const StandardMetricQuery(
-      metric: 'database:users:userRoleDistribution',
+    ChartCardId.usersTierDistribution: const StandardMetricQuery(
+      metric: 'database:users:userTierDistribution',
     ),
     // Headline Charts
     ChartCardId.contentHeadlinesViewsOverTime: const EventCountQuery(
@@ -175,6 +185,18 @@ class AnalyticsMetricMapper {
         const EventCountQuery(
           event: AnalyticsEvent.appReviewStoreRequested,
         ),
+    // Subscriptions Tab
+    ChartCardId.subscriptionsActiveOverTime: const StandardMetricQuery(
+      // Using creation date of subscriptions as a proxy for activity trend
+      // in a database-only context.
+      metric: 'database:user_subscription:created_over_time',
+    ),
+    ChartCardId.subscriptionsStatusDistribution: const StandardMetricQuery(
+      metric: 'database:user_subscription:statusDistribution',
+    ),
+    ChartCardId.subscriptionsByStoreProvider: const StandardMetricQuery(
+      metric: 'database:user_subscription:byStoreProvider',
+    ),
   };
 
   static final Map<RankedListCardId, AnalyticsQuery> _rankedListQueryMappings =
