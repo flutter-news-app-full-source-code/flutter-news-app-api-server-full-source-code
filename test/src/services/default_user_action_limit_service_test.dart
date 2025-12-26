@@ -120,7 +120,6 @@ void main() {
           ),
           subscription: SubscriptionConfig(
             enabled: false,
-            enabledProviders: [], // const implied
             monthlyPlan: PlanDetails(
               enabled: false,
               isRecommended: false,
