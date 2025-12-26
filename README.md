@@ -71,26 +71,6 @@ The data API is equipped with powerful querying capabilities, enabling rich, hig
 The API automatically validates the structure of all incoming data, ensuring that every request is well-formed before it's processed. This built-in mechanism catches missing fields, incorrect data types, and invalid enum values at the gateway, providing clear, immediate feedback to the client.
 > **Your Advantage:** This eliminates an entire class of runtime errors and saves you from writing tedious, repetitive validation code. Your data models remain consistent and your API stays resilient against malformed requests.
 
----
-- **Dart Frog Core:** Leverages the high-performance Dart Frog framework for a fast, efficient, and scalable backend.
-- **Clean, Layered Architecture:** A strict separation of concerns into distinct layers makes the codebase clean, maintainable, and easy to reason about.
-> **Your Advantage:** Your backend is built on a solid, modern foundation that is both powerful and a pleasure to work with, reducing maintenance overhead.
-
----
-
-### 🔌 Extensible & Unlocked
-The entire application is designed with a robust dependency injection system, giving you the freedom to choose your own infrastructure.
-- **Swappable Implementations:** Easily swap out core components—like the database, email provider, or file storage service—without rewriting business logic.
-> **Your Advantage:** Avoid vendor lock-in and future-proof your application. You have the freedom to adapt and evolve your tech stack as your business needs change.
-
----
-
-### 🔄 Automated & Traceable Database Migrations
-Say goodbye to risky manual database updates. A professional, versioned migration system ensures your database schema evolves safely and automatically.
-- **Code-Driven Schema Evolution:** The system automatically applies schema changes to your database on application startup, ensuring consistency across all environments.
-- **Traceable to Source:** Each migration is versioned and directly linked to the pull request that initiated it, providing a clear, auditable history of every change.
-> **Your Advantage:** Deploy with confidence. This robust system eliminates an entire class of deployment errors, ensuring your data models evolve gracefully and reliably with full traceability.
-
 </details>
 
 <details>
