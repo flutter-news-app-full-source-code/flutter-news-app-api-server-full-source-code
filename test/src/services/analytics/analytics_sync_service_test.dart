@@ -34,6 +34,7 @@ void main() {
     late MockDataRepository<Headline> mockHeadlineRepo;
     late MockDataRepository<Engagement> mockEngagementRepo;
     late MockDataRepository<AppReview> mockAppReviewRepo;
+    late MockDataRepository<UserSubscription> mockUserSubscriptionRepo;
 
     setUp(() {
       mockRemoteConfigRepo = MockDataRepository<RemoteConfig>();
@@ -50,6 +51,7 @@ void main() {
       mockHeadlineRepo = MockDataRepository<Headline>();
       mockEngagementRepo = MockDataRepository<Engagement>();
       mockAppReviewRepo = MockDataRepository<AppReview>();
+      mockUserSubscriptionRepo = MockDataRepository<UserSubscription>();
 
       // Register fallback values for any() matchers
       registerFallbackValue(
@@ -77,6 +79,7 @@ void main() {
         headlineRepository: mockHeadlineRepo,
         engagementRepository: mockEngagementRepo,
         appReviewRepository: mockAppReviewRepo,
+        userSubscriptionRepository: mockUserSubscriptionRepo,
         googleAnalyticsClient: mockAnalyticsClient,
         mixpanelClient: mockAnalyticsClient,
         analyticsMetricMapper: mockMapper,
