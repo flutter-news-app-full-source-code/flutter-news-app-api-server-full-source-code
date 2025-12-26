@@ -1,11 +1,6 @@
 import 'package:flutter_news_app_api_server_full_source_code/src/models/analytics/analytics.dart';
 import 'package:logging/logging.dart';
 
-// TODO(fulleni): swap 'database:users:userRolerDistribution' with 'database:users:userTierDistribution'
-// pipeline to aggregate users by 'tier' (AccessTier).
-// This is critical for understanding the monetization
-// funnel (Guest vs. Standard vs. Premium).
-
 /// {@template analytics_query_builder}
 /// A builder class responsible for creating complex MongoDB aggregation
 /// pipelines for analytics queries.
@@ -29,9 +24,9 @@ class AnalyticsQueryBuilder {
     _log.finer('Building pipeline for database metric: "$metric".');
 
     switch (metric) {
-      case 'database:users:userRoleDistribution':
-        _log.info('Building user role distribution pipeline.');
-        return _buildUserRoleDistributionPipeline();
+      case 'database:users:userTierDistribution':
+        _log.info('Building user tier distribution pipeline.');
+        return _buildUserTierDistributionPipeline();
       case 'database:reports:byReason':
         _log.info(
           'Building reports by reason pipeline from $startDate to $endDate.',
@@ -111,6 +106,36 @@ class AnalyticsQueryBuilder {
           startDate: startDate,
           endDate: endDate,
         );
+      // Subscription Queries
+      case 'database:user_subscription:statusDistribution':
+        _log.info(
+          'Building categorical count pipeline for subscription status.',
+        );
+        return _buildCategoricalCountPipeline(
+          collection: 'user_subscription',
+          dateField: 'createdAt',
+          groupByField: r'$status',
+          startDate: startDate,
+          endDate: endDate,
+        );
+      case 'database:user_subscription:byStoreProvider':
+        _log.info(
+          'Building categorical count pipeline for subscription provider.',
+        );
+        return _buildCategoricalCountPipeline(
+          collection: 'user_subscription',
+          dateField: 'createdAt',
+          groupByField: r'$provider',
+          startDate: startDate,
+          endDate: endDate,
+        );
+      case 'database:user_subscription:created_over_time':
+        _log.info('Building time series pipeline for subscription creation.');
+        return _buildTimeSeriesCountPipeline(
+          dateField: 'createdAt',
+          startDate: startDate,
+          endDate: endDate,
+        );
       // Ranked List Queries
       case 'database:sources:byFollowers':
         _log.info('Building ranked list pipeline for sources by followers.');
@@ -127,13 +152,13 @@ class AnalyticsQueryBuilder {
     }
   }
 
-  /// Creates a pipeline for user role distribution.
+  /// Creates a pipeline for user tier distribution.
   /// This is a snapshot and does not use a date filter.
-  List<Map<String, dynamic>> _buildUserRoleDistributionPipeline() {
+  List<Map<String, dynamic>> _buildUserTierDistributionPipeline() {
     return [
       {
         r'$group': {
-          '_id': r'$role',
+          '_id': r'$tier',
           'count': {r'$sum': 1},
         },
       },
@@ -336,6 +361,38 @@ class AnalyticsQueryBuilder {
         },
       },
       // Sort by date
+      {
+        r'$sort': {'label': 1},
+      },
+    ];
+  }
+
+  /// Creates a pipeline for counting occurrences over time (Time Series).
+  List<Map<String, dynamic>> _buildTimeSeriesCountPipeline({
+    required String dateField,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) {
+    return [
+      {
+        r'$match': {
+          dateField: {
+            r'$gte': startDate.toUtc().toIso8601String(),
+            r'$lt': endDate.toUtc().toIso8601String(),
+          },
+        },
+      },
+      {
+        r'$group': {
+          '_id': {
+            r'$dateToString': {'format': '%Y-%m-%d', 'date': '\$$dateField'},
+          },
+          'count': {r'$sum': 1},
+        },
+      },
+      {
+        r'$project': {'label': r'$_id', 'value': r'$count', '_id': 0},
+      },
       {
         r'$sort': {'label': 1},
       },
