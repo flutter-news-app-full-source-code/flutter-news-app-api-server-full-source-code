@@ -337,6 +337,18 @@ class DatabaseSeedingService {
             // A user can technically have multiple records (expired + active),
             // so we don't enforce uniqueness here, but we index for speed.
           },
+          {
+            'key': {'status': 1},
+            'name': 'analytics_subscription_status_index',
+          },
+          {
+            'key': {'provider': 1},
+            'name': 'analytics_subscription_provider_index',
+          },
+          {
+            'key': {'createdAt': 1},
+            'name': 'analytics_subscription_created_at_index',
+          },
         ],
       });
       _log.info('Ensured indexes for "user_subscriptions".');

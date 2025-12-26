@@ -10,7 +10,6 @@
 # Files and directories created by dart_frog
 build/
 .dart_frog
-context
 
 # Test related files
 coverage/

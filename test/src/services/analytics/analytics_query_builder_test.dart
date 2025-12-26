@@ -26,11 +26,11 @@ void main() {
 
     group('Categorical Queries', () {
       const query = StandardMetricQuery(
-        metric: 'database:users:userRoleDistribution',
+        metric: 'database:users:userTierDistribution',
       );
 
       test(
-        'builds correct pipeline for userRoleDistribution (non-time-bound)',
+        'builds correct pipeline for userTierDistribution (non-time-bound)',
         () {
           final pipeline = queryBuilder.buildPipelineForMetric(
             query,
@@ -41,7 +41,7 @@ void main() {
           final expectedPipeline = [
             {
               r'$group': {
-                '_id': r'$role',
+                '_id': r'$tier',
                 'count': {r'$sum': 1},
               },
             },
@@ -186,6 +186,42 @@ void main() {
 
         expect(pipeline, equals(expectedPipeline));
       });
+
+      test('builds correct pipeline for subscription status distribution', () {
+        const query = StandardMetricQuery(
+          metric: 'database:user_subscription:statusDistribution',
+        );
+        final pipeline = queryBuilder.buildPipelineForMetric(
+          query,
+          startDate,
+          endDate,
+        );
+
+        final expectedPipeline = [
+          {
+            r'$match': {
+              'createdAt': {
+                r'$gte': startDate.toUtc().toIso8601String(),
+                r'$lt': endDate.toUtc().toIso8601String(),
+              },
+            },
+          },
+          {
+            r'$group': {
+              '_id': r'$status',
+              'count': {r'$sum': 1},
+            },
+          },
+          {
+            r'$project': {
+              'label': r'$_id',
+              'value': r'$count',
+              '_id': 0,
+            },
+          },
+        ];
+        expect(pipeline, equals(expectedPipeline));
+      });
     });
 
     group('Ranked List Queries', () {
@@ -305,6 +341,48 @@ void main() {
           },
         ];
 
+        expect(pipeline, equals(expectedPipeline));
+      });
+    });
+
+    group('Time Series Queries', () {
+      test('builds correct pipeline for subscription creation over time', () {
+        const query = StandardMetricQuery(
+          metric: 'database:user_subscription:created_over_time',
+        );
+        final pipeline = queryBuilder.buildPipelineForMetric(
+          query,
+          startDate,
+          endDate,
+        );
+
+        final expectedPipeline = [
+          {
+            r'$match': {
+              'createdAt': {
+                r'$gte': startDate.toUtc().toIso8601String(),
+                r'$lt': endDate.toUtc().toIso8601String(),
+              },
+            },
+          },
+          {
+            r'$group': {
+              '_id': {
+                r'$dateToString': {
+                  'format': '%Y-%m-%d',
+                  'date': r'$createdAt',
+                },
+              },
+              'count': {r'$sum': 1},
+            },
+          },
+          {
+            r'$project': {'label': r'$_id', 'value': r'$count', '_id': 0},
+          },
+          {
+            r'$sort': {'label': 1},
+          },
+        ];
         expect(pipeline, equals(expectedPipeline));
       });
     });

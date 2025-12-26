@@ -591,6 +591,7 @@ class AppDependencies {
         analyticsMetricMapper: analyticsMetricMapper,
         engagementRepository: engagementRepository,
         appReviewRepository: appReviewRepository,
+        userSubscriptionRepository: userSubscriptionRepository,
         log: Logger('AnalyticsSyncService'),
       );
 

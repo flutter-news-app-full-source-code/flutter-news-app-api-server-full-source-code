@@ -1,5 +1,6 @@
 import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/clients/analytics/analytics_reporting_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/analytics/analytics.dart';
 import 'package:logging/logging.dart';
@@ -34,6 +35,7 @@ void main() {
     late MockDataRepository<Headline> mockHeadlineRepo;
     late MockDataRepository<Engagement> mockEngagementRepo;
     late MockDataRepository<AppReview> mockAppReviewRepo;
+    late MockDataRepository<UserSubscription> mockUserSubscriptionRepo;
 
     setUp(() {
       mockRemoteConfigRepo = MockDataRepository<RemoteConfig>();
@@ -50,6 +52,7 @@ void main() {
       mockHeadlineRepo = MockDataRepository<Headline>();
       mockEngagementRepo = MockDataRepository<Engagement>();
       mockAppReviewRepo = MockDataRepository<AppReview>();
+      mockUserSubscriptionRepo = MockDataRepository<UserSubscription>();
 
       // Register fallback values for any() matchers
       registerFallbackValue(
@@ -77,6 +80,7 @@ void main() {
         headlineRepository: mockHeadlineRepo,
         engagementRepository: mockEngagementRepo,
         appReviewRepository: mockAppReviewRepo,
+        userSubscriptionRepository: mockUserSubscriptionRepo,
         googleAnalyticsClient: mockAnalyticsClient,
         mixpanelClient: mockAnalyticsClient,
         analyticsMetricMapper: mockMapper,
