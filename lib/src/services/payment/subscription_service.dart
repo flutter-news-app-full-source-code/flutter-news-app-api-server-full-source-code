@@ -238,11 +238,6 @@ class SubscriptionService {
         id: oldSubscription.id,
         item: updatedSubscription,
       );
-
-      await _userRepository.update(
-        id: newUser.id,
-        item: newUser.copyWith(tier: AccessTier.premium),
-      );
     } catch (e) {
       _log.severe('Was not able to transfer subscription');
       rethrow;
