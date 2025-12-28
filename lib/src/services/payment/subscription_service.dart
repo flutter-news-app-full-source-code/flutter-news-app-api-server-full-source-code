@@ -224,8 +224,17 @@ class SubscriptionService {
           'Downgrading user ${oldSubscription.userId} to ${AccessTier.standard}.',
         );
       }
-    } catch (e) {
-      _log.warning('could not change tier for old user, old user deleted');
+    } on NotFoundException {
+      _log.warning(
+        'Old user ${oldSubscription.userId} not found during transfer, assuming account was deleted.',
+      );
+    } catch (e, s) {
+      _log.severe(
+        'Failed to downgrade old user ${oldSubscription.userId} during transfer. Aborting to prevent inconsistent state.',
+        e,
+        s,
+      );
+      rethrow;
     }
 
     final updatedSubscription = oldSubscription.copyWith(
