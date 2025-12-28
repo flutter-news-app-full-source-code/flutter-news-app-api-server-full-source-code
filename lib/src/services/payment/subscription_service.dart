@@ -213,8 +213,8 @@ class SubscriptionService {
     UserSubscription oldSubscription,
     User newUser,
   ) async {
-    final oldUser = await _userRepository.read(id: oldSubscription.userId);
     try {
+      final oldUser = await _userRepository.read(id: oldSubscription.userId);
       if (oldUser.tier != AccessTier.standard) {
         await _userRepository.update(
           id: oldSubscription.userId,
