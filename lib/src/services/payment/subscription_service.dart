@@ -200,7 +200,7 @@ class SubscriptionService {
     return subscriptionData;
   }
 
-  /// Transfers a subscription from an [oldSubscription.userId] to [newUser].
+  /// Transfers a subscription from an old [UserSubscription.userId] to [newUser].
   ///
   /// This implements the "Entitlement Transfer" logic:
   /// 1. **Downgrade Old User:** The previous owner is set to [AccessTier.standard].
