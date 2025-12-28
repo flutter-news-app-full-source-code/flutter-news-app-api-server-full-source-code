@@ -679,6 +679,83 @@ void main() {
           ).called(1);
         },
       );
+
+      test(
+        'aborts transfer if downgrading old user fails for a non-NotFoundException',
+        () async {
+          // 1. Setup: Transaction resolves to sub owned by 'user-old'
+          when(
+            () => mockUserSubscriptionRepository.readAll(
+              filter: any(named: 'filter'),
+            ),
+          ).thenAnswer((invocation) async {
+            final filter =
+                invocation.namedArguments[#filter] as Map<String, dynamic>;
+            if (filter.containsKey('originalTransactionId')) {
+              return PaginatedResponse(
+                items: [
+                  UserSubscription(
+                    id: 'sub-old',
+                    userId: 'user-old',
+                    tier: AccessTier.premium,
+                    status: SubscriptionStatus.active,
+                    provider: StoreProvider.google,
+                    validUntil: DateTime.now().add(const Duration(days: 30)),
+                    willAutoRenew: true,
+                    originalTransactionId: transaction.providerReceipt,
+                  ),
+                ],
+                cursor: null,
+                hasMore: false,
+              );
+            }
+            return const PaginatedResponse(
+              items: [],
+              cursor: null,
+              hasMore: false,
+            );
+          });
+
+          // 2. Mock Google Client valid purchase
+          when(
+            () => mockGooglePlayClient.getSubscription(
+              subscriptionId: any(named: 'subscriptionId'),
+              purchaseToken: any(named: 'purchaseToken'),
+            ),
+          ).thenAnswer(
+            (_) async => GoogleSubscriptionPurchase(
+              expiryTimeMillis: DateTime.now()
+                  .add(const Duration(days: 30))
+                  .millisecondsSinceEpoch
+                  .toString(),
+              autoRenewing: true,
+            ),
+          );
+
+          // 3. Mock Old User Lookup -> THROWS a generic Exception
+          final dbError = Exception('Database connection failed');
+          when(
+            () => mockUserRepository.read(id: 'user-old'),
+          ).thenThrow(dbError);
+
+          // 4. Execute and Verify Exception
+          expect(
+            () => service.verifyAndProcessPurchase(
+              user: testUser,
+              transaction: transaction,
+            ),
+            throwsA(equals(dbError)),
+          );
+
+          // 5. Verify that no updates occurred
+          verifyNever(
+            () => mockUserSubscriptionRepository.update(
+              id: any(named: 'id'),
+              item: any(named: 'item'),
+            ),
+          );
+        },
+      );
     });
 
     group('handleAppleNotification', () {
