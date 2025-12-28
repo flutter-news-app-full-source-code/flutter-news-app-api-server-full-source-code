@@ -14,8 +14,15 @@ import 'package:mongo_dart/mongo_dart.dart';
 ///
 /// This service orchestrates the verification of purchases, updates to
 /// [UserSubscription] records, and the promotion/demotion of [User.tier].
-/// It enforces idempotency to prevent duplicate processing of transactions
-/// and webhooks.
+///
+/// Key Responsibilities:
+/// 1. **Purchase Verification:** Validates receipts directly with Apple/Google.
+/// 2. **Idempotency:** Ensures transactions are processed exactly once.
+/// 3. **Entitlement Portability (Restore Purchase):** Handles the "Restore Purchase"
+///    flow by identifying if a subscription is owned by a different user account
+///    and transferring ownership to the current user (Entitlement Transfer).
+/// 4. **Anti-Sharing Enforcement:** When transferring a subscription, the previous
+///    owner is automatically downgraded to prevent account sharing.
 /// {@endtemplate}
 class SubscriptionService {
   /// {@macro subscription_service}
@@ -74,7 +81,10 @@ class SubscriptionService {
     String? originalTransactionId;
     var willAutoRenew = true;
 
-    // 2. Validate with Provider
+    // 2. Validate with Provider & Extract Canonical Data
+    // We validate the receipt to get the authoritative 'originalTransactionId'.
+    // This ID is the permanent, unique identifier for the subscription lifecycle,
+    // regardless of renewals or user account changes.
     if (transaction.provider == StoreProvider.apple) {
       if (_appStoreClient == null) {
         throw const ServerException('App Store Client is not initialized.');
@@ -125,7 +135,29 @@ class SubscriptionService {
       );
     }
 
-    // 3. Update/Create UserSubscription
+    // 3. Global Lookup & Entitlement Transfer (Restore Purchase Logic)
+    // We first check if *any* user in the system already owns this subscription.
+    // This is critical for the "Restore Purchase" flow.
+    final existingSubscriptionByOriginalTransactionId =
+        await _findSubscriptionByOriginalTransactionId(originalTransactionId);
+
+    // If the subscription exists but belongs to a *different* user, it implies
+    // the current user is restoring a purchase made on a previous account
+    // (or on a different device). We must transfer the entitlement.
+    if (existingSubscriptionByOriginalTransactionId != null &&
+        existingSubscriptionByOriginalTransactionId.userId != user.id) {
+      _log.info(
+        'Transferring subscription from ${existingSubscriptionByOriginalTransactionId.userId} to ${user.id}',
+      );
+      await _transferSubscription(
+        existingSubscriptionByOriginalTransactionId,
+        user,
+      );
+    }
+
+    // 4. Update/Create UserSubscription for Current User
+    // Now that ownership is resolved (or if it's a new purchase), we proceed
+    // to update the record for the current user.
     final currentSubscription = await _findSubscriptionByUserId(user.id);
 
     final newStatus = expiryDate.isAfter(DateTime.now())
@@ -166,6 +198,55 @@ class SubscriptionService {
     await _idempotencyService.recordEvent(transaction.providerReceipt);
 
     return subscriptionData;
+  }
+
+  /// Transfers a subscription from an [oldSubscription.userId] to [newUser].
+  ///
+  /// This implements the "Entitlement Transfer" logic:
+  /// 1. **Downgrade Old User:** The previous owner is set to [AccessTier.standard].
+  ///    This prevents two accounts from sharing the same paid subscription.
+  /// 2. **Transfer Ownership:** The [UserSubscription] record is updated to point
+  ///    to the [newUser].
+  /// 3. **Upgrade New User:** The [newUser] will be upgraded in the main flow
+  ///    after this method returns.
+  Future<void> _transferSubscription(
+    UserSubscription oldSubscription,
+    User newUser,
+  ) async {
+    final oldUser = await _userRepository.read(id: oldSubscription.userId);
+    try {
+      if (oldUser.tier != AccessTier.standard) {
+        await _userRepository.update(
+          id: oldSubscription.userId,
+          item: oldUser.copyWith(tier: AccessTier.standard),
+        );
+        _log.info(
+          'Downgrading user ${oldSubscription.userId} to ${AccessTier.standard}.',
+        );
+      }
+    } catch (e) {
+      _log.warning('could not change tier for old user, old user deleted');
+    }
+
+    final updatedSubscription = oldSubscription.copyWith(
+      userId: newUser.id,
+      tier: AccessTier.premium,
+    );
+
+    try {
+      await _userSubscriptionRepository.update(
+        id: oldSubscription.id,
+        item: updatedSubscription,
+      );
+
+      await _userRepository.update(
+        id: newUser.id,
+        item: newUser.copyWith(tier: AccessTier.premium),
+      );
+    } catch (e) {
+      _log.severe('Was not able to transfer subscription');
+      rethrow;
+    }
   }
 
   /// Handles an incoming Apple App Store Server Notification.
