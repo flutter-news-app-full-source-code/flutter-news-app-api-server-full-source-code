@@ -118,5 +118,23 @@ void main() {
         throwsA(isA<ServerException>()),
       );
     });
+
+    test(
+      'throws when response is missing required fields (malformed JSON)',
+      () {
+        // Missing 'expiryTimeMillis' which is required by the model
+        when(
+          () => mockHttpClient.get<Map<String, dynamic>>(any()),
+        ).thenAnswer((_) async => {'autoRenewing': true});
+
+        expect(
+          () => client.getSubscription(
+            subscriptionId: subscriptionId,
+            purchaseToken: purchaseToken,
+          ),
+          throwsA(anything),
+        );
+      },
+    );
   });
 }

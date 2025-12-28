@@ -83,6 +83,7 @@ A complete, zero-trust backend infrastructure for managing in-app subscriptions 
 - **Idempotent State Machine:** A dedicated idempotency layer ensures that every transaction and webhook event is processed exactly once, preventing duplicate entitlements or race conditions during network retries.
 - **Real-Time Webhook Synchronization:** The system acts as an authoritative source of truth, listening for server-to-server webhooks to instantly reflect renewals, cancellations, and billing issues, ensuring the user's status is always accurate.
 - **Type-Safe Integration:** Built with strongly-typed models for all provider interactions, eliminating fragile JSON parsing and ensuring long-term maintainability.
+- **Entitlement Portability (Restore Purchase):** Seamlessly handles "Restore Purchase" requests by identifying existing subscriptions and transferring ownership to the current user, ensuring compliance with App Store guidelines and a smooth user experience across devices.
 > **Your Advantage:** A secure, compliant, and battle-hardened monetization system that protects your revenue and guarantees a consistent experience for your subscribers.
  
 </details>

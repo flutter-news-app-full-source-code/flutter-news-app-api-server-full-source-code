@@ -347,6 +347,415 @@ void main() {
           verify(() => mockLogger.warning(any())).called(1);
         },
       );
+
+      test(
+        'does not perform redundant user update if user is already premium',
+        () async {
+          // Setup: User is ALREADY premium
+          final premiumUser = testUser.copyWith(tier: AccessTier.premium);
+
+          // Setup: Valid Google Purchase
+          when(
+            () => mockUserSubscriptionRepository.readAll(
+              filter: any(named: 'filter'),
+            ),
+          ).thenAnswer(
+            (_) async => const PaginatedResponse(
+              items: [],
+              cursor: null,
+              hasMore: false,
+            ),
+          );
+          when(
+            () => mockGooglePlayClient.getSubscription(
+              subscriptionId: any(named: 'subscriptionId'),
+              purchaseToken: any(named: 'purchaseToken'),
+            ),
+          ).thenAnswer(
+            (_) async => GoogleSubscriptionPurchase(
+              expiryTimeMillis: DateTime.now()
+                  .add(const Duration(days: 30))
+                  .millisecondsSinceEpoch
+                  .toString(),
+              autoRenewing: true,
+            ),
+          );
+
+          await service.verifyAndProcessPurchase(
+            user: premiumUser,
+            transaction: transaction,
+          );
+
+          // Verify User Update NEVER called (because they are already premium)
+          verifyNever(
+            () => mockUserRepository.update(
+              id: any(named: 'id'),
+              item: any(named: 'item'),
+            ),
+          );
+        },
+      );
+
+      test(
+        'transfers entitlement (Restore Purchase) when subscription belongs to a different user',
+        () async {
+          // 1. Setup: Transaction that resolves to an ID owned by 'old-user'
+          when(
+            () => mockUserSubscriptionRepository.readAll(
+              filter: any(named: 'filter'),
+            ),
+          ).thenAnswer((invocation) async {
+            final filter =
+                invocation.namedArguments[#filter] as Map<String, dynamic>;
+            // If looking up by originalTransactionId, return the OLD user's sub
+            if (filter.containsKey('originalTransactionId')) {
+              return PaginatedResponse(
+                items: [
+                  UserSubscription(
+                    id: 'sub-old',
+                    userId: 'user-old', // Different user
+                    tier: AccessTier.premium,
+                    status: SubscriptionStatus.active,
+                    provider: StoreProvider.google,
+                    validUntil: DateTime.now().add(const Duration(days: 30)),
+                    willAutoRenew: true,
+                    originalTransactionId: transaction.providerReceipt,
+                  ),
+                ],
+                cursor: null,
+                hasMore: false,
+              );
+            }
+            // If looking up by userId (for the current user), return empty (new install)
+            if (filter['userId'] == testUser.id) {
+              return const PaginatedResponse(
+                items: [],
+                cursor: null,
+                hasMore: false,
+              );
+            }
+            return const PaginatedResponse(
+              items: [],
+              cursor: null,
+              hasMore: false,
+            );
+          });
+
+          // 2. Mock Google Client to return valid purchase
+          when(
+            () => mockGooglePlayClient.getSubscription(
+              subscriptionId: any(named: 'subscriptionId'),
+              purchaseToken: any(named: 'purchaseToken'),
+            ),
+          ).thenAnswer(
+            (_) async => GoogleSubscriptionPurchase(
+              expiryTimeMillis: DateTime.now()
+                  .add(const Duration(days: 30))
+                  .millisecondsSinceEpoch
+                  .toString(),
+              autoRenewing: true,
+            ),
+          );
+
+          // 3. Mock Old User Retrieval & Downgrade
+          final oldUser = User(
+            id: 'user-old',
+            email: 'old@example.com',
+            role: UserRole.user,
+            tier: AccessTier.premium,
+            createdAt: DateTime.now(),
+          );
+          when(
+            () => mockUserRepository.read(id: 'user-old'),
+          ).thenAnswer((_) async => oldUser);
+
+          // 4. Execute
+          await service.verifyAndProcessPurchase(
+            user: testUser,
+            transaction: transaction,
+          );
+
+          // 5. Verify Transfer Logic
+          // A. Old user should be downgraded
+          verify(
+            () => mockUserRepository.update(
+              id: 'user-old',
+              item: any(
+                named: 'item',
+                that: isA<User>().having(
+                  (u) => u.tier,
+                  'tier',
+                  AccessTier.standard,
+                ),
+              ),
+            ),
+          ).called(1);
+
+          // B. Subscription ownership should be transferred to current user
+          verify(
+            () => mockUserSubscriptionRepository.update(
+              id: 'sub-old',
+              item: any(
+                named: 'item',
+                that: isA<UserSubscription>().having(
+                  (s) => s.userId,
+                  'userId',
+                  testUser.id,
+                ),
+              ),
+            ),
+          ).called(1);
+
+          // C. Current user should be upgraded (happens in main flow)
+          verify(
+            () => mockUserRepository.update(
+              id: testUser.id,
+              item: any(
+                named: 'item',
+                that: isA<User>().having(
+                  (u) => u.tier,
+                  'tier',
+                  AccessTier.premium,
+                ),
+              ),
+            ),
+          ).called(1);
+        },
+      );
+
+      test(
+        'handles expired purchase correctly (does not upgrade user)',
+        () async {
+          // Setup: Google purchase that is expired
+          when(
+            () => mockUserSubscriptionRepository.readAll(
+              filter: any(named: 'filter'),
+            ),
+          ).thenAnswer(
+            (_) async => const PaginatedResponse(
+              items: [],
+              cursor: null,
+              hasMore: false,
+            ),
+          );
+          when(
+            () => mockGooglePlayClient.getSubscription(
+              subscriptionId: any(named: 'subscriptionId'),
+              purchaseToken: any(named: 'purchaseToken'),
+            ),
+          ).thenAnswer(
+            (_) async => GoogleSubscriptionPurchase(
+              expiryTimeMillis: DateTime.now()
+                  .subtract(const Duration(days: 30)) // Expired
+                  .millisecondsSinceEpoch
+                  .toString(),
+              autoRenewing: false,
+            ),
+          );
+
+          final result = await service.verifyAndProcessPurchase(
+            user: testUser, // Standard user
+            transaction: transaction,
+          );
+
+          // Verify subscription created as expired
+          expect(result.status, SubscriptionStatus.expired);
+          verify(
+            () => mockUserSubscriptionRepository.create(
+              item: any(
+                named: 'item',
+                that: isA<UserSubscription>().having(
+                  (s) => s.status,
+                  'status',
+                  SubscriptionStatus.expired,
+                ),
+              ),
+            ),
+          ).called(1);
+
+          // Verify user was NOT updated (remains standard)
+          verifyNever(
+            () => mockUserRepository.update(
+              id: any(named: 'id'),
+              item: any(named: 'item'),
+            ),
+          );
+        },
+      );
+
+      test(
+        'transfers entitlement gracefully when old user is not found (deleted)',
+        () async {
+          // 1. Setup: Transaction resolves to sub owned by 'user-old'
+          when(
+            () => mockUserSubscriptionRepository.readAll(
+              filter: any(named: 'filter'),
+            ),
+          ).thenAnswer((invocation) async {
+            final filter =
+                invocation.namedArguments[#filter] as Map<String, dynamic>;
+            if (filter.containsKey('originalTransactionId')) {
+              return PaginatedResponse(
+                items: [
+                  UserSubscription(
+                    id: 'sub-old',
+                    userId: 'user-old',
+                    tier: AccessTier.premium,
+                    status: SubscriptionStatus.active,
+                    provider: StoreProvider.google,
+                    validUntil: DateTime.now().add(const Duration(days: 30)),
+                    willAutoRenew: true,
+                    originalTransactionId: transaction.providerReceipt,
+                  ),
+                ],
+                cursor: null,
+                hasMore: false,
+              );
+            }
+            return const PaginatedResponse(
+              items: [],
+              cursor: null,
+              hasMore: false,
+            );
+          });
+
+          // 2. Mock Google Client valid purchase
+          when(
+            () => mockGooglePlayClient.getSubscription(
+              subscriptionId: any(named: 'subscriptionId'),
+              purchaseToken: any(named: 'purchaseToken'),
+            ),
+          ).thenAnswer(
+            (_) async => GoogleSubscriptionPurchase(
+              expiryTimeMillis: DateTime.now()
+                  .add(const Duration(days: 30))
+                  .millisecondsSinceEpoch
+                  .toString(),
+              autoRenewing: true,
+            ),
+          );
+
+          // 3. Mock Old User Lookup -> THROWS NotFoundException
+          when(
+            () => mockUserRepository.read(id: 'user-old'),
+          ).thenThrow(const NotFoundException('User not found'));
+
+          // 4. Execute
+          await service.verifyAndProcessPurchase(
+            user: testUser,
+            transaction: transaction,
+          );
+
+          // 5. Verify Resilience
+          // Old user update should NOT be called (since read failed)
+          verifyNever(
+            () => mockUserRepository.update(
+              id: 'user-old',
+              item: any(named: 'item'),
+            ),
+          );
+
+          // Subscription SHOULD be transferred to new user
+          verify(
+            () => mockUserSubscriptionRepository.update(
+              id: 'sub-old',
+              item: any(
+                named: 'item',
+                that: isA<UserSubscription>().having(
+                  (s) => s.userId,
+                  'userId',
+                  testUser.id,
+                ),
+              ),
+            ),
+          ).called(1);
+
+          // New user SHOULD be upgraded
+          verify(
+            () => mockUserRepository.update(
+              id: testUser.id,
+              item: any(named: 'item'),
+            ),
+          ).called(1);
+        },
+      );
+
+      test(
+        'aborts transfer if downgrading old user fails for a non-NotFoundException',
+        () async {
+          // 1. Setup: Transaction resolves to sub owned by 'user-old'
+          when(
+            () => mockUserSubscriptionRepository.readAll(
+              filter: any(named: 'filter'),
+            ),
+          ).thenAnswer((invocation) async {
+            final filter =
+                invocation.namedArguments[#filter] as Map<String, dynamic>;
+            if (filter.containsKey('originalTransactionId')) {
+              return PaginatedResponse(
+                items: [
+                  UserSubscription(
+                    id: 'sub-old',
+                    userId: 'user-old',
+                    tier: AccessTier.premium,
+                    status: SubscriptionStatus.active,
+                    provider: StoreProvider.google,
+                    validUntil: DateTime.now().add(const Duration(days: 30)),
+                    willAutoRenew: true,
+                    originalTransactionId: transaction.providerReceipt,
+                  ),
+                ],
+                cursor: null,
+                hasMore: false,
+              );
+            }
+            return const PaginatedResponse(
+              items: [],
+              cursor: null,
+              hasMore: false,
+            );
+          });
+
+          // 2. Mock Google Client valid purchase
+          when(
+            () => mockGooglePlayClient.getSubscription(
+              subscriptionId: any(named: 'subscriptionId'),
+              purchaseToken: any(named: 'purchaseToken'),
+            ),
+          ).thenAnswer(
+            (_) async => GoogleSubscriptionPurchase(
+              expiryTimeMillis: DateTime.now()
+                  .add(const Duration(days: 30))
+                  .millisecondsSinceEpoch
+                  .toString(),
+              autoRenewing: true,
+            ),
+          );
+
+          // 3. Mock Old User Lookup -> THROWS a generic Exception
+          final dbError = Exception('Database connection failed');
+          when(
+            () => mockUserRepository.read(id: 'user-old'),
+          ).thenThrow(dbError);
+
+          // 4. Execute and Verify Exception
+          expect(
+            () => service.verifyAndProcessPurchase(
+              user: testUser,
+              transaction: transaction,
+            ),
+            throwsA(equals(dbError)),
+          );
+
+          // 5. Verify that no updates occurred
+          verifyNever(
+            () => mockUserSubscriptionRepository.update(
+              id: any(named: 'id'),
+              item: any(named: 'item'),
+            ),
+          );
+        },
+      );
     });
 
     group('handleAppleNotification', () {
@@ -592,6 +1001,77 @@ void main() {
           expect(capturedSub.willAutoRenew, false);
         },
       );
+
+      test('downgrades user on REVOKE notification', () async {
+        final revokePayload = AppleNotificationPayload(
+          notificationType: AppleNotificationType.revoke,
+          notificationUUID: 'uuid-revoke',
+          version: '2.0',
+          signedDate: DateTime.now(),
+          data: notificationPayload.data,
+        );
+
+        when(
+          () => mockAppStoreClient.decodeTransaction(any()),
+        ).thenReturn(transactionInfo);
+
+        final activeSub = UserSubscription(
+          id: 'sub-1',
+          userId: testUser.id,
+          tier: AccessTier.premium,
+          status: SubscriptionStatus.active,
+          provider: StoreProvider.apple,
+          validUntil: DateTime.now().add(const Duration(days: 30)),
+          originalTransactionId: transactionInfo.originalTransactionId,
+          willAutoRenew: true,
+        );
+
+        when(
+          () => mockUserSubscriptionRepository.readAll(
+            filter: any(named: 'filter'),
+          ),
+        ).thenAnswer(
+          (_) async => PaginatedResponse(
+            items: [activeSub],
+            cursor: null,
+            hasMore: false,
+          ),
+        );
+        when(
+          () => mockUserRepository.read(id: testUser.id),
+        ).thenAnswer((_) async => testUser.copyWith(tier: AccessTier.premium));
+
+        await service.handleAppleNotification(revokePayload);
+
+        // Verification is identical to EXPIRED test, as logic is shared
+        verify(
+          () => mockUserSubscriptionRepository.update(
+            id: activeSub.id,
+            item: any(
+              named: 'item',
+              that: isA<UserSubscription>().having(
+                (s) => s.status,
+                'status',
+                SubscriptionStatus.expired,
+              ),
+            ),
+          ),
+        ).called(1);
+
+        verify(
+          () => mockUserRepository.update(
+            id: testUser.id,
+            item: any(
+              named: 'item',
+              that: isA<User>().having(
+                (u) => u.tier,
+                'tier',
+                AccessTier.standard,
+              ),
+            ),
+          ),
+        ).called(1);
+      });
     });
 
     group('handleGoogleNotification', () {
@@ -697,6 +1177,79 @@ void main() {
                   ).captured.first
                   as User;
           expect(capturedUser.tier, AccessTier.premium);
+        },
+      );
+
+      test(
+        'updates subscription to non-renewing (Canceled) but keeps access if expiry is in future',
+        () async {
+          // Mock Google Client: Auto-renew OFF, Expiry FUTURE
+          when(
+            () => mockGooglePlayClient.getSubscription(
+              subscriptionId: any(named: 'subscriptionId'),
+              purchaseToken: any(named: 'purchaseToken'),
+            ),
+          ).thenAnswer(
+            (_) async => GoogleSubscriptionPurchase(
+              expiryTimeMillis: DateTime.now()
+                  .add(const Duration(days: 10))
+                  .millisecondsSinceEpoch
+                  .toString(),
+              autoRenewing: false, // User turned it off
+            ),
+          );
+
+          // Existing Sub: Active, Auto-renew ON
+          final existingSub = UserSubscription(
+            id: 'sub-1',
+            userId: testUser.id,
+            tier: AccessTier.premium,
+            status: SubscriptionStatus.active,
+            provider: StoreProvider.google,
+            validUntil: DateTime.now().add(const Duration(days: 10)),
+            originalTransactionId: 'token',
+            willAutoRenew: true,
+          );
+
+          when(
+            () => mockUserSubscriptionRepository.readAll(
+              filter: any(named: 'filter'),
+            ),
+          ).thenAnswer(
+            (_) async => PaginatedResponse(
+              items: [existingSub],
+              cursor: null,
+              hasMore: false,
+            ),
+          );
+          when(
+            () => mockUserRepository.read(id: testUser.id),
+          ).thenAnswer(
+            (_) async => testUser.copyWith(tier: AccessTier.premium),
+          );
+
+          await service.handleGoogleNotification(notification);
+
+          // Verify Update: Status Active, WillAutoRenew False
+          final capturedSub =
+              verify(
+                    () => mockUserSubscriptionRepository.update(
+                      id: existingSub.id,
+                      item: captureAny(named: 'item'),
+                    ),
+                  ).captured.first
+                  as UserSubscription;
+
+          expect(capturedSub.status, SubscriptionStatus.active);
+          expect(capturedSub.willAutoRenew, false);
+
+          // User should NOT be updated (already premium)
+          verifyNever(
+            () => mockUserRepository.update(
+              id: any(named: 'id'),
+              item: any(named: 'item'),
+            ),
+          );
         },
       );
 
