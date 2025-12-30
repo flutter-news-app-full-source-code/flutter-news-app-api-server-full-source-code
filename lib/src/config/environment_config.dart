@@ -281,8 +281,8 @@ abstract final class EnvironmentConfig {
   static set googlePlayPackageName(String? value) =>
       _setOverride('GOOGLE_PLAY_PACKAGE_NAME', value);
 
-  /// Retrieves the flag to use the logging email client.
+  /// Retrieves the selected email provider.
   ///
-  /// Defaults to false.
-  static bool get emailLoggingClient => _env['EMAIL_LOGGING_CLIENT'] == 'true';
+  /// Expected values: 'sendgrid', 'onesignal', 'logging'.
+  static String get emailProvider => _getRequiredEnv('EMAIL_PROVIDER');
 }
