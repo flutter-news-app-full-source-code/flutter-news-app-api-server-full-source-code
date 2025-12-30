@@ -1,4 +1,3 @@
-// New file: lib/src/services/email/email_sendgrid_client.dart
 // ignore_for_file: lines_longer_than_80_chars
 
 import 'package:core/core.dart';

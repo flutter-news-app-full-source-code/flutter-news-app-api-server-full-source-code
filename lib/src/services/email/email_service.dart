@@ -1,4 +1,3 @@
-// New file: lib/src/services/email/email_service.dart
 import 'package:core/core.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_client.dart';
 import 'package:logging/logging.dart';

@@ -1,4 +1,3 @@
-// New file: lib/src/models/provider/email/sendgrid_request.dart
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 

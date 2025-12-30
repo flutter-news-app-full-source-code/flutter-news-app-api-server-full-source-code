@@ -1,4 +1,3 @@
-// New file: lib/src/services/email/email_client.dart
 import 'package:core/core.dart';
 
 /// {@template email_client}
