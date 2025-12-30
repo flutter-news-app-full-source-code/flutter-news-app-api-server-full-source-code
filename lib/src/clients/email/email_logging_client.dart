@@ -27,15 +27,23 @@ class EmailLoggingClient implements EmailClient {
   }) async {
     final buffer = StringBuffer()
       ..writeln('')
-      ..writeln('╔════════════════════════════════════════════════════════════╗')
-      ..writeln('║              EMAIL LOGGING CLIENT (LOCAL DEV)              ║')
-      ..writeln('╠════════════════════════════════════════════════════════════╣')
+      ..writeln(
+        '╔════════════════════════════════════════════════════════════╗',
+      )
+      ..writeln(
+        '║              EMAIL LOGGING CLIENT (LOCAL DEV)              ║',
+      )
+      ..writeln(
+        '╠════════════════════════════════════════════════════════════╣',
+      )
       ..writeln('║ To:       $recipientEmail')
       ..writeln('║ From:     $senderEmail')
       ..writeln('║ Subject:  $subject')
       ..writeln('║ Template: $templateId')
       ..writeln('║ Data:     $templateData')
-      ..writeln('╚════════════════════════════════════════════════════════════╝')
+      ..writeln(
+        '╚════════════════════════════════════════════════════════════╝',
+      )
       ..writeln('');
 
     log.info(buffer.toString());
