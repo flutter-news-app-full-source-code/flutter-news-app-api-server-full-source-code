@@ -4,8 +4,6 @@ import 'package:flutter_news_app_api_server_full_source_code/src/clients/analyti
     show AnalyticsReportingClient;
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/analytics/analytics_reporting_client.dart'
     show AnalyticsReportingClient;
-import 'package:flutter_news_app_api_server_full_source_code/src/clients/clients.dart'
-    show AnalyticsReportingClient;
 import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:http_client/http_client.dart';
