@@ -7,6 +7,7 @@ import 'package:data_mongodb/data_mongodb.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/analytics/analytics.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_client.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_logging_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_onesignal_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_sendgrid_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/payment/app_store_server_client.dart';
@@ -424,8 +425,23 @@ class AppDependencies {
       // --- Initialize Email Service ---
       EmailClient? emailClient;
 
-      // Option A: SendGrid
-      if (EnvironmentConfig.sendGridApiKey.isNotEmpty) {
+      // Option A: Logging (Development Only)
+      // We check this first to allow developers to override other configs easily.
+      if (EnvironmentConfig.emailLoggingClient) {
+        _log.warning(
+          '=============================================================',
+        );
+        _log.warning(
+          '⚠️  USING EMAIL LOGGING CLIENT - EMAILS WILL NOT BE SENT  ⚠️',
+        );
+        _log.warning('   This configuration is for LOCAL DEVELOPMENT ONLY.');
+        _log.warning(
+          '=============================================================',
+        );
+        emailClient = EmailLoggingClient(log: Logger('EmailLoggingClient'));
+      }
+      // Option B: SendGrid
+      else if (EnvironmentConfig.sendGridApiKey?.isNotEmpty ?? false) {
         _log.info('Using SendGrid as the Email Provider.');
         final sendGridApiBase =
             EnvironmentConfig.sendGridApiUrl ?? 'https://api.sendgrid.com';
@@ -440,13 +456,13 @@ class AppDependencies {
         );
       }
 
-      // Option B: OneSignal
-      // We check this independently. If SendGrid was also configured, we log a warning.
+      // Option C: OneSignal
+      // We check this independently. If a provider was already configured, we log a warning.
       if ((EnvironmentConfig.oneSignalAppId?.isNotEmpty ?? false) &&
           (EnvironmentConfig.oneSignalRestApiKey?.isNotEmpty ?? false)) {
         if (emailClient != null) {
           _log.warning(
-            'Multiple Email Providers configured. SendGrid will be used. Unset SendGrid credentials to use OneSignal.',
+            'Multiple Email Providers configured. The active provider (Logging or SendGrid) will take precedence. Unset other credentials to use OneSignal.',
           );
         } else {
           _log.info('Using OneSignal as the Email Provider.');
