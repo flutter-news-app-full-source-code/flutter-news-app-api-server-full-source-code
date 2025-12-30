@@ -6,7 +6,11 @@ part 'onesignal_request.g.dart';
 /// {@template onesignal_email_request}
 /// Represents the payload for sending an email via the OneSignal API.
 /// {@endtemplate}
-@JsonSerializable(explicitToJson: true, createFactory: false)
+@JsonSerializable(
+  explicitToJson: true,
+  createFactory: false,
+  ignoreUnannotated: true,
+)
 class OneSignalEmailRequest extends Equatable {
   /// {@macro onesignal_email_request}
   const OneSignalEmailRequest({
