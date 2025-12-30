@@ -326,7 +326,9 @@ class AppDependencies {
       if (fcmProjectId != null &&
           fcmClientEmail != null &&
           fcmPrivateKey != null) {
-        _log.info('Firebase credentials found. Initializing Firebase client.');
+        _log.info(
+          'Firebase credentials found. Initializing Firebase client (Active provider determined by Remote Config).',
+        );
         googleAuthService = GoogleAuthService(
           log: Logger('GoogleAuthService'),
         );
@@ -358,7 +360,7 @@ class AppDependencies {
 
       if (osAppId != null && osApiKey != null) {
         _log.info(
-          'OneSignal credentials found. Initializing OneSignal client.',
+          'OneSignal credentials found. Initializing OneSignal client (Active provider determined by Remote Config).',
         );
         final oneSignalHttpClient = HttpClient(
           baseUrl: 'https://onesignal.com/api/v1/',
@@ -425,54 +427,51 @@ class AppDependencies {
       // --- Initialize Email Service ---
       EmailClient? emailClient;
 
-      // Option A: Logging (Development Only)
-      // We check this first to allow developers to override other configs easily.
-      if (EnvironmentConfig.emailLoggingClient) {
-        _log.warning(
-          '=============================================================',
-        );
-        _log.warning(
-          '⚠️  USING EMAIL LOGGING CLIENT - EMAILS WILL NOT BE SENT  ⚠️',
-        );
-        _log.warning('   This configuration is for LOCAL DEVELOPMENT ONLY.');
-        _log.warning(
-          '=============================================================',
-        );
-        emailClient = EmailLoggingClient(log: Logger('EmailLoggingClient'));
-      }
-      // Option B: SendGrid
-      else if (EnvironmentConfig.sendGridApiKey?.isNotEmpty ?? false) {
-        _log.info('Using SendGrid as the Email Provider.');
-        final sendGridApiBase =
-            EnvironmentConfig.sendGridApiUrl ?? 'https://api.sendgrid.com';
-        final sendGridHttpClient = HttpClient(
-          baseUrl: '$sendGridApiBase/v3',
-          tokenProvider: () async => EnvironmentConfig.sendGridApiKey,
-          logger: Logger('EmailSendGridHttpClient'),
-        );
-        emailClient = EmailSendGridClient(
-          httpClient: sendGridHttpClient,
-          log: Logger('EmailSendGridClient'),
-        );
-      }
+      final emailProvider = EnvironmentConfig.emailProvider.toLowerCase();
+      _log.info('Initializing Email Service with provider: $emailProvider');
 
-      // Option C: OneSignal
-      // We check this independently. If a provider was already configured, we log a warning.
-      if ((EnvironmentConfig.oneSignalAppId?.isNotEmpty ?? false) &&
-          (EnvironmentConfig.oneSignalRestApiKey?.isNotEmpty ?? false)) {
-        if (emailClient != null) {
+      switch (emailProvider) {
+        case 'logging':
           _log.warning(
-            'Multiple Email Providers configured. The active provider (Logging or SendGrid) will take precedence. Unset other credentials to use OneSignal.',
+            '=============================================================',
           );
-        } else {
-          _log.info('Using OneSignal as the Email Provider.');
-          // Reuse the OneSignal HTTP Client logic if possible, or create new.
-          // Since we might not have initialized the push client above if we
-          // didn't want push, we re-create the http client here for safety/isolation.
+          _log.warning(
+            '⚠️  USING EMAIL LOGGING CLIENT - EMAILS WILL NOT BE SENT  ⚠️',
+          );
+          _log.warning('   This configuration is for LOCAL DEVELOPMENT ONLY.');
+          _log.warning(
+            '=============================================================',
+          );
+          emailClient = EmailLoggingClient(log: Logger('EmailLoggingClient'));
+          break;
+        case 'sendgrid':
+          if (EnvironmentConfig.sendGridApiKey?.isEmpty ?? true) {
+            throw StateError(
+              'EMAIL_PROVIDER is set to "sendgrid" but SENDGRID_API_KEY is missing.',
+            );
+          }
+          final sendGridApiBase =
+              EnvironmentConfig.sendGridApiUrl ?? 'https://api.sendgrid.com';
+          final sendGridHttpClient = HttpClient(
+            baseUrl: '$sendGridApiBase/v3',
+            tokenProvider: () async => EnvironmentConfig.sendGridApiKey,
+            logger: Logger('EmailSendGridHttpClient'),
+          );
+          emailClient = EmailSendGridClient(
+            httpClient: sendGridHttpClient,
+            log: Logger('EmailSendGridClient'),
+          );
+          break;
+        case 'onesignal':
+          if ((EnvironmentConfig.oneSignalAppId?.isEmpty ?? true) ||
+              (EnvironmentConfig.oneSignalRestApiKey?.isEmpty ?? true)) {
+            throw StateError(
+              'EMAIL_PROVIDER is set to "onesignal" but OneSignal credentials are missing.',
+            );
+          }
           final oneSignalHttpClient = HttpClient(
             baseUrl: 'https://onesignal.com/api/v1/',
-            tokenProvider: () async =>
-                null, // Basic Auth handled by interceptor
+            tokenProvider: () async => null,
             interceptors: [
               InterceptorsWrapper(
                 onRequest: (options, handler) {
@@ -489,16 +488,11 @@ class AppDependencies {
             httpClient: oneSignalHttpClient,
             log: Logger('EmailOneSignalClient'),
           );
-        }
-      }
-
-      if (emailClient == null) {
-        // Throw an explicit error to prevent a LateInitializationError later.
-        // This makes it clear that an email provider is required to run the application.
-        _log.severe('No valid email provider configuration found.');
-        throw StateError(
-          'No email provider configured. Application cannot start.',
-        );
+          break;
+        default:
+          throw StateError(
+            'Invalid EMAIL_PROVIDER: "$emailProvider". Must be one of: sendgrid, onesignal, logging.',
+          );
       }
 
       emailService = EmailService(
@@ -566,6 +560,9 @@ class AppDependencies {
       if (EnvironmentConfig.appleAppStoreIssuerId != null &&
           EnvironmentConfig.appleAppStoreKeyId != null &&
           EnvironmentConfig.appleAppStorePrivateKey != null) {
+        _log.info(
+          'Apple App Store credentials found. Initializing App Store Server Client.',
+        );
         appStoreServerClient = AppStoreServerClient(
           log: Logger('AppStoreServerClient'),
         );
@@ -579,6 +576,9 @@ class AppDependencies {
       // Google Play Client requires the GoogleAuthService which might be null
       // if credentials weren't provided. We handle this gracefully.
       if (googleAuthService != null) {
+        _log.info(
+          'Google Auth Service available. Initializing Google Play Client.',
+        );
         googlePlayClient = GooglePlayClient(
           googleAuthService: googleAuthService!,
           log: Logger('GooglePlayClient'),
@@ -607,6 +607,9 @@ class AppDependencies {
 
       GoogleAnalyticsDataClient? googleAnalyticsClient;
       if (gaPropertyId != null && googleAuthService != null) {
+        _log.info(
+          'Google Analytics credentials found. Initializing Google Analytics Client (Active provider determined by Remote Config).',
+        );
         final googleAnalyticsHttpClient = HttpClient(
           baseUrl: 'https://analyticsdata.googleapis.com/v1beta',
           tokenProvider: () => googleAuthService!.getAccessToken(
@@ -631,6 +634,9 @@ class AppDependencies {
 
       MixpanelDataClient? mixpanelClient;
       if (mpProjectId != null && mpUser != null && mpSecret != null) {
+        _log.info(
+          'Mixpanel credentials found. Initializing Mixpanel Client (Active provider determined by Remote Config).',
+        );
         mixpanelClient = MixpanelDataClient(
           headlineRepository: headlineRepository,
           projectId: mpProjectId,
