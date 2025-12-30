@@ -477,24 +477,18 @@ class AppDependencies {
       }
 
       if (emailClient == null) {
-        _log.warning('No Email Provider configured. Email features will fail.');
-        // We can throw here or allow it to be null and fail at runtime.
-        // For now, we'll throw to fail fast if email is critical, or we could
-        // provide a no-op client. Given the architecture, we'll let it fail
-        // if accessed.
+        // Throw an explicit error to prevent a LateInitializationError later.
+        // This makes it clear that an email provider is required to run the application.
+        _log.severe('No valid email provider configuration found.');
+        throw StateError(
+          'No email provider configured. Application cannot start.',
+        );
       }
 
-      if (emailClient != null) {
-        emailService = EmailService(
-          emailClient: emailClient,
-          log: Logger('EmailService'),
-        );
-      } else {
-        // Fallback or error handling if strictly required.
-        // For now, we assume config is present if the app expects to send emails.
-        _log.severe('No valid email provider configuration found.');
-        // We don't throw here to allow the app to start, but email features will fail.
-      }
+      emailService = EmailService(
+        emailClient: emailClient,
+        log: Logger('EmailService'),
+      );
 
       // 5. Initialize Services
       tokenBlacklistService = MongoDbTokenBlacklistService(
