@@ -141,8 +141,8 @@ abstract final class EnvironmentConfig {
 
   /// Retrieves the SendGrid API key from the environment.
   ///
-  /// Throws a [StateError] if the `SENDGRID_API_KEY` is not set.
-  static String get sendGridApiKey => _getRequiredEnv('SENDGRID_API_KEY');
+  /// Returns null if not set.
+  static String? get sendGridApiKey => _env['SENDGRID_API_KEY'];
 
   /// Retrieves the default sender email from the environment.
   ///
@@ -280,4 +280,9 @@ abstract final class EnvironmentConfig {
 
   static set googlePlayPackageName(String? value) =>
       _setOverride('GOOGLE_PLAY_PACKAGE_NAME', value);
+
+  /// Retrieves the flag to use the logging email client.
+  ///
+  /// Defaults to false.
+  static bool get emailLoggingClient => _env['EMAIL_LOGGING_CLIENT'] == 'true';
 }
