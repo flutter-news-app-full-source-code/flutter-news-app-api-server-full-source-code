@@ -327,7 +327,7 @@ class AppDependencies {
           fcmClientEmail != null &&
           fcmPrivateKey != null) {
         _log.info(
-          'Firebase credentials found. Initializing Firebase client (Active provider determined by Remote Config).',
+          'Firebase credentials found. Initializing Firebase client.',
         );
         googleAuthService = GoogleAuthService(
           log: Logger('GoogleAuthService'),
@@ -360,7 +360,7 @@ class AppDependencies {
 
       if (osAppId != null && osApiKey != null) {
         _log.info(
-          'OneSignal credentials found. Initializing OneSignal client (Active provider determined by Remote Config).',
+          'OneSignal credentials found. Initializing OneSignal client.',
         );
         final oneSignalHttpClient = HttpClient(
           baseUrl: 'https://onesignal.com/api/v1/',
@@ -443,7 +443,6 @@ class AppDependencies {
             '=============================================================',
           );
           emailClient = EmailLoggingClient(log: Logger('EmailLoggingClient'));
-          break;
         case 'sendgrid':
           if (EnvironmentConfig.sendGridApiKey?.isEmpty ?? true) {
             throw StateError(
@@ -461,12 +460,11 @@ class AppDependencies {
             httpClient: sendGridHttpClient,
             log: Logger('EmailSendGridClient'),
           );
-          break;
         case 'onesignal':
           if ((EnvironmentConfig.oneSignalAppId?.isEmpty ?? true) ||
               (EnvironmentConfig.oneSignalRestApiKey?.isEmpty ?? true)) {
             throw StateError(
-              'EMAIL_PROVIDER is set to "onesignal" but OneSignal credentials are missing.',
+              'EMAIL_PROVIDER is set to "onesignal" but required OneSignal environment variables (ONESIGNAL_APP_ID, ONESIGNAL_REST_API_KEY) are missing or empty.',
             );
           }
           final oneSignalHttpClient = HttpClient(
@@ -488,10 +486,9 @@ class AppDependencies {
             httpClient: oneSignalHttpClient,
             log: Logger('EmailOneSignalClient'),
           );
-          break;
         default:
           throw StateError(
-            'Invalid EMAIL_PROVIDER: "$emailProvider". Must be one of: sendgrid, onesignal, logging.',
+            'Invalid EMAIL_PROVIDER: "$emailProvider". Must be one of: ${_EmailProvider.values.map((e) => e.name).join(', ')}.',
           );
       }
 
@@ -608,7 +605,7 @@ class AppDependencies {
       GoogleAnalyticsDataClient? googleAnalyticsClient;
       if (gaPropertyId != null && googleAuthService != null) {
         _log.info(
-          'Google Analytics credentials found. Initializing Google Analytics Client (Active provider determined by Remote Config).',
+          'Google Analytics credentials found. Initializing Google Analytics Client.',
         );
         final googleAnalyticsHttpClient = HttpClient(
           baseUrl: 'https://analyticsdata.googleapis.com/v1beta',
@@ -635,7 +632,7 @@ class AppDependencies {
       MixpanelDataClient? mixpanelClient;
       if (mpProjectId != null && mpUser != null && mpSecret != null) {
         _log.info(
-          'Mixpanel credentials found. Initializing Mixpanel Client (Active provider determined by Remote Config).',
+          'Mixpanel credentials found. Initializing Mixpanel Client.',
         );
         mixpanelClient = MixpanelDataClient(
           headlineRepository: headlineRepository,
@@ -713,3 +710,5 @@ class AppDependencies {
     _log.info('Application dependencies disposed and state reset.');
   }
 }
+
+enum _EmailProvider { sendgrid, onesignal, logging }
