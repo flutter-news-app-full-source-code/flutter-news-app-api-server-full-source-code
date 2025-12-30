@@ -6,7 +6,11 @@ part 'sendgrid_request.g.dart';
 /// {@template sendgrid_request}
 /// Represents the payload for sending an email via the SendGrid v3 API.
 /// {@endtemplate}
-@JsonSerializable(explicitToJson: true, createFactory: false)
+@JsonSerializable(
+  explicitToJson: true,
+  createFactory: false,
+  ignoreUnannotated: true,
+)
 class SendGridRequest extends Equatable {
   /// {@macro sendgrid_request}
   const SendGridRequest({
@@ -19,9 +23,11 @@ class SendGridRequest extends Equatable {
   Map<String, dynamic> toJson() => _$SendGridRequestToJson(this);
 
   /// The list of personalizations (recipients and dynamic data).
+  @JsonKey(name: 'personalizations')
   final List<SendGridPersonalization> personalizations;
 
   /// The sender's email information.
+  @JsonKey(name: 'from')
   final SendGridFrom from;
 
   /// The ID of the dynamic template to use.
@@ -35,7 +41,11 @@ class SendGridRequest extends Equatable {
 /// {@template sendgrid_personalization}
 /// Represents the personalization block within a SendGrid request.
 /// {@endtemplate}
-@JsonSerializable(explicitToJson: true, createFactory: false)
+@JsonSerializable(
+  explicitToJson: true,
+  createFactory: false,
+  ignoreUnannotated: true,
+)
 class SendGridPersonalization extends Equatable {
   /// {@macro sendgrid_personalization}
   const SendGridPersonalization({
@@ -48,9 +58,11 @@ class SendGridPersonalization extends Equatable {
   Map<String, dynamic> toJson() => _$SendGridPersonalizationToJson(this);
 
   /// The recipients of this personalization.
+  @JsonKey(name: 'to')
   final List<SendGridTo> to;
 
   /// The subject line for this personalization.
+  @JsonKey(name: 'subject')
   final String subject;
 
   /// The dynamic data to inject into the template.
@@ -64,7 +76,7 @@ class SendGridPersonalization extends Equatable {
 /// {@template sendgrid_to}
 /// Represents a recipient in a SendGrid request.
 /// {@endtemplate}
-@JsonSerializable(createFactory: false)
+@JsonSerializable(createFactory: false, ignoreUnannotated: true)
 class SendGridTo extends Equatable {
   /// {@macro sendgrid_to}
   const SendGridTo({required this.email});
@@ -73,6 +85,7 @@ class SendGridTo extends Equatable {
   Map<String, dynamic> toJson() => _$SendGridToToJson(this);
 
   /// The recipient's email address.
+  @JsonKey(name: 'email')
   final String email;
 
   @override
@@ -82,7 +95,7 @@ class SendGridTo extends Equatable {
 /// {@template sendgrid_from}
 /// Represents the sender in a SendGrid request.
 /// {@endtemplate}
-@JsonSerializable(createFactory: false)
+@JsonSerializable(createFactory: false, ignoreUnannotated: true)
 class SendGridFrom extends Equatable {
   /// {@macro sendgrid_from}
   const SendGridFrom({required this.email});
@@ -91,6 +104,7 @@ class SendGridFrom extends Equatable {
   Map<String, dynamic> toJson() => _$SendGridFromToJson(this);
 
   /// The sender's email address.
+  @JsonKey(name: 'email')
   final String email;
 
   @override
