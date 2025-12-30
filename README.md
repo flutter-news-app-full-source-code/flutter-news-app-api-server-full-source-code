@@ -93,7 +93,7 @@ A complete, zero-trust backend infrastructure for managing in-app subscriptions 
 
 ### 📨 Reliable Email Delivery
 A flexible email infrastructure ensures critical transactional messages, like OTPs, reach your users.
-- **Multi-Provider Strategy:** Built-in support for **SendGrid** as the primary provider, with automatic fallback to **OneSignal** email delivery if configured.
+- **Multi-Provider Strategy:** Built-in support for **SendGrid** and **OneSignal**. Simply configure your preferred provider via environment variables.
 - **Template-Based Workflow:** Decouples content from code by using provider-side templates (SendGrid Dynamic Templates or OneSignal Templates), allowing you to update email designs without redeploying the server.
 - **Unified Interface:** A clean `EmailService` abstraction allows you to swap or add new providers easily without affecting the rest of the application logic.
 > **Your Advantage:** Ensure reliable delivery of sign-in codes and alerts with a system that adapts to your preferred infrastructure provider.
