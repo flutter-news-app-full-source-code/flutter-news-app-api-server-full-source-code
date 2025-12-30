@@ -424,9 +424,9 @@ class AppDependencies {
       // --- Initialize Email Service ---
       EmailClient? emailClient;
 
-      // Priority 1: SendGrid (Check for non-empty string as it is non-nullable)
+      // Option A: SendGrid
       if (EnvironmentConfig.sendGridApiKey.isNotEmpty) {
-        _log.info('Initializing SendGrid Email Client.');
+        _log.info('Using SendGrid as the Email Provider.');
         final sendGridApiBase =
             EnvironmentConfig.sendGridApiUrl ?? 'https://api.sendgrid.com';
         final sendGridHttpClient = HttpClient(
@@ -439,33 +439,44 @@ class AppDependencies {
           log: Logger('EmailSendGridClient'),
         );
       }
-      // Priority 2: OneSignal (if SendGrid is not configured)
-      else if ((EnvironmentConfig.oneSignalAppId?.isNotEmpty ?? false) &&
+
+      // Option B: OneSignal
+      // We check this independently. If SendGrid was also configured, we log a warning.
+      if ((EnvironmentConfig.oneSignalAppId?.isNotEmpty ?? false) &&
           (EnvironmentConfig.oneSignalRestApiKey?.isNotEmpty ?? false)) {
-        _log.info('Initializing OneSignal Email Client.');
-        // Reuse the OneSignal HTTP Client logic if possible, or create new.
-        // Since we might not have initialized the push client above if we
-        // didn't want push, we re-create the http client here for safety/isolation.
-        final oneSignalHttpClient = HttpClient(
-          baseUrl: 'https://onesignal.com/api/v1/',
-          tokenProvider: () async => null, // Basic Auth handled by interceptor
-          interceptors: [
-            InterceptorsWrapper(
-              onRequest: (options, handler) {
-                options.headers['Authorization'] =
-                    'Basic ${EnvironmentConfig.oneSignalRestApiKey}';
-                return handler.next(options);
-              },
-            ),
-          ],
-          logger: Logger('EmailOneSignalHttpClient'),
-        );
-        emailClient = EmailOneSignalClient(
-          appId: EnvironmentConfig.oneSignalAppId!,
-          httpClient: oneSignalHttpClient,
-          log: Logger('EmailOneSignalClient'),
-        );
-      } else {
+        if (emailClient != null) {
+          _log.warning(
+            'Multiple Email Providers configured. SendGrid will be used. Unset SendGrid credentials to use OneSignal.',
+          );
+        } else {
+          _log.info('Using OneSignal as the Email Provider.');
+          // Reuse the OneSignal HTTP Client logic if possible, or create new.
+          // Since we might not have initialized the push client above if we
+          // didn't want push, we re-create the http client here for safety/isolation.
+          final oneSignalHttpClient = HttpClient(
+            baseUrl: 'https://onesignal.com/api/v1/',
+            tokenProvider: () async =>
+                null, // Basic Auth handled by interceptor
+            interceptors: [
+              InterceptorsWrapper(
+                onRequest: (options, handler) {
+                  options.headers['Authorization'] =
+                      'Basic ${EnvironmentConfig.oneSignalRestApiKey}';
+                  return handler.next(options);
+                },
+              ),
+            ],
+            logger: Logger('EmailOneSignalHttpClient'),
+          );
+          emailClient = EmailOneSignalClient(
+            appId: EnvironmentConfig.oneSignalAppId!,
+            httpClient: oneSignalHttpClient,
+            log: Logger('EmailOneSignalClient'),
+          );
+        }
+      }
+
+      if (emailClient == null) {
         _log.warning('No Email Provider configured. Email features will fail.');
         // We can throw here or allow it to be null and fail at runtime.
         // For now, we'll throw to fail fast if email is critical, or we could
@@ -474,7 +485,10 @@ class AppDependencies {
       }
 
       if (emailClient != null) {
-        emailService = EmailService(emailClient: emailClient);
+        emailService = EmailService(
+          emailClient: emailClient,
+          log: Logger('EmailService'),
+        );
       } else {
         // Fallback or error handling if strictly required.
         // For now, we assume config is present if the app expects to send emails.
