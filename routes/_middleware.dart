@@ -1,7 +1,6 @@
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:data_repository/data_repository.dart';
-import 'package:email_repository/email_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/app_dependencies.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/error_handler.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/request_id.dart';
@@ -11,6 +10,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/email/email_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
@@ -178,7 +178,7 @@ Handler middleware(Handler handler) {
                   (_) => deps.googleAuthService,
                 ),
               )
-              .use(provider<EmailRepository>((_) => deps.emailRepository))
+              .use(provider<EmailService>((_) => deps.emailService))
               .use(
                 provider<TokenBlacklistService>(
                   (_) => deps.tokenBlacklistService,
