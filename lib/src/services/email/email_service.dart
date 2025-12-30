@@ -1,6 +1,7 @@
 // New file: lib/src/services/email/email_service.dart
 import 'package:core/core.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_client.dart';
+import 'package:logging/logging.dart';
 
 /// {@template email_service}
 /// A service that handles email sending operations.
@@ -14,10 +15,12 @@ class EmailService {
   ///
   /// Requires an instance of [EmailClient] to handle the actual
   /// email sending operations.
-  const EmailService({required EmailClient emailClient})
-      : _emailClient = emailClient;
+  EmailService({required EmailClient emailClient, Logger? log})
+    : _emailClient = emailClient,
+      _log = log ?? Logger('EmailService');
 
   final EmailClient _emailClient;
+  final Logger _log;
 
   /// Sends a One-Time Password (OTP) email by calling the underlying client.
   ///
@@ -41,15 +44,27 @@ class EmailService {
     required String templateId,
   }) async {
     try {
+      _log.info('Sending OTP email to $recipientEmail');
       await _emailClient.sendTransactionalEmail(
         senderEmail: senderEmail,
         recipientEmail: recipientEmail,
         subject: subject,
         templateId: templateId,
+        // Note: The template MUST use {{otp_code}} variable.
         templateData: {'otp_code': otpCode},
       );
+      _log.info('OTP email sent successfully to $recipientEmail');
     } on HttpException {
+      // Propagate known exceptions from the client.
       rethrow;
+    } catch (e, s) {
+      // Catch unexpected errors (e.g., serialization) and wrap them.
+      _log.severe(
+        'Unexpected error sending OTP email to $recipientEmail',
+        e,
+        s,
+      );
+      throw OperationFailedException('Failed to send OTP email: $e');
     }
   }
 }
