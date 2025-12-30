@@ -5,9 +5,12 @@ import 'dart:async';
 import 'package:core/core.dart';
 import 'package:data_mongodb/data_mongodb.dart';
 import 'package:data_repository/data_repository.dart';
-import 'package:email_repository/email_repository.dart';
-import 'package:email_sendgrid/email_sendgrid.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/clients/clients.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/clients/analytics/analytics.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_client.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_onesignal_client.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_sendgrid_client.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/clients/payment/app_store_server_client.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/clients/payment/google_play_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/database/migrations/all_migrations.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/payment/idempotency_record.dart';
@@ -19,6 +22,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/countr
 import 'package:flutter_news_app_api_server_full_source_code/src/services/database_migration_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/database_seeding_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/default_user_action_limit_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/email/email_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/firebase_push_notification_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/jwt_auth_token_service.dart';
@@ -85,7 +89,7 @@ class AppDependencies {
   late final DataRepository<Engagement> engagementRepository;
   late final DataRepository<Report> reportRepository;
   late final DataRepository<AppReview> appReviewRepository;
-  late final EmailRepository emailRepository;
+  late final EmailService emailService;
 
   // Services
   late final AnalyticsSyncService analyticsSyncService;
@@ -417,24 +421,74 @@ class AppDependencies {
       );
       idempotencyRepository = DataRepository(dataClient: idempotencyClient);
 
-      // Configure the HTTP client for SendGrid.
-      // The HttpClient's AuthInterceptor will use the tokenProvider to add
-      // the 'Authorization: Bearer <SENDGRID_API_KEY>' header.
-      final sendGridApiBase =
-          EnvironmentConfig.sendGridApiUrl ?? 'https://api.sendgrid.com';
-      final sendGridHttpClient = HttpClient(
-        baseUrl: '$sendGridApiBase/v3',
-        tokenProvider: () async => EnvironmentConfig.sendGridApiKey,
-        logger: Logger('EmailSendgridClient'),
-      );
+      // --- Initialize Email Service ---
+      EmailClient? emailClient;
 
-      // Initialize the SendGrid email client with the dedicated HTTP client.
-      final emailClient = EmailSendGrid(
-        httpClient: sendGridHttpClient,
-        log: Logger('EmailSendgrid'),
-      );
+      // Option A: SendGrid
+      if (EnvironmentConfig.sendGridApiKey.isNotEmpty) {
+        _log.info('Using SendGrid as the Email Provider.');
+        final sendGridApiBase =
+            EnvironmentConfig.sendGridApiUrl ?? 'https://api.sendgrid.com';
+        final sendGridHttpClient = HttpClient(
+          baseUrl: '$sendGridApiBase/v3',
+          tokenProvider: () async => EnvironmentConfig.sendGridApiKey,
+          logger: Logger('EmailSendGridHttpClient'),
+        );
+        emailClient = EmailSendGridClient(
+          httpClient: sendGridHttpClient,
+          log: Logger('EmailSendGridClient'),
+        );
+      }
 
-      emailRepository = EmailRepository(emailClient: emailClient);
+      // Option B: OneSignal
+      // We check this independently. If SendGrid was also configured, we log a warning.
+      if ((EnvironmentConfig.oneSignalAppId?.isNotEmpty ?? false) &&
+          (EnvironmentConfig.oneSignalRestApiKey?.isNotEmpty ?? false)) {
+        if (emailClient != null) {
+          _log.warning(
+            'Multiple Email Providers configured. SendGrid will be used. Unset SendGrid credentials to use OneSignal.',
+          );
+        } else {
+          _log.info('Using OneSignal as the Email Provider.');
+          // Reuse the OneSignal HTTP Client logic if possible, or create new.
+          // Since we might not have initialized the push client above if we
+          // didn't want push, we re-create the http client here for safety/isolation.
+          final oneSignalHttpClient = HttpClient(
+            baseUrl: 'https://onesignal.com/api/v1/',
+            tokenProvider: () async =>
+                null, // Basic Auth handled by interceptor
+            interceptors: [
+              InterceptorsWrapper(
+                onRequest: (options, handler) {
+                  options.headers['Authorization'] =
+                      'Basic ${EnvironmentConfig.oneSignalRestApiKey}';
+                  return handler.next(options);
+                },
+              ),
+            ],
+            logger: Logger('EmailOneSignalHttpClient'),
+          );
+          emailClient = EmailOneSignalClient(
+            appId: EnvironmentConfig.oneSignalAppId!,
+            httpClient: oneSignalHttpClient,
+            log: Logger('EmailOneSignalClient'),
+          );
+        }
+      }
+
+      if (emailClient == null) {
+        // Throw an explicit error to prevent a LateInitializationError later.
+        // This makes it clear that an email provider is required to run the application.
+        _log.severe('No valid email provider configuration found.');
+        throw StateError(
+          'No email provider configured. Application cannot start.',
+        );
+      }
+
+      emailService = EmailService(
+        emailClient: emailClient,
+        log: Logger('EmailService'),
+      );
 
       // 5. Initialize Services
       tokenBlacklistService = MongoDbTokenBlacklistService(
@@ -456,7 +510,7 @@ class AppDependencies {
         authTokenService: authTokenService,
         verificationCodeStorageService: verificationCodeStorageService,
         permissionService: permissionService,
-        emailRepository: emailRepository,
+        emailService: emailService,
         appSettingsRepository: appSettingsRepository,
         userContextRepository: userContextRepository,
         userContentPreferencesRepository: userContentPreferencesRepository,

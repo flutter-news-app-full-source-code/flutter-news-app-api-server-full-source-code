@@ -5,6 +5,7 @@ export 'country_query_service.dart';
 export 'database_migration_service.dart';
 export 'database_seeding_service.dart';
 export 'default_user_action_limit_service.dart';
+export 'email/email.dart';
 export 'firebase_push_notification_client.dart';
 export 'google_auth_service.dart';
 export 'jwt_auth_token_service.dart';

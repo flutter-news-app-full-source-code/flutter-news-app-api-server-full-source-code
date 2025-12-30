@@ -1,6 +1,6 @@
 import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/clients/clients.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/clients/analytics/google_analytics_data_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/analytics/analytics_query.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:http_client/http_client.dart';

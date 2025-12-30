@@ -1,6 +1,6 @@
 import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/clients/clients.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/clients/analytics/analytics.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
 import 'package:http_client/http_client.dart';
 import 'package:logging/logging.dart';
