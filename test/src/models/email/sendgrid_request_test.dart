@@ -4,29 +4,29 @@ import 'package:test/test.dart';
 void main() {
   group('SendGridRequest', () {
     test('supports value equality', () {
-      final request1 = SendGridRequest(
-        personalizations: const [],
-        from: const SendGridFrom(email: 'test@example.com'),
+      const request1 = SendGridRequest(
+        personalizations: [],
+        from: SendGridFrom(email: 'test@example.com'),
         templateId: 'template-id',
       );
-      final request2 = SendGridRequest(
-        personalizations: const [],
-        from: const SendGridFrom(email: 'test@example.com'),
+      const request2 = SendGridRequest(
+        personalizations: [],
+        from: SendGridFrom(email: 'test@example.com'),
         templateId: 'template-id',
       );
       expect(request1, equals(request2));
     });
 
     test('toJson returns correct map', () {
-      final request = SendGridRequest(
+      const request = SendGridRequest(
         personalizations: [
           SendGridPersonalization(
-            to: [const SendGridTo(email: 'recipient@example.com')],
+            to: [SendGridTo(email: 'recipient@example.com')],
             subject: 'Test Subject',
-            dynamicTemplateData: const {'key': 'value'},
+            dynamicTemplateData: {'key': 'value'},
           ),
         ],
-        from: const SendGridFrom(email: 'sender@example.com'),
+        from: SendGridFrom(email: 'sender@example.com'),
         templateId: 'template-id',
       );
 

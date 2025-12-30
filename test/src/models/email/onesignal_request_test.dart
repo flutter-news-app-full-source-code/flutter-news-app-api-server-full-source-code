@@ -4,30 +4,30 @@ import 'package:test/test.dart';
 void main() {
   group('OneSignalEmailRequest', () {
     test('supports value equality', () {
-      final request1 = OneSignalEmailRequest(
+      const request1 = OneSignalEmailRequest(
         appId: 'app-id',
         templateId: 'template-id',
-        includeEmailTokens: const ['test@example.com'],
+        includeEmailTokens: ['test@example.com'],
         emailSubject: 'Subject',
-        customData: const {},
+        customData: {},
       );
-      final request2 = OneSignalEmailRequest(
+      const request2 = OneSignalEmailRequest(
         appId: 'app-id',
         templateId: 'template-id',
-        includeEmailTokens: const ['test@example.com'],
+        includeEmailTokens: ['test@example.com'],
         emailSubject: 'Subject',
-        customData: const {},
+        customData: {},
       );
       expect(request1, equals(request2));
     });
 
     test('toJson returns correct map', () {
-      final request = OneSignalEmailRequest(
+      const request = OneSignalEmailRequest(
         appId: 'app-id',
         templateId: 'template-id',
-        includeEmailTokens: const ['recipient@example.com'],
+        includeEmailTokens: ['recipient@example.com'],
         emailSubject: 'Test Subject',
-        customData: const {'key': 'value'},
+        customData: {'key': 'value'},
       );
 
       final json = request.toJson();
