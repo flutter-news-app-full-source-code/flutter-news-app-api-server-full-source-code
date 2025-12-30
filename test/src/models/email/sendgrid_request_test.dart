@@ -36,11 +36,11 @@ void main() {
         'personalizations': [
           {
             'to': [
-              {'email': 'recipient@example.com'}
+              {'email': 'recipient@example.com'},
             ],
             'subject': 'Test Subject',
             'dynamic_template_data': {'key': 'value'},
-          }
+          },
         ],
         'from': {'email': 'sender@example.com'},
         'template_id': 'template-id',

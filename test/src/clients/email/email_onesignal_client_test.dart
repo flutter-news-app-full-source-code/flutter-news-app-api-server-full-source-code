@@ -6,6 +6,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
 class MockHttpClient extends Mock implements HttpClient {}
+
 class MockLogger extends Mock implements Logger {}
 
 void main() {
@@ -25,10 +26,12 @@ void main() {
     });
 
     test('sendTransactionalEmail sends correct request', () async {
-      when(() => httpClient.post<void>(
-            any(),
-            data: any(named: 'data'),
-          )).thenAnswer((_) async {});
+      when(
+        () => httpClient.post<void>(
+          any(),
+          data: any(named: 'data'),
+        ),
+      ).thenAnswer((_) async {});
 
       await client.sendTransactionalEmail(
         senderEmail: 'sender@example.com',
@@ -38,17 +41,21 @@ void main() {
         templateData: {'otp': '1234'},
       );
 
-      verify(() => httpClient.post<void>(
-            'notifications',
-            data: any(named: 'data', that: isA<Map<String, dynamic>>()),
-          )).called(1);
+      verify(
+        () => httpClient.post<void>(
+          'notifications',
+          data: any(named: 'data', that: isA<Map<String, dynamic>>()),
+        ),
+      ).called(1);
     });
 
     test('rethrows HttpException', () async {
-      when(() => httpClient.post<void>(
-            any(),
-            data: any(named: 'data'),
-          )).thenThrow(const NetworkException());
+      when(
+        () => httpClient.post<void>(
+          any(),
+          data: any(named: 'data'),
+        ),
+      ).thenThrow(const NetworkException());
 
       expect(
         () => client.sendTransactionalEmail(
@@ -63,10 +70,12 @@ void main() {
     });
 
     test('wraps unexpected exceptions in OperationFailedException', () async {
-      when(() => httpClient.post<void>(
-            any(),
-            data: any(named: 'data'),
-          )).thenThrow(Exception('Unexpected'));
+      when(
+        () => httpClient.post<void>(
+          any(),
+          data: any(named: 'data'),
+        ),
+      ).thenThrow(Exception('Unexpected'));
 
       expect(
         () => client.sendTransactionalEmail(

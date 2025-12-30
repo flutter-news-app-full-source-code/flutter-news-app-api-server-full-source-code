@@ -6,6 +6,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
 class MockEmailClient extends Mock implements EmailClient {}
+
 class MockLogger extends Mock implements Logger {}
 
 void main() {
@@ -21,13 +22,15 @@ void main() {
     });
 
     test('sendOtpEmail calls client with correct parameters', () async {
-      when(() => emailClient.sendTransactionalEmail(
-            senderEmail: any(named: 'senderEmail'),
-            recipientEmail: any(named: 'recipientEmail'),
-            subject: any(named: 'subject'),
-            templateId: any(named: 'templateId'),
-            templateData: any(named: 'templateData'),
-          )).thenAnswer((_) async {});
+      when(
+        () => emailClient.sendTransactionalEmail(
+          senderEmail: any(named: 'senderEmail'),
+          recipientEmail: any(named: 'recipientEmail'),
+          subject: any(named: 'subject'),
+          templateId: any(named: 'templateId'),
+          templateData: any(named: 'templateData'),
+        ),
+      ).thenAnswer((_) async {});
 
       await service.sendOtpEmail(
         senderEmail: 'sender@example.com',
@@ -37,23 +40,27 @@ void main() {
         templateId: 'template-id',
       );
 
-      verify(() => emailClient.sendTransactionalEmail(
-            senderEmail: 'sender@example.com',
-            recipientEmail: 'recipient@example.com',
-            subject: 'OTP Code',
-            templateId: 'template-id',
-            templateData: {'otp_code': '123456'},
-          )).called(1);
+      verify(
+        () => emailClient.sendTransactionalEmail(
+          senderEmail: 'sender@example.com',
+          recipientEmail: 'recipient@example.com',
+          subject: 'OTP Code',
+          templateId: 'template-id',
+          templateData: {'otp_code': '123456'},
+        ),
+      ).called(1);
     });
 
     test('sendOtpEmail rethrows HttpException', () async {
-      when(() => emailClient.sendTransactionalEmail(
-            senderEmail: any(named: 'senderEmail'),
-            recipientEmail: any(named: 'recipientEmail'),
-            subject: any(named: 'subject'),
-            templateId: any(named: 'templateId'),
-            templateData: any(named: 'templateData'),
-          )).thenThrow(const NetworkException());
+      when(
+        () => emailClient.sendTransactionalEmail(
+          senderEmail: any(named: 'senderEmail'),
+          recipientEmail: any(named: 'recipientEmail'),
+          subject: any(named: 'subject'),
+          templateId: any(named: 'templateId'),
+          templateData: any(named: 'templateData'),
+        ),
+      ).thenThrow(const NetworkException());
 
       expect(
         () => service.sendOtpEmail(
@@ -68,13 +75,15 @@ void main() {
     });
 
     test('sendOtpEmail wraps unexpected exceptions', () async {
-      when(() => emailClient.sendTransactionalEmail(
-            senderEmail: any(named: 'senderEmail'),
-            recipientEmail: any(named: 'recipientEmail'),
-            subject: any(named: 'subject'),
-            templateId: any(named: 'templateId'),
-            templateData: any(named: 'templateData'),
-          )).thenThrow(Exception('Unexpected'));
+      when(
+        () => emailClient.sendTransactionalEmail(
+          senderEmail: any(named: 'senderEmail'),
+          recipientEmail: any(named: 'recipientEmail'),
+          subject: any(named: 'subject'),
+          templateId: any(named: 'templateId'),
+          templateData: any(named: 'templateData'),
+        ),
+      ).thenThrow(Exception('Unexpected'));
 
       expect(
         () => service.sendOtpEmail(
