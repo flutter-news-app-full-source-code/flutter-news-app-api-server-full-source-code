@@ -149,8 +149,12 @@ Say goodbye to risky manual database updates. A professional, versioned migratio
 
 </details>
 
-## 🔑 Licensing
-This `Flutter News App API Server` package is an integral part of the [**Flutter News App Full Source Code Toolkit**](https://github.com/flutter-news-app-full-source-code). For comprehensive details regarding licensing, including trial and commercial options for the entire toolkit, please refer to the main toolkit organization page.
-
 ## 🚀 Getting Started & Running Locally
-For a complete guide on setting up your local environment, running the server, and understanding the configuration, please see the **[Local Setup Guide](https://flutter-news-app-full-source-code.github.io/docs/api-server/local-setup/)** in our official documentation.
+
+For a complete guide on setting up your local environment and running this project, please see the `Wiki` tab in this repository.
+
+## 🔑 Licensing
+
+This source code is licensed for commercial use and is provided for local evaluation. A **Lifetime Commercial License** is required for any production or public-facing application.
+
+Please visit the main [Flutter News App Full Source Code Toolkit](https://github.com/flutter-news-app-full-source-code) organization page to review the full license terms and to purchase.
