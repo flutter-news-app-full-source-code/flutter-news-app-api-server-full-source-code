@@ -14,6 +14,8 @@ final Set<String> _guestTierPermissions = {
   Permissions.userContentPreferencesReadOwned,
   Permissions.userContentPreferencesUpdateOwned,
   Permissions.userUpdateOwned,
+  Permissions.userContextReadOwned,
+  Permissions.userContextUpdateOwned,
 
   // Allow all app users to register and unregister their devices for push
   // notifications.
@@ -42,6 +44,7 @@ final Set<String> _standardTierPermissions = {
   ..._guestTierPermissions,
   Permissions.userReadOwned,
   Permissions.userDeleteOwned,
+  Permissions.userSubscriptionReadOwned,
 };
 
 final Set<String> _premiumTierPermissions = {
