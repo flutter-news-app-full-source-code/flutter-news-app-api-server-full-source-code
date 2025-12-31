@@ -645,6 +645,7 @@ class DatabaseSeedingService {
 
     // Create a default UserContext for the new user.
     final defaultUserContext = UserContext(
+      id: userId.oid,
       userId: userId.oid,
       feedDecoratorStatus: Map.fromEntries(
         FeedDecoratorType.values.map(
@@ -653,8 +654,9 @@ class DatabaseSeedingService {
         ),
       ),
     );
-    await _db
-        .collection('user_contexts')
-        .insertOne(defaultUserContext.toJson());
+    await _db.collection('user_contexts').insertOne({
+      '_id': ObjectId.fromHexString(defaultUserContext.id),
+      ...defaultUserContext.toJson()..remove('id'),
+    });
   }
 }
