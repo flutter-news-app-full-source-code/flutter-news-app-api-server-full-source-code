@@ -112,6 +112,11 @@ Handler middleware(Handler handler) {
               ) //
               .use(
                 provider<DataRepository<User>>((_) => deps.userRepository),
+              )
+              .use(
+                provider<DataRepository<UserContext>>(
+                  (_) => deps.userContextRepository,
+                ),
               ) //
               .use(
                 provider<DataRepository<AppSettings>>(
@@ -126,6 +131,11 @@ Handler middleware(Handler handler) {
               .use(
                 provider<DataRepository<RemoteConfig>>(
                   (_) => deps.remoteConfigRepository,
+                ),
+              )
+              .use(
+                provider<DataRepository<UserSubscription>>(
+                  (_) => deps.userSubscriptionRepository,
                 ),
               )
               .use(
