@@ -752,44 +752,73 @@ class AuthService {
     );
 
     try {
-      // --- 1. Migrate Push Notification Devices ---
-      // Find all devices associated with the guest user.
-      final guestDevices = await _pushNotificationDeviceRepository.readAll(
+      // --- 1. Fetch all devices for both users upfront ---
+      final guestDevicesFuture = _pushNotificationDeviceRepository.readAll(
         filter: {'userId': guestUser.id},
       );
+      final existingUserDevicesFuture = _pushNotificationDeviceRepository
+          .readAll(
+            filter: {'userId': existingUser.id},
+          );
+
+      final results = await Future.wait([
+        guestDevicesFuture,
+        existingUserDevicesFuture,
+      ]);
+      final guestDevices = results[0];
+      final existingUserDevices = results[1];
 
       if (guestDevices.items.isNotEmpty) {
         _log.info(
           'Found ${guestDevices.items.length} push notification devices to migrate.',
         );
-        // For each device, update its userId to the existing user's ID.
-        for (final device in guestDevices.items) {
-          // First, check if the existing user already has a device with the
-          // same token to avoid unique constraint violations. If so, delete it.
-          for (final entry in device.providerTokens.entries) {
-            final existingDeviceWithSameToken =
-                await _pushNotificationDeviceRepository.readAll(
-                  filter: {
-                    'userId': existingUser.id,
-                    'providerTokens.${entry.key.name}': entry.value,
-                  },
-                );
-            for (final oldDevice in existingDeviceWithSameToken.items) {
-              await _pushNotificationDeviceRepository.delete(id: oldDevice.id);
-              _log.finer(
-                'Deleted duplicate push device ${oldDevice.id} from existing user.',
-              );
-            }
-          }
 
-          // Now, update the guest's device to belong to the existing user.
+        // Create a set of all tokens the existing user already has for quick lookups.
+        final existingUserTokens = <(PushNotificationProvider, String)>{
+          for (final device in existingUserDevices.items)
+            for (final entry in device.providerTokens.entries)
+              (entry.key, entry.value),
+        };
+
+        final devicesToUpdate = <PushNotificationDevice>[];
+        final devicesToDelete = <PushNotificationDevice>[];
+
+        // Decide whether to update or delete each guest device.
+        for (final guestDevice in guestDevices.items) {
+          final hasRedundantToken = guestDevice.providerTokens.entries.any(
+            (entry) => existingUserTokens.contains((entry.key, entry.value)),
+          );
+
+          if (hasRedundantToken) {
+            devicesToDelete.add(guestDevice);
+          } else {
+            devicesToUpdate.add(guestDevice);
+          }
+        }
+
+        // Perform all database writes in parallel.
+        final writeFutures = <Future<void>>[];
+        for (final device in devicesToUpdate) {
           final updatedDevice = device.copyWith(userId: existingUser.id);
-          await _pushNotificationDeviceRepository.update(
-            id: device.id,
-            item: updatedDevice,
+          writeFutures.add(
+            _pushNotificationDeviceRepository.update(
+              id: device.id,
+              item: updatedDevice,
+            ),
           );
         }
-        _log.info('Successfully migrated push notification devices.');
+        for (final device in devicesToDelete) {
+          writeFutures.add(
+            _pushNotificationDeviceRepository.delete(id: device.id),
+          );
+        }
+
+        if (writeFutures.isNotEmpty) {
+          await Future.wait(writeFutures);
+          _log.info(
+            'Device migration complete: ${devicesToUpdate.length} updated, ${devicesToDelete.length} deleted.',
+          );
+        }
       }
 
       // --- 2. Delete the now-empty guest account ---
@@ -800,8 +829,7 @@ class AuthService {
         e,
         s,
       );
-      // We do not rethrow here as this is a background process. The error is
-      // logged for manual intervention if necessary.
+      // We do not rethrow here as this is a background process.
     }
   }
 }
