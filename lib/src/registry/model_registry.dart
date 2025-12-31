@@ -347,7 +347,7 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     ),
     getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
-      permission: Permissions.userReadOwned, // Re-use user read permission
+      permission: Permissions.userContextReadOwned,
       requiresOwnershipCheck: true,
       requiresAuthentication: true,
     ),
@@ -356,7 +356,7 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     ),
     putPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
-      permission: Permissions.userUpdateOwned, // Re-use user update permission
+      permission: Permissions.userContextUpdateOwned,
       requiresOwnershipCheck: true,
       requiresAuthentication: true,
     ),
@@ -657,13 +657,13 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     // Users can read their own subscription status
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
-      permission: Permissions.userReadOwned,
+      permission: Permissions.userSubscriptionReadOwned,
       requiresOwnershipCheck: true,
       requiresAuthentication: true,
     ),
     getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
-      permission: Permissions.userReadOwned,
+      permission: Permissions.userSubscriptionReadOwned,
       requiresOwnershipCheck: true,
       requiresAuthentication: true,
     ),

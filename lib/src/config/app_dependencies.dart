@@ -522,6 +522,7 @@ class AppDependencies {
         userContextRepository: userContextRepository,
         userContentPreferencesRepository: userContentPreferencesRepository,
         log: Logger('AuthService'),
+        pushNotificationDeviceRepository: pushNotificationDeviceRepository,
       );
       userActionLimitService = DefaultUserActionLimitService(
         remoteConfigRepository: remoteConfigRepository,
