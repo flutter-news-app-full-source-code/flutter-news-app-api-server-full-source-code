@@ -30,6 +30,8 @@ class AuthService {
     required DataRepository<UserContext> userContextRepository,
     required DataRepository<UserContentPreferences>
     userContentPreferencesRepository,
+    required DataRepository<PushNotificationDevice>
+    pushNotificationDeviceRepository,
     required PermissionService permissionService,
     required Logger log,
   }) : _userRepository = userRepository,
@@ -40,6 +42,7 @@ class AuthService {
        _emailService = emailService,
        _appSettingsRepository = appSettingsRepository,
        _userContentPreferencesRepository = userContentPreferencesRepository,
+       _pushNotificationDeviceRepository = pushNotificationDeviceRepository,
        _log = log;
 
   final DataRepository<User> _userRepository;
@@ -50,6 +53,8 @@ class AuthService {
   final DataRepository<AppSettings> _appSettingsRepository;
   final DataRepository<UserContentPreferences>
   _userContentPreferencesRepository;
+  final DataRepository<PushNotificationDevice>
+  _pushNotificationDeviceRepository;
   final PermissionService _permissionService;
   final Logger _log;
 
@@ -212,17 +217,14 @@ class AuthService {
           'Signing in and abandoning guest session ${authenticatedUser.id}.',
         );
 
-        // Delete the now-orphaned anonymous user account and its data.
-        // This is a fire-and-forget operation; we don't want to block the
-        // login if cleanup fails, but we should log any errors.
+        // Transfer push devices from the guest account to the permanent account
+        // and then clean up the guest account. This is a fire-and-forget
+        // operation to avoid delaying the login response.
         unawaited(
-          deleteAccount(userId: authenticatedUser.id).catchError((e, s) {
-            _log.severe(
-              'Failed to clean up orphaned anonymous user ${authenticatedUser.id} after sign-in.',
-              e,
-              s is StackTrace ? s : null,
-            );
-          }),
+          _transferGuestPushDevicesToExistingUser(
+            guestUser: authenticatedUser,
+            existingUser: existingUser,
+          ),
         );
 
         // Generate a new token for the existing permanent user.
@@ -570,6 +572,7 @@ class AuthService {
         'UserContext not found for user ${user.id}. Creating with defaults.',
       );
       final defaultUserContext = UserContext(
+        id: user.id,
         userId: user.id,
         feedDecoratorStatus: {
           for (final type in FeedDecoratorType.values)
@@ -728,5 +731,77 @@ class AuthService {
     _log.info('Successfully updated email for user ${user.id} to "$newEmail".');
 
     return finalUser;
+  }
+
+  /// Transfers push notification devices from a guest user to an existing
+  /// permanent user account and then deletes the guest account.
+  ///
+  /// This is used in "Scenario A" where a guest user signs in to an *existing*
+  /// account. We want to preserve the device registration (push tokens) so
+  /// the user continues receiving notifications on this device, now associated
+  /// with their permanent account.
+  ///
+  /// Note: Other guest data (preferences, settings) is NOT merged; the existing
+  /// user's data takes precedence.
+  Future<void> _transferGuestPushDevicesToExistingUser({
+    required User guestUser,
+    required User existingUser,
+  }) async {
+    _log.info(
+      'Starting push device transfer from guest ${guestUser.id} to existing user ${existingUser.id}.',
+    );
+
+    try {
+      // --- 1. Migrate Push Notification Devices ---
+      // Find all devices associated with the guest user.
+      final guestDevices = await _pushNotificationDeviceRepository.readAll(
+        filter: {'userId': guestUser.id},
+      );
+
+      if (guestDevices.items.isNotEmpty) {
+        _log.info(
+          'Found ${guestDevices.items.length} push notification devices to migrate.',
+        );
+        // For each device, update its userId to the existing user's ID.
+        for (final device in guestDevices.items) {
+          // First, check if the existing user already has a device with the
+          // same token to avoid unique constraint violations. If so, delete it.
+          for (final entry in device.providerTokens.entries) {
+            final existingDeviceWithSameToken =
+                await _pushNotificationDeviceRepository.readAll(
+                  filter: {
+                    'userId': existingUser.id,
+                    'providerTokens.${entry.key.name}': entry.value,
+                  },
+                );
+            for (final oldDevice in existingDeviceWithSameToken.items) {
+              await _pushNotificationDeviceRepository.delete(id: oldDevice.id);
+              _log.finer(
+                'Deleted duplicate push device ${oldDevice.id} from existing user.',
+              );
+            }
+          }
+
+          // Now, update the guest's device to belong to the existing user.
+          final updatedDevice = device.copyWith(userId: existingUser.id);
+          await _pushNotificationDeviceRepository.update(
+            id: device.id,
+            item: updatedDevice,
+          );
+        }
+        _log.info('Successfully migrated push notification devices.');
+      }
+
+      // --- 2. Delete the now-empty guest account ---
+      await deleteAccount(userId: guestUser.id);
+    } catch (e, s) {
+      _log.severe(
+        'CRITICAL: Push device transfer from guest ${guestUser.id} to existing user ${existingUser.id} failed.',
+        e,
+        s,
+      );
+      // We do not rethrow here as this is a background process. The error is
+      // logged for manual intervention if necessary.
+    }
   }
 }
