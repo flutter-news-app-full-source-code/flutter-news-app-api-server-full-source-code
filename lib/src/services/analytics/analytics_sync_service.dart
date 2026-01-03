@@ -119,14 +119,12 @@ class AnalyticsSyncService {
   }
 
   /// Returns the appropriate analytics client based on the configured provider.
-  AnalyticsReportingClient? _getClient(AnalyticsProvider provider) {
+  AnalyticsReportingClient? _getClient(AnalyticsProviders provider) {
     switch (provider) {
-      case AnalyticsProvider.firebase:
+      case AnalyticsProviders.firebase:
         return _googleAnalyticsClient;
-      case AnalyticsProvider.mixpanel:
+      case AnalyticsProviders.mixpanel:
         return _mixpanelClient;
-      case AnalyticsProvider.demo:
-        return null;
     }
   }
 

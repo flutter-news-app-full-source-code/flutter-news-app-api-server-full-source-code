@@ -774,7 +774,7 @@ class AuthService {
         );
 
         // Create a set of all tokens the existing user already has for quick lookups.
-        final existingUserTokens = <(PushNotificationProvider, String)>{
+        final existingUserTokens = <(PushNotificationProviders, String)>{
           for (final device in existingUserDevices.items)
             for (final entry in device.providerTokens.entries)
               (entry.key, entry.value),

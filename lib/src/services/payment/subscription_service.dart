@@ -85,7 +85,7 @@ class SubscriptionService {
     // We validate the receipt to get the authoritative 'originalTransactionId'.
     // This ID is the permanent, unique identifier for the subscription lifecycle,
     // regardless of renewals or user account changes.
-    if (transaction.provider == StoreProvider.apple) {
+    if (transaction.provider == StoreProviders.apple) {
       if (_appStoreClient == null) {
         throw const ServerException('App Store Client is not initialized.');
       }
@@ -107,7 +107,7 @@ class SubscriptionService {
 
       expiryDate = decodedTransaction.expiresDate;
       originalTransactionId = decodedTransaction.originalTransactionId;
-    } else if (transaction.provider == StoreProvider.google) {
+    } else if (transaction.provider == StoreProviders.google) {
       if (_googlePlayClient == null) {
         throw const ServerException('Google Play Client is not initialized.');
       }

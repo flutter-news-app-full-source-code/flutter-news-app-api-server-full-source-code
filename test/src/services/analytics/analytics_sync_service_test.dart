@@ -91,7 +91,7 @@ void main() {
     // Helper to create a default remote config
     RemoteConfig createRemoteConfig({
       bool analyticsEnabled = true,
-      AnalyticsProvider provider = AnalyticsProvider.mixpanel,
+      AnalyticsProviders provider = AnalyticsProviders.mixpanel,
     }) {
       return RemoteConfig(
         id: 'test',
@@ -133,7 +133,7 @@ void main() {
           ),
           pushNotifications: const PushNotificationConfig(
             enabled: false,
-            primaryProvider: PushNotificationProvider.firebase,
+            primaryProvider: PushNotificationProviders.firebase,
             deliveryConfigs: {},
           ),
           feed: const FeedConfig(
@@ -179,17 +179,6 @@ void main() {
 
     test('run skips sync if analytics is disabled in remote config', () async {
       final config = createRemoteConfig(analyticsEnabled: false);
-      when(
-        () => mockRemoteConfigRepo.read(id: any(named: 'id')),
-      ).thenAnswer((_) async => config);
-
-      await service.run();
-
-      verifyNever(() => mockMapper.getKpiQuery(any()));
-    });
-
-    test('run skips sync if analytics client is not available', () async {
-      final config = createRemoteConfig(provider: AnalyticsProvider.demo);
       when(
         () => mockRemoteConfigRepo.read(id: any(named: 'id')),
       ).thenAnswer((_) async => config);
