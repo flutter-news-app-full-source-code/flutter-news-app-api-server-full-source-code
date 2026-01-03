@@ -113,30 +113,7 @@ class DatabaseSeedingService {
 
       // Start with the default configuration from the fixtures data.
       final initialConfig = remoteConfigsFixturesData.first;
-      var featuresConfig = initialConfig.features;
-
-      // --- Generic Sanitization for Production/Staging Environments ---
-      // This block ensures that any configuration option with a 'demo'
-      // variant is reset to a sensible, non-demo default. This prevents
-      // 'demo' options from being the default in a real environment.
-
-      // Sanitize Ad Platform
-      if (featuresConfig.ads.primaryAdPlatform == AdPlatformType.demo) {
-        featuresConfig = featuresConfig.copyWith(
-          ads: featuresConfig.ads.copyWith(
-            primaryAdPlatform: AdPlatformType.admob, // Default to AdMob
-          ),
-        );
-      }
-
-      // Sanitize Analytics Provider
-      if (featuresConfig.analytics.activeProvider == AnalyticsProvider.demo) {
-        featuresConfig = featuresConfig.copyWith(
-          analytics: featuresConfig.analytics.copyWith(
-            activeProvider: AnalyticsProvider.firebase, // Default to Firebase
-          ),
-        );
-      }
+      final featuresConfig = initialConfig.features;
 
       final productionReadyConfig = initialConfig.copyWith(
         features: featuresConfig,

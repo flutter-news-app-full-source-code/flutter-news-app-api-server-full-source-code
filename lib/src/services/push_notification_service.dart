@@ -92,7 +92,7 @@ class DefaultPushNotificationService implements IPushNotificationService {
 
       // Determine which client to use based on the primary provider.
       final IPushNotificationClient? client;
-      if (primaryProvider == PushNotificationProvider.firebase) {
+      if (primaryProvider == PushNotificationProviders.firebase) {
         client = _firebaseClient;
       } else {
         client = _oneSignalClient;
@@ -286,7 +286,7 @@ class DefaultPushNotificationService implements IPushNotificationService {
   ///   invalid.
   Future<void> _cleanupInvalidDevices(
     List<String> invalidTokens,
-    PushNotificationProvider provider,
+    PushNotificationProviders provider,
   ) async {
     if (invalidTokens.isEmpty) {
       return;

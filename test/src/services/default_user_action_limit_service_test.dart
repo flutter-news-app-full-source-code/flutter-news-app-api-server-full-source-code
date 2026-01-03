@@ -70,13 +70,13 @@ void main() {
         features: const FeaturesConfig(
           analytics: AnalyticsConfig(
             enabled: true,
-            activeProvider: AnalyticsProvider.demo,
+            activeProvider: AnalyticsProviders.firebase,
             disabledEvents: {}, // const implied
             eventSamplingRates: {}, // const implied
           ),
           ads: AdConfig(
             enabled: false,
-            primaryAdPlatform: AdPlatformType.demo,
+            primaryAdPlatform: AdPlatformType.admob,
             platformAdIdentifiers: {}, // const implied
             feedAdConfiguration: FeedAdConfiguration(
               enabled: false,
@@ -90,7 +90,7 @@ void main() {
           ),
           pushNotifications: PushNotificationConfig(
             enabled: false,
-            primaryProvider: PushNotificationProvider.firebase,
+            primaryProvider: PushNotificationProviders.firebase,
             deliveryConfigs: {}, // const implied
           ),
           feed: FeedConfig(
