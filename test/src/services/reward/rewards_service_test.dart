@@ -245,14 +245,7 @@ void main() {
     test(
       'processAdMobCallback grants reward using RemoteConfig duration (ignoring AdMob amount)',
       () async {
-        // Setup: Force the 'create' path by making 'update' throw NotFoundException.
-        // The service logic tries to update first if the user record exists but has no active rewards.
-        when(
-          () => mockUserRewardsRepo.update(
-            id: any(named: 'id'),
-            item: any(named: 'item'),
-          ),
-        ).thenThrow(const NotFoundException(''));
+        // Setup: User has no existing rewards (default stub handles this)
 
         await service.processAdMobCallback(uri);
 
@@ -271,6 +264,13 @@ void main() {
         final expiry = captured.activeRewards[RewardType.adFree]!;
         final difference = expiry.difference(DateTime.now()).inHours;
         expect(difference, closeTo(24, 1)); // 24 hours +/- 1 hour
+
+        verifyNever(
+          () => mockUserRewardsRepo.update(
+            id: any(named: 'id'),
+            item: any(named: 'item'),
+          ),
+        );
       },
     );
 
