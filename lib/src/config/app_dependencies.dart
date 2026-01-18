@@ -10,8 +10,6 @@ import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/e
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_logging_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_onesignal_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_sendgrid_client.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/clients/payment/app_store_server_client.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/clients/payment/google_play_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/database/migrations/all_migrations.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/payment/idempotency_record.dart';
@@ -31,7 +29,6 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/mongod
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_verification_code_storage_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/onesignal_push_notification_client.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/payment/payment.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
@@ -80,7 +77,7 @@ class AppDependencies {
   late final DataRepository<PushNotificationDevice>
   pushNotificationDeviceRepository;
   late final DataRepository<RemoteConfig> remoteConfigRepository;
-  late final DataRepository<UserSubscription> userSubscriptionRepository;
+  late final DataRepository<UserRewards> userRewardsRepository;
   late final DataRepository<InAppNotification> inAppNotificationRepository;
   late final DataRepository<KpiCardData> kpiCardDataRepository;
   late final DataRepository<ChartCardData> chartCardDataRepository;
@@ -107,9 +104,6 @@ class AppDependencies {
   late final IGoogleAuthService? googleAuthService;
   late final IPushNotificationClient? firebasePushNotificationClient;
   late final IPushNotificationClient? oneSignalPushNotificationClient;
-  late final AppStoreServerClient? appStoreServerClient;
-  late final GooglePlayClient? googlePlayClient;
-  late final SubscriptionService subscriptionService;
   late final IdempotencyService idempotencyService;
 
   /// Initializes all application dependencies.
@@ -239,12 +233,12 @@ class AppDependencies {
         toJson: (item) => item.toJson(),
         logger: Logger('DataMongodb<RemoteConfig>'),
       );
-      final userSubscriptionClient = DataMongodb<UserSubscription>(
+      final userRewardsClient = DataMongodb<UserRewards>(
         connectionManager: _mongoDbConnectionManager,
-        modelName: 'user_subscriptions',
-        fromJson: UserSubscription.fromJson,
+        modelName: 'user_rewards',
+        fromJson: UserRewards.fromJson,
         toJson: (item) => item.toJson(),
-        logger: Logger('DataMongodb<UserSubscription>'),
+        logger: Logger('DataMongodb<UserRewards>'),
       );
 
       final idempotencyClient = DataMongodb<IdempotencyRecord>(
@@ -406,8 +400,8 @@ class AppDependencies {
       pushNotificationDeviceRepository = DataRepository(
         dataClient: pushNotificationDeviceClient,
       );
-      userSubscriptionRepository = DataRepository(
-        dataClient: userSubscriptionClient,
+      userRewardsRepository = DataRepository(
+        dataClient: userRewardsClient,
       );
       inAppNotificationRepository = DataRepository(
         dataClient: inAppNotificationClient,
@@ -554,49 +548,6 @@ class AppDependencies {
         log: Logger('IdempotencyService'),
       );
 
-      // --- Subscription Services ---
-      if (EnvironmentConfig.appleAppStoreIssuerId != null &&
-          EnvironmentConfig.appleAppStoreKeyId != null &&
-          EnvironmentConfig.appleAppStorePrivateKey != null) {
-        _log.info(
-          'Apple App Store credentials found. Initializing App Store Server Client.',
-        );
-        appStoreServerClient = AppStoreServerClient(
-          log: Logger('AppStoreServerClient'),
-        );
-      } else {
-        _log.warning(
-          'Apple App Store credentials not found. App Store Client disabled.',
-        );
-        appStoreServerClient = null;
-      }
-
-      // Google Play Client requires the GoogleAuthService which might be null
-      // if credentials weren't provided. We handle this gracefully.
-      if (googleAuthService != null) {
-        _log.info(
-          'Google Auth Service available. Initializing Google Play Client.',
-        );
-        googlePlayClient = GooglePlayClient(
-          googleAuthService: googleAuthService!,
-          log: Logger('GooglePlayClient'),
-        );
-      } else {
-        _log.warning(
-          'Google Auth Service not available. Google Play Client disabled.',
-        );
-        googlePlayClient = null;
-      }
-
-      subscriptionService = SubscriptionService(
-        userSubscriptionRepository: userSubscriptionRepository,
-        userRepository: userRepository,
-        appStoreClient: appStoreServerClient,
-        googlePlayClient: googlePlayClient,
-        idempotencyService: idempotencyService,
-        log: Logger('SubscriptionService'),
-      );
-
       // --- Analytics Services ---
       final gaPropertyId = EnvironmentConfig.googleAnalyticsPropertyId;
       final mpProjectId = EnvironmentConfig.mixpanelProjectId;
@@ -665,7 +616,6 @@ class AppDependencies {
         analyticsMetricMapper: analyticsMetricMapper,
         engagementRepository: engagementRepository,
         appReviewRepository: appReviewRepository,
-        userSubscriptionRepository: userSubscriptionRepository,
         log: Logger('AnalyticsSyncService'),
       );
 
