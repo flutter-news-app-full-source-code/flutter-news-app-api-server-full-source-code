@@ -14,7 +14,6 @@ export 'mongodb_rate_limit_service.dart';
 export 'mongodb_token_blacklist_service.dart';
 export 'mongodb_verification_code_storage_service.dart';
 export 'onesignal_push_notification_client.dart';
-export 'payment/payment.dart';
 export 'push_notification_client.dart';
 export 'push_notification_service.dart';
 export 'rate_limit_service.dart';

@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
-part 'payment/idempotency_record.g.dart';
+part 'idempotency_record.g.dart';
 
 /// {@template idempotency_record}
 /// Represents a processed event or transaction to ensure idempotency.
