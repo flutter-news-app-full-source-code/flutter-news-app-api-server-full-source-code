@@ -15,8 +15,6 @@ class MockAnalyticsReportingClient extends Mock
 
 class MockAnalyticsMetricMapper extends Mock implements AnalyticsMetricMapper {}
 
-class MockSubscriptionConfig extends Mock implements SubscriptionConfig {}
-
 void main() {
   group('AnalyticsSyncService', () {
     late AnalyticsSyncService service;
@@ -35,7 +33,6 @@ void main() {
     late MockDataRepository<Headline> mockHeadlineRepo;
     late MockDataRepository<Engagement> mockEngagementRepo;
     late MockDataRepository<AppReview> mockAppReviewRepo;
-    late MockDataRepository<UserSubscription> mockUserSubscriptionRepo;
 
     setUp(() {
       mockRemoteConfigRepo = MockDataRepository<RemoteConfig>();
@@ -52,7 +49,6 @@ void main() {
       mockHeadlineRepo = MockDataRepository<Headline>();
       mockEngagementRepo = MockDataRepository<Engagement>();
       mockAppReviewRepo = MockDataRepository<AppReview>();
-      mockUserSubscriptionRepo = MockDataRepository<UserSubscription>();
 
       // Register fallback values for any() matchers
       registerFallbackValue(
@@ -80,7 +76,6 @@ void main() {
         headlineRepository: mockHeadlineRepo,
         engagementRepository: mockEngagementRepo,
         appReviewRepository: mockAppReviewRepo,
-        userSubscriptionRepository: mockUserSubscriptionRepo,
         googleAnalyticsClient: mockAnalyticsClient,
         mixpanelClient: mockAnalyticsClient,
         analyticsMetricMapper: mockMapper,
@@ -160,8 +155,8 @@ void main() {
               isNegativeFeedbackFollowUpEnabled: false,
               isPositiveFeedbackFollowUpEnabled: false,
             ),
-          ),
-          subscription: MockSubscriptionConfig(),
+          ), 
+          rewards: const RewardsConfig(enabled: true, rewards: {}),
         ),
         user: const UserConfig(
           limits: UserLimitsConfig(
