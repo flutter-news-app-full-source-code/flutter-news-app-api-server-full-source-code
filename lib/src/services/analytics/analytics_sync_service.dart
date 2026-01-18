@@ -36,7 +36,6 @@ class AnalyticsSyncService {
     required DataRepository<Headline> headlineRepository,
     required DataRepository<Engagement> engagementRepository,
     required DataRepository<AppReview> appReviewRepository,
-    required DataRepository<UserSubscription> userSubscriptionRepository,
     required AnalyticsReportingClient? googleAnalyticsClient,
     required AnalyticsReportingClient? mixpanelClient,
     required AnalyticsMetricMapper analyticsMetricMapper,
@@ -52,7 +51,6 @@ class AnalyticsSyncService {
        _headlineRepository = headlineRepository,
        _engagementRepository = engagementRepository,
        _appReviewRepository = appReviewRepository,
-       _userSubscriptionRepository = userSubscriptionRepository,
        _googleAnalyticsClient = googleAnalyticsClient,
        _mixpanelClient = mixpanelClient,
        _mapper = analyticsMetricMapper,
@@ -71,7 +69,6 @@ class AnalyticsSyncService {
   final DataRepository<Headline> _headlineRepository;
   final DataRepository<Engagement> _engagementRepository;
   final DataRepository<AppReview> _appReviewRepository;
-  final DataRepository<UserSubscription> _userSubscriptionRepository;
   final AnalyticsReportingClient? _googleAnalyticsClient;
   final AnalyticsReportingClient? _mixpanelClient;
   final AnalyticsMetricMapper _mapper;
@@ -402,18 +399,6 @@ class AnalyticsSyncService {
         return _reportRepository.count(
           filter: {'status': ModerationStatus.resolved.name},
         );
-      case 'database:user_subscription:active_count':
-        return _userSubscriptionRepository.count(
-          filter: {'status': SubscriptionStatus.active.name},
-        );
-      case 'database:user_subscription:canceled_count':
-        return _userSubscriptionRepository.count(
-          filter: {'status': SubscriptionStatus.canceled.name},
-        );
-      case 'database:user_subscription:expired_count':
-        return _userSubscriptionRepository.count(
-          filter: {'status': SubscriptionStatus.expired.name},
-        );
       default:
         _log.warning('Unsupported database metric total: ${query.metric}');
         return 0;
@@ -520,7 +505,6 @@ class AnalyticsSyncService {
       'sources': _sourceRepository,
       'topics': _topicRepository,
       'headlines': _headlineRepository,
-      'user_subscription': _userSubscriptionRepository,
     };
 
     final repo = repositoryMap[collectionName];
