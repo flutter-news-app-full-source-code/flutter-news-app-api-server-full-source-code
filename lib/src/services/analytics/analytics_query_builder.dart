@@ -346,38 +346,6 @@ class AnalyticsQueryBuilder {
     ];
   }
 
-  /// Creates a pipeline for counting occurrences over time (Time Series).
-  List<Map<String, dynamic>> _buildTimeSeriesCountPipeline({
-    required String dateField,
-    required DateTime startDate,
-    required DateTime endDate,
-  }) {
-    return [
-      {
-        r'$match': {
-          dateField: {
-            r'$gte': startDate.toUtc().toIso8601String(),
-            r'$lt': endDate.toUtc().toIso8601String(),
-          },
-        },
-      },
-      {
-        r'$group': {
-          '_id': {
-            r'$dateToString': {'format': '%Y-%m-%d', 'date': '\$$dateField'},
-          },
-          'count': {r'$sum': 1},
-        },
-      },
-      {
-        r'$project': {'label': r'$_id', 'value': r'$count', '_id': 0},
-      },
-      {
-        r'$sort': {'label': 1},
-      },
-    ];
-  }
-
   /// Creates a pipeline for counting active rewards by type.
   ///
   /// This pipeline unwinds the `activeRewards` map and counts the occurrences
@@ -402,7 +370,7 @@ class AnalyticsQueryBuilder {
       // Filter for rewards that expire in the future (are currently active)
       {
         r'$match': {
-          r'rewardsArray.v': {r'$gt': now},
+          'rewardsArray.v': {r'$gt': now},
         },
       },
       // Group by reward type (the key)
