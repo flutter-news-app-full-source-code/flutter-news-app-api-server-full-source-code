@@ -45,7 +45,7 @@ class AdMobRewardCallback extends Equatable {
       throw const InvalidInputException('Missing key_id');
     }
 
-    // Parse reward amount, defaulting to 1 if missing or invalid
+    // Parse reward amount, defaulting to 1 if missing or invalid.
     var rewardAmount = 1;
     if (rewardAmountStr != null) {
       rewardAmount = int.tryParse(rewardAmountStr) ?? 1;
@@ -71,7 +71,12 @@ class AdMobRewardCallback extends Equatable {
   /// The type of reward (e.g., "adFree").
   final String rewardItem;
 
-  /// The amount of the reward (multiplier).
+  /// The amount of the reward specified in the AdMob console.
+  ///
+  /// **Architecture Note:** This value is parsed for logging and validation
+  /// purposes but is **ignored** by the `RewardsService` for duration
+  /// calculations. The `RemoteConfig` is the single source of truth for
+  /// reward value/duration.
   final int rewardAmount;
 
   /// The cryptographic signature.
