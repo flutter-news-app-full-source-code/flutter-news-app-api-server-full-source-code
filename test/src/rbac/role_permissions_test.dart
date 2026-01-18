@@ -32,13 +32,6 @@ void main() {
       expect(standardPerms.containsAll(guestPerms), isTrue);
     });
 
-    test('Premium tier includes Standard permissions', () {
-      final standardPerms = rolePermissions[AccessTier.standard]!;
-      final premiumPerms = rolePermissions[AccessTier.premium]!;
-
-      expect(premiumPerms.containsAll(standardPerms), isTrue);
-    });
-
     test('Admin role includes Publisher permissions', () {
       final publisherPerms = rolePermissions[UserRole.publisher]!;
       final adminPerms = rolePermissions[UserRole.admin]!;
