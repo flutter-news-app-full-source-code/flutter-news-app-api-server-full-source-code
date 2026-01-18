@@ -118,17 +118,7 @@ void main() {
               isPositiveFeedbackFollowUpEnabled: false,
             ),
           ),
-          subscription: SubscriptionConfig(
-            enabled: false,
-            monthlyPlan: PlanDetails(
-              enabled: false,
-              isRecommended: false,
-            ),
-            annualPlan: PlanDetails(
-              enabled: false,
-              isRecommended: true,
-            ),
-          ),
+          rewards: RewardsConfig(enabled: true, rewards: {}),
         ),
         user: const UserConfig(
           limits: UserLimitsConfig(
@@ -141,7 +131,6 @@ void main() {
                 notificationSubscriptions: {
                   PushNotificationSubscriptionDeliveryType.breakingOnly: 1,
                   PushNotificationSubscriptionDeliveryType.dailyDigest: 1,
-                  PushNotificationSubscriptionDeliveryType.weeklyRoundup: 1,
                 },
               ),
             },
