@@ -201,9 +201,15 @@ void main() {
         // but we can verify the structure.
         expect(pipeline, isNotNull);
         expect(pipeline!.length, equals(5));
-        expect(pipeline[0], containsPair(r'$project', isA<Map>()));
+        expect(
+          pipeline[0],
+          containsPair(r'$project', isA<Map<String, dynamic>>()),
+        );
         expect(pipeline[1], containsPair(r'$unwind', r'$rewardsArray'));
-        expect(pipeline[2], containsPair(r'$match', isA<Map>()));
+        expect(
+          pipeline[2],
+          containsPair(r'$match', isA<Map<String, dynamic>>()),
+        );
         expect(
           pipeline[3],
           equals({
