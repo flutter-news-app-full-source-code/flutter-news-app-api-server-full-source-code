@@ -7,7 +7,6 @@ import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/own
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/payment/subscription_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
 import 'package:logging/logging.dart';
@@ -141,8 +140,8 @@ class DataOperationRegistry {
       'ranked_list_card_data': (c, id) => c
           .read<DataRepository<RankedListCardData>>()
           .read(id: id, userId: null),
-      'user_subscription': (c, id) =>
-          c.read<DataRepository<UserSubscription>>().read(id: id, userId: null),
+      'user_rewards': (c, id) =>
+          c.read<DataRepository<UserRewards>>().read(id: id, userId: null),
     });
 
     // --- Register "Read All" Readers ---
@@ -247,8 +246,8 @@ class DataOperationRegistry {
             sort: s,
             pagination: p,
           ),
-      'user_subscription': (c, uid, f, s, p) =>
-          c.read<DataRepository<UserSubscription>>().readAll(
+      'user_rewards': (c, uid, f, s, p) =>
+          c.read<DataRepository<UserRewards>>().readAll(
             userId: uid,
             filter: f,
           ),
@@ -432,17 +431,6 @@ class DataOperationRegistry {
         }
 
         return context.read<DataRepository<AppReview>>().create(item: item);
-      },
-      'purchase_transaction': (context, item, uid) async {
-        _log.info('Executing custom creator for purchase_transaction.');
-        final authenticatedUser = context.read<User>();
-        final transaction = item as PurchaseTransaction;
-        final subscriptionService = context.read<SubscriptionService>();
-
-        return subscriptionService.verifyAndProcessPurchase(
-          user: authenticatedUser,
-          transaction: transaction,
-        );
       },
     });
 
