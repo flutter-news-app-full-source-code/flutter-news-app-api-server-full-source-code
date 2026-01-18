@@ -1,6 +1,7 @@
 import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/payment/idempotency_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/reward/reward.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/rewards/admob_ssv_verifier.dart';
 import 'package:logging/logging.dart';
 
@@ -35,64 +36,47 @@ class RewardsService {
 
   /// Processes an incoming AdMob Server-Side Verification callback.
   ///
-  /// 1. Verifies the cryptographic signature.
-  /// 2. Checks idempotency using the transaction ID.
-  /// 3. Grants the reward to the user.
+  /// 1. Parses the URI into a strongly-typed [AdMobRewardCallback].
+  /// 2. Verifies the cryptographic signature.
+  /// 3. Checks idempotency using the transaction ID.
+  /// 4. Grants the reward to the user.
   ///
   /// [uri] is the full request URI containing the query parameters.
   Future<void> processAdMobCallback(Uri uri) async {
     _log.info('Processing AdMob reward callback.');
 
-    // 1. Verify Signature
-    await _admobVerifier.verify(uri);
+    // 1. Parse & Validate Input
+    final callback = AdMobRewardCallback.fromUri(uri);
 
-    // 2. Extract Data
-    final queryParams = uri.queryParameters;
-    final userId = queryParams['custom_data']; // We send userId in custom_data
-    final rewardItem = queryParams['reward_item']; // e.g., "adFree"
-    final transactionId = queryParams['transaction_id'];
-    final rewardAmountStr = queryParams['reward_amount'];
-
-    if (userId == null || rewardItem == null || transactionId == null) {
-      _log.warning('Missing required fields in AdMob callback.');
-      throw const InvalidInputException('Missing required fields.');
-    }
+    // 2. Verify Signature
+    await _admobVerifier.verify(callback);
 
     // 3. Idempotency Check
-    if (await _idempotencyService.isEventProcessed(transactionId)) {
-      _log.info('Reward transaction $transactionId already processed.');
+    if (await _idempotencyService.isEventProcessed(callback.transactionId)) {
+      _log.info(
+        'Reward transaction ${callback.transactionId} already processed.',
+      );
       return;
     }
 
     // 4. Map Reward Item to RewardType
-    // We assume the Ad Unit is configured to send the RewardType name (e.g. "adFree")
-    // as the "Reward Item" string.
-    final rewardType = RewardType.values.asNameMap()[rewardItem];
+    final rewardType = RewardType.values.asNameMap()[callback.rewardItem];
     if (rewardType == null) {
-      _log.warning('Unknown reward type received: $rewardItem');
+      _log.warning('Unknown reward type received: ${callback.rewardItem}');
       throw const BadRequestException('Unknown reward type.');
     }
 
-    // 5. Parse Reward Amount
-    // The reward amount is used as a multiplier for the base duration.
-    // Default to 1 if missing or invalid.
-    var multiplier = 1;
-    if (rewardAmountStr != null) {
-      final parsed = int.tryParse(rewardAmountStr);
-      if (parsed != null && parsed > 0) {
-        multiplier = parsed;
-      }
-    }
-
-    // 6. Grant Reward
+    // 5. Grant Reward
     await _grantReward(
-      userId: userId,
+      userId: callback.userId,
       rewardType: rewardType,
-      transactionId: transactionId,
-      multiplier: multiplier,
+      transactionId: callback.transactionId,
+      multiplier: callback.rewardAmount,
     );
 
-    _log.info('Successfully granted $rewardType to user $userId.');
+    _log.info(
+      'Successfully granted $rewardType to user ${callback.userId}.',
+    );
   }
 
   /// Grants a specific reward to a user.
@@ -135,6 +119,8 @@ class RewardsService {
     // If expired, start from now. If active, extend from current expiry.
     final effectiveStartTime =
         currentExpiry.isBefore(now) ? now : currentExpiry;
+    
+    // Logic: Base Duration (from Config) * Multiplier (from AdMob)
     final durationToAdd = Duration(
       days: rewardDetails.durationDays * multiplier,
     );
@@ -151,10 +137,6 @@ class RewardsService {
     );
 
     if (userRewards.activeRewards.isEmpty) {
-      // If it was a new/empty object, we might need to create it.
-      // However, since we use `read` above which throws NotFound,
-      // we can rely on the repository's update/create semantics.
-      // For safety with the generic repo, we try update, fallback to create.
       try {
         await _userRewardsRepository.update(
           id: userId,
