@@ -191,7 +191,7 @@ void main() {
           id: 'admin-id',
           email: 'admin@example.com',
           role: UserRole.admin,
-          tier: AccessTier.premium,
+          tier: AccessTier.standard,
           createdAt: DateTime.now(),
         );
       });
@@ -201,7 +201,7 @@ void main() {
         () async {
           final updater = registry.itemUpdaters['user']!;
           final requestBody = userToUpdate
-              .copyWith(tier: AccessTier.premium) // Attempt upgrade
+              .copyWith(tier: AccessTier.guest) // Attempt tier change
               .toJson();
 
           final context = createMockRequestContext(
@@ -271,7 +271,7 @@ void main() {
 
       test('succeeds when admin updates user tier', () async {
         final updater = registry.itemUpdaters['user']!;
-        final updatedUser = userToUpdate.copyWith(tier: AccessTier.premium);
+        final updatedUser = userToUpdate.copyWith(tier: AccessTier.guest);
         final requestBody = updatedUser.toJson();
 
         when(
