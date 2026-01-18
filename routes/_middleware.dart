@@ -134,8 +134,8 @@ Handler middleware(Handler handler) {
                 ),
               )
               .use(
-                provider<DataRepository<UserSubscription>>(
-                  (_) => deps.userSubscriptionRepository,
+                provider<DataRepository<UserRewards>>(
+                  (_) => deps.userRewardsRepository,
                 ),
               )
               .use(
