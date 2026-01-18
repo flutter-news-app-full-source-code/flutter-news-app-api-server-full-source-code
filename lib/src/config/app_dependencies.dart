@@ -12,7 +12,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/e
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_sendgrid_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/database/migrations/all_migrations.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/payment/idempotency_record.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/idempotency_record.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/analytics/analytics.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_service.dart';
@@ -24,12 +24,12 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/defaul
 import 'package:flutter_news_app_api_server_full_source_code/src/services/email/email_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/firebase_push_notification_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/jwt_auth_token_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_rate_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_verification_code_storage_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/onesignal_push_notification_client.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/payment/idempotency_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
@@ -555,7 +555,7 @@ class AppDependencies {
       // --- Rewards Services ---
       final admobVerifier = AdMobSsvVerifier(
         httpClient: HttpClient(
-          baseUrl: '',
+          baseUrl: 'https://gstatic.com', // Base URL for Google keys
           tokenProvider: () async => null,
         ),
         log: Logger('AdMobSsvVerifier'),
