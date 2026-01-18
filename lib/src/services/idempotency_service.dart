@@ -1,0 +1,57 @@
+import 'package:core/core.dart';
+import 'package:data_repository/data_repository.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/idempotency_record.dart';
+import 'package:logging/logging.dart';
+
+/// {@template idempotency_service}
+/// A generic service for ensuring operations are performed exactly once.
+///
+/// It uses an [IdempotencyRecord] repository to track processed event IDs.
+/// {@endtemplate}
+class IdempotencyService {
+  /// {@macro idempotency_service}
+  const IdempotencyService({
+    required DataRepository<IdempotencyRecord> repository,
+    required Logger log,
+  }) : _repository = repository,
+       _log = log;
+
+  final DataRepository<IdempotencyRecord> _repository;
+  final Logger _log;
+
+  /// Checks if an event with the given [eventId] has already been processed.
+  ///
+  /// Returns `true` if the event exists, `false` otherwise.
+  Future<bool> isEventProcessed(String eventId) async {
+    try {
+      await _repository.read(id: eventId);
+      return true;
+    } on NotFoundException {
+      return false;
+    } catch (e, s) {
+      _log.severe('Error checking idempotency for event $eventId', e, s);
+      // Fail safe: If we can't check, assume not processed to avoid blocking,
+      // OR assume processed to avoid duplication.
+      // For payments/rewards, avoiding duplication is usually safer, but
+      // blocking valid requests is bad.
+      // We rethrow to let the caller decide or handle the error.
+      rethrow;
+    }
+  }
+
+  /// Records an event as processed.
+  ///
+  /// Throws [ConflictException] if the event was recorded concurrently.
+  Future<void> recordEvent(String eventId) async {
+    try {
+      final record = IdempotencyRecord(
+        id: eventId,
+        createdAt: DateTime.now(),
+      );
+      await _repository.create(item: record);
+    } catch (e, s) {
+      _log.severe('Error recording idempotency for event $eventId', e, s);
+      rethrow;
+    }
+  }
+}
