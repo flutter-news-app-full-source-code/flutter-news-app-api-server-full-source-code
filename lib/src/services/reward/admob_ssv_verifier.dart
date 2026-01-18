@@ -111,17 +111,21 @@ class AdMobSsvVerifier {
       return newCache[keyId];
     } catch (e, s) {
       _log.severe('Failed to fetch AdMob keys', e, s);
-      throw const OperationFailedException('Failed to fetch verification keys.');
+      throw const OperationFailedException(
+        'Failed to fetch verification keys.',
+      );
     }
   }
 
   /// Decodes a URL-safe Base64 string.
   Uint8List _decodeWebSafeBase64(String input) {
     var normalized = input.replaceAll('-', '+').replaceAll('_', '/');
+    final buffer = StringBuffer(normalized);
     while (normalized.length % 4 != 0) {
-      normalized += '=';
+      buffer.write('=');
+      normalized = buffer.toString();
     }
-    return base64Decode(normalized);
+    return base64Decode(buffer.toString());
   }
 
   /// Verifies the ECDSA signature using the `jose` package.
