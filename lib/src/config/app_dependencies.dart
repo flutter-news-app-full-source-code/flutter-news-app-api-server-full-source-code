@@ -638,7 +638,7 @@ class AppDependencies {
         engagementRepository: engagementRepository,
         appReviewRepository: appReviewRepository,
         userRewardsRepository: userRewardsRepository,
-        log: Logger('AnalyticsSyncService'), 
+        log: Logger('AnalyticsSyncService'),
       );
 
       _log.info('Application dependencies initialized successfully.');

@@ -108,7 +108,7 @@ class RewardsService {
       userRewards = UserRewards(
         id: userId,
         userId: userId,
-        activeRewards: {},
+        activeRewards: const {},
       );
     }
 
@@ -117,8 +117,9 @@ class RewardsService {
     final currentExpiry = userRewards.activeRewards[rewardType] ?? now;
 
     // If expired, start from now. If active, extend from current expiry.
-    final effectiveStartTime =
-        currentExpiry.isBefore(now) ? now : currentExpiry;
+    final effectiveStartTime = currentExpiry.isBefore(now)
+        ? now
+        : currentExpiry;
 
     // Logic: Use strictly the duration defined in RemoteConfig.
     // We do NOT multiply by AdMob's rewardAmount.

@@ -420,7 +420,7 @@ class AnalyticsSyncService {
           },
           {
             r'$match': {
-              r'rewardsArray.v': {r'$gt': nowStr},
+              'rewardsArray.v': {r'$gt': nowStr},
             },
           },
           {
