@@ -98,15 +98,12 @@ class AnalyticsMetricMapper {
     KpiCardId.engagementsAppReviewsStoreRequests: const EventCountQuery(
       event: AnalyticsEvent.appReviewStoreRequested,
     ),
-    // Subscription KPIs
-    KpiCardId.subscriptionsActiveCount: const StandardMetricQuery(
-      metric: 'database:user_subscription:active_count',
+    // Rewards KPIs
+    KpiCardId.rewardsAdsWatchedTotal: const EventCountQuery(
+      event: AnalyticsEvent.adRewardEarned,
     ),
-    KpiCardId.subscriptionsCanceledCount: const StandardMetricQuery(
-      metric: 'database:user_subscription:canceled_count',
-    ),
-    KpiCardId.subscriptionsExpiredCount: const StandardMetricQuery(
-      metric: 'database:user_subscription:expired_count',
+    KpiCardId.rewardsActiveUsersCount: const StandardMetricQuery(
+      metric: 'database:user_rewards:active_count',
     ),
   };
 
@@ -185,17 +182,12 @@ class AnalyticsMetricMapper {
         const EventCountQuery(
           event: AnalyticsEvent.appReviewStoreRequested,
         ),
-    // Subscriptions Tab
-    ChartCardId.subscriptionsActiveOverTime: const StandardMetricQuery(
-      // Using creation date of subscriptions as a proxy for activity trend
-      // in a database-only context.
-      metric: 'database:user_subscription:created_over_time',
+    // Rewards Tab
+    ChartCardId.rewardsAdsWatchedOverTime: const EventCountQuery(
+      event: AnalyticsEvent.adRewardEarned,
     ),
-    ChartCardId.subscriptionsStatusDistribution: const StandardMetricQuery(
-      metric: 'database:user_subscription:statusDistribution',
-    ),
-    ChartCardId.subscriptionsByStoreProvider: const StandardMetricQuery(
-      metric: 'database:user_subscription:byStoreProvider',
+    ChartCardId.rewardsActiveByType: const StandardMetricQuery(
+      metric: 'database:user_rewards:active_by_type',
     ),
   };
 
