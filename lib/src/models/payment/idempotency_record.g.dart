@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'idempotency_record.dart';
+part of '../idempotency_record.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator

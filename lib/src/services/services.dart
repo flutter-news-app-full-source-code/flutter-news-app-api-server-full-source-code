@@ -18,7 +18,7 @@ export 'payment/payment.dart';
 export 'push_notification_client.dart';
 export 'push_notification_service.dart';
 export 'rate_limit_service.dart';
-export 'rewards/rewards.dart';
+export 'reward/reward.dart';
 export 'token_blacklist_service.dart';
 export 'user_action_limit_service.dart';
 export 'verification_code_storage_service.dart';
