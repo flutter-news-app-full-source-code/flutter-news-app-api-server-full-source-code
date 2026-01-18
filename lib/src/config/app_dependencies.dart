@@ -29,9 +29,12 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/mongod
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_verification_code_storage_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/onesignal_push_notification_client.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/payment/idempotency_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/rewards/admob_ssv_verifier.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/rewards/rewards_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/verification_code_storage_service.dart';
@@ -105,6 +108,7 @@ class AppDependencies {
   late final IPushNotificationClient? firebasePushNotificationClient;
   late final IPushNotificationClient? oneSignalPushNotificationClient;
   late final IdempotencyService idempotencyService;
+  late final RewardsService rewardsService;
 
   /// Initializes all application dependencies.
   ///
@@ -546,6 +550,23 @@ class AppDependencies {
       idempotencyService = IdempotencyService(
         repository: idempotencyRepository,
         log: Logger('IdempotencyService'),
+      );
+
+      // --- Rewards Services ---
+      final admobVerifier = AdMobSsvVerifier(
+        httpClient: HttpClient(
+          baseUrl: '',
+          tokenProvider: () async => null,
+        ),
+        log: Logger('AdMobSsvVerifier'),
+      );
+
+      rewardsService = RewardsService(
+        userRewardsRepository: userRewardsRepository,
+        remoteConfigRepository: remoteConfigRepository,
+        idempotencyService: idempotencyService,
+        admobVerifier: admobVerifier,
+        log: Logger('RewardsService'),
       );
 
       // --- Analytics Services ---
