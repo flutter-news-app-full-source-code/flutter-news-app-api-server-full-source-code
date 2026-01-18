@@ -1,4 +1,4 @@
-import 'package:flutter_news_app_api_server_full_source_code/src/models/payment/idempotency_record.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/idempotency_record.dart';
 import 'package:test/test.dart';
 
 void main() {
