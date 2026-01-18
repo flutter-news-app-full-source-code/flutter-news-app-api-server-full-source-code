@@ -38,19 +38,15 @@ final Set<String> _guestTierPermissions = {
   Permissions.appReviewCreateOwned,
   Permissions.appReviewReadOwned,
   Permissions.appReviewUpdateOwned,
+
+  // Rewards
+  Permissions.userRewardsReadOwned,
 };
 
 final Set<String> _standardTierPermissions = {
   ..._guestTierPermissions,
   Permissions.userReadOwned,
   Permissions.userDeleteOwned,
-  Permissions.userSubscriptionReadOwned,
-};
-
-final Set<String> _premiumTierPermissions = {
-  ..._standardTierPermissions,
-  // Bypassing limits is a premium feature.
-  Permissions.userPreferenceBypassLimits,
 };
 
 // --- User Role Permissions (for Admin/Dashboard Users) ---
@@ -118,7 +114,6 @@ final Set<String> _adminRolePermissions = {
 final Map<Enum, Set<String>> rolePermissions = {
   AccessTier.guest: _guestTierPermissions,
   AccessTier.standard: _standardTierPermissions,
-  AccessTier.premium: _premiumTierPermissions,
   UserRole.user: _userRolePermissions,
   UserRole.publisher: _publisherRolePermissions,
   UserRole.admin: _adminRolePermissions,

@@ -650,48 +650,27 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       type: RequiredPermissionType.unsupported,
     ),
   ),
-  'user_subscription': ModelConfig<UserSubscription>(
-    fromJson: UserSubscription.fromJson,
+  'user_rewards': ModelConfig<UserRewards>(
+    fromJson: UserRewards.fromJson,
     getId: (s) => s.id,
-    getOwnerId: (dynamic item) => (item as UserSubscription).userId,
-    // Users can read their own subscription status
+    getOwnerId: (dynamic item) => (item as UserRewards).userId,
+    // Users can read their own rewards status
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
-      permission: Permissions.userSubscriptionReadOwned,
+      permission: Permissions.userRewardsReadOwned,
       requiresOwnershipCheck: true,
       requiresAuthentication: true,
     ),
     getItemPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
-      permission: Permissions.userSubscriptionReadOwned,
+      permission: Permissions.userRewardsReadOwned,
       requiresOwnershipCheck: true,
       requiresAuthentication: true,
     ),
-    // Creation/Update/Delete is handled by the system (SubscriptionService), not via API
+    // Creation/Update/Delete is handled by the system (RewardsService), not via API
     postPermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported,
     ),
-    putPermission: const ModelActionPermission(
-      type: RequiredPermissionType.unsupported,
-    ),
-    deletePermission: const ModelActionPermission(
-      type: RequiredPermissionType.unsupported,
-    ),
-  ),
-  'purchase_transaction': ModelConfig<PurchaseTransaction>(
-    fromJson: PurchaseTransaction.fromJson,
-    getId: (_) => '', // DTO doesn't have an ID
-    getOwnerId: null,
-    getCollectionPermission: const ModelActionPermission(
-      type: RequiredPermissionType.unsupported,
-    ),
-    getItemPermission: const ModelActionPermission(
-      type: RequiredPermissionType.unsupported,
-    ),
-    postPermission: const ModelActionPermission(
-      type: RequiredPermissionType.none,
-      requiresAuthentication: true,
-    ), // Authenticated users can post purchases
     putPermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported,
     ),

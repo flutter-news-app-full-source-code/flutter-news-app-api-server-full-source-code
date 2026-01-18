@@ -189,8 +189,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "745e746587b2a651eb056e885c57475b7bc8d0bf"
-      resolved-ref: "745e746587b2a651eb056e885c57475b7bc8d0bf"
+      ref: "636272804ea244035cd09d4c763ada6af30f2ec9"
+      resolved-ref: "636272804ea244035cd09d4c763ada6af30f2ec9"
       url: "https://github.com/flutter-news-app-full-source-code/core.git"
     source: git
     version: "1.6.0"
@@ -578,7 +578,7 @@ packages:
     source: hosted
     version: "1.9.1"
   pointycastle:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: pointycastle
       sha256: "92aa3841d083cc4b0f4709b5c74fd6409a3e6ba833ffc7dc6a8fee096366acf5"

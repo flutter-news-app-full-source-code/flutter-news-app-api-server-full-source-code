@@ -187,9 +187,9 @@ void main() {
         expect(pipeline, equals(expectedPipeline));
       });
 
-      test('builds correct pipeline for subscription status distribution', () {
+      test('builds correct pipeline for active rewards by type', () {
         const query = StandardMetricQuery(
-          metric: 'database:user_subscription:statusDistribution',
+          metric: 'database:user_rewards:active_by_type',
         );
         final pipeline = queryBuilder.buildPipelineForMetric(
           query,
@@ -197,30 +197,28 @@ void main() {
           endDate,
         );
 
-        final expectedPipeline = [
-          {
-            r'$match': {
-              'createdAt': {
-                r'$gte': startDate.toUtc().toIso8601String(),
-                r'$lt': endDate.toUtc().toIso8601String(),
-              },
-            },
-          },
-          {
+        // We can't strictly test the 'now' string since it changes,
+        // but we can verify the structure.
+        expect(pipeline, isNotNull);
+        expect(pipeline!.length, equals(5));
+        expect(
+          pipeline[0],
+          containsPair(r'$project', isA<Map<String, dynamic>>()),
+        );
+        expect(pipeline[1], containsPair(r'$unwind', r'$rewardsArray'));
+        expect(
+          pipeline[2],
+          containsPair(r'$match', isA<Map<String, dynamic>>()),
+        );
+        expect(
+          pipeline[3],
+          equals({
             r'$group': {
-              '_id': r'$status',
+              '_id': r'$rewardsArray.k',
               'count': {r'$sum': 1},
             },
-          },
-          {
-            r'$project': {
-              'label': r'$_id',
-              'value': r'$count',
-              '_id': 0,
-            },
-          },
-        ];
-        expect(pipeline, equals(expectedPipeline));
+          }),
+        );
       });
     });
 
@@ -318,7 +316,10 @@ void main() {
           {
             r'$group': {
               '_id': {
-                r'$dateToString': {'format': '%Y-%m-%d', 'date': r'$updatedAt'},
+                r'$dateToString': {
+                  'format': '%Y-%m-%d',
+                  'date': r'$updatedAt',
+                },
               },
               'avgResolutionTime': {
                 r'$avg': {
@@ -341,48 +342,6 @@ void main() {
           },
         ];
 
-        expect(pipeline, equals(expectedPipeline));
-      });
-    });
-
-    group('Time Series Queries', () {
-      test('builds correct pipeline for subscription creation over time', () {
-        const query = StandardMetricQuery(
-          metric: 'database:user_subscription:created_over_time',
-        );
-        final pipeline = queryBuilder.buildPipelineForMetric(
-          query,
-          startDate,
-          endDate,
-        );
-
-        final expectedPipeline = [
-          {
-            r'$match': {
-              'createdAt': {
-                r'$gte': startDate.toUtc().toIso8601String(),
-                r'$lt': endDate.toUtc().toIso8601String(),
-              },
-            },
-          },
-          {
-            r'$group': {
-              '_id': {
-                r'$dateToString': {
-                  'format': '%Y-%m-%d',
-                  'date': r'$createdAt',
-                },
-              },
-              'count': {r'$sum': 1},
-            },
-          },
-          {
-            r'$project': {'label': r'$_id', 'value': r'$count', '_id': 0},
-          },
-          {
-            r'$sort': {'label': 1},
-          },
-        ];
         expect(pipeline, equals(expectedPipeline));
       });
     });

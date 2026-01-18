@@ -1,7 +1,7 @@
 import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/payment/idempotency_record.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/payment/idempotency_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/idempotency_record.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
@@ -88,17 +88,6 @@ void main() {
 
         expect(captured.id, eventId);
         expect(captured.createdAt, isA<DateTime>());
-      });
-
-      test('does not rethrow when repository.create fails', () async {
-        when(
-          () => mockRepository.create(item: any(named: 'item')),
-        ).thenThrow(const ServerException('DB down'));
-
-        // Expect no exception to be thrown from the service method itself.
-        await expectLater(service.recordEvent(eventId), completes);
-
-        verify(() => mockLogger.severe(any(), any(), any())).called(1);
       });
     });
   });

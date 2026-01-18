@@ -304,31 +304,17 @@ class DatabaseSeedingService {
       });
       _log.info('Ensured indexes for "user_contexts".');
 
-      // Indexes for the user_subscriptions collection
+      // Indexes for the user_rewards collection
       await _db.runCommand({
-        'createIndexes': 'user_subscriptions',
+        'createIndexes': 'user_rewards',
         'indexes': [
           {
             'key': {'userId': 1},
             'name': 'userId_index',
-            // A user can technically have multiple records (expired + active),
-            // so we don't enforce uniqueness here, but we index for speed.
-          },
-          {
-            'key': {'status': 1},
-            'name': 'analytics_subscription_status_index',
-          },
-          {
-            'key': {'provider': 1},
-            'name': 'analytics_subscription_provider_index',
-          },
-          {
-            'key': {'createdAt': 1},
-            'name': 'analytics_subscription_created_at_index',
           },
         ],
       });
-      _log.info('Ensured indexes for "user_subscriptions".');
+      _log.info('Ensured indexes for "user_rewards".');
 
       // Indexes for the users collection
       await _db.runCommand({
@@ -549,7 +535,7 @@ class DatabaseSeedingService {
       email: overrideEmail,
       isAnonymous: false,
       role: UserRole.admin,
-      tier: AccessTier.premium,
+      tier: AccessTier.standard,
       createdAt: DateTime.now(),
     );
 
