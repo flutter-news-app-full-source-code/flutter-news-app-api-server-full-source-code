@@ -106,35 +106,14 @@ class AnalyticsQueryBuilder {
           startDate: startDate,
           endDate: endDate,
         );
-      // Subscription Queries
-      case 'database:user_subscription:statusDistribution':
+      // Rewards Queries
+      case 'database:user_rewards:active_by_type':
         _log.info(
-          'Building categorical count pipeline for subscription status.',
+          'Building pipeline for active rewards by type.',
         );
-        return _buildCategoricalCountPipeline(
-          collection: 'user_subscription',
-          dateField: 'createdAt',
-          groupByField: r'$status',
-          startDate: startDate,
-          endDate: endDate,
-        );
-      case 'database:user_subscription:byStoreProvider':
-        _log.info(
-          'Building categorical count pipeline for subscription provider.',
-        );
-        return _buildCategoricalCountPipeline(
-          collection: 'user_subscription',
-          dateField: 'createdAt',
-          groupByField: r'$provider',
-          startDate: startDate,
-          endDate: endDate,
-        );
-      case 'database:user_subscription:created_over_time':
-        _log.info('Building time series pipeline for subscription creation.');
-        return _buildTimeSeriesCountPipeline(
-          dateField: 'createdAt',
-          startDate: startDate,
-          endDate: endDate,
+        return _buildActiveRewardsByTypePipeline(
+          startDate,
+          endDate,
         );
       // Ranked List Queries
       case 'database:sources:byFollowers':
@@ -395,6 +374,51 @@ class AnalyticsQueryBuilder {
       },
       {
         r'$sort': {'label': 1},
+      },
+    ];
+  }
+
+  /// Creates a pipeline for counting active rewards by type.
+  ///
+  /// This pipeline unwinds the `activeRewards` map and counts the occurrences
+  /// of each reward type where the expiration date is in the future.
+  List<Map<String, dynamic>> _buildActiveRewardsByTypePipeline(
+    DateTime startDate,
+    DateTime endDate,
+  ) {
+    // Note: startDate/endDate are less relevant for "currently active" snapshots,
+    // but we respect the interface. Usually, "active" means "now".
+    final now = DateTime.now().toUtc().toIso8601String();
+
+    return [
+      // Convert the map to an array of key-value pairs
+      {
+        r'$project': {
+          'rewardsArray': {r'$objectToArray': r'$activeRewards'},
+        },
+      },
+      // Unwind the array to process each reward individually
+      {r'$unwind': r'$rewardsArray'},
+      // Filter for rewards that expire in the future (are currently active)
+      {
+        r'$match': {
+          r'rewardsArray.v': {r'$gt': now},
+        },
+      },
+      // Group by reward type (the key)
+      {
+        r'$group': {
+          '_id': r'$rewardsArray.k',
+          'count': {r'$sum': 1},
+        },
+      },
+      // Format output
+      {
+        r'$project': {
+          'label': r'$_id',
+          'value': r'$count',
+          '_id': 0,
+        },
       },
     ];
   }
