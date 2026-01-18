@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:core/core.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/reward/reward.dart';
 import 'package:http_client/http_client.dart';
 import 'package:jose/jose.dart';
 import 'package:logging/logging.dart';
@@ -25,9 +26,9 @@ class AdMobSsvVerifier {
   final HttpClient _httpClient;
   final Logger _log;
 
-  // Google's public keys URL for AdMob SSV.
-  static const String _keysUrl =
-      'https://gstatic.com/admob/reward/verifier-keys.json';
+  // The path to the keys JSON. The base URL (https://gstatic.com) is configured
+  // in the HttpClient.
+  static const String _keysPath = '/admob/reward/verifier-keys.json';
 
   // In-memory cache for public keys to avoid fetching on every request.
   // Structure: { keyId: PEM string }
@@ -36,31 +37,22 @@ class AdMobSsvVerifier {
 
   /// Verifies the signature of an incoming AdMob SSV callback.
   ///
-  /// [uri] is the full request URI containing the query parameters.
+  /// [callback] is the parsed callback model.
   ///
-  /// Throws [InvalidInputException] if the signature is missing or invalid.
+  /// Throws [InvalidInputException] if the signature is invalid.
   /// Throws [OperationFailedException] if keys cannot be fetched or verification fails.
-  Future<void> verify(Uri uri) async {
-    final queryParams = uri.queryParameters;
-    final signature = queryParams['signature'];
-    final keyId = queryParams['key_id'];
-
-    if (signature == null || keyId == null) {
-      _log.warning('Missing signature or key_id in AdMob callback.');
-      throw const InvalidInputException('Missing signature or key_id.');
-    }
-
+  Future<void> verify(AdMobRewardCallback callback) async {
     // 1. Construct the content string to verify.
     // AdMob requires the query string excluding the signature and key_id parameters.
     // We use the raw query string from the URI to preserve order and encoding.
-    final contentString = _reconstructContentString(uri);
+    final contentString = _reconstructContentString(callback.originalUri);
     final contentBytes = utf8.encode(contentString);
-    final signatureBytes = _decodeWebSafeBase64(signature);
+    final signatureBytes = _decodeWebSafeBase64(callback.signature);
 
     // 2. Fetch Public Keys
-    final publicKeyPem = await _getPublicKey(keyId);
+    final publicKeyPem = await _getPublicKey(callback.keyId);
     if (publicKeyPem == null) {
-      _log.warning('Public key not found for key_id: $keyId');
+      _log.warning('Public key not found for key_id: ${callback.keyId}');
       throw const InvalidInputException('Invalid key_id.');
     }
 
@@ -80,10 +72,6 @@ class AdMobSsvVerifier {
   }
 
   /// Reconstructs the query string excluding signature and key_id.
-  ///
-  /// This method parses the raw query string to ensure the exact byte sequence
-  /// of the remaining parameters is preserved, which is critical for signature
-  /// verification.
   String _reconstructContentString(Uri uri) {
     final query = uri.query;
     if (query.isEmpty) return '';
@@ -104,8 +92,8 @@ class AdMobSsvVerifier {
     }
 
     try {
-      _log.info('Fetching AdMob verifier keys from $_keysUrl');
-      final response = await _httpClient.get<Map<String, dynamic>>(_keysUrl);
+      _log.info('Fetching AdMob verifier keys...');
+      final response = await _httpClient.get<Map<String, dynamic>>(_keysPath);
       final keys = response['keys'] as List<dynamic>;
 
       final newCache = <String, String>{};
@@ -147,7 +135,6 @@ class AdMobSsvVerifier {
       final key = JsonWebKey.fromPem(publicKeyPem);
 
       // Verify the signature using ES256 (ECDSA using P-256 and SHA-256).
-      // The `verify` method on JsonWebKey handles the cryptographic operations.
       return key.verify(message, signature, algorithm: 'ES256');
     } catch (e) {
       _log.warning('Crypto verification error: $e');
