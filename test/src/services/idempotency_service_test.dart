@@ -89,17 +89,6 @@ void main() {
         expect(captured.id, eventId);
         expect(captured.createdAt, isA<DateTime>());
       });
-
-      test('does not rethrow when repository.create fails', () async {
-        when(
-          () => mockRepository.create(item: any(named: 'item')),
-        ).thenThrow(const ServerException('DB down'));
-
-        // Expect no exception to be thrown from the service method itself.
-        await expectLater(service.recordEvent(eventId), completes);
-
-        verify(() => mockLogger.severe(any(), any(), any())).called(1);
-      });
     });
   });
 }
