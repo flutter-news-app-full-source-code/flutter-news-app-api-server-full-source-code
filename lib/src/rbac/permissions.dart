@@ -63,9 +63,8 @@ abstract class Permissions {
   static const String userContextReadOwned = 'user_context.read_owned';
   static const String userContextUpdateOwned = 'user_context.update_owned';
 
-  // User Subscription Permissions (User-owned)
-  static const String userSubscriptionReadOwned =
-      'user_subscription.read_owned';
+  // User Rewards Permissions (User-owned)
+  static const String userRewardsReadOwned = 'user_rewards.read_owned';
 
   // Remote Config Permissions (Global/Managed)
   static const String remoteConfigCreate = 'remote_config.create';
