@@ -101,16 +101,21 @@ class RewardsService {
     }
 
     // Fetch Current User Rewards (or create default)
-    UserRewards userRewards;
+    UserRewards? existingRewards;
     try {
-      userRewards = await _userRewardsRepository.read(id: userId);
+      existingRewards = await _userRewardsRepository.read(id: userId);
     } on NotFoundException {
-      userRewards = UserRewards(
-        id: userId,
-        userId: userId,
-        activeRewards: const {},
-      );
+      // It's okay if the user has no rewards document yet.
+      existingRewards = null;
     }
+
+    final userRewards =
+        existingRewards ??
+        UserRewards(
+          id: userId,
+          userId: userId,
+          activeRewards: const {},
+        );
 
     // Calculate New Expiration
     final now = DateTime.now();
@@ -136,15 +141,8 @@ class RewardsService {
       activeRewards: updatedRewardsMap,
     );
 
-    if (userRewards.activeRewards.isEmpty) {
-      try {
-        await _userRewardsRepository.update(
-          id: userId,
-          item: updatedUserRewards,
-        );
-      } on NotFoundException {
-        await _userRewardsRepository.create(item: updatedUserRewards);
-      }
+    if (existingRewards == null) {
+      await _userRewardsRepository.create(item: updatedUserRewards);
     } else {
       await _userRewardsRepository.update(id: userId, item: updatedUserRewards);
     }
