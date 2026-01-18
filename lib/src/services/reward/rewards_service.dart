@@ -1,6 +1,6 @@
 import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/reward/reward.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/reward/admob_reward_callback.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/admob_ssv_verifier.dart';
 import 'package:logging/logging.dart';
@@ -67,11 +67,12 @@ class RewardsService {
     }
 
     // 5. Grant Reward
+    // Note: We intentionally ignore `callback.rewardAmount` for the duration
+    // calculation to enforce RemoteConfig as the single source of truth.
     await _grantReward(
       userId: callback.userId,
       rewardType: rewardType,
       transactionId: callback.transactionId,
-      multiplier: callback.rewardAmount,
     );
 
     _log.info(
@@ -87,7 +88,6 @@ class RewardsService {
     required String userId,
     required RewardType rewardType,
     required String transactionId,
-    required int multiplier,
   }) async {
     // Fetch Configuration
     final remoteConfig = await _remoteConfigRepository.read(
@@ -119,11 +119,10 @@ class RewardsService {
     // If expired, start from now. If active, extend from current expiry.
     final effectiveStartTime =
         currentExpiry.isBefore(now) ? now : currentExpiry;
-    
-    // Logic: Base Duration (from Config) * Multiplier (from AdMob)
-    final durationToAdd = Duration(
-      days: rewardDetails.durationDays * multiplier,
-    );
+
+    // Logic: Use strictly the duration defined in RemoteConfig.
+    // We do NOT multiply by AdMob's rewardAmount.
+    final durationToAdd = Duration(days: rewardDetails.durationDays);
     final newExpiry = effectiveStartTime.add(durationToAdd);
 
     // Update & Persist
