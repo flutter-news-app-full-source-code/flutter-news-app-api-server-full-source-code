@@ -81,11 +81,13 @@ iTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==
       // 2. Mock Keys Response
       when(
         () => mockHttpClient.get<Map<String, dynamic>>(any()),
-      ).thenAnswer((_) async => {
-        'keys': [
-          {'keyId': 'test-key-id', 'pem': testPublicKeyPem},
-        ],
-      });
+      ).thenAnswer(
+        (_) async => {
+          'keys': [
+            {'keyId': 'test-key-id', 'pem': testPublicKeyPem},
+          ],
+        },
+      );
 
       // 3. Execute
       await verifier.verify(callback);
@@ -109,11 +111,13 @@ iTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==
 
       when(
         () => mockHttpClient.get<Map<String, dynamic>>(any()),
-      ).thenAnswer((_) async => {
-        'keys': [
-          {'keyId': 'test-key-id', 'pem': testPublicKeyPem},
-        ],
-      });
+      ).thenAnswer(
+        (_) async => {
+          'keys': [
+            {'keyId': 'test-key-id', 'pem': testPublicKeyPem},
+          ],
+        },
+      );
 
       expect(
         () => verifier.verify(callback),
@@ -136,11 +140,13 @@ iTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==
 
       when(
         () => mockHttpClient.get<Map<String, dynamic>>(any()),
-      ).thenAnswer((_) async => {
-        'keys': [
-          {'keyId': 'test-key-id', 'pem': testPublicKeyPem},
-        ],
-      });
+      ).thenAnswer(
+        (_) async => {
+          'keys': [
+            {'keyId': 'test-key-id', 'pem': testPublicKeyPem},
+          ],
+        },
+      );
 
       expect(
         () => verifier.verify(callback),
@@ -162,11 +168,13 @@ iTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==
 
       when(
         () => mockHttpClient.get<Map<String, dynamic>>(any()),
-      ).thenAnswer((_) async => {
-        'keys': [
-          {'keyId': 'test-key-id', 'pem': testPublicKeyPem},
-        ],
-      });
+      ).thenAnswer(
+        (_) async => {
+          'keys': [
+            {'keyId': 'test-key-id', 'pem': testPublicKeyPem},
+          ],
+        },
+      );
 
       // First call fetches keys
       await verifier.verify(callback);

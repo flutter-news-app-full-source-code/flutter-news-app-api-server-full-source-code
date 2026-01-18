@@ -36,49 +36,51 @@ void main() {
       expect(callback.rewardAmount, equals(1));
     });
 
-    test('fromUri throws InvalidInputException when required fields are missing',
-        () {
-      final params = {
-        'transaction_id': 't',
-        'custom_data': 'u',
-        'reward_item': 'i',
-        'signature': 's',
-        'key_id': 'k',
-      };
+    test(
+      'fromUri throws InvalidInputException when required fields are missing',
+      () {
+        final params = {
+          'transaction_id': 't',
+          'custom_data': 'u',
+          'reward_item': 'i',
+          'signature': 's',
+          'key_id': 'k',
+        };
 
-      // Test missing transaction_id
-      var uri = Uri(
-        scheme: 'https',
-        host: 'e.com',
-        queryParameters: Map.from(params)..remove('transaction_id'),
-      );
-      expect(
-        () => AdMobRewardCallback.fromUri(uri),
-        throwsA(isA<InvalidInputException>()),
-      );
+        // Test missing transaction_id
+        var uri = Uri(
+          scheme: 'https',
+          host: 'e.com',
+          queryParameters: Map.from(params)..remove('transaction_id'),
+        );
+        expect(
+          () => AdMobRewardCallback.fromUri(uri),
+          throwsA(isA<InvalidInputException>()),
+        );
 
-      // Test missing custom_data (userId)
-      uri = Uri(
-        scheme: 'https',
-        host: 'e.com',
-        queryParameters: Map.from(params)..remove('custom_data'),
-      );
-      expect(
-        () => AdMobRewardCallback.fromUri(uri),
-        throwsA(isA<InvalidInputException>()),
-      );
+        // Test missing custom_data (userId)
+        uri = Uri(
+          scheme: 'https',
+          host: 'e.com',
+          queryParameters: Map.from(params)..remove('custom_data'),
+        );
+        expect(
+          () => AdMobRewardCallback.fromUri(uri),
+          throwsA(isA<InvalidInputException>()),
+        );
 
-      // Test missing signature
-      uri = Uri(
-        scheme: 'https',
-        host: 'e.com',
-        queryParameters: Map.from(params)..remove('signature'),
-      );
-      expect(
-        () => AdMobRewardCallback.fromUri(uri),
-        throwsA(isA<InvalidInputException>()),
-      );
-    });
+        // Test missing signature
+        uri = Uri(
+          scheme: 'https',
+          host: 'e.com',
+          queryParameters: Map.from(params)..remove('signature'),
+        );
+        expect(
+          () => AdMobRewardCallback.fromUri(uri),
+          throwsA(isA<InvalidInputException>()),
+        );
+      },
+    );
 
     test('props are correct', () {
       final uri = Uri.parse(validUriString);
