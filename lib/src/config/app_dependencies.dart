@@ -637,7 +637,8 @@ class AppDependencies {
         analyticsMetricMapper: analyticsMetricMapper,
         engagementRepository: engagementRepository,
         appReviewRepository: appReviewRepository,
-        log: Logger('AnalyticsSyncService'),
+        userRewardsRepository: userRewardsRepository,
+        log: Logger('AnalyticsSyncService'), 
       );
 
       _log.info('Application dependencies initialized successfully.');
