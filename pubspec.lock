@@ -189,8 +189,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: a0b020d37666b2ef3eb7a11c3d9c41aa9ac8772c
-      resolved-ref: a0b020d37666b2ef3eb7a11c3d9c41aa9ac8772c
+      ref: "636272804ea244035cd09d4c763ada6af30f2ec9"
+      resolved-ref: "636272804ea244035cd09d4c763ada6af30f2ec9"
       url: "https://github.com/flutter-news-app-full-source-code/core.git"
     source: git
     version: "1.6.0"
