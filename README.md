@@ -72,21 +72,6 @@ The API automatically validates the structure of all incoming data, ensuring tha
 </details>
 
 <details>
-<summary><strong>💰 Monetization & Subscriptions</strong></summary>
-
-### 💳 Robust Subscription Engine
-A complete, zero-trust backend infrastructure for managing in-app subscriptions and entitlements.
-- **Multi-Provider Support:** Built-in support for Apple App Store and Google Play Store, unified under a single "Entitlement" interface.
-- **Zero-Trust Validation:** Every purchase is cryptographically verified directly with Apple and Google servers before any entitlement is granted, eliminating client-side receipt spoofing.
-- **Idempotent State Machine:** A dedicated idempotency layer ensures that every transaction and webhook event is processed exactly once, preventing duplicate entitlements or race conditions during network retries.
-- **Real-Time Webhook Synchronization:** The system acts as an authoritative source of truth, listening for server-to-server webhooks to instantly reflect renewals, cancellations, and billing issues, ensuring the user's status is always accurate.
-- **Type-Safe Integration:** Built with strongly-typed models for all provider interactions, eliminating fragile JSON parsing and ensuring long-term maintainability.
-- **Entitlement Portability (Restore Purchase):** Seamlessly handles "Restore Purchase" requests by identifying existing subscriptions and transferring ownership to the current user, ensuring compliance with App Store guidelines and a smooth user experience across devices.
-> **Your Advantage:** A secure, compliant, and battle-hardened monetization system that protects your revenue and guarantees a consistent experience for your subscribers.
- 
-</details>
-
-<details>
 <summary><strong>📧 Email & Transactional Messaging</strong></summary>
 
 ### 📨 Reliable Email Delivery
@@ -109,6 +94,18 @@ A complete, multi-provider notification engine empowers you to engage users with
 - **Provider Agnostic & Scalable:** The engine is built to be provider-agnostic, with out-of-the-box support for Firebase (FCM) and OneSignal. The active provider can be switched remotely without any code changes.
 - **Intelligent, Self-Healing Delivery:** The system is designed for long-term efficiency. It automatically detects and prunes invalid device tokens—for example, when a user uninstalls the app—ensuring your delivery infrastructure remains clean and performant.
 > **Your Advantage:** Drive user re-engagement with a powerful and flexible notification system that delivers both broad-reaching alerts and deeply personalized content streams, all built on a scalable, self-healing, and provider-agnostic architecture.
+
+</details>
+
+<details>
+<summary><strong>🎁 Rewards & Incentives</strong></summary>
+
+### 🏆 Time-Based Reward System
+A secure, server-side verified reward system that incentivizes user engagement (e.g., watching ads) with tangible benefits.
+- **AdMob Server-Side Verification (SSV):** Uses cryptographic signature verification (ECDSA) to ensure that every reward callback originates directly from Google's servers, preventing client-side spoofing.
+- **Remote Config Driven:** The value and duration of rewards (e.g., "24 Hours Ad-Free") are controlled entirely by your Remote Config, acting as the single source of truth. This decouples business logic from ad network settings.
+- **Idempotent Processing:** A dedicated idempotency layer ensures that each reward transaction is processed exactly once, preventing duplicate grants even if the ad network retries callbacks.
+> **Your Advantage:** Safely monetize your app with rewarded ads, knowing that your premium features are protected by banking-grade verification logic.
 
 </details>
 
