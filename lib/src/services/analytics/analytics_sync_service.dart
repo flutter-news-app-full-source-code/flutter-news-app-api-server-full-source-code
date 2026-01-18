@@ -36,6 +36,7 @@ class AnalyticsSyncService {
     required DataRepository<Headline> headlineRepository,
     required DataRepository<Engagement> engagementRepository,
     required DataRepository<AppReview> appReviewRepository,
+    required DataRepository<UserRewards> userRewardsRepository,
     required AnalyticsReportingClient? googleAnalyticsClient,
     required AnalyticsReportingClient? mixpanelClient,
     required AnalyticsMetricMapper analyticsMetricMapper,
@@ -51,6 +52,7 @@ class AnalyticsSyncService {
        _headlineRepository = headlineRepository,
        _engagementRepository = engagementRepository,
        _appReviewRepository = appReviewRepository,
+       _userRewardsRepository = userRewardsRepository,
        _googleAnalyticsClient = googleAnalyticsClient,
        _mixpanelClient = mixpanelClient,
        _mapper = analyticsMetricMapper,
@@ -69,6 +71,7 @@ class AnalyticsSyncService {
   final DataRepository<Headline> _headlineRepository;
   final DataRepository<Engagement> _engagementRepository;
   final DataRepository<AppReview> _appReviewRepository;
+  final DataRepository<UserRewards> _userRewardsRepository;
   final AnalyticsReportingClient? _googleAnalyticsClient;
   final AnalyticsReportingClient? _mixpanelClient;
   final AnalyticsMetricMapper _mapper;
@@ -399,6 +402,35 @@ class AnalyticsSyncService {
         return _reportRepository.count(
           filter: {'status': ModerationStatus.resolved.name},
         );
+      case 'database:user_rewards:active_count':
+        // This requires a more complex query than a simple filter because
+        // activeRewards is a map of dates. We need to count documents where
+        // ANY value in the map is > now.
+        // Since DataRepository.count takes a simple filter, we might need to
+        // use aggregate if the filter logic is complex, or rely on the fact
+        // that we can query map values.
+        // However, for simplicity and performance in this sync job, we can
+        // use an aggregation pipeline to count.
+        final nowStr = DateTime.now().toUtc().toIso8601String();
+        final pipeline = [
+          {
+            r'$project': {
+              'rewardsArray': {r'$objectToArray': r'$activeRewards'},
+            },
+          },
+          {
+            r'$match': {
+              r'rewardsArray.v': {r'$gt': nowStr},
+            },
+          },
+          {
+            r'$count': 'total',
+          },
+        ];
+        final result = await _userRewardsRepository.aggregate(
+          pipeline: pipeline,
+        );
+        return result.firstOrNull?['total'] as num? ?? 0;
       default:
         _log.warning('Unsupported database metric total: ${query.metric}');
         return 0;
@@ -505,6 +537,7 @@ class AnalyticsSyncService {
       'sources': _sourceRepository,
       'topics': _topicRepository,
       'headlines': _headlineRepository,
+      'user_rewards': _userRewardsRepository,
     };
 
     final repo = repositoryMap[collectionName];
