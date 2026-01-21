@@ -76,14 +76,6 @@ abstract final class EnvironmentConfig {
     return value;
   }
 
-  static void _setOverride(String key, String? value) {
-    if (value == null) {
-      _overrides.remove(key);
-    } else {
-      _overrides[key] = value;
-    }
-  }
-
   /// Retrieves the database connection URI from the environment.
   ///
   /// The value is read from the `DATABASE_URL` environment variable.
