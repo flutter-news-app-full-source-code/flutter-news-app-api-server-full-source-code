@@ -10,6 +10,6 @@ Response onRequest(RequestContext context) {
   // like links to documentation.
   return Response.json(
     statusCode: HttpStatus.ok, // 200
-    body: {'message': 'Welcome to the Headlines Toolkit API V1!'},
+    body: {'message': 'Welcome to the Flutter News App Backend API V1!'},
   );
 }
