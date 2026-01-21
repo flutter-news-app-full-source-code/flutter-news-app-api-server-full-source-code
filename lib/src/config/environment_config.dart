@@ -249,38 +249,6 @@ abstract final class EnvironmentConfig {
   static String? get mixpanelServiceAccountSecret =>
       _getEnv('MIXPANEL_SERVICE_ACCOUNT_SECRET');
 
-  /// Retrieves the Apple App Store Connect Issuer ID.
-  static String? get appleAppStoreIssuerId =>
-      _getEnv('APPLE_APP_STORE_ISSUER_ID');
-
-  static set appleAppStoreIssuerId(String? value) =>
-      _setOverride('APPLE_APP_STORE_ISSUER_ID', value);
-
-  /// Retrieves the Apple App Store Connect Key ID.
-  static String? get appleAppStoreKeyId => _getEnv('APPLE_APP_STORE_KEY_ID');
-
-  static set appleAppStoreKeyId(String? value) =>
-      _setOverride('APPLE_APP_STORE_KEY_ID', value);
-
-  /// Retrieves the Apple App Store Connect Private Key.
-  static String? get appleAppStorePrivateKey =>
-      _getEnv('APPLE_APP_STORE_PRIVATE_KEY');
-
-  static set appleAppStorePrivateKey(String? value) =>
-      _setOverride('APPLE_APP_STORE_PRIVATE_KEY', value);
-
-  /// Retrieves the Apple Bundle ID.
-  static String? get appleBundleId => _getEnv('APPLE_BUNDLE_ID');
-  static set appleBundleId(String? value) =>
-      _setOverride('APPLE_BUNDLE_ID', value);
-
-  /// Retrieves the Google Play Package Name.
-  static String? get googlePlayPackageName =>
-      _getEnv('GOOGLE_PLAY_PACKAGE_NAME');
-
-  static set googlePlayPackageName(String? value) =>
-      _setOverride('GOOGLE_PLAY_PACKAGE_NAME', value);
-
   /// Retrieves the selected email provider.
   ///
   /// Expected values: 'sendgrid', 'onesignal', 'logging'.
