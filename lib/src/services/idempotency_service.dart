@@ -60,9 +60,10 @@ class IdempotencyService {
     }
   }
 
-  /// Generates a valid 24-character hex ObjectId from an arbitrary event ID.
+  /// Generates a deterministic 24-character hex string from an event ID.
   ///
-  /// This is necessary because MongoDB requires `_id` to be a specific format.
+  /// This is necessary to create a fixed-length, database-compatible string
+  /// identifier from an arbitrary event ID for use as a document `_id`.
   String _generateDeterministicId(String eventId) {
     final bytes = utf8.encode(eventId);
     final digest = sha256.convert(bytes);
