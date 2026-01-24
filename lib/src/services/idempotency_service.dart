@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:core/core.dart';
+import 'package:crypto/crypto.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/idempotency_record.dart';
 import 'package:logging/logging.dart';
@@ -24,7 +27,8 @@ class IdempotencyService {
   /// Returns `true` if the event exists, `false` otherwise.
   Future<bool> isEventProcessed(String eventId) async {
     try {
-      await _repository.read(id: eventId);
+      final dbId = _generateDeterministicId(eventId);
+      await _repository.read(id: dbId);
       return true;
     } on NotFoundException {
       return false;
@@ -44,8 +48,9 @@ class IdempotencyService {
   /// Throws [ConflictException] if the event was recorded concurrently.
   Future<void> recordEvent(String eventId) async {
     try {
+      final dbId = _generateDeterministicId(eventId);
       final record = IdempotencyRecord(
-        id: eventId,
+        id: dbId,
         createdAt: DateTime.now(),
       );
       await _repository.create(item: record);
@@ -53,5 +58,15 @@ class IdempotencyService {
       _log.severe('Error recording idempotency for event $eventId', e, s);
       rethrow;
     }
+  }
+
+  /// Generates a valid 24-character hex ObjectId from an arbitrary event ID.
+  ///
+  /// This is necessary because MongoDB requires `_id` to be a specific format.
+  String _generateDeterministicId(String eventId) {
+    final bytes = utf8.encode(eventId);
+    final digest = md5.convert(bytes);
+    // MD5 produces 32 chars; take the first 24 for a valid ObjectId length.
+    return digest.toString().substring(0, 24);
   }
 }
