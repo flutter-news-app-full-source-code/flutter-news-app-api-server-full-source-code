@@ -221,6 +221,50 @@ void main() {
       },
     );
 
+    test(
+      'processAdMobCallback handles case-insensitive reward types (e.g. DailyDigest)',
+      () async {
+        // Setup: URI with PascalCase 'DailyDigest'
+        final mixedCaseUri = Uri.parse(
+          'https://e.com?transaction_id=tx_mixed&user_id=user1&custom_data=DailyDigest&reward_amount=1&signature=s&key_id=k',
+        );
+
+        // Ensure config has dailyDigest enabled
+        final digestConfig = remoteConfig.copyWith(
+          features: remoteConfig.features.copyWith(
+            rewards: const RewardsConfig(
+              enabled: true,
+              rewards: {
+                RewardType.dailyDigest: RewardDetails(
+                  enabled: true,
+                  durationDays: 1,
+                ),
+              },
+            ),
+          ),
+        );
+
+        when(
+          () => mockRemoteConfigRepo.read(id: any(named: 'id')),
+        ).thenAnswer((_) async => digestConfig);
+
+        await service.processAdMobCallback(mixedCaseUri);
+
+        final captured =
+            verify(
+                  () => mockUserRewardsRepo.create(
+                    item: captureAny(named: 'item'),
+                  ),
+                ).captured.first
+                as UserRewards;
+
+        expect(
+          captured.activeRewards.containsKey(RewardType.dailyDigest),
+          isTrue,
+        );
+      },
+    );
+
     test('processAdMobCallback throws Forbidden if reward disabled', () async {
       final disabledConfig = remoteConfig.copyWith(
         features: remoteConfig.features.copyWith(
