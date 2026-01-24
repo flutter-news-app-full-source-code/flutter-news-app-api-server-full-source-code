@@ -14,6 +14,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/email/
 import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/rewards_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/verification_code_storage_service.dart';
@@ -211,6 +212,7 @@ Handler middleware(Handler handler) {
               .use(
                 provider<CountryQueryService>((_) => deps.countryQueryService),
               )
+              .use(provider<RewardsService>((_) => deps.rewardsService))
               .call(context);
         };
       });
