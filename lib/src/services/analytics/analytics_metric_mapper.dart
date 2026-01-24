@@ -105,6 +105,9 @@ class AnalyticsMetricMapper {
     KpiCardId.rewardsActiveUsersCount: const StandardMetricQuery(
       metric: 'database:user_rewards:active_count',
     ),
+    KpiCardId.rewardsGrantedTotal: const EventCountQuery(
+      event: AnalyticsEvent.rewardGranted,
+    ),
   };
 
   static final Map<ChartCardId, MetricQuery> _chartQueryMappings = {
@@ -188,6 +191,9 @@ class AnalyticsMetricMapper {
     ),
     ChartCardId.rewardsActiveByType: const StandardMetricQuery(
       metric: 'database:user_rewards:active_by_type',
+    ),
+    ChartCardId.rewardsGrantedOverTime: const EventCountQuery(
+      event: AnalyticsEvent.rewardGranted,
     ),
   };
 
