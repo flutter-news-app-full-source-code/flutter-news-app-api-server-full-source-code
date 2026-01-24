@@ -8,6 +8,7 @@ environment:
   sdk: ^3.9.0
 
 dependencies:
+  asn1lib: ^1.6.5
   collection: ^1.19.1
   core:
     git:
