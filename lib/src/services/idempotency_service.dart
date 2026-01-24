@@ -65,8 +65,8 @@ class IdempotencyService {
   /// This is necessary because MongoDB requires `_id` to be a specific format.
   String _generateDeterministicId(String eventId) {
     final bytes = utf8.encode(eventId);
-    final digest = md5.convert(bytes);
-    // MD5 produces 32 chars; take the first 24 for a valid ObjectId length.
+    final digest = sha256.convert(bytes);
+    // SHA-256 produces 64 chars; take the first 24 for a valid ObjectId length.
     return digest.toString().substring(0, 24);
   }
 }
