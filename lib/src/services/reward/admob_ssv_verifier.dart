@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:asn1lib/asn1lib.dart' as asn1;
@@ -150,7 +149,7 @@ class AdMobSsvVerifier {
       final result = Uint8List(elementLength * 2);
 
       // Copy R (right-aligned)
-      var rOffset = elementLength - rValue.length;
+      final rOffset = elementLength - rValue.length;
       if (rValue.length > elementLength) {
         // If longer than 32 bytes, skip leading bytes (usually sign padding 0x00)
         final diff = rValue.length - elementLength;
@@ -160,7 +159,7 @@ class AdMobSsvVerifier {
       }
 
       // Copy S (right-aligned)
-      var sOffset = (elementLength * 2) - sValue.length;
+      final sOffset = (elementLength * 2) - sValue.length;
       if (sValue.length > elementLength) {
         // If longer than 32 bytes, skip leading bytes
         final diff = sValue.length - elementLength;
