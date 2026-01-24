@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:core/core.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/reward/admob_reward_callback.dart';
@@ -52,10 +53,35 @@ iTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==
     });
 
     String signContent(String content) {
-      final signature = privateKey.sign(
+      final rawSignature = privateKey.sign(
         utf8.encode(content),
         algorithm: 'ES256',
       );
+
+      // The verifier expects a DER-encoded signature (AdMob standard),
+      // but 'jose' produces a raw IEEE P1363 signature (R|S).
+      // We must wrap the raw signature in a DER sequence for the test to pass.
+      // P-256 signature is 64 bytes: 32 bytes R + 32 bytes S.
+      final r = rawSignature.sublist(0, 32);
+      final s = rawSignature.sublist(32, 64);
+
+      // Helper to encode integer in DER
+      List<int> encodeInteger(List<int> intBytes) {
+        // If high bit is set, prepend 0x00 to make it positive
+        if (intBytes[0] & 0x80 != 0) {
+          return [0x02, intBytes.length + 1, 0x00, ...intBytes];
+        }
+        return [0x02, intBytes.length, ...intBytes];
+      }
+
+      final rEncoded = encodeInteger(r);
+      final sEncoded = encodeInteger(s);
+      final sequenceLength = rEncoded.length + sEncoded.length;
+
+      final signature = Uint8List.fromList(
+        [0x30, sequenceLength, ...rEncoded, ...sEncoded],
+      );
+
       // Encode to URL-safe Base64
       return base64Url.encode(signature).replaceAll('=', '');
     }
