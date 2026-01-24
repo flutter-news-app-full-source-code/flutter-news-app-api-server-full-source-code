@@ -187,6 +187,29 @@ void main() {
         expect(pipeline, equals(expectedPipeline));
       });
 
+      test('builds correct pipeline for active rewards count', () {
+        const query = StandardMetricQuery(
+          metric: 'database:user_rewards:active_count',
+        );
+        final pipeline = queryBuilder.buildPipelineForMetric(
+          query,
+          startDate,
+          endDate,
+        );
+
+        expect(pipeline, isNotNull);
+        expect(pipeline!.length, equals(3));
+        expect(
+          pipeline[0],
+          containsPair(r'$project', isA<Map<String, dynamic>>()),
+        );
+        expect(
+          pipeline[1],
+          containsPair(r'$match', isA<Map<String, dynamic>>()),
+        );
+        expect(pipeline[2], equals({r'$count': 'total'}));
+      });
+
       test('builds correct pipeline for active rewards by type', () {
         const query = StandardMetricQuery(
           metric: 'database:user_rewards:active_by_type',
