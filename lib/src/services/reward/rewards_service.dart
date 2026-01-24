@@ -47,6 +47,7 @@ class RewardsService {
 
     // 1. Parse & Validate Input
     final callback = AdMobRewardCallback.fromUri(uri);
+    _log.finer('Parsed AdMob callback: ${callback.props}');
 
     // 2. Verify Signature
     await _admobVerifier.verify(callback);
