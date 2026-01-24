@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:core/core.dart';
+import 'package:crypto/crypto.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/idempotency_record.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
@@ -17,6 +20,12 @@ void main() {
     late IdempotencyService service;
     const eventId = 'test-event-id';
 
+    // Calculate the expected hashed ID (MD5 of 'test-event-id' truncated to 24 chars)
+    final expectedDbId = md5
+        .convert(utf8.encode(eventId))
+        .toString()
+        .substring(0, 24);
+
     setUpAll(() {
       registerFallbackValue(
         IdempotencyRecord(id: 'fallback', createdAt: DateTime.now()),
@@ -34,9 +43,11 @@ void main() {
 
     group('isEventProcessed', () {
       test('returns true when repository finds the record', () async {
-        when(() => mockRepository.read(id: eventId, userId: null)).thenAnswer(
+        when(
+          () => mockRepository.read(id: expectedDbId, userId: null),
+        ).thenAnswer(
           (_) async => IdempotencyRecord(
-            id: eventId,
+            id: expectedDbId,
             createdAt: DateTime.now(),
           ),
         );
@@ -44,12 +55,14 @@ void main() {
         final result = await service.isEventProcessed(eventId);
 
         expect(result, isTrue);
-        verify(() => mockRepository.read(id: eventId, userId: null)).called(1);
+        verify(
+          () => mockRepository.read(id: expectedDbId, userId: null),
+        ).called(1);
       });
 
       test('returns false when repository throws NotFoundException', () async {
         when(
-          () => mockRepository.read(id: eventId, userId: null),
+          () => mockRepository.read(id: expectedDbId, userId: null),
         ).thenThrow(const NotFoundException('Not found'));
 
         final result = await service.isEventProcessed(eventId);
@@ -59,7 +72,7 @@ void main() {
 
       test('rethrows ServerException on other repository errors', () async {
         when(
-          () => mockRepository.read(id: eventId, userId: null),
+          () => mockRepository.read(id: expectedDbId, userId: null),
         ).thenThrow(const ServerException('DB down'));
 
         expect(
@@ -73,7 +86,7 @@ void main() {
       test('calls repository.create with correct IdempotencyRecord', () async {
         when(() => mockRepository.create(item: any(named: 'item'))).thenAnswer(
           (_) async => IdempotencyRecord(
-            id: eventId,
+            id: expectedDbId,
             createdAt: DateTime.now(),
           ),
         );
@@ -86,7 +99,7 @@ void main() {
                 ).captured.first
                 as IdempotencyRecord;
 
-        expect(captured.id, eventId);
+        expect(captured.id, expectedDbId);
         expect(captured.createdAt, isA<DateTime>());
       });
     });
