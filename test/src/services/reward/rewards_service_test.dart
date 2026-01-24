@@ -23,7 +23,7 @@ void main() {
     late MockAdMobSsvVerifier mockVerifier;
 
     final uri = Uri.parse(
-      'https://e.com?transaction_id=tx1&custom_data=user1&reward_item=adFree&reward_amount=10&signature=sig&key_id=k',
+      'https://e.com?transaction_id=tx1&user_id=user1&custom_data=adFree&reward_amount=10&signature=sig&key_id=k',
     );
 
     final remoteConfig = RemoteConfig(
@@ -212,11 +212,55 @@ void main() {
       'processAdMobCallback throws BadRequest for unknown reward type',
       () async {
         final badUri = Uri.parse(
-          'https://e.com?transaction_id=tx1&custom_data=user1&reward_item=UNKNOWN&signature=s&key_id=k',
+          'https://e.com?transaction_id=tx1&user_id=user1&custom_data=UNKNOWN&signature=s&key_id=k',
         );
         expect(
           () => service.processAdMobCallback(badUri),
           throwsA(isA<BadRequestException>()),
+        );
+      },
+    );
+
+    test(
+      'processAdMobCallback handles case-insensitive reward types (e.g. DailyDigest)',
+      () async {
+        // Setup: URI with PascalCase 'DailyDigest'
+        final mixedCaseUri = Uri.parse(
+          'https://e.com?transaction_id=tx_mixed&user_id=user1&custom_data=DailyDigest&reward_amount=1&signature=s&key_id=k',
+        );
+
+        // Ensure config has dailyDigest enabled
+        final digestConfig = remoteConfig.copyWith(
+          features: remoteConfig.features.copyWith(
+            rewards: const RewardsConfig(
+              enabled: true,
+              rewards: {
+                RewardType.dailyDigest: RewardDetails(
+                  enabled: true,
+                  durationDays: 1,
+                ),
+              },
+            ),
+          ),
+        );
+
+        when(
+          () => mockRemoteConfigRepo.read(id: any(named: 'id')),
+        ).thenAnswer((_) async => digestConfig);
+
+        await service.processAdMobCallback(mixedCaseUri);
+
+        final captured =
+            verify(
+                  () => mockUserRewardsRepo.create(
+                    item: captureAny(named: 'item'),
+                  ),
+                ).captured.first
+                as UserRewards;
+
+        expect(
+          captured.activeRewards.containsKey(RewardType.dailyDigest),
+          isTrue,
         );
       },
     );

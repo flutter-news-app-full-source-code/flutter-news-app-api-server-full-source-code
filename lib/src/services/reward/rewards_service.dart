@@ -47,6 +47,7 @@ class RewardsService {
 
     // 1. Parse & Validate Input
     final callback = AdMobRewardCallback.fromUri(uri);
+    _log.finer('Parsed AdMob callback: ${callback.props}');
 
     // 2. Verify Signature
     await _admobVerifier.verify(callback);
@@ -60,11 +61,11 @@ class RewardsService {
     }
 
     // 4. Map Reward Item to RewardType
-    final rewardType = RewardType.values.asNameMap()[callback.rewardItem];
-    if (rewardType == null) {
-      _log.warning('Unknown reward type received: ${callback.rewardItem}');
-      throw const BadRequestException('Unknown reward type.');
-    }
+    // We perform a case-insensitive lookup to be robust against client/console variations.
+    final rewardType = RewardType.values.firstWhere(
+      (e) => e.name.toLowerCase() == callback.rewardItem.toLowerCase(),
+      orElse: () => throw const BadRequestException('Unknown reward type.'),
+    );
 
     // 5. Grant Reward
     // Note: We intentionally ignore `callback.rewardAmount` for the duration

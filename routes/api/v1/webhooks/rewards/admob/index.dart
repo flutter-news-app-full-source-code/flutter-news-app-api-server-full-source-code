@@ -16,6 +16,7 @@ final _log = Logger('AdMobWebhookHandler');
 /// This handler delegates the verification and reward granting logic to the
 /// [RewardsService].
 Future<Response> onRequest(RequestContext context) async {
+  _log.info('Received AdMob SSV request: ${context.request.uri}');
   // AdMob SSV callbacks are GET requests.
   if (context.request.method != HttpMethod.get) {
     return Response(statusCode: HttpStatus.methodNotAllowed);

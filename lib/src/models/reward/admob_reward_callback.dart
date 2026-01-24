@@ -23,8 +23,10 @@ class AdMobRewardCallback extends Equatable {
     final params = uri.queryParameters;
 
     final transactionId = params['transaction_id'];
-    final userId = params['custom_data']; // We map custom_data to userId
-    final rewardItem = params['reward_item'];
+    final userId = params['user_id'];
+    // We map the 'custom_data' param (from client) to the 'rewardItem' field.
+    // This allows the client to dynamically specify the reward type.
+    final rewardItem = params['custom_data'];
     final rewardAmountStr = params['reward_amount'];
     final signature = params['signature'];
     final keyId = params['key_id'];
@@ -33,10 +35,10 @@ class AdMobRewardCallback extends Equatable {
       throw const InvalidInputException('Missing transaction_id');
     }
     if (userId == null || userId.isEmpty) {
-      throw const InvalidInputException('Missing custom_data (userId)');
+      throw const InvalidInputException('Missing user_id');
     }
     if (rewardItem == null || rewardItem.isEmpty) {
-      throw const InvalidInputException('Missing reward_item');
+      throw const InvalidInputException('Missing custom_data (rewardItem)');
     }
     if (signature == null || signature.isEmpty) {
       throw const InvalidInputException('Missing signature');
@@ -65,10 +67,10 @@ class AdMobRewardCallback extends Equatable {
   /// Unique transaction ID from AdMob.
   final String transactionId;
 
-  /// The user ID who watched the ad (passed via custom_data).
+  /// The user ID who watched the ad (passed via user_id).
   final String userId;
 
-  /// The type of reward (e.g., "adFree").
+  /// The type of reward (e.g., "adFree"), mapped from 'custom_data'.
   final String rewardItem;
 
   /// The amount of the reward specified in the AdMob console.

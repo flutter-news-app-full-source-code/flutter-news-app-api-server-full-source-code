@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:asn1lib/asn1lib.dart' as asn1;
 import 'package:core/core.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/reward/admob_reward_callback.dart';
 import 'package:http_client/http_client.dart';
@@ -57,10 +58,13 @@ class AdMobSsvVerifier {
     }
 
     // 3. Verify Signature (ECDSA with SHA-256)
+    // AdMob sends a DER-encoded signature, but the 'jose' package (and most
+    // JWA implementations) expects the IEEE P1363 format (R|S concatenated).
+    final ieeeSignature = _convertDerToIeeeP1363(signatureBytes);
     final isValid = _verifySignature(
       publicKeyPem,
       contentBytes,
-      signatureBytes,
+      ieeeSignature,
     );
 
     if (!isValid) {
@@ -126,6 +130,55 @@ class AdMobSsvVerifier {
       normalized = buffer.toString();
     }
     return base64Decode(buffer.toString());
+  }
+
+  /// Converts a DER-encoded ECDSA signature (ASN.1) to IEEE P1363 format (R|S).
+  ///
+  /// AdMob provides signatures in DER format, but the `jose` package expects
+  /// the raw R and S values concatenated (64 bytes total for P-256).
+  Uint8List _convertDerToIeeeP1363(Uint8List derSignature) {
+    try {
+      final parser = asn1.ASN1Parser(derSignature);
+      final sequence = parser.nextObject() as asn1.ASN1Sequence;
+
+      final rValue = (sequence.elements[0] as asn1.ASN1Integer).contentBytes();
+      final sValue = (sequence.elements[1] as asn1.ASN1Integer).contentBytes();
+
+      // --- Pad to 32 bytes (for P-256) ---
+      const elementLength = 32;
+      final result = Uint8List(elementLength * 2);
+
+      // Copy R (right-aligned)
+      final rOffset = elementLength - rValue.length;
+      if (rValue.length > elementLength) {
+        // If longer than 32 bytes, skip leading bytes (usually sign padding 0x00)
+        final diff = rValue.length - elementLength;
+        result.setRange(0, elementLength, rValue.sublist(diff));
+      } else {
+        result.setRange(rOffset, elementLength, rValue);
+      }
+
+      // Copy S (right-aligned)
+      final sOffset = (elementLength * 2) - sValue.length;
+      if (sValue.length > elementLength) {
+        // If longer than 32 bytes, skip leading bytes
+        final diff = sValue.length - elementLength;
+        result.setRange(
+          elementLength,
+          elementLength * 2,
+          sValue.sublist(diff),
+        );
+      } else {
+        result.setRange(sOffset, elementLength * 2, sValue);
+      }
+
+      return result;
+    } catch (e) {
+      _log.warning('Failed to parse DER signature: $e');
+      throw const InvalidInputException(
+        'Invalid DER signature format.',
+      );
+    }
   }
 
   /// Verifies the ECDSA signature using the `jose` package.

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:asn1lib/asn1lib.dart' as asn1;
 import 'package:core/core.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/reward/admob_reward_callback.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/admob_ssv_verifier.dart';
@@ -52,10 +53,37 @@ iTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==
     });
 
     String signContent(String content) {
-      final signature = privateKey.sign(
+      final rawSignature = privateKey.sign(
         utf8.encode(content),
         algorithm: 'ES256',
       );
+
+      // The verifier expects a DER-encoded signature (AdMob standard),
+      // but 'jose' produces a raw IEEE P1363 signature (R|S).
+      // We must wrap the raw signature in a DER sequence for the test to pass.
+      // P-256 signature is 64 bytes: 32 bytes R + 32 bytes S.
+      final r = rawSignature.sublist(0, 32);
+      final s = rawSignature.sublist(32, 64);
+
+      // Use asn1lib to build the DER-encoded signature.
+      final sequence = asn1.ASN1Sequence();
+
+      // Convert raw bytes to BigInt to create ASN1Integer correctly.
+      // ASN1Integer.fromBytes expects a full ASN.1 encoded byte stream (Tag+Len+Val),
+      // whereas r and s are just the raw value bytes.
+      final rBigInt = BigInt.parse(
+        r.map((b) => b.toRadixString(16).padLeft(2, '0')).join(),
+        radix: 16,
+      );
+      final sBigInt = BigInt.parse(
+        s.map((b) => b.toRadixString(16).padLeft(2, '0')).join(),
+        radix: 16,
+      );
+
+      sequence.add(asn1.ASN1Integer(rBigInt));
+      sequence.add(asn1.ASN1Integer(sBigInt));
+      final signature = sequence.encodedBytes;
+
       // Encode to URL-safe Base64
       return base64Url.encode(signature).replaceAll('=', '');
     }
@@ -65,7 +93,7 @@ iTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==
       // We construct the URI first to ensure we sign exactly what the verifier sees
       // after Uri.parse normalization.
       final baseUri = Uri.parse(
-        'https://example.com/webhook?ad_network=5450213213286189855&ad_unit=1234567890&reward_amount=1&reward_item=adFree&timestamp=150777823&transaction_id=1234567890&custom_data=my_custom_data',
+        'https://example.com/webhook?ad_network=5450213213286189855&ad_unit=1234567890&reward_amount=1&timestamp=150777823&transaction_id=1234567890&user_id=user123&custom_data=adFree',
       );
 
       // Extract the query string that AdMob would sign (everything except signature and key_id)
@@ -97,14 +125,14 @@ iTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==
     test('verify throws InvalidInputException for invalid signature', () async {
       // Use a valid base URI structure to pass fromUri validation
       final baseUri = Uri.parse(
-        'https://example.com/webhook?transaction_id=123&custom_data=user1&reward_item=adFree',
+        'https://example.com/webhook?transaction_id=123&user_id=user1&custom_data=adFree',
       );
       final contentToSign = baseUri.query;
       final signature = signContent(contentToSign);
 
       // Tamper with the content in the final URI
       final tamperedUri = Uri.parse(
-        'https://example.com/webhook?transaction_id=999&custom_data=user1&reward_item=adFree&key_id=test-key-id&signature=$signature',
+        'https://example.com/webhook?transaction_id=999&user_id=user1&custom_data=adFree&key_id=test-key-id&signature=$signature',
       );
 
       final callback = AdMobRewardCallback.fromUri(tamperedUri);
@@ -127,7 +155,7 @@ iTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==
 
     test('verify throws InvalidInputException for unknown key_id', () async {
       final baseUri = Uri.parse(
-        'https://example.com/webhook?transaction_id=123&custom_data=user1&reward_item=adFree',
+        'https://example.com/webhook?transaction_id=123&user_id=user1&custom_data=adFree',
       );
       final contentToSign = baseUri.query;
       final signature = signContent(contentToSign);
@@ -156,7 +184,7 @@ iTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==
 
     test('verify caches keys', () async {
       final baseUri = Uri.parse(
-        'https://example.com/webhook?transaction_id=123&custom_data=user1&reward_item=adFree',
+        'https://example.com/webhook?transaction_id=123&user_id=user1&custom_data=adFree',
       );
       final contentToSign = baseUri.query;
       final signature = signContent(contentToSign);
