@@ -68,7 +68,7 @@ iTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==
       // Helper to encode integer in DER
       List<int> encodeInteger(List<int> intBytes) {
         // If high bit is set, prepend 0x00 to make it positive
-        if (intBytes[0] & 0x80 != 0) {
+        if (intBytes.isNotEmpty && intBytes[0] & 0x80 != 0) {
           return [0x02, intBytes.length + 1, 0x00, ...intBytes];
         }
         return [0x02, intBytes.length, ...intBytes];
