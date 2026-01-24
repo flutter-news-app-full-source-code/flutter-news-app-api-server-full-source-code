@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('AdMobRewardCallback', () {
     const validUriString =
-        'https://example.com/webhook?transaction_id=trans123&custom_data=user123&reward_item=adFree&reward_amount=5&signature=sig123&key_id=key123';
+        'https://example.com/webhook?transaction_id=trans123&user_id=user123&custom_data=adFree&reward_amount=5&signature=sig123&key_id=key123';
 
     test('fromUri parses valid URI correctly', () {
       final uri = Uri.parse(validUriString);
@@ -22,7 +22,7 @@ void main() {
 
     test('fromUri defaults rewardAmount to 1 if missing', () {
       final uri = Uri.parse(
-        'https://example.com/webhook?transaction_id=t&custom_data=u&reward_item=i&signature=s&key_id=k',
+        'https://example.com/webhook?transaction_id=t&user_id=u&custom_data=adFree&signature=s&key_id=k',
       );
       final callback = AdMobRewardCallback.fromUri(uri);
       expect(callback.rewardAmount, equals(1));
@@ -30,7 +30,7 @@ void main() {
 
     test('fromUri defaults rewardAmount to 1 if invalid', () {
       final uri = Uri.parse(
-        'https://example.com/webhook?transaction_id=t&custom_data=u&reward_item=i&reward_amount=invalid&signature=s&key_id=k',
+        'https://example.com/webhook?transaction_id=t&user_id=u&custom_data=adFree&reward_amount=invalid&signature=s&key_id=k',
       );
       final callback = AdMobRewardCallback.fromUri(uri);
       expect(callback.rewardAmount, equals(1));
@@ -41,8 +41,8 @@ void main() {
       () {
         final params = {
           'transaction_id': 't',
-          'custom_data': 'u',
-          'reward_item': 'i',
+          'user_id': 'u',
+          'custom_data': 'adFree',
           'signature': 's',
           'key_id': 'k',
         };
@@ -58,7 +58,18 @@ void main() {
           throwsA(isA<InvalidInputException>()),
         );
 
-        // Test missing custom_data (userId)
+        // Test missing user_id
+        uri = Uri(
+          scheme: 'https',
+          host: 'e.com',
+          queryParameters: Map.from(params)..remove('user_id'),
+        );
+        expect(
+          () => AdMobRewardCallback.fromUri(uri),
+          throwsA(isA<InvalidInputException>()),
+        );
+
+        // Test missing custom_data (which maps to rewardItem)
         uri = Uri(
           scheme: 'https',
           host: 'e.com',
