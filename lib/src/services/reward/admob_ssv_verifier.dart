@@ -49,12 +49,17 @@ class AdMobSsvVerifier {
     final contentBytes = utf8.encode(contentString);
     final signatureBytes = _decodeWebSafeBase64(callback.signature);
 
+    _log.finer('Attempting to verify signature for key_id: ${callback.keyId}');
+    _log.finer('Content string to verify: "$contentString"');
+    _log.finer('Signature (Base64): ${callback.signature}');
+
     // 2. Fetch Public Keys
     final publicKeyPem = await _getPublicKey(callback.keyId);
     if (publicKeyPem == null) {
       _log.warning('Public key not found for key_id: ${callback.keyId}');
       throw const InvalidInputException('Invalid key_id.');
     }
+    _log.finer('Using public key: $publicKeyPem');
 
     // 3. Verify Signature (ECDSA with SHA-256)
     final isValid = _verifySignature(
