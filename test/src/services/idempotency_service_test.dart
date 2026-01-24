@@ -20,8 +20,8 @@ void main() {
     late IdempotencyService service;
     const eventId = 'test-event-id';
 
-    // Calculate the expected hashed ID (MD5 of 'test-event-id' truncated to 24 chars)
-    final expectedDbId = md5
+    // Calculate the expected hashed ID (SHA-256 of 'test-event-id' truncated to 24 chars)
+    final expectedDbId = sha256
         .convert(utf8.encode(eventId))
         .toString()
         .substring(0, 24);
