@@ -23,7 +23,7 @@ void main() {
     late MockAdMobSsvVerifier mockVerifier;
 
     final uri = Uri.parse(
-      'https://e.com?transaction_id=tx1&custom_data=user1&reward_item=adFree&reward_amount=10&signature=sig&key_id=k',
+      'https://e.com?transaction_id=tx1&user_id=user1&custom_data=adFree&reward_amount=10&signature=sig&key_id=k',
     );
 
     final remoteConfig = RemoteConfig(
@@ -212,7 +212,7 @@ void main() {
       'processAdMobCallback throws BadRequest for unknown reward type',
       () async {
         final badUri = Uri.parse(
-          'https://e.com?transaction_id=tx1&custom_data=user1&reward_item=UNKNOWN&signature=s&key_id=k',
+          'https://e.com?transaction_id=tx1&user_id=user1&custom_data=UNKNOWN&signature=s&key_id=k',
         );
         expect(
           () => service.processAdMobCallback(badUri),
