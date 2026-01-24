@@ -199,7 +199,11 @@ class AdMobSsvVerifier {
 
     // Copy S (right-aligned)
     final sOffset = (elementLength * 2) - sBytes.length;
-    result.setRange(max(elementLength, sOffset), elementLength * 2, sBytes);
+    result.setRange(
+      max(elementLength, sOffset),
+      elementLength * 2,
+      sBytes,
+    );
 
     return result;
   }
