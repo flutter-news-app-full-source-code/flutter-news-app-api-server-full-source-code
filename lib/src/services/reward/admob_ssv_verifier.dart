@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:core/core.dart';
@@ -62,10 +63,13 @@ class AdMobSsvVerifier {
     _log.finer('Using public key: $publicKeyPem');
 
     // 3. Verify Signature (ECDSA with SHA-256)
+    // AdMob sends a DER-encoded signature, but the 'jose' package (and most
+    // JWA implementations) expects the IEEE P1363 format (R|S concatenated).
+    final ieeeSignature = _convertDerToIeeeP1363(signatureBytes);
     final isValid = _verifySignature(
       publicKeyPem,
       contentBytes,
-      signatureBytes,
+      ieeeSignature,
     );
 
     if (!isValid) {
@@ -131,6 +135,73 @@ class AdMobSsvVerifier {
       normalized = buffer.toString();
     }
     return base64Decode(buffer.toString());
+  }
+
+  /// Converts a DER-encoded ECDSA signature (ASN.1) to IEEE P1363 format (R|S).
+  ///
+  /// AdMob provides signatures in DER format, but the `jose` package expects
+  /// the raw R and S values concatenated (64 bytes total for P-256).
+  Uint8List _convertDerToIeeeP1363(Uint8List derSignature) {
+    // DER Structure for ECDSA Signature:
+    // 0x30 (Sequence) | Length | 0x02 (Integer) | R-Length | R | 0x02 (Integer) | S-Length | S
+
+    var offset = 0;
+    if (derSignature[offset++] != 0x30) {
+      throw const InvalidInputException(
+        'Invalid DER signature: missing sequence tag.',
+      );
+    }
+
+    // Skip sequence length (can be 1 or 2 bytes)
+    final lengthByte = derSignature[offset++];
+    if (lengthByte & 0x80 != 0) {
+      offset += lengthByte & 0x7F;
+    }
+
+    // --- Extract R ---
+    if (derSignature[offset++] != 0x02) {
+      throw const InvalidInputException(
+        'Invalid DER signature: missing integer tag for R.',
+      );
+    }
+    final rLength = derSignature[offset++];
+    final rStart = offset;
+    offset += rLength;
+    var rBytes = derSignature.sublist(rStart, rStart + rLength);
+
+    // Remove leading zero padding if present (DER requires minimal encoding)
+    while (rBytes.isNotEmpty && rBytes[0] == 0) {
+      rBytes = rBytes.sublist(1);
+    }
+
+    // --- Extract S ---
+    if (derSignature[offset++] != 0x02) {
+      throw const InvalidInputException(
+        'Invalid DER signature: missing integer tag for S.',
+      );
+    }
+    final sLength = derSignature[offset++];
+    final sStart = offset;
+    var sBytes = derSignature.sublist(sStart, sStart + sLength);
+
+    // Remove leading zero padding
+    while (sBytes.isNotEmpty && sBytes[0] == 0) {
+      sBytes = sBytes.sublist(1);
+    }
+
+    // --- Pad to 32 bytes (for P-256) ---
+    const elementLength = 32;
+    final result = Uint8List(elementLength * 2);
+
+    // Copy R (right-aligned)
+    final rOffset = elementLength - rBytes.length;
+    result.setRange(max(0, rOffset), elementLength, rBytes);
+
+    // Copy S (right-aligned)
+    final sOffset = (elementLength * 2) - sBytes.length;
+    result.setRange(max(elementLength, sOffset), elementLength * 2, sBytes);
+
+    return result;
   }
 
   /// Verifies the ECDSA signature using the `jose` package.
