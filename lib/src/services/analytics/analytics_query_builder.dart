@@ -107,6 +107,10 @@ class AnalyticsQueryBuilder {
           endDate: endDate,
         );
       // Rewards Queries
+      case 'database:user_rewards:active_count':
+        _log.info('Building pipeline for active rewards count.');
+        return _buildActiveRewardsCountPipeline();
+
       case 'database:user_rewards:active_by_type':
         _log.info(
           'Building pipeline for active rewards by type.',
@@ -343,6 +347,25 @@ class AnalyticsQueryBuilder {
       {
         r'$sort': {'label': 1},
       },
+    ];
+  }
+
+  /// Creates a pipeline for counting the total number of users with at least
+  /// one currently active reward.
+  List<Map<String, dynamic>> _buildActiveRewardsCountPipeline() {
+    final now = DateTime.now().toUtc().toIso8601String();
+    return [
+      {
+        r'$project': {
+          'rewardsArray': {r'$objectToArray': r'$activeRewards'},
+        },
+      },
+      {
+        r'$match': {
+          'rewardsArray.v': {r'$gt': now},
+        },
+      },
+      {r'$count': 'total'},
     ];
   }
 
