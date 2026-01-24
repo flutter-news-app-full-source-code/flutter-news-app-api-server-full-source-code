@@ -197,17 +197,21 @@ void main() {
           endDate,
         );
 
-        expect(pipeline, isNotNull);
-        expect(pipeline!.length, equals(3));
-        expect(
-          pipeline[0],
-          containsPair(r'$project', isA<Map<String, dynamic>>()),
-        );
-        expect(
-          pipeline[1],
-          containsPair(r'$match', isA<Map<String, dynamic>>()),
-        );
-        expect(pipeline[2], equals({r'$count': 'total'}));
+        final expectedPipeline = [
+          {
+            r'$project': {
+              'rewardsArray': {r'$objectToArray': r'$activeRewards'},
+            },
+          },
+          {
+            r'$match': {
+              'rewardsArray.v': {r'$gt': endDate.toUtc().toIso8601String()},
+            },
+          },
+          {r'$count': 'total'},
+        ];
+
+        expect(pipeline, equals(expectedPipeline));
       });
 
       test('builds correct pipeline for active rewards by type', () {
