@@ -65,7 +65,7 @@ iTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==
       // We construct the URI first to ensure we sign exactly what the verifier sees
       // after Uri.parse normalization.
       final baseUri = Uri.parse(
-        'https://example.com/webhook?ad_network=5450213213286189855&ad_unit=1234567890&reward_amount=1&reward_item=adFree&timestamp=150777823&transaction_id=1234567890&custom_data=my_custom_data',
+        'https://example.com/webhook?ad_network=5450213213286189855&ad_unit=1234567890&reward_amount=1&timestamp=150777823&transaction_id=1234567890&user_id=user123&custom_data=adFree',
       );
 
       // Extract the query string that AdMob would sign (everything except signature and key_id)
@@ -97,14 +97,14 @@ iTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==
     test('verify throws InvalidInputException for invalid signature', () async {
       // Use a valid base URI structure to pass fromUri validation
       final baseUri = Uri.parse(
-        'https://example.com/webhook?transaction_id=123&custom_data=user1&reward_item=adFree',
+        'https://example.com/webhook?transaction_id=123&user_id=user1&custom_data=adFree',
       );
       final contentToSign = baseUri.query;
       final signature = signContent(contentToSign);
 
       // Tamper with the content in the final URI
       final tamperedUri = Uri.parse(
-        'https://example.com/webhook?transaction_id=999&custom_data=user1&reward_item=adFree&key_id=test-key-id&signature=$signature',
+        'https://example.com/webhook?transaction_id=999&user_id=user1&custom_data=adFree&key_id=test-key-id&signature=$signature',
       );
 
       final callback = AdMobRewardCallback.fromUri(tamperedUri);
@@ -127,7 +127,7 @@ iTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==
 
     test('verify throws InvalidInputException for unknown key_id', () async {
       final baseUri = Uri.parse(
-        'https://example.com/webhook?transaction_id=123&custom_data=user1&reward_item=adFree',
+        'https://example.com/webhook?transaction_id=123&user_id=user1&custom_data=adFree',
       );
       final contentToSign = baseUri.query;
       final signature = signContent(contentToSign);
@@ -156,7 +156,7 @@ iTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==
 
     test('verify caches keys', () async {
       final baseUri = Uri.parse(
-        'https://example.com/webhook?transaction_id=123&custom_data=user1&reward_item=adFree',
+        'https://example.com/webhook?transaction_id=123&user_id=user1&custom_data=adFree',
       );
       final contentToSign = baseUri.query;
       final signature = signContent(contentToSign);
