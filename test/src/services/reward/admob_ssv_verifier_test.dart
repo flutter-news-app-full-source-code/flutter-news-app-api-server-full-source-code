@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
+import 'package:asn1lib/asn1lib.dart' as asn1;
 import 'package:core/core.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/reward/admob_reward_callback.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/admob_ssv_verifier.dart';
@@ -65,22 +65,24 @@ iTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==
       final r = rawSignature.sublist(0, 32);
       final s = rawSignature.sublist(32, 64);
 
-      // Helper to encode integer in DER
-      List<int> encodeInteger(List<int> intBytes) {
-        // If high bit is set, prepend 0x00 to make it positive
-        if (intBytes.isNotEmpty && intBytes[0] & 0x80 != 0) {
-          return [0x02, intBytes.length + 1, 0x00, ...intBytes];
-        }
-        return [0x02, intBytes.length, ...intBytes];
-      }
+      // Use asn1lib to build the DER-encoded signature.
+      final sequence = asn1.ASN1Sequence();
 
-      final rEncoded = encodeInteger(r);
-      final sEncoded = encodeInteger(s);
-      final sequenceLength = rEncoded.length + sEncoded.length;
-
-      final signature = Uint8List.fromList(
-        [0x30, sequenceLength, ...rEncoded, ...sEncoded],
+      // Convert raw bytes to BigInt to create ASN1Integer correctly.
+      // ASN1Integer.fromBytes expects a full ASN.1 encoded byte stream (Tag+Len+Val),
+      // whereas r and s are just the raw value bytes.
+      final rBigInt = BigInt.parse(
+        r.map((b) => b.toRadixString(16).padLeft(2, '0')).join(),
+        radix: 16,
       );
+      final sBigInt = BigInt.parse(
+        s.map((b) => b.toRadixString(16).padLeft(2, '0')).join(),
+        radix: 16,
+      );
+
+      sequence.add(asn1.ASN1Integer(rBigInt));
+      sequence.add(asn1.ASN1Integer(sBigInt));
+      final signature = sequence.encodedBytes;
 
       // Encode to URL-safe Base64
       return base64Url.encode(signature).replaceAll('=', '');
