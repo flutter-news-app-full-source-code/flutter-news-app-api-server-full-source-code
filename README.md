@@ -148,7 +148,7 @@ Say goodbye to risky manual database updates. A professional, versioned migratio
 
 ## 🚀 Getting Started & Running Locally
 
-For a complete guide on setting up your local environment and running this project, please see the `Wiki` tab in this repository.
+For a complete guide on setting up your local environment and running this project, please see the [Wiki](https://github.com/flutter-news-app-full-source-code/flutter-news-app-api-server-full-source-code/wiki) tab in this repository.
 
 ## 🔑 Licensing
 
