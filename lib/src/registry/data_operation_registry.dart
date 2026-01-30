@@ -250,6 +250,8 @@ class DataOperationRegistry {
           c.read<DataRepository<UserRewards>>().readAll(
             userId: uid,
             filter: f,
+            sort: s,
+            pagination: p,
           ),
     });
 
