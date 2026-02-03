@@ -1,6 +1,6 @@
 import 'package:core/core.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_client.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification/push_notification_client.dart';
 import 'package:http_client/http_client.dart';
 import 'package:logging/logging.dart';
 
@@ -107,12 +107,15 @@ class OneSignalPushNotificationClient implements IPushNotificationClient {
       data: payload,
     );
 
+    final jsonBody = requestBody.toJson();
+    _log.finer('Sending OneSignal request with body: $jsonBody');
+
     try {
       // The OneSignal API returns a JSON object with details about the send,
       // including errors for invalid player IDs.
       final response = await _httpClient.post<Map<String, dynamic>>(
         url,
-        data: requestBody,
+        data: jsonBody,
       );
 
       final sentTokens = <String>{...deviceTokens};

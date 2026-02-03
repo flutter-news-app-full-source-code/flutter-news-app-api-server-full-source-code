@@ -13,12 +13,14 @@ part 'firebase_request_body.g.dart';
   includeIfNull: true,
   checked: true,
   createFactory: false,
+  ignoreUnannotated: true,
 )
 class FirebaseRequestBody extends Equatable {
   /// {@macro firebase_request_body}
   const FirebaseRequestBody({required this.message});
 
   /// The message payload.
+  @JsonKey()
   final FirebaseMessage message;
 
   /// Converts this [FirebaseRequestBody] instance to a JSON map.
@@ -36,6 +38,7 @@ class FirebaseRequestBody extends Equatable {
   includeIfNull: true,
   checked: true,
   createFactory: false,
+  ignoreUnannotated: true,
 )
 class FirebaseMessage extends Equatable {
   /// {@macro firebase_message}
@@ -46,12 +49,15 @@ class FirebaseMessage extends Equatable {
   });
 
   /// The registration token of the device to send the message to.
+  @JsonKey()
   final String token;
 
   /// The notification content.
+  @JsonKey()
   final FirebaseNotification notification;
 
   /// The custom data payload.
+  @JsonKey()
   final PushNotificationPayload data;
 
   /// Converts this [FirebaseMessage] instance to a JSON map.
@@ -69,6 +75,7 @@ class FirebaseMessage extends Equatable {
   includeIfNull: true,
   checked: true,
   createFactory: false,
+  ignoreUnannotated: true,
 )
 class FirebaseNotification extends Equatable {
   /// {@macro firebase_notification}
@@ -79,12 +86,15 @@ class FirebaseNotification extends Equatable {
   });
 
   /// The notification's title.
+  @JsonKey()
   final String title;
 
   /// The notification's body text.
+  @JsonKey()
   final String? body;
 
   /// The URL of an image to be displayed in the notification.
+  @JsonKey()
   final String? image;
 
   /// Converts this [FirebaseNotification] instance to a JSON map.

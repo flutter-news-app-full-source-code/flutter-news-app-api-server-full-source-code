@@ -223,6 +223,15 @@ class DatabaseSeedingService {
           },
         ],
       });
+      await _db.runCommand({
+        'createIndexes': 'user_content_preferences',
+        'indexes': [
+          {
+            'key': {'savedHeadlineFilters.deliveryTypes': 1},
+            'name': 'breaking_news_subscription_index',
+          },
+        ],
+      });
       _log.info('Ensured indexes for "push_notification_devices".');
 
       // Indexes for the in-app notifications collection

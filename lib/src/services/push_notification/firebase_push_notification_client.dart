@@ -1,6 +1,6 @@
 import 'package:core/core.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_client.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification/push_notification_client.dart';
 import 'package:http_client/http_client.dart';
 import 'package:logging/logging.dart';
 
@@ -122,16 +122,23 @@ class FirebasePushNotificationClient implements IPushNotificationClient {
         ),
       );
 
+      final jsonBody = requestBody.toJson();
+      _log.finer(
+        'Batch $batchNumber/$totalBatches: Sending Firebase request to token "$token" with body: $jsonBody',
+      );
       // Return the future from the post request.
-      return _httpClient.post<void>(url, data: requestBody);
+      // By adding a `catchError`, we ensure that `Future.wait` does not
+      // throw an exception if a single request fails. Instead, the
+      // exception object itself is placed in the `results` list.
+      return _httpClient
+          .post<void>(url, data: jsonBody)
+          .catchError((Object e) => e);
     }).toList();
 
-    // `eagerError: false` ensures that all futures complete, even if some
-    // fail. The results list will contain Exception objects for failures.
-    final results = await Future.wait<dynamic>(
-      sendFutures,
-      eagerError: false,
-    );
+    // Wait for all futures to complete. Thanks to `catchError`, this will not
+    // throw, and the `results` list will contain `null` for successes and
+    // `Exception` objects for failures.
+    final results = await Future.wait<dynamic>(sendFutures);
 
     final sentTokens = <String>[];
     final failedTokens = <String>[];

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_client.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification/push_notification_client.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 
@@ -75,6 +75,9 @@ class DefaultPushNotificationService implements IPushNotificationService {
       final remoteConfig = await _remoteConfigRepository.read(
         id: _remoteConfigId,
       );
+      _log.finer(
+        'Fetched remote config for push notification settings successfully.',
+      );
       final pushConfig = remoteConfig.features.pushNotifications;
 
       // Check if push notifications are globally enabled.
@@ -123,8 +126,8 @@ class DefaultPushNotificationService implements IPushNotificationService {
 
       // 2. Find all user preferences that contain a saved headline filter
       //    subscribed to breaking news. This query targets the embedded 'savedHeadlineFilters' array.
-      final subscribedUserPreferences = await _userContentPreferencesRepository
-          .readAll(
+      final allSubscribedUserPreferences =
+          await _userContentPreferencesRepository.readAll(
             filter: {
               'savedHeadlineFilters.deliveryTypes': {
                 r'$in': [
@@ -134,32 +137,50 @@ class DefaultPushNotificationService implements IPushNotificationService {
             },
           );
 
-      if (subscribedUserPreferences.items.isEmpty) {
+      _log.finer(
+        'Found ${allSubscribedUserPreferences.items.length} total users with at least one breaking news subscription.',
+      );
+      if (allSubscribedUserPreferences.items.isEmpty) {
         _log.info('No users subscribed to breaking news. Aborting.');
         return;
       }
 
-      // 3. Collect all unique user IDs from the preference documents.
-      // Using a Set automatically handles deduplication.
-      // The ID of the UserContentPreferences document is the user's ID.
-      final userIds = subscribedUserPreferences.items
+      // 3. Filter these users to find who should receive THIS specific notification.
+      final eligibleUserIds = allSubscribedUserPreferences.items
+          .where(
+            (preference) => preference.savedHeadlineFilters.any(
+              (filter) => _matchesCriteria(headline: headline, filter: filter),
+            ),
+          )
           .map((preference) => preference.id)
           .toSet();
+      _log.finer(
+        'Filtered down to ${eligibleUserIds.length} users matching headline criteria.',
+      );
+
+      if (eligibleUserIds.isEmpty) {
+        _log.info(
+          'No users matched the criteria for this specific breaking news headline. Aborting.',
+        );
+        return;
+      }
 
       _log.info(
-        'Found ${subscribedUserPreferences.items.length} users with '
-        'subscriptions to breaking news.',
+        'Found ${eligibleUserIds.length} eligible users for this breaking news headline.',
       );
 
       // 4. Fetch all devices for all subscribed users in a single bulk query.
       final allDevicesResponse = await _pushNotificationDeviceRepository
           .readAll(
             filter: {
-              'userId': {r'$in': userIds.toList()},
+              'userId': {r'$in': eligibleUserIds.toList()},
             },
           );
 
       final allDevices = allDevicesResponse.items;
+      _log.finer(
+        'Fetched ${allDevices.length} total devices for eligible users.',
+      );
       if (allDevices.isEmpty) {
         _log.info('No registered devices found for any subscribed users.');
         return;
@@ -175,6 +196,9 @@ class DefaultPushNotificationService implements IPushNotificationService {
           .where((d) => d.providerTokens.containsKey(primaryProvider))
           .toList();
 
+      _log.finer(
+        'Filtered down to ${targetedDevices.length} devices with a token for the primary provider.',
+      );
       if (targetedDevices.isEmpty) {
         _log.info(
           'No devices found with a token for the primary provider '
@@ -198,22 +222,39 @@ class DefaultPushNotificationService implements IPushNotificationService {
           userDeviceTokensMap.putIfAbsent(device.userId, () => []).add(token);
         }
       }
+      _log.finer(
+        'Grouped ${targetedDevices.length} tokens by ${userDeviceTokensMap.keys.length} users.',
+      );
 
       // 7. Iterate through each subscribed user to create and send a
       // personalized notification.
       final notificationsToCreate = <InAppNotification>[];
 
-      for (final userId in userIds) {
+      for (final userId in eligibleUserIds) {
         final userDeviceTokens = userDeviceTokensMap[userId];
         if (userDeviceTokens != null && userDeviceTokens.isNotEmpty) {
           final notificationId = ObjectId();
+
+          final String? imageUrlToSend;
+          if (_isBase64Image(headline.imageUrl)) {
+            _log.warning(
+              'Headline ${headline.id} has a Base64 image. Omitting image from push notification payload to avoid exceeding size limits.',
+            );
+            imageUrlToSend = null;
+          } else {
+            imageUrlToSend = headline.imageUrl;
+          }
+          _log.finer(
+            'User $userId has ${userDeviceTokens.length} devices. Creating in-app notification.',
+          );
+
           final notification = InAppNotification(
             id: notificationId.oid,
             userId: userId,
             payload: PushNotificationPayload(
               // Corrected payload structure
               title: headline.title,
-              imageUrl: headline.imageUrl,
+              imageUrl: imageUrlToSend,
               notificationId: notificationId.oid,
               notificationType:
                   PushNotificationSubscriptionDeliveryType.breakingOnly,
@@ -256,6 +297,9 @@ class DefaultPushNotificationService implements IPushNotificationService {
       // Await all the send operations to complete.
       await Future.wait(sendFutures);
 
+      _log.finer(
+        'All push notification dispatches have been awaited.',
+      );
       _log.info(
         'Successfully dispatched breaking news notification for headline: '
         '${headline.id}.',
@@ -288,25 +332,32 @@ class DefaultPushNotificationService implements IPushNotificationService {
     List<String> invalidTokens,
     PushNotificationProviders provider,
   ) async {
-    if (invalidTokens.isEmpty) {
-      return;
-    }
-
-    _log.info(
-      'Cleaning up ${invalidTokens.length} invalid device tokens for provider "$provider".',
-    );
-
-    // Retrieve the list of devices that match the filter criteria.
-    final devicesToDelete = await _pushNotificationDeviceRepository.readAll(
-      filter: {
-        'providerTokens.${provider.name}': {r'$in': invalidTokens},
-      },
-    );
-
     try {
+      if (invalidTokens.isEmpty) {
+        _log.finer('No invalid tokens to clean up.');
+        return;
+      }
+
+      _log.info(
+        'Cleaning up ${invalidTokens.length} invalid device tokens for provider "$provider".',
+      );
+
+      // Retrieve the list of devices that match the filter criteria.
+      final devicesToDelete = await _pushNotificationDeviceRepository.readAll(
+        filter: {
+          'providerTokens.${provider.name}': {r'$in': invalidTokens},
+        },
+      );
+      _log.finer(
+        'Found ${devicesToDelete.items.length} device documents to delete based on ${invalidTokens.length} invalid tokens.',
+      );
+
       // Delete the devices in parallel for better performance.
       final deleteFutures = devicesToDelete.items.map(
         (device) => _pushNotificationDeviceRepository.delete(id: device.id),
+      );
+      _log.finer(
+        'Attempting to delete ${deleteFutures.length} device documents.',
       );
       await Future.wait(deleteFutures);
 
@@ -316,5 +367,39 @@ class DefaultPushNotificationService implements IPushNotificationService {
       // We log the error but do not rethrow, as this is a background
       // cleanup task and should not crash the main application flow.
     }
+  }
+
+  bool _isBase64Image(String? url) {
+    return url?.startsWith('data:image/') ?? false;
+  }
+
+  /// Checks if a given [headline] matches the criteria of a [filter].
+  bool _matchesCriteria({
+    required Headline headline,
+    required SavedHeadlineFilter filter,
+  }) {
+    // 1. The filter must be subscribed to breaking news.
+    if (!filter.deliveryTypes.contains(
+      PushNotificationSubscriptionDeliveryType.breakingOnly,
+    )) {
+      return false;
+    }
+
+    // 2. Check topic match (wildcard if empty).
+    final topicMatch =
+        filter.criteria.topics.isEmpty ||
+        filter.criteria.topics.any((t) => t.id == headline.topic.id);
+
+    // 3. Check source match (wildcard if empty).
+    final sourceMatch =
+        filter.criteria.sources.isEmpty ||
+        filter.criteria.sources.any((s) => s.id == headline.source.id);
+
+    // 4. Check country match (wildcard if empty).
+    final countryMatch =
+        filter.criteria.countries.isEmpty ||
+        filter.criteria.countries.any((c) => c.id == headline.eventCountry.id);
+
+    return topicMatch && sourceMatch && countryMatch;
   }
 }
