@@ -192,7 +192,7 @@ class DataOperationRegistry {
         pagination: p,
       ),
       'in_app_notification': (c, uid, f, s, p) {
-        final finalFilter = f ?? <String, dynamic>{};
+        final finalFilter = {...?f};
         if (uid != null) {
           finalFilter['userId'] = uid;
         }
@@ -204,7 +204,7 @@ class DataOperationRegistry {
         );
       },
       'push_notification_device': (c, uid, f, s, p) {
-        final finalFilter = f ?? <String, dynamic>{};
+        final finalFilter = {...?f};
         if (uid != null) {
           finalFilter['userId'] = uid;
         }
@@ -216,7 +216,7 @@ class DataOperationRegistry {
         );
       },
       'engagement': (c, uid, f, s, p) {
-        final finalFilter = f ?? <String, dynamic>{};
+        final finalFilter = {...?f};
         if (uid != null) {
           finalFilter['userId'] = uid;
         }
@@ -228,7 +228,7 @@ class DataOperationRegistry {
         );
       },
       'report': (c, uid, f, s, p) {
-        final finalFilter = f ?? <String, dynamic>{};
+        final finalFilter = {...?f};
         if (uid != null) {
           finalFilter['reporterUserId'] = uid;
         }
@@ -240,7 +240,7 @@ class DataOperationRegistry {
         );
       },
       'app_review': (c, uid, f, s, p) {
-        final finalFilter = f ?? <String, dynamic>{};
+        final finalFilter = {...?f};
         if (uid != null) {
           finalFilter['userId'] = uid;
         }
@@ -273,7 +273,7 @@ class DataOperationRegistry {
             pagination: p,
           ),
       'user_rewards': (c, uid, f, s, p) {
-        final finalFilter = f ?? <String, dynamic>{};
+        final finalFilter = {...?f};
         if (uid != null) {
           finalFilter['userId'] = uid;
         }
