@@ -191,40 +191,66 @@ class DataOperationRegistry {
         sort: s,
         pagination: p,
       ),
-      'in_app_notification': (c, uid, f, s, p) =>
-          c.read<DataRepository<InAppNotification>>().readAll(
-            userId: uid,
-            filter: f,
-            sort: s,
-            pagination: p,
-          ),
-      'push_notification_device': (c, uid, f, s, p) =>
-          c.read<DataRepository<PushNotificationDevice>>().readAll(
-            userId: uid,
-            filter: f,
-            sort: s,
-            pagination: p,
-          ),
-      'engagement': (c, uid, f, s, p) =>
-          c.read<DataRepository<Engagement>>().readAll(
-            userId: uid,
-            filter: f,
-            sort: s,
-            pagination: p,
-          ),
-      'report': (c, uid, f, s, p) => c.read<DataRepository<Report>>().readAll(
-        userId: uid,
-        filter: f,
-        sort: s,
-        pagination: p,
-      ),
-      'app_review': (c, uid, f, s, p) =>
-          c.read<DataRepository<AppReview>>().readAll(
-            userId: uid,
-            filter: f,
-            sort: s,
-            pagination: p,
-          ),
+      'in_app_notification': (c, uid, f, s, p) {
+        final finalFilter = f ?? <String, dynamic>{};
+        if (uid != null) {
+          finalFilter['userId'] = uid;
+        }
+        return c.read<DataRepository<InAppNotification>>().readAll(
+          userId: null,
+          filter: finalFilter,
+          sort: s,
+          pagination: p,
+        );
+      },
+      'push_notification_device': (c, uid, f, s, p) {
+        final finalFilter = f ?? <String, dynamic>{};
+        if (uid != null) {
+          finalFilter['userId'] = uid;
+        }
+        return c.read<DataRepository<PushNotificationDevice>>().readAll(
+          userId: null,
+          filter: finalFilter,
+          sort: s,
+          pagination: p,
+        );
+      },
+      'engagement': (c, uid, f, s, p) {
+        final finalFilter = f ?? <String, dynamic>{};
+        if (uid != null) {
+          finalFilter['userId'] = uid;
+        }
+        return c.read<DataRepository<Engagement>>().readAll(
+          userId: null,
+          filter: finalFilter,
+          sort: s,
+          pagination: p,
+        );
+      },
+      'report': (c, uid, f, s, p) {
+        final finalFilter = f ?? <String, dynamic>{};
+        if (uid != null) {
+          finalFilter['reporterUserId'] = uid;
+        }
+        return c.read<DataRepository<Report>>().readAll(
+          userId: null,
+          filter: finalFilter,
+          sort: s,
+          pagination: p,
+        );
+      },
+      'app_review': (c, uid, f, s, p) {
+        final finalFilter = f ?? <String, dynamic>{};
+        if (uid != null) {
+          finalFilter['userId'] = uid;
+        }
+        return c.read<DataRepository<AppReview>>().readAll(
+          userId: null,
+          filter: finalFilter,
+          sort: s,
+          pagination: p,
+        );
+      },
       'kpi_card_data': (c, uid, f, s, p) =>
           c.read<DataRepository<KpiCardData>>().readAll(
             userId: uid,
@@ -246,13 +272,18 @@ class DataOperationRegistry {
             sort: s,
             pagination: p,
           ),
-      'user_rewards': (c, uid, f, s, p) =>
-          c.read<DataRepository<UserRewards>>().readAll(
-            userId: uid,
-            filter: f,
-            sort: s,
-            pagination: p,
-          ),
+      'user_rewards': (c, uid, f, s, p) {
+        final finalFilter = f ?? <String, dynamic>{};
+        if (uid != null) {
+          finalFilter['userId'] = uid;
+        }
+        return c.read<DataRepository<UserRewards>>().readAll(
+          userId: null,
+          filter: finalFilter,
+          sort: s,
+          pagination: p,
+        );
+      },
     });
 
     // --- Register Item Creators ---
