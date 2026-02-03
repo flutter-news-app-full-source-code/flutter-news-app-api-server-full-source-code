@@ -198,12 +198,13 @@ void main() {
           );
 
           test(
-            'merges server-side userId with existing client filter',
+            'merges server-side userId with existing client filter without mutating original',
             () async {
               final reader = registry.allItemsReaders[modelName]!;
               final context = contextBuilder();
               final clientFilter = {'some_field': 'some_value'};
-
+              // Create a copy for comparison to ensure the original is not mutated.
+              final originalFilter = Map<String, dynamic>.from(clientFilter);
               await reader(context, standardUser.id, clientFilter, null, null);
 
               final captured = verify(
@@ -219,16 +220,20 @@ void main() {
                 'some_field': 'some_value',
                 userIdField: standardUser.id,
               });
+
+              // Verify the original filter map was not mutated.
+              expect(clientFilter, equals(originalFilter));
             },
           );
 
           test(
-            'overwrites malicious client-provided userId in filter',
+            'overwrites malicious client-provided userId without mutating original filter',
             () async {
               final reader = registry.allItemsReaders[modelName]!;
               final context = contextBuilder();
               final clientFilter = {userIdField: 'another-user-id'};
-
+              // Create a copy for comparison to ensure the original is not mutated.
+              final originalFilter = Map<String, dynamic>.from(clientFilter);
               await reader(context, standardUser.id, clientFilter, null, null);
 
               final captured = verify(
@@ -241,6 +246,9 @@ void main() {
               ).captured;
 
               expect(captured.single, {userIdField: standardUser.id});
+
+              // Verify the original filter map was not mutated.
+              expect(clientFilter, equals(originalFilter));
             },
           );
         });
