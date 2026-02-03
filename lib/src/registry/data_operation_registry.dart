@@ -7,7 +7,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/own
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
 import 'package:logging/logging.dart';
 
