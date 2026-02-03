@@ -74,16 +74,11 @@ Future<Response> _handleGet(RequestContext context) async {
         )
       : null;
 
-  // Determine userId for repository call.
-  // If the model is user-owned and the user is authenticated and not an admin,
-  // then the operation should be scoped to the authenticated user's ID.
-  // Otherwise, it's a global operation or an admin bypass.
-  final userIdForRepoCall =
-      (modelConfig.getOwnerId != null &&
-          authenticatedUser != null &&
-          !context.read<PermissionService>().isAdmin(authenticatedUser))
-      ? authenticatedUser.id
-      : null;
+  final userIdForRepoCall = _getUserIdForRepoCall(
+    context,
+    modelConfig,
+    authenticatedUser,
+  );
 
   final responseData = await _readAllItems(
     context,
@@ -145,16 +140,11 @@ Future<Response> _handlePost(RequestContext context) async {
     );
   }
 
-  // Determine userId for repository call.
-  // If the model is user-owned and the user is authenticated and not an admin,
-  // then the operation should be scoped to the authenticated user's ID.
-  // Otherwise, it's a global operation or an admin bypass.
-  final userIdForRepoCall =
-      (modelConfig.getOwnerId != null &&
-          authenticatedUser != null &&
-          !context.read<PermissionService>().isAdmin(authenticatedUser))
-      ? authenticatedUser.id
-      : null;
+  final userIdForRepoCall = _getUserIdForRepoCall(
+    context,
+    modelConfig,
+    authenticatedUser,
+  );
 
   final createdItem = await _createItem(
     context,
@@ -174,6 +164,32 @@ Future<Response> _handlePost(RequestContext context) async {
 // =============================================================================
 // --- Helper Functions ---
 // =============================================================================
+
+/// Determines the `userId` to be used for a repository call based on user
+/// role and model configuration.
+///
+/// If the model is user-owned and the authenticated user is not an admin,
+/// the authenticated user's ID is returned. Otherwise, `null` is returned,
+/// indicating a global operation or an admin-level bypass.
+///
+/// --- Architectural Note ---
+/// For collection GET requests (`/api/v1/data?model=...`), this `userId` is
+/// passed to the `DataOperationRegistry`. The registry is then responsible for
+/// authoritatively merging this ID into the database query filter. This
+/// ensures that user-scoping is applied at the database level, which is
+/// fundamentally different from item-level requests (`/api/v1/data/[id]`)
+/// where ownership is checked by middleware *after* the item is fetched.
+String? _getUserIdForRepoCall(
+  RequestContext context,
+  ModelConfig<dynamic> modelConfig,
+  User? authenticatedUser,
+) {
+  return (modelConfig.getOwnerId != null &&
+          authenticatedUser != null &&
+          !context.read<PermissionService>().isAdmin(authenticatedUser))
+      ? authenticatedUser.id
+      : null;
+}
 
 /// Encapsulates the logic for reading a collection of items by type.
 Future<PaginatedResponse<dynamic>> _readAllItems(
