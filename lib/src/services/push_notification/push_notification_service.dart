@@ -126,27 +126,36 @@ class DefaultPushNotificationService implements IPushNotificationService {
 
       // 2. Find all user preferences that contain a saved headline filter
       //    subscribed to breaking news. This query targets the embedded 'savedHeadlineFilters' array.
-      final allSubscribedUserPreferences =
-          await _userContentPreferencesRepository.readAll(
-            filter: {
-              'savedHeadlineFilters.deliveryTypes': {
-                r'$in': [
-                  PushNotificationSubscriptionDeliveryType.breakingOnly.name,
-                ],
-              },
+      final allSubscribedUserPreferences = <UserContentPreferences>[];
+      String? cursor;
+      var hasMore = true;
+
+      while (hasMore) {
+        final page = await _userContentPreferencesRepository.readAll(
+          filter: {
+            'savedHeadlineFilters.deliveryTypes': {
+              r'$in': [
+                PushNotificationSubscriptionDeliveryType.breakingOnly.name,
+              ],
             },
-          );
+          },
+          pagination: PaginationOptions(cursor: cursor, limit: 100),
+        );
+        allSubscribedUserPreferences.addAll(page.items);
+        cursor = page.cursor;
+        hasMore = page.hasMore;
+      }
 
       _log.finer(
-        'Found ${allSubscribedUserPreferences.items.length} total users with at least one breaking news subscription.',
+        'Found ${allSubscribedUserPreferences.length} total users with at least one breaking news subscription.',
       );
-      if (allSubscribedUserPreferences.items.isEmpty) {
+      if (allSubscribedUserPreferences.isEmpty) {
         _log.info('No users subscribed to breaking news. Aborting.');
         return;
       }
 
       // 3. Filter these users to find who should receive THIS specific notification.
-      final eligibleUserIds = allSubscribedUserPreferences.items
+      final eligibleUserIds = allSubscribedUserPreferences
           .where(
             (preference) => preference.savedHeadlineFilters.any(
               (filter) => _matchesCriteria(headline: headline, filter: filter),

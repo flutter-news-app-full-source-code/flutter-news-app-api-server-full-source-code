@@ -103,6 +103,9 @@ class OneSignalPushNotificationClient implements IPushNotificationClient {
       appId: appId,
       includePlayerIds: deviceTokens,
       headings: {'en': payload.title},
+      contents: const {
+        'en': '...',
+      }, // Required, Cannot be an empty object or empty string.
       bigPicture: payload.imageUrl,
       data: payload,
     );
