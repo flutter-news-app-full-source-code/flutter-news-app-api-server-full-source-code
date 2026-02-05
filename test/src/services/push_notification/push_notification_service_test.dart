@@ -198,6 +198,7 @@ void main() {
         when(
           () => userContentPreferencesRepository.readAll(
             filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
           ),
         ).thenAnswer(
           (_) async => PaginatedResponse(
@@ -219,6 +220,7 @@ void main() {
         when(
           () => pushNotificationDeviceRepository.readAll(
             filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
           ),
         ).thenAnswer(
           (_) async => PaginatedResponse(
@@ -247,6 +249,7 @@ void main() {
           when(
             () => userContentPreferencesRepository.readAll(
               filter: any(named: 'filter'),
+              pagination: any(named: 'pagination'),
             ),
           ).thenAnswer(
             (_) async => PaginatedResponse(
@@ -297,6 +300,7 @@ void main() {
         verifyNever(
           () => userContentPreferencesRepository.readAll(
             filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
           ),
         );
       });
@@ -305,6 +309,7 @@ void main() {
         when(
           () => userContentPreferencesRepository.readAll(
             filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
           ),
         ).thenAnswer(
           (_) async => const PaginatedResponse(
@@ -333,6 +338,7 @@ void main() {
         when(
           () => userContentPreferencesRepository.readAll(
             filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
           ),
         ).thenAnswer(
           (_) async => PaginatedResponse(
@@ -422,6 +428,7 @@ void main() {
         when(
           () => userContentPreferencesRepository.readAll(
             filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
           ),
         ).thenAnswer(
           (_) async => PaginatedResponse(
@@ -497,6 +504,7 @@ void main() {
         verifyNever(
           () => userContentPreferencesRepository.readAll(
             filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
           ),
         );
       });
@@ -505,6 +513,7 @@ void main() {
         when(
           () => userContentPreferencesRepository.readAll(
             filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
           ),
         ).thenAnswer(
           (_) async => PaginatedResponse(
@@ -564,6 +573,7 @@ void main() {
           when(
             () => userContentPreferencesRepository.readAll(
               filter: any(named: 'filter'),
+              pagination: any(named: 'pagination'),
             ),
           ).thenAnswer(
             (_) async => PaginatedResponse(
@@ -631,6 +641,7 @@ void main() {
             when(
               () => userContentPreferencesRepository.readAll(
                 filter: any(named: 'filter'),
+                pagination: any(named: 'pagination'),
               ),
             ).thenAnswer(
               (_) async => PaginatedResponse(
@@ -692,6 +703,7 @@ void main() {
           when(
             () => userContentPreferencesRepository.readAll(
               filter: any(named: 'filter'),
+              pagination: any(named: 'pagination'),
             ),
           ).thenAnswer(
             (_) async => PaginatedResponse(
@@ -731,6 +743,7 @@ void main() {
           when(
             () => userContentPreferencesRepository.readAll(
               filter: any(named: 'filter'),
+              pagination: any(named: 'pagination'),
             ),
           ).thenAnswer(
             (_) async => PaginatedResponse(
@@ -774,6 +787,7 @@ void main() {
             when(
               () => userContentPreferencesRepository.readAll(
                 filter: any(named: 'filter'),
+                pagination: any(named: 'pagination'),
               ),
             ).thenAnswer(
               (_) async => PaginatedResponse(
@@ -830,6 +844,7 @@ void main() {
         when(
           () => userContentPreferencesRepository.readAll(
             filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
           ),
         ).thenAnswer(
           (_) async => PaginatedResponse(
@@ -902,6 +917,7 @@ void main() {
         verifyNever(
           () => userContentPreferencesRepository.readAll(
             filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
           ),
         );
       });
