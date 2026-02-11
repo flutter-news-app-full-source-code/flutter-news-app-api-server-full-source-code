@@ -428,8 +428,14 @@ void main() {
             any(),
             queryParameters: any(named: 'queryParameters'),
           ),
-          // ignore: inference_failure_on_collection_literal
-        ).thenAnswer((_) async => {'data': {}}); // Simplified response
+        ).thenAnswer(
+          (_) async => {
+            'data': {
+              'series': <String>[],
+              'values': <String, dynamic>{},
+            },
+          },
+        );
 
         final result = await mixpanelClient.getMetricTotalsBatch(
           query,
