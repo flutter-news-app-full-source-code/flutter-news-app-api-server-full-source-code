@@ -3,7 +3,6 @@
 import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/analytics/google_analytics_data_client.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/analytics/analytics_query.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:http_client/http_client.dart';
@@ -419,7 +418,12 @@ void main() {
 
         final result = await client.getTimeSeriesBatch(
           const EventCountQuery(event: AnalyticsEvent.contentViewed),
-          [const GARequestDateRange(startDate: '2024-01-01', endDate: '2024-01-02')],
+          [
+            const GARequestDateRange(
+              startDate: '2024-01-01',
+              endDate: '2024-01-02',
+            ),
+          ],
         );
 
         expect(result, isEmpty);
