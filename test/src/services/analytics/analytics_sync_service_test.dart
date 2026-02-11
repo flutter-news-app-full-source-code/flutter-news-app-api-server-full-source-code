@@ -60,7 +60,8 @@ void main() {
       registerFallbackValue(KpiCardId.usersTotalRegistered);
       registerFallbackValue(
         const KpiCardData(
-          id: KpiCardId.usersTotalRegistered,
+          id: 'fallback_id',
+          cardId: KpiCardId.usersTotalRegistered,
           label: '',
           timeFrames: {},
         ),
@@ -195,35 +196,70 @@ void main() {
         () => mockRemoteConfigRepo.read(id: any(named: 'id')),
       ).thenAnswer((_) async => config);
       when(() => mockMapper.getKpiQuery(kpiId)).thenReturn(query);
+
+      // Mock the batch call instead of the singular call
       when(
-        () => mockAnalyticsClient.getMetricTotal(any(), any(), any()),
-      ).thenAnswer((_) async => 100);
+        () => mockAnalyticsClient.getMetricTotalsBatch(any(), any()),
+      ).thenAnswer((invocation) async {
+        final ranges =
+            invocation.positionalArguments[1] as List<GARequestDateRange>;
+        return {
+          for (final range in ranges) range: 100,
+        };
+      });
+
+      // Mock readAll to return an existing card so update is called
+      when(
+        () => mockKpiCardRepo.readAll(
+          filter: any(named: 'filter'),
+          pagination: any(named: 'pagination'),
+        ),
+      ).thenAnswer(
+        (_) async => PaginatedResponse(
+          items: [
+            const KpiCardData(
+              id: 'test_id',
+              cardId: kpiId,
+              label: '',
+              timeFrames: {},
+            ),
+          ],
+          cursor: null,
+          hasMore: false,
+        ),
+      );
+
       when(
         () => mockKpiCardRepo.update(
           id: any(named: 'id'),
           item: any(named: 'item'),
         ),
       ).thenAnswer(
-        (_) async => const KpiCardData(id: kpiId, label: '', timeFrames: {}),
+        (_) async => const KpiCardData(
+          id: 'test_id',
+          cardId: kpiId,
+          label: '',
+          timeFrames: {},
+        ),
       );
 
       await service.run();
 
-      // Verify that getMetricTotal was called for both current and previous periods
+      // Verify that getMetricTotalsBatch was called once with the query
       verify(
-        () => mockAnalyticsClient.getMetricTotal(query, any(), any()),
-      ).called(8);
+        () => mockAnalyticsClient.getMetricTotalsBatch(query, any()),
+      ).called(1);
 
       // Verify that the repository update was called with the correct data
       final captured = verify(
         () => mockKpiCardRepo.update(
-          id: kpiId.name,
+          id: 'test_id',
           item: captureAny(named: 'item'),
         ),
       ).captured;
 
       final capturedCard = captured.first as KpiCardData;
-      expect(capturedCard.id, kpiId);
+      expect(capturedCard.cardId, kpiId);
       expect(capturedCard.timeFrames[KpiTimeFrame.day]!.value, 100);
       // 100 vs 100 -> 0% trend
       expect(capturedCard.timeFrames[KpiTimeFrame.day]!.trend, '+0.0%');
