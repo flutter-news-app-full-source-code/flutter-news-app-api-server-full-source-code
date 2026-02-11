@@ -266,6 +266,7 @@ void main() {
               'name': 1,
               'followerCount': {
                 r'$size': {
+                  // ignore: inference_failure_on_collection_literal
                   r'$ifNull': [r'$followerIds', []],
                 },
               },
@@ -304,6 +305,7 @@ void main() {
               'name': 1,
               'followerCount': {
                 r'$size': {
+                  // ignore: inference_failure_on_collection_literal
                   r'$ifNull': [r'$followerIds', []],
                 },
               },

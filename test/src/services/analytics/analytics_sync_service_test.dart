@@ -215,9 +215,9 @@ void main() {
           pagination: any(named: 'pagination'),
         ),
       ).thenAnswer(
-        (_) async => PaginatedResponse(
+        (_) async => const PaginatedResponse(
           items: [
-            const KpiCardData(
+            KpiCardData(
               id: 'test_id',
               cardId: kpiId,
               label: '',

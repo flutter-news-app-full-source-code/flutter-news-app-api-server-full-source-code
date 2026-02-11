@@ -42,24 +42,24 @@ class AnalyticsSyncService {
     required AnalyticsReportingClient? mixpanelClient,
     required AnalyticsMetricMapper analyticsMetricMapper,
     required Logger log,
-  })  : _remoteConfigRepository = remoteConfigRepository,
-        _kpiCardRepository = kpiCardRepository,
-        _chartCardRepository = chartCardRepository,
-        _rankedListCardRepository = rankedListCardRepository,
-        _userRepository = userRepository,
-        _topicRepository = topicRepository,
-        _reportRepository = reportRepository,
-        _sourceRepository = sourceRepository,
-        _headlineRepository = headlineRepository,
-        _engagementRepository = engagementRepository,
-        _appReviewRepository = appReviewRepository,
-        _userRewardsRepository = userRewardsRepository,
-        _googleAnalyticsClient = googleAnalyticsClient,
-        _mixpanelClient = mixpanelClient,
-        _mapper = analyticsMetricMapper,
-        // The query builder is instantiated here as it is stateless.
-        _queryBuilder = AnalyticsQueryBuilder(),
-        _log = log;
+  }) : _remoteConfigRepository = remoteConfigRepository,
+       _kpiCardRepository = kpiCardRepository,
+       _chartCardRepository = chartCardRepository,
+       _rankedListCardRepository = rankedListCardRepository,
+       _userRepository = userRepository,
+       _topicRepository = topicRepository,
+       _reportRepository = reportRepository,
+       _sourceRepository = sourceRepository,
+       _headlineRepository = headlineRepository,
+       _engagementRepository = engagementRepository,
+       _appReviewRepository = appReviewRepository,
+       _userRewardsRepository = userRewardsRepository,
+       _googleAnalyticsClient = googleAnalyticsClient,
+       _mixpanelClient = mixpanelClient,
+       _mapper = analyticsMetricMapper,
+       // The query builder is instantiated here as it is stateless.
+       _queryBuilder = AnalyticsQueryBuilder(),
+       _log = log;
 
   final DataRepository<RemoteConfig> _remoteConfigRepository;
   final DataRepository<KpiCardData> _kpiCardRepository;
@@ -138,8 +138,9 @@ class AnalyticsSyncService {
     DataRepository<dynamic> repository, {
     required List<Map<String, dynamic>> pipeline,
   }) {
-    final correctlyTypedPipeline =
-        pipeline.map((stage) => Map<String, Object>.from(stage)).toList();
+    final correctlyTypedPipeline = pipeline
+        .map(Map<String, Object>.from)
+        .toList();
     return repository.aggregate(
       pipeline: correctlyTypedPipeline,
     );
@@ -157,10 +158,12 @@ class AnalyticsSyncService {
         }
 
         final isDatabaseQuery =
-            query is StandardMetricQuery && query.metric.startsWith('database:');
+            query is StandardMetricQuery &&
+            query.metric.startsWith('database:');
 
         final isCalculatedQuery =
-            query is StandardMetricQuery && query.metric.startsWith('calculated:');
+            query is StandardMetricQuery &&
+            query.metric.startsWith('calculated:');
 
         final timeFrames = <KpiTimeFrame, KpiTimeFrameData>{};
         final now = DateTime.now();
@@ -197,39 +200,55 @@ class AnalyticsSyncService {
                   );
 
             final trend = _calculateTrend(value, prevValue);
-            timeFrames[timeFrame] = KpiTimeFrameData(value: value, trend: trend);
+            timeFrames[timeFrame] = KpiTimeFrameData(
+              value: value,
+              trend: trend,
+            );
           }
         } else {
           // N+1 Optimization: Batch API calls for all time frames and periods.
           final rangesToFetch = <GARequestDateRange>[];
-          final periodMap = <KpiTimeFrame,
-              ({GARequestDateRange current, GARequestDateRange previous})>{};
+          final periodMap =
+              <
+                KpiTimeFrame,
+                ({GARequestDateRange current, GARequestDateRange previous})
+              >{};
 
           for (final timeFrame in KpiTimeFrame.values) {
             final days = _daysForKpiTimeFrame(timeFrame);
             final currentStartDate = now.subtract(Duration(days: days));
             final previousStartDate = now.subtract(Duration(days: days * 2));
 
-            final currentRange =
-                GARequestDateRange.from(start: currentStartDate, end: now);
+            final currentRange = GARequestDateRange.from(
+              start: currentStartDate,
+              end: now,
+            );
             final previousRange = GARequestDateRange.from(
               start: previousStartDate,
               end: currentStartDate,
             );
 
             rangesToFetch.addAll([currentRange, previousRange]);
-            periodMap[timeFrame] =
-                (current: currentRange, previous: previousRange);
+            periodMap[timeFrame] = (
+              current: currentRange,
+              previous: previousRange,
+            );
           }
 
-          final results = await client.getMetricTotalsBatch(query, rangesToFetch);
+          final results = await client.getMetricTotalsBatch(
+            query,
+            rangesToFetch,
+          );
 
           for (final timeFrame in KpiTimeFrame.values) {
             final periods = periodMap[timeFrame]!;
             final value = results[periods.current] ?? 0;
             final prevValue = results[periods.previous] ?? 0;
             final trend = _calculateTrend(value, prevValue);
-            timeFrames[timeFrame] = KpiTimeFrameData(value: value, trend: trend);
+            timeFrames[timeFrame] = KpiTimeFrameData(
+              value: value,
+              trend: trend,
+            );
           }
         }
 
@@ -246,7 +265,10 @@ class AnalyticsSyncService {
             label: _formatLabel(kpiId.name),
             timeFrames: timeFrames,
           );
-          await _kpiCardRepository.update(id: existingCard.id, item: updatedCard);
+          await _kpiCardRepository.update(
+            id: existingCard.id,
+            item: updatedCard,
+          );
         } else {
           final newCard = KpiCardData(
             id: ObjectId().oid,
@@ -274,7 +296,8 @@ class AnalyticsSyncService {
         }
 
         final isDatabaseQuery =
-            query is StandardMetricQuery && query.metric.startsWith('database:');
+            query is StandardMetricQuery &&
+            query.metric.startsWith('database:');
 
         final timeFrames = <ChartTimeFrame, List<DataPoint>>{};
         final now = DateTime.now();
@@ -285,8 +308,11 @@ class AnalyticsSyncService {
           for (final timeFrame in ChartTimeFrame.values) {
             final days = _daysForChartTimeFrame(timeFrame);
             final startDate = now.subtract(Duration(days: days));
-            timeFrames[timeFrame] =
-                await _getDatabaseTimeSeries(query, startDate, now);
+            timeFrames[timeFrame] = await _getDatabaseTimeSeries(
+              query,
+              startDate,
+              now,
+            );
           }
         } else {
           // N+1 Optimization: Batch API calls for all time frames.
@@ -322,7 +348,10 @@ class AnalyticsSyncService {
             type: _mapper.getChartType(chartId),
             timeFrames: timeFrames,
           );
-          await _chartCardRepository.update(id: existingCard.id, item: updatedCard);
+          await _chartCardRepository.update(
+            id: existingCard.id,
+            item: updatedCard,
+          );
         } else {
           final newCard = ChartCardData(
             id: ObjectId().oid,
@@ -346,7 +375,8 @@ class AnalyticsSyncService {
       try {
         final query = _mapper.getRankedListQuery(rankedListId);
         final isDatabaseQuery =
-            query is StandardMetricQuery && query.metric.startsWith('database:');
+            query is StandardMetricQuery &&
+            query.metric.startsWith('database:');
 
         if (query == null || (!isDatabaseQuery && query is! RankedListQuery)) {
           _log.finer(
@@ -356,8 +386,8 @@ class AnalyticsSyncService {
         }
 
         // Optimization: For non-temporal DB queries, fetch data only once.
-        final isNonTemporalDbQuery = isDatabaseQuery &&
-            (query as StandardMetricQuery).metric.endsWith(':byFollowers');
+        final isNonTemporalDbQuery =
+            isDatabaseQuery && query.metric.endsWith(':byFollowers');
 
         final timeFrames = <RankedListTimeFrame, List<RankedListItem>>{};
         final now = DateTime.now();
@@ -468,8 +498,9 @@ class AnalyticsSyncService {
             r'$project': {
               'followerCount': {
                 r'$size': {
-                  r'$ifNull': [r'$followerIds', []]
-                }
+                  // ignore: inference_failure_on_collection_literal
+                  r'$ifNull': [r'$followerIds', []],
+                },
               },
             },
           },
@@ -488,8 +519,9 @@ class AnalyticsSyncService {
             r'$project': {
               'followerCount': {
                 r'$size': {
-                  r'$ifNull': [r'$followerIds', []]
-                }
+                  // ignore: inference_failure_on_collection_literal
+                  r'$ifNull': [r'$followerIds', []],
+                },
               },
             },
           },
@@ -560,10 +592,13 @@ class AnalyticsSyncService {
       final label = e['label']?.toString() ?? 'Unknown';
       final value = (e['value'] as num?) ?? 0;
 
-      final formattedLabel = label.split(' ').map((word) {
-        if (word.isEmpty) return '';
-        return '${word[0].toUpperCase()}${word.substring(1)}';
-      }).join(' ');
+      final formattedLabel = label
+          .split(' ')
+          .map((word) {
+            if (word.isEmpty) return '';
+            return '${word[0].toUpperCase()}${word.substring(1)}';
+          })
+          .join(' ');
       return DataPoint(label: formattedLabel, value: value);
     }).toList();
   }
@@ -719,7 +754,7 @@ class AnalyticsSyncService {
   }
 
   String _formatLabel(String idName) => idName
-      .replaceAll(RegExp(r'([A-Z])'), r' $1')
+      .replaceAll(RegExp('([A-Z])'), r' $1')
       .trim()
       .split(' ')
       .map((w) => '${w[0].toUpperCase()}${w.substring(1)}')
