@@ -369,5 +369,75 @@ void main() {
         ).called(1);
       });
     });
+
+    group('getTimeSeriesBatch', () {
+      test('executes parallel requests and aggregates results', () async {
+        const query = EventCountQuery(event: AnalyticsEvent.contentViewed);
+        const range1 = GARequestDateRange(
+          startDate: '2024-01-01',
+          endDate: '2024-01-02',
+        );
+        const range2 = GARequestDateRange(
+          startDate: '2024-01-03',
+          endDate: '2024-01-04',
+        );
+
+        // Mock response for both calls (simplified)
+        when(
+          () => mockHttpClient.get<Map<String, dynamic>>(
+            any(),
+            queryParameters: any(named: 'queryParameters'),
+          ),
+        ).thenAnswer(
+          (_) async => {
+            'data': {
+              'series': <String>[],
+              'values': <String, dynamic>{},
+            },
+          },
+        );
+
+        final result = await mixpanelClient.getTimeSeriesBatch(
+          query,
+          [range1, range2],
+        );
+
+        expect(result, hasLength(2));
+        expect(result.containsKey(range1), isTrue);
+        expect(result.containsKey(range2), isTrue);
+
+        verify(
+          () => mockHttpClient.get<Map<String, dynamic>>(
+            any(),
+            queryParameters: any(named: 'queryParameters'),
+          ),
+        ).called(2);
+      });
+    });
+
+    group('getMetricTotalsBatch', () {
+      test('executes parallel requests and aggregates totals', () async {
+        const query = EventCountQuery(event: AnalyticsEvent.contentViewed);
+        const range1 = GARequestDateRange(
+          startDate: '2024-01-01',
+          endDate: '2024-01-02',
+        );
+
+        when(
+          () => mockHttpClient.get<Map<String, dynamic>>(
+            any(),
+            queryParameters: any(named: 'queryParameters'),
+          ),
+        ).thenAnswer((_) async => {'data': {}}); // Simplified response
+
+        final result = await mixpanelClient.getMetricTotalsBatch(
+          query,
+          [range1],
+        );
+
+        expect(result, hasLength(1));
+        expect(result[range1], 0); // Default 0 for empty response
+      });
+    });
   });
 }
