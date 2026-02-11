@@ -41,4 +41,28 @@ abstract class AnalyticsReportingClient {
     DateTime startDate,
     DateTime endDate,
   );
+
+  /// Fetches time-series data for multiple date ranges in a single batch.
+  ///
+  /// - [query]: The structured query object defining what to fetch.
+  /// - [ranges]: A list of date ranges to fetch data for.
+  ///
+  /// Returns a map where keys are the requested [GARequestDateRange] objects
+  /// and values are the corresponding lists of [DataPoint]s.
+  Future<Map<GARequestDateRange, List<DataPoint>>> getTimeSeriesBatch(
+    MetricQuery query,
+    List<GARequestDateRange> ranges,
+  );
+
+  /// Fetches single metric totals for multiple date ranges in a single batch.
+  ///
+  /// - [query]: The structured metric query object defining what to fetch.
+  /// - [ranges]: A list of date ranges to fetch data for.
+  ///
+  /// Returns a map where keys are the requested [GARequestDateRange] objects
+  /// and values are the corresponding total metric values.
+  Future<Map<GARequestDateRange, num>> getMetricTotalsBatch(
+    MetricQuery query,
+    List<GARequestDateRange> ranges,
+  );
 }
