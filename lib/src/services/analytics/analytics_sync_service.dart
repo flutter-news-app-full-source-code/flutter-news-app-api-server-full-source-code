@@ -149,6 +149,7 @@ class AnalyticsSyncService {
   /// Syncs all KPI cards defined in [KpiCardId].
   Future<void> _syncKpiCards(AnalyticsReportingClient client) async {
     _log.info('Syncing KPI cards...');
+    final now = _getNow();
     for (final kpiId in KpiCardId.values) {
       try {
         final query = _mapper.getKpiQuery(kpiId);
@@ -166,7 +167,6 @@ class AnalyticsSyncService {
             query.metric.startsWith('calculated:');
 
         final timeFrames = <KpiTimeFrame, KpiTimeFrameData>{};
-        final now = DateTime.now();
 
         if (isDatabaseQuery || isCalculatedQuery) {
           // Batching for DB/calculated queries is more complex.
@@ -287,6 +287,7 @@ class AnalyticsSyncService {
 
   Future<void> _syncChartCards(AnalyticsReportingClient client) async {
     _log.info('Syncing Chart cards...');
+    final now = _getNow();
     for (final chartId in ChartCardId.values) {
       try {
         final query = _mapper.getChartQuery(chartId);
@@ -300,7 +301,6 @@ class AnalyticsSyncService {
             query.metric.startsWith('database:');
 
         final timeFrames = <ChartTimeFrame, List<DataPoint>>{};
-        final now = DateTime.now();
 
         if (isDatabaseQuery) {
           // For DB queries, batching is more complex as pipelines differ.
@@ -371,6 +371,7 @@ class AnalyticsSyncService {
 
   Future<void> _syncRankedListCards(AnalyticsReportingClient client) async {
     _log.info('Syncing Ranked List cards...');
+    final now = _getNow();
     for (final rankedListId in RankedListCardId.values) {
       try {
         final query = _mapper.getRankedListQuery(rankedListId);
@@ -390,7 +391,6 @@ class AnalyticsSyncService {
             isDatabaseQuery && query.metric.endsWith(':byFollowers');
 
         final timeFrames = <RankedListTimeFrame, List<RankedListItem>>{};
-        final now = DateTime.now();
 
         List<RankedListItem>? nonTemporalItems;
         if (isNonTemporalDbQuery) {
@@ -760,3 +760,5 @@ class AnalyticsSyncService {
       .map((w) => '${w[0].toUpperCase()}${w.substring(1)}')
       .join(' ');
 }
+
+DateTime _getNow() => DateTime.now();
