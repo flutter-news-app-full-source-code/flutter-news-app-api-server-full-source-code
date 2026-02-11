@@ -182,7 +182,11 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
         ),
       ],
       dimensions: [
-        GARequestDimension(name: dimensionName),
+        GARequestDimension(
+          name: dimensionName.startsWith('customEvent:')
+              ? dimensionName
+              : 'customEvent:$dimensionName',
+        ),
       ],
       metrics: const [
         GARequestMetric(name: metricName),
