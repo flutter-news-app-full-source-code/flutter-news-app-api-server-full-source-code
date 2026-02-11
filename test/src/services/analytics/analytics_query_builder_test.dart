@@ -264,7 +264,11 @@ void main() {
           {
             r'$project': {
               'name': 1,
-              'followerCount': {r'$size': r'$followerIds'},
+              'followerCount': {
+                r'$size': {
+                  r'$ifNull': [r'$followerIds', []],
+                },
+              },
             },
           },
           {
@@ -298,7 +302,11 @@ void main() {
           {
             r'$project': {
               'name': 1,
-              'followerCount': {r'$size': r'$followerIds'},
+              'followerCount': {
+                r'$size': {
+                  r'$ifNull': [r'$followerIds', []],
+                },
+              },
             },
           },
           {
