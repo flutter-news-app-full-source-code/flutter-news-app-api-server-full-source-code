@@ -26,6 +26,12 @@ class AnalyticsMetricMapper {
     return _rankedListQueryMappings[rankedListId];
   }
 
+  /// Returns the chart type for a given chart card.
+  ChartType getChartType(ChartCardId id) =>
+      id.name.contains('distribution') || id.name.contains('by_')
+      ? ChartType.bar
+      : ChartType.line;
+      
   static final Map<KpiCardId, MetricQuery> _kpiQueryMappings = {
     // User KPIs
     KpiCardId.usersTotalRegistered: const EventCountQuery(
