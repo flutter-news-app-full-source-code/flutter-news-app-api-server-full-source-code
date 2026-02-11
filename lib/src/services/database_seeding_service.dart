@@ -449,6 +449,10 @@ class DatabaseSeedingService {
             'key': {'_id': 1},
             'name': 'kpi_card_data_id_index',
           },
+          {
+            'key': {'cardId': 1},
+            'name': 'kpi_card_data_cardId_index',
+          },
         ],
       });
       _log.info('Ensured indexes for "kpi_card_data".');
@@ -460,6 +464,10 @@ class DatabaseSeedingService {
             'key': {'_id': 1},
             'name': 'chart_card_data_id_index',
           },
+          {
+            'key': {'cardId': 1},
+            'name': 'chart_card_data_cardId_index',
+          },
         ],
       });
       _log.info('Ensured indexes for "chart_card_data".');
@@ -470,6 +478,10 @@ class DatabaseSeedingService {
           {
             'key': {'_id': 1},
             'name': 'ranked_list_card_data_id_index',
+          },
+          {
+            'key': {'cardId': 1},
+            'name': 'ranked_list_card_data_cardId_index',
           },
         ],
       });
