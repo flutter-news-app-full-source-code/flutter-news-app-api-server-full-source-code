@@ -49,5 +49,24 @@ void main() {
         );
       }
     });
+
+    test('getChartType returns correct ChartType based on ID name', () {
+      expect(
+        mapper.getChartType(ChartCardId.usersTierDistribution),
+        ChartType.bar,
+      );
+      expect(
+        mapper.getChartType(ChartCardId.contentSourcesStatusDistribution),
+        ChartType.bar,
+      );
+      expect(
+        mapper.getChartType(ChartCardId.contentSourcesEngagementByType),
+        ChartType.bar,
+      );
+      expect(
+        mapper.getChartType(ChartCardId.contentHeadlinesViewsOverTime),
+        ChartType.line,
+      );
+    });
   });
 }

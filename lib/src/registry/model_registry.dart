@@ -426,7 +426,7 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
   ),
   'kpi_card_data': ModelConfig<KpiCardData>(
     fromJson: KpiCardData.fromJson,
-    getId: (d) => d.id.name,
+    getId: (d) => d.id,
     getOwnerId: null, // System-owned resource
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
@@ -448,7 +448,7 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
   ),
   'chart_card_data': ModelConfig<ChartCardData>(
     fromJson: ChartCardData.fromJson,
-    getId: (d) => d.id.name,
+    getId: (d) => d.id,
     getOwnerId: null, // System-owned resource
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
@@ -470,7 +470,7 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
   ),
   'ranked_list_card_data': ModelConfig<RankedListCardData>(
     fromJson: RankedListCardData.fromJson,
-    getId: (d) => d.id.name,
+    getId: (d) => d.id,
     getOwnerId: null, // System-owned resource
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,

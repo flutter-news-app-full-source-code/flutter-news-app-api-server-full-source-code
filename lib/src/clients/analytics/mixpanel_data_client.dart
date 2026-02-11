@@ -1,9 +1,7 @@
 import 'dart:convert';
 
 import 'package:core/core.dart';
-import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/clients/analytics/analytics.dart'
-    show AnalyticsReportingClient;
+import 'package:data_repository/data_repository.dart' show DataRepository;
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/analytics/analytics_reporting_client.dart'
     show AnalyticsReportingClient;
 import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
@@ -243,5 +241,51 @@ class MixpanelDataClient implements AnalyticsReportingClient {
           ),
         )
         .toList();
+  }
+
+  @override
+  Future<Map<GARequestDateRange, List<DataPoint>>> getTimeSeriesBatch(
+    MetricQuery query,
+    List<GARequestDateRange> ranges,
+  ) async {
+    _log.info(
+      'Executing pseudo-batch for getTimeSeries with ${ranges.length} ranges '
+      'for Mixpanel (parallel requests).',
+    );
+    final futures = ranges.map(
+      (range) => getTimeSeries(
+        query,
+        DateTime.parse(range.startDate),
+        DateTime.parse(range.endDate),
+      ),
+    );
+
+    final results = await Future.wait(futures);
+
+    return {
+      for (var i = 0; i < ranges.length; i++) ranges[i]: results[i],
+    };
+  }
+
+  @override
+  Future<Map<GARequestDateRange, num>> getMetricTotalsBatch(
+    MetricQuery query,
+    List<GARequestDateRange> ranges,
+  ) async {
+    _log.info(
+      'Executing pseudo-batch for getMetricTotalsBatch with ${ranges.length} '
+      'ranges for Mixpanel (parallel requests).',
+    );
+    final futures = ranges.map(
+      (range) => getMetricTotal(
+        query,
+        DateTime.parse(range.startDate),
+        DateTime.parse(range.endDate),
+      ),
+    );
+
+    final results = await Future.wait(futures);
+
+    return {for (var i = 0; i < ranges.length; i++) ranges[i]: results[i]};
   }
 }

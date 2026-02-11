@@ -26,6 +26,18 @@ class AnalyticsMetricMapper {
     return _rankedListQueryMappings[rankedListId];
   }
 
+  /// Returns the chart type for a given chart card.
+  ChartType getChartType(ChartCardId id) {
+    final name = id.name.toLowerCase();
+    // Check for keywords indicating categorical data (Bar Chart)
+    // vs time-series data (Line Chart).
+    return name.contains('distribution') ||
+            name.contains('bytype') ||
+            name.contains('by_')
+        ? ChartType.bar
+        : ChartType.line;
+  }
+
   static final Map<KpiCardId, MetricQuery> _kpiQueryMappings = {
     // User KPIs
     KpiCardId.usersTotalRegistered: const EventCountQuery(

@@ -240,7 +240,13 @@ class AnalyticsQueryBuilder {
       {
         r'$project': {
           'name': 1,
-          'followerCount': {r'$size': r'$followerIds'},
+          'followerCount': {
+            r'$size': {
+              // Use $ifNull to provide a default empty array if followerIds is missing.
+              // ignore: inference_failure_on_collection_literal
+              r'$ifNull': [r'$followerIds', []],
+            },
+          },
         },
       },
       {

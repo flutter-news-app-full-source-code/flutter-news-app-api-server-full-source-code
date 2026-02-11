@@ -1,7 +1,9 @@
+// ignore_for_file: inference_failure_on_function_invocation
+
 import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/analytics/google_analytics_data_client.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/analytics/analytics_query.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:http_client/http_client.dart';
 import 'package:logging/logging.dart';
@@ -351,6 +353,130 @@ void main() {
           ).called(1);
         },
       );
+    });
+
+    group('getTimeSeriesBatch', () {
+      test('correctly parses batched response with multiple ranges', () async {
+        const range1 = GARequestDateRange(
+          startDate: '2024-01-01',
+          endDate: '2024-01-07',
+        );
+        const range2 = GARequestDateRange(
+          startDate: '2024-01-08',
+          endDate: '2024-01-14',
+        );
+
+        final mockApiResponse = {
+          'rows': [
+            {
+              'dimensionValues': [
+                {'value': 'date_range_0'},
+                {'value': '20240101'},
+              ],
+              'metricValues': [
+                {'value': '10'},
+              ],
+            },
+            {
+              'dimensionValues': [
+                {'value': 'date_range_1'},
+                {'value': '20240108'},
+              ],
+              'metricValues': [
+                {'value': '20'},
+              ],
+            },
+          ],
+        };
+
+        when(
+          () => mockHttpClient.post<Map<String, dynamic>>(
+            any(),
+            data: any(named: 'data'),
+          ),
+        ).thenAnswer((_) async => mockApiResponse);
+
+        final result = await client.getTimeSeriesBatch(
+          const EventCountQuery(event: AnalyticsEvent.contentViewed),
+          [range1, range2],
+        );
+
+        expect(result, hasLength(2));
+        expect(result[range1], hasLength(1));
+        expect(result[range1]!.first.value, 10);
+        expect(result[range2], hasLength(1));
+        expect(result[range2]!.first.value, 20);
+      });
+
+      test('handles empty response gracefully', () async {
+        when(
+          () => mockHttpClient.post<Map<String, dynamic>>(
+            any(),
+            data: any(named: 'data'),
+          ),
+        ).thenAnswer((_) async => {});
+
+        final result = await client.getTimeSeriesBatch(
+          const EventCountQuery(event: AnalyticsEvent.contentViewed),
+          [
+            const GARequestDateRange(
+              startDate: '2024-01-01',
+              endDate: '2024-01-02',
+            ),
+          ],
+        );
+
+        expect(result, isEmpty);
+      });
+    });
+
+    group('getMetricTotalsBatch', () {
+      test('correctly parses batched totals', () async {
+        const range1 = GARequestDateRange(
+          startDate: '2024-01-01',
+          endDate: '2024-01-07',
+        );
+        const range2 = GARequestDateRange(
+          startDate: '2024-01-08',
+          endDate: '2024-01-14',
+        );
+
+        final mockApiResponse = {
+          'rows': [
+            {
+              'dimensionValues': [
+                {'value': 'date_range_0'},
+              ],
+              'metricValues': [
+                {'value': '100'},
+              ],
+            },
+            {
+              'dimensionValues': [
+                {'value': 'date_range_1'},
+              ],
+              'metricValues': [
+                {'value': '200'},
+              ],
+            },
+          ],
+        };
+
+        when(
+          () => mockHttpClient.post<Map<String, dynamic>>(
+            any(),
+            data: any(named: 'data'),
+          ),
+        ).thenAnswer((_) async => mockApiResponse);
+
+        final result = await client.getMetricTotalsBatch(
+          const EventCountQuery(event: AnalyticsEvent.contentViewed),
+          [range1, range2],
+        );
+
+        expect(result[range1], 100);
+        expect(result[range2], 200);
+      });
     });
   });
 }

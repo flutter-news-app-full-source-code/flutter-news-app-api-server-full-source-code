@@ -1,7 +1,5 @@
 import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/clients/analytics/analytics.dart'
-    show AnalyticsReportingClient;
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/analytics/analytics_reporting_client.dart'
     show AnalyticsReportingClient;
 import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
@@ -184,7 +182,11 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
         ),
       ],
       dimensions: [
-        GARequestDimension(name: 'customEvent:$dimensionName'),
+        GARequestDimension(
+          name: dimensionName.startsWith('customEvent:')
+              ? dimensionName
+              : 'customEvent:$dimensionName',
+        ),
       ],
       metrics: const [
         GARequestMetric(name: metricName),
@@ -247,5 +249,134 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
       data: requestBody,
     );
     return RunReportResponse.fromJson(response);
+  }
+
+  @override
+  Future<Map<GARequestDateRange, List<DataPoint>>> getTimeSeriesBatch(
+    MetricQuery query,
+    List<GARequestDateRange> ranges,
+  ) async {
+    final metricName = _getMetricName(query);
+    _log.info(
+      'Fetching batched time series for metric "$metricName" from Google '
+      'Analytics for ${ranges.length} ranges.',
+    );
+
+    final request = RunReportRequest(
+      dateRanges: ranges,
+      dimensions: const [
+        // The 'dateRange' dimension is automatically added by GA when
+        // multiple ranges are requested.
+        GARequestDimension(name: 'date'),
+      ],
+      metrics: [
+        GARequestMetric(name: metricName),
+      ],
+      dimensionFilter: query is EventCountQuery
+          ? GARequestFilterExpression(
+              filter: GARequestFilter(
+                fieldName: 'eventName',
+                stringFilter: GARequestStringFilter(value: query.event.name),
+              ),
+            )
+          : null,
+    );
+
+    final response = await _runReport(request.toJson());
+    final rows = response.rows;
+    if (rows == null || rows.isEmpty) {
+      _log.finer('No batched time series data returned.');
+      return {};
+    }
+
+    final results = <GARequestDateRange, List<DataPoint>>{};
+    for (final row in rows) {
+      if (row.dimensionValues.length < 2) continue;
+
+      // Identify the date range from the response.
+      final rangeIdentifier =
+          row.dimensionValues[0].value; // e.g., 'date_range_0'
+      final dateStr = row.dimensionValues[1].value;
+      final valueStr = row.metricValues.firstOrNull?.value;
+
+      if (rangeIdentifier == null || dateStr == null || valueStr == null) {
+        continue;
+      }
+
+      final rangeIndex = int.tryParse(rangeIdentifier.split('_').last);
+      if (rangeIndex == null || rangeIndex >= ranges.length) continue;
+
+      final originalRange = ranges[rangeIndex];
+      final dataPoint = DataPoint(
+        timestamp: DateTime.parse(dateStr),
+        value: num.tryParse(valueStr) ?? 0.0,
+      );
+
+      results.update(
+        originalRange,
+        (list) => list..add(dataPoint),
+        ifAbsent: () => [dataPoint],
+      );
+    }
+    return results;
+  }
+
+  @override
+  Future<Map<GARequestDateRange, num>> getMetricTotalsBatch(
+    MetricQuery query,
+    List<GARequestDateRange> ranges,
+  ) async {
+    final metricName = _getMetricName(query);
+    _log.info(
+      'Fetching batched totals for metric "$metricName" from Google '
+      'Analytics for ${ranges.length} ranges.',
+    );
+
+    final request = RunReportRequest(
+      dateRanges: ranges,
+      metrics: [
+        GARequestMetric(name: metricName),
+      ],
+      dimensionFilter: query is EventCountQuery
+          ? GARequestFilterExpression(
+              filter: GARequestFilter(
+                fieldName: 'eventName',
+                stringFilter: GARequestStringFilter(value: query.event.name),
+              ),
+            )
+          : null,
+    );
+
+    final response = await _runReport(request.toJson());
+    final rows = response.rows;
+    if (rows == null || rows.isEmpty) {
+      _log.finer('No batched metric total data returned.');
+      return {};
+    }
+
+    final results = <GARequestDateRange, num>{};
+    for (final row in rows) {
+      // For metric-only requests with multiple ranges, the first dimension
+      // value is the date range identifier.
+      final rangeIdentifier = row.dimensionValues.firstOrNull?.value;
+      final valueStr = row.metricValues.firstOrNull?.value;
+
+      if (rangeIdentifier == null || valueStr == null) continue;
+
+      final rangeIndex = int.tryParse(rangeIdentifier.split('_').last);
+      if (rangeIndex == null || rangeIndex >= ranges.length) continue;
+
+      final originalRange = ranges[rangeIndex];
+      final value = num.tryParse(valueStr) ?? 0.0;
+
+      results[originalRange] = value;
+    }
+
+    // Ensure all requested ranges have a value, defaulting to 0.
+    for (final range in ranges) {
+      results.putIfAbsent(range, () => 0);
+    }
+
+    return results;
   }
 }

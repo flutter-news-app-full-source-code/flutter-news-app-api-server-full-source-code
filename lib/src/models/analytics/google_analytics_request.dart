@@ -70,6 +70,15 @@ class GARequestDateRange extends Equatable {
   factory GARequestDateRange.fromJson(Map<String, dynamic> json) =>
       _$GARequestDateRangeFromJson(json);
 
+  /// Creates a [GARequestDateRange] from [DateTime] objects.
+  factory GARequestDateRange.from({
+    required DateTime start,
+    required DateTime end,
+  }) => GARequestDateRange(
+    startDate: _formatDate(start),
+    endDate: _formatDate(end),
+  );
+
   /// The start date in 'YYYY-MM-DD' format.
   final String startDate;
 
@@ -83,6 +92,9 @@ class GARequestDateRange extends Equatable {
   @JsonKey(includeToJson: false)
   List<Object> get props => [startDate, endDate];
 }
+
+String _formatDate(DateTime date) =>
+    '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
 /// {@template ga_request_dimension}
 /// Represents a dimension to include in a Google Analytics report request.

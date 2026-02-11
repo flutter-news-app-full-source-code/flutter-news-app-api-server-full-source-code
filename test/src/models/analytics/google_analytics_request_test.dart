@@ -55,5 +55,16 @@ void main() {
         expect(json.containsKey('metrics'), isFalse);
       });
     });
+
+    group('GARequestDateRange', () {
+      test('from constructor formats dates correctly', () {
+        final range = GARequestDateRange.from(
+          start: DateTime(2024, 1, 1),
+          end: DateTime(2024, 1, 31),
+        );
+        expect(range.startDate, '2024-01-01');
+        expect(range.endDate, '2024-01-31');
+      });
+    });
   });
 }
