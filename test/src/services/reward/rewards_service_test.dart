@@ -42,15 +42,22 @@ void main() {
           termsOfServiceUrl: '',
           privacyPolicyUrl: '',
         ),
-        initialPersonalization: InitialPersonalizationConfig(
-          isEnabled: true,
-          isCountrySelectionEnabled: true,
-          isTopicSelectionEnabled: true,
-          isSourceSelectionEnabled: true,
-          minSelectionsRequired: 3,
-        ),
       ),
       features: const FeaturesConfig(
+        onboarding: OnboardingConfig(
+          appTour: AppTourConfig(
+            isEnabled: true,
+            isSkippable: true,
+          ),
+          initialPersonalization: InitialPersonalizationConfig(
+            isEnabled: true,
+            isCountrySelectionEnabled: true,
+            isTopicSelectionEnabled: true,
+            isSourceSelectionEnabled: true,
+            minSelectionsRequired: 3,
+            isSkippable: true,
+          ),
+        ),
         analytics: AnalyticsConfig(
           enabled: false,
           activeProvider: AnalyticsProviders.mixpanel,

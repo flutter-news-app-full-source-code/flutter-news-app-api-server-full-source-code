@@ -108,15 +108,22 @@ void main() {
             termsOfServiceUrl: '',
             privacyPolicyUrl: '',
           ),
-          initialPersonalization: InitialPersonalizationConfig(
-            isEnabled: true,
-            isCountrySelectionEnabled: true,
-            isTopicSelectionEnabled: true,
-            isSourceSelectionEnabled: true,
-            minSelectionsRequired: 3,
-          ),
         ),
         features: FeaturesConfig(
+          onboarding: const OnboardingConfig(
+            appTour: AppTourConfig(
+              isEnabled: true,
+              isSkippable: true,
+            ),
+            initialPersonalization: InitialPersonalizationConfig(
+              isEnabled: true,
+              isCountrySelectionEnabled: true,
+              isTopicSelectionEnabled: true,
+              isSourceSelectionEnabled: true,
+              minSelectionsRequired: 3,
+              isSkippable: true,
+            ),
+          ),
           ads: const AdConfig(
             enabled: false,
             primaryAdPlatform: AdPlatformType.admob,
