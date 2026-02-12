@@ -236,7 +236,9 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
       final entityId = row.dimensionValues.firstOrNull?.value;
       final metricValueStr = row.metricValues.firstOrNull?.value;
       // Filter out invalid data from GA, such as '(not set)'.
-      if (entityId == null || metricValueStr == null || entityId == '(not set)') {
+      if (entityId == null ||
+          metricValueStr == null ||
+          entityId == '(not set)') {
         continue;
       }
 
