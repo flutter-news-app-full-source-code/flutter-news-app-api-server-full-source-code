@@ -21,10 +21,17 @@ sealed class MetricQuery extends AnalyticsQuery {
 /// This is used when the metric is the count of a specific [AnalyticsEvent].
 class EventCountQuery extends MetricQuery {
   /// {@macro event_count_query}
-  const EventCountQuery({required this.event});
+  const EventCountQuery({
+    required this.event,
+    this.properties,
+  });
 
   /// The core, type-safe event from the shared [AnalyticsEvent] enum.
   final AnalyticsEvent event;
+
+  /// An optional map of properties to filter the event by.
+  /// The key is the property name and the value is the property value.
+  final Map<String, String>? properties;
 }
 
 /// A query for a standard, provider-defined metric (e.g., 'activeUsers').
