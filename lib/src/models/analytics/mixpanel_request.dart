@@ -21,7 +21,12 @@ enum MixpanelTimeUnit {
 /// {@template mixpanel_segmentation_request}
 /// Represents the query parameters for a Mixpanel segmentation request.
 /// {@endtemplate}
-@JsonSerializable(fieldRename: FieldRename.snake)
+@JsonSerializable(
+  fieldRename: FieldRename.snake,
+  explicitToJson: true,
+  includeIfNull: false,
+  checked: true,
+)
 class MixpanelSegmentationRequest extends Equatable {
   /// {@macro mixpanel_segmentation_request}
   const MixpanelSegmentationRequest({
@@ -30,6 +35,7 @@ class MixpanelSegmentationRequest extends Equatable {
     required this.fromDate,
     required this.toDate,
     this.unit,
+    this.where,
   });
 
   /// Creates a [MixpanelSegmentationRequest] from a JSON object.
@@ -51,11 +57,15 @@ class MixpanelSegmentationRequest extends Equatable {
   /// The time unit for segmentation (e.g., 'day', 'week').
   final MixpanelTimeUnit? unit;
 
+  /// An expression to filter events by properties.
+  /// See: https://developer.mixpanel.com/reference/segmentation#propexpr
+  final String? where;
+
   /// Converts this instance to a JSON map for query parameters.
   Map<String, dynamic> toJson() => _$MixpanelSegmentationRequestToJson(this);
 
   @override
-  List<Object?> get props => [projectId, event, fromDate, toDate, unit];
+  List<Object?> get props => [projectId, event, fromDate, toDate, unit, where];
 }
 
 /// {@template mixpanel_top_events_request}
