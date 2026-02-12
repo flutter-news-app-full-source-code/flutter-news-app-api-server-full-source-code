@@ -160,21 +160,59 @@ class GARequestMetric extends Equatable {
 )
 class GARequestFilterExpression extends Equatable {
   /// {@macro ga_request_filter_expression}
-  const GARequestFilterExpression({required this.filter});
+  const GARequestFilterExpression({this.filter, this.andGroup})
+    : assert(
+        filter != null || andGroup != null,
+        'Either filter or andGroup must be provided.',
+      ),
+      assert(
+        filter == null || andGroup == null,
+        'Cannot provide both filter and andGroup.',
+      );
 
   /// Creates a [GARequestFilterExpression] from JSON data.
   factory GARequestFilterExpression.fromJson(Map<String, dynamic> json) =>
       _$GARequestFilterExpressionFromJson(json);
 
   /// The filter to apply.
-  final GARequestFilter filter;
+  final GARequestFilter? filter;
+
+  /// A list of expressions to be ANDed together.
+  final GAAndGroup? andGroup;
 
   /// Converts this [GARequestFilterExpression] instance to JSON data.
   Map<String, dynamic> toJson() => _$GARequestFilterExpressionToJson(this);
 
   @override
   @JsonKey(includeToJson: false)
-  List<Object> get props => [filter];
+  List<Object?> get props => [filter, andGroup];
+}
+
+/// {@template ga_and_group}
+/// A list of filter expressions to be AND'ed together.
+/// {@endtemplate}
+@JsonSerializable(
+  explicitToJson: true,
+  includeIfNull: false,
+  checked: true,
+)
+class GAAndGroup extends Equatable {
+  /// {@macro ga_and_group}
+  const GAAndGroup({required this.expressions});
+
+  /// Creates a [GAAndGroup] from JSON data.
+  factory GAAndGroup.fromJson(Map<String, dynamic> json) =>
+      _$GAAndGroupFromJson(json);
+
+  /// A list of filter expressions.
+  final List<GARequestFilterExpression> expressions;
+
+  /// Converts this [GAAndGroup] instance to JSON data.
+  Map<String, dynamic> toJson() => _$GAAndGroupToJson(this);
+
+  @override
+  @JsonKey(includeToJson: false)
+  List<Object> get props => [expressions];
 }
 
 /// {@template ga_request_filter}

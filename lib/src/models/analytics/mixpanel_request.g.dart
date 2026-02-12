@@ -8,12 +8,28 @@ part of 'mixpanel_request.dart';
 
 MixpanelSegmentationRequest _$MixpanelSegmentationRequestFromJson(
   Map<String, dynamic> json,
-) => MixpanelSegmentationRequest(
-  projectId: json['project_id'] as String,
-  event: json['event'] as String,
-  fromDate: json['from_date'] as String,
-  toDate: json['to_date'] as String,
-  unit: $enumDecodeNullable(_$MixpanelTimeUnitEnumMap, json['unit']),
+) => $checkedCreate(
+  'MixpanelSegmentationRequest',
+  json,
+  ($checkedConvert) {
+    final val = MixpanelSegmentationRequest(
+      projectId: $checkedConvert('project_id', (v) => v as String),
+      event: $checkedConvert('event', (v) => v as String),
+      fromDate: $checkedConvert('from_date', (v) => v as String),
+      toDate: $checkedConvert('to_date', (v) => v as String),
+      unit: $checkedConvert(
+        'unit',
+        (v) => $enumDecodeNullable(_$MixpanelTimeUnitEnumMap, v),
+      ),
+      where: $checkedConvert('where', (v) => v as String?),
+    );
+    return val;
+  },
+  fieldKeyMap: const {
+    'projectId': 'project_id',
+    'fromDate': 'from_date',
+    'toDate': 'to_date',
+  },
 );
 
 Map<String, dynamic> _$MixpanelSegmentationRequestToJson(
@@ -23,7 +39,8 @@ Map<String, dynamic> _$MixpanelSegmentationRequestToJson(
   'event': instance.event,
   'from_date': instance.fromDate,
   'to_date': instance.toDate,
-  'unit': _$MixpanelTimeUnitEnumMap[instance.unit],
+  'unit': ?_$MixpanelTimeUnitEnumMap[instance.unit],
+  'where': ?instance.where,
 };
 
 const _$MixpanelTimeUnitEnumMap = {

@@ -300,11 +300,28 @@ class AnalyticsSyncService {
             query is StandardMetricQuery &&
             query.metric.startsWith('database:');
 
+        final isFunnelQuery =
+            query is StandardMetricQuery && query.metric.startsWith('funnel:');
+
         final timeFrames = <ChartTimeFrame, List<DataPoint>>{};
 
-        if (isDatabaseQuery) {
+        if (isFunnelQuery) {
+          _log.info('Processing funnel query for ${chartId.name}');
+          // Handle funnel queries which are a special type of remote query.
           // For DB queries, batching is more complex as pipelines differ.
           // We will handle them individually for now.
+          for (final timeFrame in ChartTimeFrame.values) {
+            final days = _daysForChartTimeFrame(timeFrame);
+            final startDate = now.subtract(Duration(days: days));
+            timeFrames[timeFrame] = await _getFunnelData(
+              query,
+              startDate,
+              now,
+              client,
+            );
+          }
+        } else if (isDatabaseQuery) {
+          _log.info('Processing database query for ${chartId.name}');
           for (final timeFrame in ChartTimeFrame.values) {
             final days = _daysForChartTimeFrame(timeFrame);
             final startDate = now.subtract(Duration(days: days));
@@ -452,6 +469,95 @@ class AnalyticsSyncService {
           s,
         );
       }
+    }
+  }
+
+  Future<List<DataPoint>> _getFunnelData(
+    StandardMetricQuery query,
+    DateTime startDate,
+    DateTime endDate,
+    AnalyticsReportingClient client,
+  ) async {
+    final funnelName = query.metric.split(':').last;
+    _log.info(
+      'Executing funnel query for: $funnelName from $startDate to $endDate.',
+    );
+
+    final steps = _getFunnelSteps(funnelName);
+    if (steps == null) {
+      _log.warning('No steps defined for funnel: $funnelName');
+      return [];
+    }
+
+    final dataPoints = <DataPoint>[];
+    for (final step in steps) {
+      final total = await client.getMetricTotal(
+        EventCountQuery(event: step.event, properties: step.properties),
+        startDate,
+        endDate,
+      );
+      dataPoints.add(DataPoint(label: step.label, value: total));
+    }
+
+    return dataPoints;
+  }
+
+  List<({AnalyticsEvent event, String label, Map<String, String>? properties})>?
+  _getFunnelSteps(String funnelName) {
+    switch (funnelName) {
+      case 'appTour':
+        return [
+          (
+            event: AnalyticsEvent.appTourStarted,
+            label: 'Started',
+            properties: null,
+          ),
+          (
+            event: AnalyticsEvent.appTourStepViewed,
+            label: 'Step 1',
+            properties: {'step_index': '0'},
+          ),
+          (
+            event: AnalyticsEvent.appTourStepViewed,
+            label: 'Step 2',
+            properties: {'step_index': '1'},
+          ),
+          (
+            event: AnalyticsEvent.appTourStepViewed,
+            label: 'Step 3',
+            properties: {'step_index': '2'},
+          ),
+          (
+            event: AnalyticsEvent.appTourCompleted,
+            label: 'Completed',
+            properties: null,
+          ),
+          (
+            event: AnalyticsEvent.appTourSkipped,
+            label: 'Skipped',
+            properties: null,
+          ),
+        ];
+      case 'initialPersonalization':
+        return [
+          (
+            event: AnalyticsEvent.initialPersonalizationStarted,
+            label: 'Started',
+            properties: null,
+          ),
+          (
+            event: AnalyticsEvent.initialPersonalizationCompleted,
+            label: 'Completed',
+            properties: null,
+          ),
+          (
+            event: AnalyticsEvent.initialPersonalizationSkipped,
+            label: 'Skipped',
+            properties: null,
+          ),
+        ];
+      default:
+        return null;
     }
   }
 
@@ -753,12 +859,16 @@ class AnalyticsSyncService {
         '${percentageChange.toStringAsFixed(1)}%';
   }
 
-  String _formatLabel(String idName) => idName
-      .replaceAll(RegExp('([A-Z])'), r' $1')
-      .trim()
-      .split(' ')
-      .map((w) => '${w[0].toUpperCase()}${w.substring(1)}')
-      .join(' ');
+  String _formatLabel(String idName) {
+    // Add a space before each capital letter.
+    var spaced = idName.replaceAllMapped(
+      RegExp('([A-Z])'),
+      (m) => ' ${m.group(1)}',
+    );
+    // Capitalize the first letter of the whole string and return.
+    spaced = spaced[0].toUpperCase() + spaced.substring(1);
+    return spaced.trim();
+  }
 }
 
 DateTime _getNow() => DateTime.now();
