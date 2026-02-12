@@ -32,8 +32,10 @@ class AnalyticsMetricMapper {
     // Check for keywords indicating categorical data (Bar Chart)
     // vs time-series data (Line Chart).
     return name.contains('distribution') ||
+            name.contains('funnel') ||
             name.contains('bytype') ||
-            name.contains('by_')
+            name.contains('by') ||
+            name.contains('vs')
         ? ChartType.bar
         : ChartType.line;
   }
@@ -123,6 +125,13 @@ class AnalyticsMetricMapper {
   };
 
   static final Map<ChartCardId, MetricQuery> _chartQueryMappings = {
+    // Onboarding Funnels
+    ChartCardId.overviewAppTourFunnel: const StandardMetricQuery(
+      metric: 'funnel:appTour',
+    ),
+    ChartCardId.overviewInitialPersonalizationFunnel: const StandardMetricQuery(
+      metric: 'funnel:initialPersonalization',
+    ),
     // User Charts
     ChartCardId.usersRegistrationsOverTime: const EventCountQuery(
       event: AnalyticsEvent.userRegistered,
