@@ -108,6 +108,13 @@ void main() {
             termsOfServiceUrl: '',
             privacyPolicyUrl: '',
           ),
+          initialPersonalization: InitialPersonalizationConfig(
+            isEnabled: true,
+            isCountrySelectionEnabled: true,
+            isTopicSelectionEnabled: true,
+            isSourceSelectionEnabled: true,
+            minSelectionsRequired: 3,
+          ),
         ),
         features: FeaturesConfig(
           ads: const AdConfig(
