@@ -89,12 +89,22 @@ class MixpanelDataClient implements AnalyticsReportingClient {
 
     _log.info('Fetching time series for metric "$metricName" from Mixpanel.');
 
+    String? whereClause;
+    if (query is EventCountQuery &&
+        query.properties != null &&
+        query.properties!.isNotEmpty) {
+      whereClause = query.properties!.entries
+          .map((e) => 'properties["${e.key}"] == "${e.value}"')
+          .join(' and ');
+    }
+
     final request = MixpanelSegmentationRequest(
       projectId: _projectId,
       event: metricName,
       fromDate: DateFormat('yyyy-MM-dd').format(startDate),
       toDate: DateFormat('yyyy-MM-dd').format(endDate),
       unit: MixpanelTimeUnit.day,
+      where: whereClause,
     );
 
     final response = await _httpClient.get<Map<String, dynamic>>(
@@ -147,11 +157,21 @@ class MixpanelDataClient implements AnalyticsReportingClient {
     // To get a single total, we call the segmentation endpoint without the 'unit'
     // parameter. The MixpanelSegmentationRequest model supports this by having
     // a nullable 'unit'.
+    String? whereClause;
+    if (query is EventCountQuery &&
+        query.properties != null &&
+        query.properties!.isNotEmpty) {
+      whereClause = query.properties!.entries
+          .map((e) => 'properties["${e.key}"] == "${e.value}"')
+          .join(' and ');
+    }
+
     final request = MixpanelSegmentationRequest(
       projectId: _projectId,
       event: metricName,
       fromDate: DateFormat('yyyy-MM-dd').format(startDate),
       toDate: DateFormat('yyyy-MM-dd').format(endDate),
+      where: whereClause,
     );
 
     final response = await _httpClient.get<Map<String, dynamic>>(
