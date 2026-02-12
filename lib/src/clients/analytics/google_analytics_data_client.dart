@@ -80,14 +80,7 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
       metrics: [
         GARequestMetric(name: metricName),
       ],
-      dimensionFilter: query is EventCountQuery
-          ? GARequestFilterExpression(
-              filter: GARequestFilter(
-                fieldName: 'eventName',
-                stringFilter: GARequestStringFilter(value: query.event.name),
-              ),
-            )
-          : null,
+      dimensionFilter: _buildDimensionFilter(query),
     );
 
     final response = await _runReport(request.toJson());
@@ -139,14 +132,7 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
       metrics: [
         GARequestMetric(name: metricName),
       ],
-      dimensionFilter: query is EventCountQuery
-          ? GARequestFilterExpression(
-              filter: GARequestFilter(
-                fieldName: 'eventName',
-                stringFilter: GARequestStringFilter(value: query.event.name),
-              ),
-            )
-          : null,
+      dimensionFilter: _buildDimensionFilter(query),
     );
 
     final response = await _runReport(request.toJson());
@@ -159,6 +145,43 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
 
     final valueStr = rows.firstOrNull?.metricValues.firstOrNull?.value;
     return num.tryParse(valueStr ?? '0') ?? 0.0;
+  }
+
+  GARequestFilterExpression? _buildDimensionFilter(MetricQuery query) {
+    if (query is! EventCountQuery) {
+      return null;
+    }
+
+    final eventNameFilter = GARequestFilterExpression(
+      filter: GARequestFilter(
+        fieldName: 'eventName',
+        stringFilter: GARequestStringFilter(value: query.event.name),
+      ),
+    );
+
+    if (query.properties == null || query.properties!.isEmpty) {
+      return eventNameFilter;
+    }
+
+    final propertyFilters = query.properties!.entries.map((entry) {
+      // GA custom dimensions are prefixed.
+      final fieldName = 'customEvent:${entry.key}';
+      return GARequestFilterExpression(
+        filter: GARequestFilter(
+          fieldName: fieldName,
+          stringFilter: GARequestStringFilter(value: entry.value),
+        ),
+      );
+    }).toList();
+
+    return GARequestFilterExpression(
+      andGroup: GAAndGroup(
+        expressions: [
+          eventNameFilter,
+          ...propertyFilters,
+        ],
+      ),
+    );
   }
 
   @override
@@ -212,7 +235,10 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
     for (final row in rows) {
       final entityId = row.dimensionValues.firstOrNull?.value;
       final metricValueStr = row.metricValues.firstOrNull?.value;
-      if (entityId == null || metricValueStr == null) continue;
+      // Filter out invalid data from GA, such as '(not set)'.
+      if (entityId == null || metricValueStr == null || entityId == '(not set)') {
+        continue;
+      }
 
       final metricValue = num.tryParse(metricValueStr) ?? 0;
       rawItems.add(
@@ -223,6 +249,8 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
         ),
       );
     }
+
+    if (rawItems.isEmpty) return [];
 
     final headlineIds = rawItems.map((item) => item.entityId).toList();
     final paginatedHeadlines = await _headlineRepository.readAll(
@@ -272,14 +300,7 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
       metrics: [
         GARequestMetric(name: metricName),
       ],
-      dimensionFilter: query is EventCountQuery
-          ? GARequestFilterExpression(
-              filter: GARequestFilter(
-                fieldName: 'eventName',
-                stringFilter: GARequestStringFilter(value: query.event.name),
-              ),
-            )
-          : null,
+      dimensionFilter: _buildDimensionFilter(query),
     );
 
     final response = await _runReport(request.toJson());
@@ -337,14 +358,7 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
       metrics: [
         GARequestMetric(name: metricName),
       ],
-      dimensionFilter: query is EventCountQuery
-          ? GARequestFilterExpression(
-              filter: GARequestFilter(
-                fieldName: 'eventName',
-                stringFilter: GARequestStringFilter(value: query.event.name),
-              ),
-            )
-          : null,
+      dimensionFilter: _buildDimensionFilter(query),
     );
 
     final response = await _runReport(request.toJson());
