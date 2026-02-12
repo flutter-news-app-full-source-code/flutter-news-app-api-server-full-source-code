@@ -91,7 +91,13 @@ GARequestFilterExpression _$GARequestFilterExpressionFromJson(
   final val = GARequestFilterExpression(
     filter: $checkedConvert(
       'filter',
-      (v) => GARequestFilter.fromJson(v as Map<String, dynamic>),
+      (v) => v == null
+          ? null
+          : GARequestFilter.fromJson(v as Map<String, dynamic>),
+    ),
+    andGroup: $checkedConvert(
+      'andGroup',
+      (v) => v == null ? null : GAAndGroup.fromJson(v as Map<String, dynamic>),
     ),
   );
   return val;
@@ -99,7 +105,34 @@ GARequestFilterExpression _$GARequestFilterExpressionFromJson(
 
 Map<String, dynamic> _$GARequestFilterExpressionToJson(
   GARequestFilterExpression instance,
-) => <String, dynamic>{'filter': instance.filter.toJson()};
+) => <String, dynamic>{
+  'filter': ?instance.filter?.toJson(),
+  'andGroup': ?instance.andGroup?.toJson(),
+};
+
+GAAndGroup _$GAAndGroupFromJson(Map<String, dynamic> json) => $checkedCreate(
+  'GAAndGroup',
+  json,
+  ($checkedConvert) {
+    final val = GAAndGroup(
+      expressions: $checkedConvert(
+        'expressions',
+        (v) => (v as List<dynamic>)
+            .map(
+              (e) =>
+                  GARequestFilterExpression.fromJson(e as Map<String, dynamic>),
+            )
+            .toList(),
+      ),
+    );
+    return val;
+  },
+);
+
+Map<String, dynamic> _$GAAndGroupToJson(GAAndGroup instance) =>
+    <String, dynamic>{
+      'expressions': instance.expressions.map((e) => e.toJson()).toList(),
+    };
 
 GARequestFilter _$GARequestFilterFromJson(Map<String, dynamic> json) =>
     $checkedCreate('GARequestFilter', json, ($checkedConvert) {
