@@ -69,6 +69,7 @@ void main() {
         ),
         features: const FeaturesConfig(
           onboarding: OnboardingConfig(
+            isEnabled: true,
             appTour: AppTourConfig(
               isEnabled: true,
               isSkippable: true,

@@ -111,6 +111,7 @@ void main() {
         ),
         features: FeaturesConfig(
           onboarding: const OnboardingConfig(
+            isEnabled: true,
             appTour: AppTourConfig(
               isEnabled: true,
               isSkippable: true,
