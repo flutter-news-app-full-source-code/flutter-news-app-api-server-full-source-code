@@ -3,6 +3,7 @@
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:data_client/data_client.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 
 /// Defines the type of permission check required for a specific action.
@@ -676,6 +677,33 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     ),
     deletePermission: const ModelActionPermission(
       type: RequiredPermissionType.unsupported,
+    ),
+  ),
+  'media_asset': ModelConfig<MediaAsset>(
+    fromJson: MediaAsset.fromJson,
+    getId: (m) => m.id,
+    getOwnerId: (dynamic item) => (item as MediaAsset).userId,
+    // Admins can list all media assets for the media library.
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.mediaManage,
+    ),
+    // Admins can view individual media asset details.
+    getItemPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.mediaManage,
+    ),
+    // Creation is handled by the dedicated /request-upload-url endpoint.
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    // Updates are handled by the GCS webhook.
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.unsupported,
+    ),
+    // Admins can delete media assets from the library.
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
     ),
   ),
 };
