@@ -245,4 +245,8 @@ abstract final class EnvironmentConfig {
   ///
   /// Expected values: 'sendgrid', 'onesignal', 'logging'.
   static String get emailProvider => _getRequiredEnv('EMAIL_PROVIDER');
+
+  /// Retrieves the Google Cloud Storage bucket name from the environment.
+  /// The value is read from the `GCS_BUCKET_NAME` environment variable, if available.
+  static String? get gcsBucketName => _getEnv('GCS_BUCKET_NAME');
 }
