@@ -13,6 +13,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/e
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/database/migrations/all_migrations.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/idempotency_record.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/media_asset.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/analytics/analytics.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_service.dart';
@@ -35,6 +36,8 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/push_n
 import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/admob_ssv_verifier.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/rewards_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/google_cloud_storage_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/verification_code_storage_service.dart';
@@ -87,6 +90,7 @@ class AppDependencies {
   late final DataRepository<RankedListCardData> rankedListCardDataRepository;
   late final DataRepository<IdempotencyRecord> idempotencyRepository;
 
+  late final DataRepository<MediaAsset> mediaAssetRepository;
   late final DataRepository<Engagement> engagementRepository;
   late final DataRepository<Report> reportRepository;
   late final DataRepository<AppReview> appReviewRepository;
@@ -108,6 +112,7 @@ class AppDependencies {
   late final IPushNotificationClient? firebasePushNotificationClient;
   late final IPushNotificationClient? oneSignalPushNotificationClient;
   late final IdempotencyService idempotencyService;
+  late final IStorageService storageService;
   late final RewardsService rewardsService;
 
   /// Initializes all application dependencies.
@@ -251,6 +256,14 @@ class AppDependencies {
         fromJson: IdempotencyRecord.fromJson,
         toJson: (item) => item.toJson(),
         logger: Logger('DataMongodb<IdempotencyRecord>'),
+      );
+
+      final mediaAssetClient = DataMongodb<MediaAsset>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'media_assets',
+        fromJson: MediaAsset.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<MediaAsset>'),
       );
 
       // Initialize Data Clients for Push Notifications
@@ -421,6 +434,7 @@ class AppDependencies {
         dataClient: rankedListCardDataClient,
       );
       idempotencyRepository = DataRepository(dataClient: idempotencyClient);
+      mediaAssetRepository = DataRepository(dataClient: mediaAssetClient);
 
       // --- Initialize Email Service ---
       EmailClient? emailClient;
@@ -550,6 +564,10 @@ class AppDependencies {
       idempotencyService = IdempotencyService(
         repository: idempotencyRepository,
         log: Logger('IdempotencyService'),
+      );
+
+      storageService = GoogleCloudStorageService(
+        log: Logger('GoogleCloudStorageService'),
       );
 
       // --- Rewards Services ---
