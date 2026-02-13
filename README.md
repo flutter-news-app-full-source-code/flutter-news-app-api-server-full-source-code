@@ -122,6 +122,19 @@ A complete, multi-provider analytics engine that transforms raw data from both e
 </details>
 
 <details>
+<summary><strong>🖼️ Media & File Management</strong></summary>
+
+### ☁️ A Scalable, Professional-Grade Upload Architecture
+A robust, secure, and cost-effective system for handling file uploads, built on definitive industry best practices.
+- **Direct-to-Cloud Uploads:** Clients upload files directly to Google Cloud Storage using secure, short-lived signed URLs. This keeps the API server lightweight and responsive by offloading heavy data transfers to a global, scalable infrastructure.
+- **Server-Side Authorization:** The API server remains the central authority, performing all authentication and authorization checks before granting an upload URL. This ensures users can only upload files for the purposes and entities they have permission for.
+- **Guaranteed Finalization via Webhooks:** The system uses server-to-server webhooks from Google Cloud Storage to reliably confirm successful uploads. This event-driven approach guarantees data consistency and triggers any necessary business logic (like updating a user's profile picture URL) without relying on the client.
+- **Idempotent & Resilient:** The webhook handler is fully idempotent, ensuring that even if a notification is delivered multiple times, the finalization logic is executed exactly once.
+> **Your Advantage:** You get a professional-grade file upload system that is infinitely scalable, highly secure, and cost-efficient. This architecture is used by major tech companies and provides a superior user experience with faster, more reliable uploads.
+
+</details>
+
+<details>
 <summary><strong>🏗️ Architecture & Infrastructure</strong></summary>
 
 ### 🚀 High-Performance by Design
