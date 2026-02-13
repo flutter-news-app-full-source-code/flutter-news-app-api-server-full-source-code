@@ -143,4 +143,11 @@ abstract class Permissions {
 
   // Analytics Permissions
   static const String analyticsRead = 'analytics.read';
+
+  // Media Permissions
+  /// Allows requesting a signed URL for uploading media.
+  static const String mediaRequestUploadUrl = 'media.request_upload_url';
+
+  /// Allows managing media assets (e.g., for admins in the dashboard).
+  static const String mediaManage = 'media.manage';
 }
