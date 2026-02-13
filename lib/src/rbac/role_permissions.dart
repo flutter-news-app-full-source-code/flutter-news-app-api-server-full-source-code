@@ -41,6 +41,9 @@ final Set<String> _guestTierPermissions = {
 
   // Rewards
   Permissions.userRewardsReadOwned,
+
+  // Media
+  Permissions.mediaRequestUploadUrl,
 };
 
 final Set<String> _standardTierPermissions = {
@@ -103,6 +106,9 @@ final Set<String> _adminRolePermissions = {
 
   // Analytics
   Permissions.analyticsRead,
+
+  // Media
+  Permissions.mediaManage,
 };
 
 /// Defines the mapping between user roles and access tiers to the permissions
