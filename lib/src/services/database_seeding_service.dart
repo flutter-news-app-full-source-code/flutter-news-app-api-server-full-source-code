@@ -500,6 +500,24 @@ class DatabaseSeedingService {
       });
       _log.info('Ensured indexes for "idempotency_records".');
 
+      // Indexes for media_assets
+      await _db.runCommand({
+        'createIndexes': 'media_assets',
+        'indexes': [
+          {
+            'key': {'userId': 1},
+            'name': 'userId_index',
+          },
+          {
+            // Ensures that each file path in the bucket is unique.
+            'key': {'storagePath': 1},
+            'name': 'storagePath_unique_index',
+            'unique': true,
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "media_assets".');
+
       _log.info('Database indexes are set up correctly.');
     } on Exception catch (e, s) {
       _log.severe('Failed to create database indexes.', e, s);
