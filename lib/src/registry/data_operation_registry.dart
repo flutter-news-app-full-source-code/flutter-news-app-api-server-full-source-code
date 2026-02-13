@@ -4,6 +4,7 @@ import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/media_asset.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
@@ -15,7 +16,10 @@ import 'package:logging/logging.dart';
 
 /// A function that fetches a single item by its ID.
 typedef ItemFetcher =
-    Future<dynamic> Function(RequestContext context, String id);
+    Future<dynamic> Function(
+      RequestContext context,
+      String id,
+    );
 
 /// A function that fetches a paginated list of items.
 typedef AllItemsReader =
@@ -46,7 +50,11 @@ typedef ItemUpdater =
 
 /// A function that deletes an item by its ID.
 typedef ItemDeleter =
-    Future<void> Function(RequestContext context, String id, String? userId);
+    Future<void> Function(
+      RequestContext context,
+      String id,
+      String? userId,
+    );
 
 final _log = Logger('DataOperationRegistry');
 
@@ -116,17 +124,23 @@ class DataOperationRegistry {
           c.read<DataRepository<AppSettings>>().read(id: id, userId: null),
       'user_context': (c, id) =>
           c.read<DataRepository<UserContext>>().read(id: id, userId: null),
-      'user_content_preferences': (c, id) => c
-          .read<DataRepository<UserContentPreferences>>()
-          .read(id: id, userId: null),
+      'user_content_preferences': (c, id) =>
+          c.read<DataRepository<UserContentPreferences>>().read(
+            id: id,
+            userId: null,
+          ),
       'remote_config': (c, id) =>
           c.read<DataRepository<RemoteConfig>>().read(id: id, userId: null),
-      'in_app_notification': (c, id) => c
-          .read<DataRepository<InAppNotification>>()
-          .read(id: id, userId: null),
-      'push_notification_device': (c, id) => c
-          .read<DataRepository<PushNotificationDevice>>()
-          .read(id: id, userId: null),
+      'in_app_notification': (c, id) =>
+          c.read<DataRepository<InAppNotification>>().read(
+            id: id,
+            userId: null,
+          ),
+      'push_notification_device': (c, id) =>
+          c.read<DataRepository<PushNotificationDevice>>().read(
+            id: id,
+            userId: null,
+          ),
       'engagement': (c, id) =>
           c.read<DataRepository<Engagement>>().read(id: id, userId: null),
       'report': (c, id) =>
@@ -137,18 +151,26 @@ class DataOperationRegistry {
           c.read<DataRepository<KpiCardData>>().read(id: id, userId: null),
       'chart_card_data': (c, id) =>
           c.read<DataRepository<ChartCardData>>().read(id: id, userId: null),
-      'ranked_list_card_data': (c, id) => c
-          .read<DataRepository<RankedListCardData>>()
-          .read(id: id, userId: null),
+      'ranked_list_card_data': (c, id) =>
+          c.read<DataRepository<RankedListCardData>>().read(
+            id: id,
+            userId: null,
+          ),
       'user_rewards': (c, id) =>
           c.read<DataRepository<UserRewards>>().read(id: id, userId: null),
+      'media_asset': (c, id) =>
+          c.read<DataRepository<MediaAsset>>().read(id: id, userId: null),
     });
 
     // --- Register "Read All" Readers ---
     _allItemsReaders.addAll({
-      'headline': (c, uid, f, s, p) => c
-          .read<DataRepository<Headline>>()
-          .readAll(userId: uid, filter: f, sort: s, pagination: p),
+      'headline': (c, uid, f, s, p) =>
+          c.read<DataRepository<Headline>>().readAll(
+            userId: uid,
+            filter: f,
+            sort: s,
+            pagination: p,
+          ),
       'topic': (c, uid, f, s, p) => c.read<DataRepository<Topic>>().readAll(
         userId: uid,
         filter: f,
@@ -182,9 +204,13 @@ class DataOperationRegistry {
           pagination: p,
         );
       },
-      'language': (c, uid, f, s, p) => c
-          .read<DataRepository<Language>>()
-          .readAll(userId: uid, filter: f, sort: s, pagination: p),
+      'language': (c, uid, f, s, p) =>
+          c.read<DataRepository<Language>>().readAll(
+            userId: uid,
+            filter: f,
+            sort: s,
+            pagination: p,
+          ),
       'user': (c, uid, f, s, p) => c.read<DataRepository<User>>().readAll(
         userId: uid,
         filter: f,
@@ -284,6 +310,13 @@ class DataOperationRegistry {
           pagination: p,
         );
       },
+      'media_asset': (c, uid, f, s, p) =>
+          c.read<DataRepository<MediaAsset>>().readAll(
+            userId: uid,
+            filter: f,
+            sort: s,
+            pagination: p,
+          ),
     });
 
     // --- Register Item Creators ---
@@ -337,9 +370,11 @@ class DataOperationRegistry {
         item: item as Language,
         userId: uid,
       ),
-      'remote_config': (c, item, uid) => c
-          .read<DataRepository<RemoteConfig>>()
-          .create(item: item as RemoteConfig, userId: uid),
+      'remote_config': (c, item, uid) =>
+          c.read<DataRepository<RemoteConfig>>().create(
+            item: item as RemoteConfig,
+            userId: uid,
+          ),
       'push_notification_device': (context, item, uid) async {
         _log.info('Executing custom creator for push_notification_device.');
         final authenticatedUser = context.read<User>();
@@ -460,7 +495,9 @@ class DataOperationRegistry {
           _log.warning(
             'User ${authenticatedUser.id} attempted to create a second AppReview record.',
           );
-          throw const ConflictException('An app review record already exists.');
+          throw const ConflictException(
+            'An app review record already exists.',
+          );
         }
 
         return context.read<DataRepository<AppReview>>().create(item: item);
@@ -469,9 +506,12 @@ class DataOperationRegistry {
 
     // --- Register Item Updaters ---
     _itemUpdaters.addAll({
-      'headline': (c, id, item, uid) => c
-          .read<DataRepository<Headline>>()
-          .update(id: id, item: item as Headline, userId: uid),
+      'headline': (c, id, item, uid) =>
+          c.read<DataRepository<Headline>>().update(
+            id: id,
+            item: item as Headline,
+            userId: uid,
+          ),
       'topic': (c, id, item, uid) => c.read<DataRepository<Topic>>().update(
         id: id,
         item: item as Topic,
@@ -487,9 +527,12 @@ class DataOperationRegistry {
         item: item as Country,
         userId: uid,
       ),
-      'language': (c, id, item, uid) => c
-          .read<DataRepository<Language>>()
-          .update(id: id, item: item as Language, userId: uid),
+      'language': (c, id, item, uid) =>
+          c.read<DataRepository<Language>>().update(
+            id: id,
+            item: item as Language,
+            userId: uid,
+          ),
       // Custom updater for the 'user' model. This logic is critical for
       // security and architectural consistency.
       //
@@ -581,12 +624,18 @@ class DataOperationRegistry {
           userId: uid,
         );
       },
-      'app_settings': (c, id, item, uid) => c
-          .read<DataRepository<AppSettings>>()
-          .update(id: id, item: item as AppSettings, userId: uid),
-      'user_context': (c, id, item, uid) => c
-          .read<DataRepository<UserContext>>()
-          .update(id: id, item: item as UserContext, userId: uid),
+      'app_settings': (c, id, item, uid) =>
+          c.read<DataRepository<AppSettings>>().update(
+            id: id,
+            item: item as AppSettings,
+            userId: uid,
+          ),
+      'user_context': (c, id, item, uid) =>
+          c.read<DataRepository<UserContext>>().update(
+            id: id,
+            item: item as UserContext,
+            userId: uid,
+          ),
       'user_content_preferences': (context, id, item, uid) async {
         _log.info(
           'Executing custom updater for user_content_preferences ID: $id.',
@@ -626,9 +675,12 @@ class DataOperationRegistry {
           item: preferencesToUpdate,
         );
       },
-      'remote_config': (c, id, item, uid) => c
-          .read<DataRepository<RemoteConfig>>()
-          .update(id: id, item: item as RemoteConfig, userId: uid),
+      'remote_config': (c, id, item, uid) =>
+          c.read<DataRepository<RemoteConfig>>().update(
+            id: id,
+            item: item as RemoteConfig,
+            userId: uid,
+          ),
       'in_app_notification': (c, id, item, uid) =>
           c.read<DataRepository<InAppNotification>>().update(
             id: id,
@@ -664,23 +716,31 @@ class DataOperationRegistry {
           c.read<DataRepository<Language>>().delete(id: id, userId: uid),
       'app_settings': (c, id, uid) =>
           c.read<DataRepository<AppSettings>>().delete(id: id, userId: uid),
-      'user_content_preferences': (c, id, uid) => c
-          .read<DataRepository<UserContentPreferences>>()
-          .delete(id: id, userId: uid),
+      'user_content_preferences': (c, id, uid) =>
+          c.read<DataRepository<UserContentPreferences>>().delete(
+            id: id,
+            userId: uid,
+          ),
       'remote_config': (c, id, uid) =>
           c.read<DataRepository<RemoteConfig>>().delete(id: id, userId: uid),
-      'push_notification_device': (c, id, uid) => c
-          .read<DataRepository<PushNotificationDevice>>()
-          .delete(id: id, userId: uid),
-      'in_app_notification': (c, id, uid) => c
-          .read<DataRepository<InAppNotification>>()
-          .delete(id: id, userId: uid),
+      'push_notification_device': (c, id, uid) =>
+          c.read<DataRepository<PushNotificationDevice>>().delete(
+            id: id,
+            userId: uid,
+          ),
+      'in_app_notification': (c, id, uid) =>
+          c.read<DataRepository<InAppNotification>>().delete(
+            id: id,
+            userId: uid,
+          ),
       'engagement': (c, id, uid) =>
           c.read<DataRepository<Engagement>>().delete(id: id, userId: uid),
       'report': (c, id, uid) =>
           c.read<DataRepository<Report>>().delete(id: id, userId: uid),
       'app_review': (c, id, uid) =>
           c.read<DataRepository<AppReview>>().delete(id: id, userId: uid),
+      'media_asset': (c, id, uid) =>
+          c.read<DataRepository<MediaAsset>>().delete(id: id, userId: uid),
     });
   }
 }
