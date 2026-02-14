@@ -24,6 +24,14 @@ MediaAsset _$MediaAssetFromJson(
     contentType: $checkedConvert('contentType', (v) => v as String),
     createdAt: $checkedConvert('createdAt', (v) => DateTime.parse(v as String)),
     updatedAt: $checkedConvert('updatedAt', (v) => DateTime.parse(v as String)),
+    associatedEntityId: $checkedConvert(
+      'associatedEntityId',
+      (v) => v as String?,
+    ),
+    associatedEntityType: $checkedConvert(
+      'associatedEntityType',
+      (v) => $enumDecodeNullable(_$MediaAssetEntityTypeEnumMap, v),
+    ),
     publicUrl: $checkedConvert('publicUrl', (v) => v as String?),
   );
   return val;
@@ -40,15 +48,26 @@ Map<String, dynamic> _$MediaAssetToJson(MediaAsset instance) =>
       'publicUrl': instance.publicUrl,
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt.toIso8601String(),
+      'associatedEntityId': instance.associatedEntityId,
+      'associatedEntityType':
+          _$MediaAssetEntityTypeEnumMap[instance.associatedEntityType],
     };
 
 const _$MediaAssetPurposeEnumMap = {
   MediaAssetPurpose.userProfilePhoto: 'userProfilePhoto',
   MediaAssetPurpose.headlineImage: 'headlineImage',
+  MediaAssetPurpose.topicImage: 'topicImage',
+  MediaAssetPurpose.sourceImage: 'sourceImage',
 };
 
 const _$MediaAssetStatusEnumMap = {
-  MediaAssetStatus.pendingUpload: 'pending_upload',
+  MediaAssetStatus.pendingUpload: 'pendingUpload',
   MediaAssetStatus.completed: 'completed',
   MediaAssetStatus.failed: 'failed',
+};
+
+const _$MediaAssetEntityTypeEnumMap = {
+  MediaAssetEntityType.headline: 'headline',
+  MediaAssetEntityType.topic: 'topic',
+  MediaAssetEntityType.source: 'source',
 };

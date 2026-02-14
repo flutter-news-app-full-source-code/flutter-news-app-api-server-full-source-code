@@ -16,41 +16,46 @@ import 'package:logging/logging.dart';
 // --- Typedefs for Data Operations ---
 
 /// A function that fetches a single item by its ID.
-typedef ItemFetcher = Future<dynamic> Function(
-  RequestContext context,
-  String id,
-);
+typedef ItemFetcher =
+    Future<dynamic> Function(
+      RequestContext context,
+      String id,
+    );
 
 /// A function that fetches a paginated list of items.
-typedef AllItemsReader = Future<PaginatedResponse<dynamic>> Function(
-  RequestContext context,
-  String? userId,
-  Map<String, dynamic>? filter,
-  List<SortOption>? sort,
-  PaginationOptions? pagination,
-);
+typedef AllItemsReader =
+    Future<PaginatedResponse<dynamic>> Function(
+      RequestContext context,
+      String? userId,
+      Map<String, dynamic>? filter,
+      List<SortOption>? sort,
+      PaginationOptions? pagination,
+    );
 
 /// A function that creates a new item.
-typedef ItemCreator = Future<dynamic> Function(
-  RequestContext context,
-  dynamic item,
-  String? userId,
-);
+typedef ItemCreator =
+    Future<dynamic> Function(
+      RequestContext context,
+      dynamic item,
+      String? userId,
+    );
 
 /// A function that updates an existing item.
-typedef ItemUpdater = Future<dynamic> Function(
-  RequestContext context,
-  String id,
-  dynamic item,
-  String? userId,
-);
+typedef ItemUpdater =
+    Future<dynamic> Function(
+      RequestContext context,
+      String id,
+      dynamic item,
+      String? userId,
+    );
 
 /// A function that deletes an item by its ID.
-typedef ItemDeleter = Future<void> Function(
-  RequestContext context,
-  String id,
-  String? userId,
-);
+typedef ItemDeleter =
+    Future<void> Function(
+      RequestContext context,
+      String id,
+      String? userId,
+    );
 
 final _log = Logger('DataOperationRegistry');
 
@@ -168,17 +173,17 @@ class DataOperationRegistry {
             pagination: p,
           ),
       'topic': (c, uid, f, s, p) => c.read<DataRepository<Topic>>().readAll(
-            userId: uid,
-            filter: f,
-            sort: s,
-            pagination: p,
-          ),
+        userId: uid,
+        filter: f,
+        sort: s,
+        pagination: p,
+      ),
       'source': (c, uid, f, s, p) => c.read<DataRepository<Source>>().readAll(
-            userId: uid,
-            filter: f,
-            sort: s,
-            pagination: p,
-          ),
+        userId: uid,
+        filter: f,
+        sort: s,
+        pagination: p,
+      ),
       'country': (c, uid, f, s, p) async {
         // Check for special filters that require aggregation.
         if (f != null &&
@@ -194,11 +199,11 @@ class DataOperationRegistry {
         }
         // Fallback to standard readAll if no special filters are present.
         return c.read<DataRepository<Country>>().readAll(
-              userId: uid,
-              filter: f,
-              sort: s,
-              pagination: p,
-            );
+          userId: uid,
+          filter: f,
+          sort: s,
+          pagination: p,
+        );
       },
       'language': (c, uid, f, s, p) =>
           c.read<DataRepository<Language>>().readAll(
@@ -208,22 +213,22 @@ class DataOperationRegistry {
             pagination: p,
           ),
       'user': (c, uid, f, s, p) => c.read<DataRepository<User>>().readAll(
-            userId: uid,
-            filter: f,
-            sort: s,
-            pagination: p,
-          ),
+        userId: uid,
+        filter: f,
+        sort: s,
+        pagination: p,
+      ),
       'in_app_notification': (c, uid, f, s, p) {
         final finalFilter = {...?f};
         if (uid != null) {
           finalFilter['userId'] = uid;
         }
         return c.read<DataRepository<InAppNotification>>().readAll(
-              userId: null,
-              filter: finalFilter,
-              sort: s,
-              pagination: p,
-            );
+          userId: null,
+          filter: finalFilter,
+          sort: s,
+          pagination: p,
+        );
       },
       'push_notification_device': (c, uid, f, s, p) {
         final finalFilter = {...?f};
@@ -231,11 +236,11 @@ class DataOperationRegistry {
           finalFilter['userId'] = uid;
         }
         return c.read<DataRepository<PushNotificationDevice>>().readAll(
-              userId: null,
-              filter: finalFilter,
-              sort: s,
-              pagination: p,
-            );
+          userId: null,
+          filter: finalFilter,
+          sort: s,
+          pagination: p,
+        );
       },
       'engagement': (c, uid, f, s, p) {
         final finalFilter = {...?f};
@@ -243,11 +248,11 @@ class DataOperationRegistry {
           finalFilter['userId'] = uid;
         }
         return c.read<DataRepository<Engagement>>().readAll(
-              userId: null,
-              filter: finalFilter,
-              sort: s,
-              pagination: p,
-            );
+          userId: null,
+          filter: finalFilter,
+          sort: s,
+          pagination: p,
+        );
       },
       'report': (c, uid, f, s, p) {
         final finalFilter = {...?f};
@@ -255,11 +260,11 @@ class DataOperationRegistry {
           finalFilter['reporterUserId'] = uid;
         }
         return c.read<DataRepository<Report>>().readAll(
-              userId: null,
-              filter: finalFilter,
-              sort: s,
-              pagination: p,
-            );
+          userId: null,
+          filter: finalFilter,
+          sort: s,
+          pagination: p,
+        );
       },
       'app_review': (c, uid, f, s, p) {
         final finalFilter = {...?f};
@@ -267,62 +272,61 @@ class DataOperationRegistry {
           finalFilter['userId'] = uid;
         }
         return c.read<DataRepository<AppReview>>().readAll(
-              userId: null,
-              filter: finalFilter,
-              sort: s,
-              pagination: p,
-            );
+          userId: null,
+          filter: finalFilter,
+          sort: s,
+          pagination: p,
+        );
       },
       'kpi_card_data': (c, uid, f, s, p) =>
           c.read<DataRepository<KpiCardData>>().readAll(
-                userId: uid,
-                filter: f,
-                sort: s,
-                pagination: p,
-              ),
+            userId: uid,
+            filter: f,
+            sort: s,
+            pagination: p,
+          ),
       'chart_card_data': (c, uid, f, s, p) =>
           c.read<DataRepository<ChartCardData>>().readAll(
-                userId: uid,
-                filter: f,
-                sort: s,
-                pagination: p,
-              ),
+            userId: uid,
+            filter: f,
+            sort: s,
+            pagination: p,
+          ),
       'ranked_list_card_data': (c, uid, f, s, p) =>
           c.read<DataRepository<RankedListCardData>>().readAll(
-                userId: uid,
-                filter: f,
-                sort: s,
-                pagination: p,
-              ),
+            userId: uid,
+            filter: f,
+            sort: s,
+            pagination: p,
+          ),
       'user_rewards': (c, uid, f, s, p) {
         final finalFilter = {...?f};
         if (uid != null) {
           finalFilter['userId'] = uid;
         }
         return c.read<DataRepository<UserRewards>>().readAll(
-              userId: null,
-              filter: finalFilter,
-              sort: s,
-              pagination: p,
-            );
+          userId: null,
+          filter: finalFilter,
+          sort: s,
+          pagination: p,
+        );
       },
       'media_asset': (c, uid, f, s, p) =>
           c.read<DataRepository<MediaAsset>>().readAll(
-                userId: uid,
-                filter: f,
-                sort: s,
-                pagination: p,
-              ),
+            userId: uid,
+            filter: f,
+            sort: s,
+            pagination: p,
+          ),
     });
 
     // --- Register Item Creators ---
     _itemCreators.addAll({
       'headline': (c, item, uid) async {
-        final createdHeadline =
-            await c.read<DataRepository<Headline>>().create(
-                  item: item as Headline,
-                  userId: uid,
-                );
+        final createdHeadline = await c.read<DataRepository<Headline>>().create(
+          item: item as Headline,
+          userId: uid,
+        );
 
         // If the created headline is marked as breaking news, trigger the
         // push notification service. The service itself contains all the
@@ -336,8 +340,7 @@ class DataOperationRegistry {
         // error from crashing the headline creation process.
         if (createdHeadline.isBreaking) {
           try {
-            final pushNotificationService =
-                c.read<IPushNotificationService>();
+            final pushNotificationService = c.read<IPushNotificationService>();
             unawaited(
               pushNotificationService.sendBreakingNewsNotification(
                 headline: createdHeadline,
@@ -353,26 +356,26 @@ class DataOperationRegistry {
         return createdHeadline;
       },
       'topic': (c, item, uid) => c.read<DataRepository<Topic>>().create(
-            item: item as Topic,
-            userId: uid,
-          ),
+        item: item as Topic,
+        userId: uid,
+      ),
       'source': (c, item, uid) => c.read<DataRepository<Source>>().create(
-            item: item as Source,
-            userId: uid,
-          ),
+        item: item as Source,
+        userId: uid,
+      ),
       'country': (c, item, uid) => c.read<DataRepository<Country>>().create(
-            item: item as Country,
-            userId: uid,
-          ),
+        item: item as Country,
+        userId: uid,
+      ),
       'language': (c, item, uid) => c.read<DataRepository<Language>>().create(
-            item: item as Language,
-            userId: uid,
-          ),
+        item: item as Language,
+        userId: uid,
+      ),
       'remote_config': (c, item, uid) =>
           c.read<DataRepository<RemoteConfig>>().create(
-                item: item as RemoteConfig,
-                userId: uid,
-              ),
+            item: item as RemoteConfig,
+            userId: uid,
+          ),
       'push_notification_device': (context, item, uid) async {
         _log.info('Executing custom creator for push_notification_device.');
         final authenticatedUser = context.read<User>();
@@ -401,9 +404,9 @@ class DataOperationRegistry {
         // user-owned resources, the scoping is handled by the creator logic
         // itself, not a generic filter in the repository.
         return context.read<DataRepository<PushNotificationDevice>>().create(
-              item: deviceToCreate,
-              userId: null,
-            );
+          item: deviceToCreate,
+          userId: null,
+        );
       },
       'engagement': (context, item, uid) async {
         _log.info('Executing custom creator for engagement.');
@@ -420,8 +423,7 @@ class DataOperationRegistry {
 
         // Business Logic Check: Ensure a user can only have one engagement
         // per headline to prevent duplicate reactions or comments.
-        final engagementRepository =
-            context.read<DataRepository<Engagement>>();
+        final engagementRepository = context.read<DataRepository<Engagement>>();
         final existingEngagements = await engagementRepository.readAll(
           filter: {
             'userId': authenticatedUser.id,
@@ -446,9 +448,9 @@ class DataOperationRegistry {
         );
 
         return context.read<DataRepository<Engagement>>().create(
-              item: engagementToCreate,
-              userId: null,
-            );
+          item: engagementToCreate,
+          userId: null,
+        );
       },
       'report': (context, item, uid) async {
         _log.info('Executing custom creator for report.');
@@ -507,26 +509,25 @@ class DataOperationRegistry {
     _itemUpdaters.addAll({
       'headline': (c, id, item, uid) =>
           c.read<DataRepository<Headline>>().update(
-                id: id,
-                item: item as Headline,
-                userId: uid,
-              ),
+            id: id,
+            item: item as Headline,
+            userId: uid,
+          ),
       'topic': (c, id, item, uid) => c.read<DataRepository<Topic>>().update(
-            id: id,
-            item: item as Topic,
-            userId: uid,
-          ),
+        id: id,
+        item: item as Topic,
+        userId: uid,
+      ),
       'source': (c, id, item, uid) => c.read<DataRepository<Source>>().update(
-            id: id,
-            item: item as Source,
-            userId: uid,
-          ),
-      'country': (c, id, item, uid) =>
-          c.read<DataRepository<Country>>().update(
-            id: id,
-            item: item as Country,
-            userId: uid,
-          ),
+        id: id,
+        item: item as Source,
+        userId: uid,
+      ),
+      'country': (c, id, item, uid) => c.read<DataRepository<Country>>().update(
+        id: id,
+        item: item as Country,
+        userId: uid,
+      ),
       'language': (c, id, item, uid) =>
           c.read<DataRepository<Language>>().update(
             id: id,
@@ -551,8 +552,7 @@ class DataOperationRegistry {
         _log.info('Executing custom updater for user ID: $id.');
         final permissionService = context.read<PermissionService>();
         final authenticatedUser = context.read<User>();
-        final userToUpdate =
-            context.read<FetchedItem<dynamic>>().data as User;
+        final userToUpdate = context.read<FetchedItem<dynamic>>().data as User;
         final requestBody = item as Map<String, dynamic>;
         final requestedUpdateUser = User.fromJson(requestBody);
 
@@ -620,23 +620,23 @@ class DataOperationRegistry {
         // The validation passed, so we can now safely pass the full User
         // object from the request to the repository, honoring the contract.
         return context.read<DataRepository<User>>().update(
-              id: id,
-              item: requestedUpdateUser,
-              userId: uid,
-            );
+          id: id,
+          item: requestedUpdateUser,
+          userId: uid,
+        );
       },
       'app_settings': (c, id, item, uid) =>
           c.read<DataRepository<AppSettings>>().update(
-                id: id,
-                item: item as AppSettings,
-                userId: uid,
-              ),
+            id: id,
+            item: item as AppSettings,
+            userId: uid,
+          ),
       'user_context': (c, id, item, uid) =>
           c.read<DataRepository<UserContext>>().update(
-                id: id,
-                item: item as UserContext,
-                userId: uid,
-              ),
+            id: id,
+            item: item as UserContext,
+            userId: uid,
+          ),
       'user_content_preferences': (context, id, item, uid) async {
         _log.info(
           'Executing custom updater for user_content_preferences ID: $id.',
@@ -644,8 +644,8 @@ class DataOperationRegistry {
         final authenticatedUser = context.read<User>();
         final permissionService = context.read<PermissionService>();
         final userActionLimitService = context.read<UserActionLimitService>();
-        final userContentPreferencesRepository =
-            context.read<DataRepository<UserContentPreferences>>();
+        final userContentPreferencesRepository = context
+            .read<DataRepository<UserContentPreferences>>();
 
         final preferencesToUpdate = item as UserContentPreferences;
 
@@ -678,25 +678,24 @@ class DataOperationRegistry {
       },
       'remote_config': (c, id, item, uid) =>
           c.read<DataRepository<RemoteConfig>>().update(
-                id: id,
-                item: item as RemoteConfig,
-                userId: uid,
-              ),
+            id: id,
+            item: item as RemoteConfig,
+            userId: uid,
+          ),
       'in_app_notification': (c, id, item, uid) =>
           c.read<DataRepository<InAppNotification>>().update(
-                id: id,
-                item: item as InAppNotification,
-              ),
+            id: id,
+            item: item as InAppNotification,
+          ),
       'engagement': (c, id, item, uid) =>
           c.read<DataRepository<Engagement>>().update(
-                id: id,
-                item: item as Engagement,
-              ),
-      'report': (c, id, item, uid) =>
-          c.read<DataRepository<Report>>().update(
             id: id,
-            item: item as Report,
+            item: item as Engagement,
           ),
+      'report': (c, id, item, uid) => c.read<DataRepository<Report>>().update(
+        id: id,
+        item: item as Report,
+      ),
       'app_review': (c, id, item, uid) =>
           c.read<DataRepository<AppReview>>().update(
             id: id,
@@ -744,8 +743,7 @@ class DataOperationRegistry {
       'media_asset': (context, id, uid) async {
         _log.info('Executing custom deleter for media_asset ID: $id.');
         final storageService = context.read<IStorageService>();
-        final mediaAssetRepository =
-            context.read<DataRepository<MediaAsset>>();
+        final mediaAssetRepository = context.read<DataRepository<MediaAsset>>();
 
         // First, fetch the asset to get its storage path.
         final assetToDelete = await mediaAssetRepository.read(id: id);

@@ -1,7 +1,9 @@
 // lib/src/enums/media_asset_entity_type.dart
 import 'package:core/core.dart' show Headline, Source, Topic;
-import 'package:flutter_news_app_api_server_full_source_code/src/models/media_asset.dart' show MediaAsset;
-import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart' show MediaAsset;
+import 'package:flutter_news_app_api_server_full_source_code/src/models/media_asset.dart'
+    show MediaAsset;
+import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart'
+    show MediaAsset;
 import 'package:json_annotation/json_annotation.dart';
 
 /// {@template media_asset_entity_type}
