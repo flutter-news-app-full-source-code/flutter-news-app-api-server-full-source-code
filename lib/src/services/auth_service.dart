@@ -5,10 +5,12 @@ import 'dart:async';
 import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/media_asset.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/email/email_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/verification_code_storage_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
@@ -32,6 +34,8 @@ class AuthService {
     userContentPreferencesRepository,
     required DataRepository<PushNotificationDevice>
     pushNotificationDeviceRepository,
+    required DataRepository<MediaAsset> mediaAssetRepository,
+    required IStorageService storageService,
     required PermissionService permissionService,
     required Logger log,
   }) : _userRepository = userRepository,
@@ -43,6 +47,8 @@ class AuthService {
        _appSettingsRepository = appSettingsRepository,
        _userContentPreferencesRepository = userContentPreferencesRepository,
        _pushNotificationDeviceRepository = pushNotificationDeviceRepository,
+       _mediaAssetRepository = mediaAssetRepository,
+       _storageService = storageService,
        _log = log;
 
   final DataRepository<User> _userRepository;
@@ -55,6 +61,8 @@ class AuthService {
   _userContentPreferencesRepository;
   final DataRepository<PushNotificationDevice>
   _pushNotificationDeviceRepository;
+  final DataRepository<MediaAsset> _mediaAssetRepository;
+  final IStorageService _storageService;
   final PermissionService _permissionService;
   final Logger _log;
 
@@ -449,6 +457,30 @@ class AuthService {
         userId: userId,
       );
       _log.info('Deleted UserContentPreferences for user ${userToDelete.id}.');
+
+      // New: Delete associated media assets from GCS and the database.
+      final mediaAssets = await _mediaAssetRepository.readAll(
+        filter: {'userId': userId},
+      );
+      if (mediaAssets.items.isNotEmpty) {
+        _log.info(
+          'Found ${mediaAssets.items.length} media assets to delete for user $userId.',
+        );
+        final deletionFutures = <Future<void>>[];
+        for (final asset in mediaAssets.items) {
+          // Delete from GCS
+          deletionFutures.add(
+            _storageService.deleteObject(storagePath: asset.storagePath),
+          );
+          // Delete from DB
+          deletionFutures.add(_mediaAssetRepository.delete(id: asset.id));
+        }
+        // Wait for all deletions to complete.
+        await Future.wait(deletionFutures);
+        _log.info(
+          'Successfully deleted all media assets for user $userId.',
+        );
+      }
 
       // 2. Delete the main user record. This also implicitly invalidates
       // tokens that rely on user lookup, as the user will no longer exist.
