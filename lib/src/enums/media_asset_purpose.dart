@@ -14,4 +14,10 @@ enum MediaAssetPurpose {
 
   /// The media is intended for use as a headline's main image.
   headlineImage,
+
+  /// The media is intended for use as a topic's icon.
+  topicImage,
+
+  /// The media is intended for use as a source's logo.
+  sourceImage,
 }
