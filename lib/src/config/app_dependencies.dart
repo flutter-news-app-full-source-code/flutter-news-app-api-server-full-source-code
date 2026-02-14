@@ -533,6 +533,8 @@ class AppDependencies {
         appSettingsRepository: appSettingsRepository,
         userContextRepository: userContextRepository,
         userContentPreferencesRepository: userContentPreferencesRepository,
+        mediaAssetRepository: mediaAssetRepository,
+        storageService: storageService,
         log: Logger('AuthService'),
         pushNotificationDeviceRepository: pushNotificationDeviceRepository,
       );
@@ -567,6 +569,7 @@ class AppDependencies {
       );
 
       storageService = GoogleCloudStorageService(
+        googleAuthService: googleAuthService,
         log: Logger('GoogleCloudStorageService'),
       );
 
