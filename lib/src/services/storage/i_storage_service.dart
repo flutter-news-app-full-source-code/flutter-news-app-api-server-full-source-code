@@ -18,4 +18,11 @@ abstract class IStorageService {
     required String storagePath,
     required String contentType,
   });
+
+  /// Deletes an object from the cloud storage bucket.
+  ///
+  /// - [storagePath]: The full path to the object to be deleted.
+  ///
+  /// Returns a [Future] that completes when the deletion is successful.
+  Future<void> deleteObject({required String storagePath});
 }
