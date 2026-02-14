@@ -45,6 +45,7 @@ void main() {
       ),
       features: const FeaturesConfig(
         onboarding: OnboardingConfig(
+          isEnabled: true,
           appTour: AppTourConfig(
             isEnabled: true,
             isSkippable: true,
@@ -54,7 +55,6 @@ void main() {
             isCountrySelectionEnabled: true,
             isTopicSelectionEnabled: true,
             isSourceSelectionEnabled: true,
-            minSelectionsRequired: 3,
             isSkippable: true,
           ),
         ),
