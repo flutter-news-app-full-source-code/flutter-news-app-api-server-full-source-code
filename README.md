@@ -1,12 +1,12 @@
 <div align="center">
   <img src="https://repository-images.githubusercontent.com/946589707/1ee61062-ded3-44f9-bb6d-c35cd03b5d64" alt="Flutter News App Toolkit Mockup" width="440">
-  <h1>Flutter News App API Server</h1>
+  <h1>Flutter News App Backend API</h1>
   <p><strong>Complete, production-ready source code for a Flutter news app api server.</strong></p>
 </div>
 
 <p align="center">
 <img src="https://img.shields.io/badge/coverage-64%25-green?style=for-the-badge" alt="coverage">
-<a href="https://flutter-news-app-full-source-code.github.io/docs/api-server/local-setup/"><img src="https://img.shields.io/badge/DOCUMENTATION-READ-slategray?style=for-the-badge" alt="Documentation: Read"></a>
+<a href="https://github.com/flutter-news-app-full-source-code/flutter-news-app-api-server-full-source-code/wiki/Local-Setup"><img src="https://img.shields.io/badge/DOCUMENTATION-READ-slategray?style=for-the-badge" alt="Documentation: Read"></a>
 <a href="LICENSE"><img src="https://img.shields.io/badge/TRIAL_LICENSE-VIEW_TERMS-blue?style=for-the-badge" alt="Trial License: View Terms"></a>
 <a href="https://github.com/sponsors/flutter-news-app-full-source-code"><img src="https://img.shields.io/badge/LIFETIME_LICENSE-PURCHASE-purple?style=for-the-badge" alt="Lifetime License: Purchase"></a>
 </p>
