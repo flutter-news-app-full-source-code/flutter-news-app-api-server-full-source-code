@@ -33,6 +33,25 @@ class PermissionService {
     return rolePerms.contains(permission) || tierPerms.contains(permission);
   }
 
+  /// Checks if the given [user] has at least one of the specified [permissions].
+  ///
+  /// Returns `true` if the user is an admin or if their combined role and tier
+  /// permissions contain any of the permissions in the provided set.
+  ///
+  /// - [user]: The authenticated user.
+  /// - [permissions]: A set of permission strings to check.
+  bool hasAnyPermission(User user, Set<String> permissions) {
+    if (isAdmin(user)) {
+      return true;
+    }
+
+    final rolePerms = rolePermissions[user.role] ?? const <String>{};
+    final tierPerms = rolePermissions[user.tier] ?? const <String>{};
+    final userPerms = rolePerms.union(tierPerms);
+
+    return userPerms.intersection(permissions).isNotEmpty;
+  }
+
   /// Checks if the given [user] has the `admin` role.
   ///
   /// This is a convenience method for checks that are strictly limited
