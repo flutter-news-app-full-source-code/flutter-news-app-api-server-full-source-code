@@ -20,25 +20,14 @@ Future<Response> onRequest(RequestContext context) async {
     return Response(statusCode: HttpStatus.methodNotAllowed);
   }
 
-  // Manually perform authorization for this custom route.
-  // The `requireAuthentication` middleware has already ensured a user exists.
   final user = context.read<User>();
-  final permissionService = context.read<PermissionService>();
-  if (!permissionService.hasPermission(
-    user,
-    Permissions.mediaRequestUploadUrl,
-  )) {
-    throw const ForbiddenException(
-      'You do not have permission to upload media.',
-    );
-  }
-
   return _post(context, user);
 }
 
 Future<Response> _post(RequestContext context, User user) async {
   final storageService = context.read<IStorageService>();
   final mediaAssetRepository = context.read<DataRepository<MediaAsset>>();
+  final permissionService = context.read<PermissionService>();
   final body = await context.request.json() as Map<String, dynamic>;
 
   final fileName = body['fileName'] as String?;
@@ -52,6 +41,42 @@ Future<Response> _post(RequestContext context, User user) async {
   }
 
   final purpose = MediaAssetPurpose.values.byName(purposeString);
+
+  // Granular, purpose-based authorization.
+  switch (purpose) {
+    case MediaAssetPurpose.userProfilePhoto:
+      if (user.isAnonymous) {
+        throw const ForbiddenException(
+          'You must have a registered account to upload a profile photo.',
+        );
+      }
+    case MediaAssetPurpose.headlineImage:
+      if (!permissionService.hasAnyPermission(user, {
+        Permissions.headlineCreate,
+        Permissions.headlineUpdate,
+      })) {
+        throw const ForbiddenException(
+          'No permission to upload headline images.',
+        );
+      }
+    case MediaAssetPurpose.topicImage:
+      if (!permissionService.hasAnyPermission(user, {
+        Permissions.topicCreate,
+        Permissions.topicUpdate,
+      })) {
+        throw const ForbiddenException('No permission to upload topic images.');
+      }
+    case MediaAssetPurpose.sourceImage:
+      if (!permissionService.hasAnyPermission(user, {
+        Permissions.sourceCreate,
+        Permissions.sourceUpdate,
+      })) {
+        throw const ForbiddenException(
+          'No permission to upload source images.',
+        );
+      }
+  }
+
   final extension = p.extension(fileName);
   final newFileName = '${ObjectId().oid}$extension';
   final storagePath = 'user-media/${user.id}/$newFileName';
