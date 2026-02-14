@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:core/core.dart';
@@ -8,6 +9,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/enums/media_ass
 import 'package:flutter_news_app_api_server_full_source_code/src/enums/media_asset_status.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/media_asset.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
 import 'package:logging/logging.dart';
 
 final _log = Logger('GcsNotificationsWebhook');
@@ -20,6 +22,7 @@ Future<Response> onRequest(RequestContext context) async {
   final idempotencyService = context.read<IdempotencyService>();
   final mediaAssetRepository = context.read<DataRepository<MediaAsset>>();
   final userRepository = context.read<DataRepository<User>>();
+  final storageService = context.read<IStorageService>();
 
   final body = await context.request.json() as Map<String, dynamic>;
 
@@ -48,14 +51,14 @@ Future<Response> onRequest(RequestContext context) async {
   final eventType = attributes['eventType'] as String?;
   final objectId = attributes['objectId'] as String?; // This is the storagePath
 
-  if (eventType != 'OBJECT_FINALIZE' || objectId == null) {
+  if (objectId == null) {
     _log.info('Ignoring GCS event of type "$eventType". Acknowledging.');
     return Response(statusCode: HttpStatus.ok);
   }
 
-  _log.info('Processing OBJECT_FINALIZE event for path: "$objectId"');
+  _log.info('Processing GCS event "$eventType" for path: "$objectId"');
 
-  // 3. Find MediaAsset
+  // 3. Find MediaAsset by its storage path.
   final results = await mediaAssetRepository.readAll(
     filter: {'storagePath': objectId},
     pagination: const PaginationOptions(limit: 1),
@@ -69,14 +72,58 @@ Future<Response> onRequest(RequestContext context) async {
     return Response(statusCode: HttpStatus.ok);
   }
 
-  final mediaAsset = results.items.first;
+  // 4. Handle different event types.
+  switch (eventType) {
+    case 'OBJECT_FINALIZE':
+      await _handleObjectFinalize(
+        mediaAsset: results.items.first,
+        objectId: objectId,
+        userRepository: userRepository,
+        mediaAssetRepository: mediaAssetRepository,
+        storageService: storageService,
+      );
+    case 'OBJECT_DELETE':
+      await _handleObjectDelete(
+        mediaAsset: results.items.first,
+        userRepository: userRepository,
+        mediaAssetRepository: mediaAssetRepository,
+      );
+    default:
+      _log.info('Ignoring unhandled GCS event type "$eventType".');
+  }
 
-  // 4. Perform Business Logic (e.g., update user profile)
+  // 5. Record Idempotency
+  await idempotencyService.recordEvent(messageId);
+
+  return Response(statusCode: HttpStatus.noContent);
+}
+
+Future<void> _handleObjectFinalize({
+  required MediaAsset mediaAsset,
+  required String objectId,
+  required DataRepository<User> userRepository,
+  required DataRepository<MediaAsset> mediaAssetRepository,
+  required IStorageService storageService,
+}) async {
+  _log.info('Handling OBJECT_FINALIZE for asset ${mediaAsset.id}.');
+
+  final bucketName = EnvironmentConfig.gcsBucketName;
+  final publicUrl = 'https://storage.googleapis.com/$bucketName/$objectId';
+
+  // Perform Business Logic (e.g., update user profile)
   if (mediaAsset.purpose == MediaAssetPurpose.userProfilePhoto) {
     try {
       final user = await userRepository.read(id: mediaAsset.userId);
-      final bucketName = EnvironmentConfig.gcsBucketName;
-      final publicUrl = 'https://storage.googleapis.com/$bucketName/$objectId';
+
+      // Fire-and-forget the cleanup of the old asset.
+      unawaited(
+        _cleanupOldProfilePhoto(
+          user: user,
+          newAsset: mediaAsset,
+          mediaAssetRepository: mediaAssetRepository,
+          storageService: storageService,
+        ),
+      );
 
       await userRepository.update(
         id: user.id,
@@ -92,9 +139,7 @@ Future<Response> onRequest(RequestContext context) async {
     }
   }
 
-  // 5. Finalize MediaAsset status
-  final bucketName = EnvironmentConfig.gcsBucketName;
-  final publicUrl = 'https://storage.googleapis.com/$bucketName/$objectId';
+  // Finalize MediaAsset status
   final updatedAsset = mediaAsset.copyWith(
     status: MediaAssetStatus.completed,
     publicUrl: publicUrl,
@@ -103,9 +148,57 @@ Future<Response> onRequest(RequestContext context) async {
 
   await mediaAssetRepository.update(id: mediaAsset.id, item: updatedAsset);
   _log.info('Finalized media asset ${mediaAsset.id} to "completed".');
+}
 
-  // 6. Record Idempotency
-  await idempotencyService.recordEvent(messageId);
+Future<void> _handleObjectDelete({
+  required MediaAsset mediaAsset,
+  required DataRepository<User> userRepository,
+  required DataRepository<MediaAsset> mediaAssetRepository,
+}) async {
+  _log.info('Handling OBJECT_DELETE for asset ${mediaAsset.id}.');
 
-  return Response(statusCode: HttpStatus.noContent);
+  // If the deleted asset was a user's profile photo, nullify the user's photoUrl.
+  if (mediaAsset.purpose == MediaAssetPurpose.userProfilePhoto) {
+    final user = await userRepository.read(id: mediaAsset.userId);
+    // Only update if the user's current photoUrl matches the deleted asset.
+    if (user.photoUrl == mediaAsset.publicUrl) {
+      await userRepository.update(
+        id: user.id,
+        item: user.copyWith(photoUrl: null),
+      );
+      _log.info('Nulled profile photo for user ${user.id}.');
+    }
+  }
+
+  // Delete the corresponding MediaAsset record from the database.
+  await mediaAssetRepository.delete(id: mediaAsset.id);
+  _log.info('Deleted MediaAsset record ${mediaAsset.id} from database.');
+}
+
+Future<void> _cleanupOldProfilePhoto({
+  required User user,
+  required MediaAsset newAsset,
+  required DataRepository<MediaAsset> mediaAssetRepository,
+  required IStorageService storageService,
+}) async {
+  final oldAssets = await mediaAssetRepository.readAll(
+    filter: {
+      'userId': user.id,
+      'purpose': MediaAssetPurpose.userProfilePhoto.name,
+      '_id': {r'$ne': newAsset.id}, // Exclude the newly uploaded asset
+    },
+  );
+
+  if (oldAssets.items.isEmpty) return;
+
+  _log.info('Found ${oldAssets.items.length} old profile photos to clean up.');
+  for (final oldAsset in oldAssets.items) {
+    try {
+      await storageService.deleteObject(storagePath: oldAsset.storagePath);
+      await mediaAssetRepository.delete(id: oldAsset.id);
+      _log.info('Cleaned up old asset: ${oldAsset.id}');
+    } catch (e, s) {
+      _log.severe('Failed to clean up old asset ${oldAsset.id}', e, s);
+    }
+  }
 }
