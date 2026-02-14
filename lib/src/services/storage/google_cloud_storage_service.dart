@@ -3,7 +3,9 @@ import 'dart:convert';
 
 import 'package:core/core.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
+import 'package:http_client/http_client.dart';
 import 'package:jose/jose.dart';
 import 'package:logging/logging.dart';
 
@@ -18,9 +20,25 @@ import 'package:logging/logging.dart';
 /// {@endtemplate}
 class GoogleCloudStorageService implements IStorageService {
   /// {@macro google_cloud_storage_service}
-  GoogleCloudStorageService({required Logger log}) : _log = log;
+  GoogleCloudStorageService({
+    required IGoogleAuthService? googleAuthService,
+    required Logger log,
+  }) : _googleAuthService = googleAuthService,
+       _log = log {
+    _storageHttpClient = HttpClient(
+      baseUrl: 'https://storage.googleapis.com',
+      tokenProvider: () =>
+          _googleAuthService?.getAccessToken(
+            scope: 'https://www.googleapis.com/auth/devstorage.read_write',
+          ) ??
+          Future.value(null),
+      logger: Logger('GcsHttpClient'),
+    );
+  }
 
   final Logger _log;
+  final IGoogleAuthService? _googleAuthService;
+  late final HttpClient _storageHttpClient;
 
   @override
   Future<String> generateUploadUrl({
@@ -85,6 +103,39 @@ class GoogleCloudStorageService implements IStorageService {
     } catch (e, s) {
       _log.severe('Failed to generate signed URL', e, s);
       throw OperationFailedException('Failed to generate signed URL: $e');
+    }
+  }
+
+  @override
+  Future<void> deleteObject({required String storagePath}) async {
+    final bucketName = EnvironmentConfig.gcsBucketName;
+    if (bucketName == null || bucketName.isEmpty) {
+      _log.severe(
+        'GCS_BUCKET_NAME is not configured in environment variables.',
+      );
+      throw const OperationFailedException(
+        'Storage service is not configured.',
+      );
+    }
+
+    if (_googleAuthService == null) {
+      _log.severe(
+        'GoogleAuthService is not available. Cannot authenticate to GCS.',
+      );
+      throw const OperationFailedException(
+        'Storage service is not configured.',
+      );
+    }
+
+    try {
+      _log.info('Deleting object at path: "$storagePath"');
+      await _storageHttpClient.delete<void>(
+        '/storage/v1/b/$bucketName/o/${Uri.encodeComponent(storagePath)}',
+      );
+      _log.info('Successfully deleted object at path: "$storagePath"');
+    } on Exception catch (e, s) {
+      _log.severe('Failed to delete object at path: "$storagePath"', e, s);
+      throw OperationFailedException('Failed to delete object: $e');
     }
   }
 }
