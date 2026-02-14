@@ -1,5 +1,6 @@
 // lib/src/models/media_asset.dart
 import 'package:equatable/equatable.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/enums/media_asset_entity_type.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/enums/media_asset_purpose.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/enums/media_asset_status.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -27,6 +28,8 @@ class MediaAsset extends Equatable {
     required this.contentType,
     required this.createdAt,
     required this.updatedAt,
+    this.associatedEntityId,
+    this.associatedEntityType,
     this.publicUrl,
   });
 
@@ -63,6 +66,14 @@ class MediaAsset extends Equatable {
   /// The timestamp when this record was last updated.
   final DateTime updatedAt;
 
+  /// The ID of the entity this asset is associated with (e.g., a Headline ID).
+  /// This is null until the asset is explicitly linked, for example, when an
+  /// admin assigns an uploaded image to a headline in the dashboard.
+  final String? associatedEntityId;
+
+  /// The type of the entity this asset is associated with (e.g., 'headline').
+  final MediaAssetEntityType? associatedEntityType;
+
   /// Converts this [MediaAsset] instance to JSON data.
   Map<String, dynamic> toJson() => _$MediaAssetToJson(this);
 
@@ -77,6 +88,8 @@ class MediaAsset extends Equatable {
     publicUrl,
     createdAt,
     updatedAt,
+    associatedEntityId,
+    associatedEntityType,
   ];
 
   /// Creates a copy of this [MediaAsset] with updated values.
@@ -90,6 +103,8 @@ class MediaAsset extends Equatable {
     String? publicUrl,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? associatedEntityId,
+    MediaAssetEntityType? associatedEntityType,
   }) {
     return MediaAsset(
       id: id ?? this.id,
@@ -101,6 +116,8 @@ class MediaAsset extends Equatable {
       publicUrl: publicUrl ?? this.publicUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      associatedEntityId: associatedEntityId ?? this.associatedEntityId,
+      associatedEntityType: associatedEntityType ?? this.associatedEntityType,
     );
   }
 }
