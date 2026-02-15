@@ -3,9 +3,6 @@ import 'dart:io';
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/enums/media_asset_purpose.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/enums/media_asset_status.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/media_asset.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
@@ -28,19 +25,12 @@ Future<Response> _post(RequestContext context, User user) async {
   final storageService = context.read<IStorageService>();
   final mediaAssetRepository = context.read<DataRepository<MediaAsset>>();
   final permissionService = context.read<PermissionService>();
-  final body = await context.request.json() as Map<String, dynamic>;
-
-  final fileName = body['fileName'] as String?;
-  final contentType = body['contentType'] as String?;
-  final purposeString = body['purpose'] as String?;
-
-  if (fileName == null || contentType == null || purposeString == null) {
-    throw const BadRequestException(
-      'Missing required fields: fileName, contentType, purpose.',
-    );
-  }
-
-  final purpose = MediaAssetPurpose.values.byName(purposeString);
+  final request = RequestUploadUrlRequest.fromJson(
+    await context.request.json() as Map<String, dynamic>,
+  );
+  final purpose = request.purpose;
+  final fileName = request.fileName;
+  final contentType = request.contentType;
 
   // Granular, purpose-based authorization.
   switch (purpose) {
@@ -82,7 +72,7 @@ Future<Response> _post(RequestContext context, User user) async {
   final storagePath = 'user-media/${user.id}/$newFileName';
 
   _log.info(
-    'User ${user.id} requesting upload URL for purpose "$purposeString" '
+    'User ${user.id} requesting upload URL for purpose "${purpose.name}" '
     'with path "$storagePath".',
   );
 
@@ -105,9 +95,9 @@ Future<Response> _post(RequestContext context, User user) async {
   );
 
   return Response.json(
-    body: {
-      'signedUrl': signedUrl,
-      'mediaAssetId': mediaAsset.id,
-    },
+    body: RequestUploadUrlResponse(
+      signedUrl: signedUrl,
+      mediaAssetId: mediaAsset.id,
+    ).toJson(),
   );
 }
