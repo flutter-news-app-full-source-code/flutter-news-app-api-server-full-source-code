@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dotenv/dotenv.dart';
 import 'package:logging/logging.dart';
+import 'package:meta/meta.dart';
 
 /// {@template environment_config}
 /// A utility class for accessing environment variables.
@@ -18,6 +19,16 @@ abstract final class EnvironmentConfig {
   static final DotEnv _env = _loadEnv();
 
   static final Map<String, String> _overrides = {};
+
+  /// Overrides an environment variable for testing purposes.
+  @visibleForTesting
+  static void setOverride(String key, String? value) {
+    if (value == null) {
+      _overrides.remove(key);
+    } else {
+      _overrides[key] = value;
+    }
+  }
 
   /// Helper method to load the .env file more robustly.
   ///
