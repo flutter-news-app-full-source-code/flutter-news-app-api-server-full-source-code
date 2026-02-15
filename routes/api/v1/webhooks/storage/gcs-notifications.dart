@@ -5,9 +5,7 @@ import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/enums/media_asset_purpose.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/enums/media_asset_status.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/media_asset.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/media/gcs_notification.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
 import 'package:logging/logging.dart';
@@ -24,22 +22,10 @@ Future<Response> onRequest(RequestContext context) async {
   final userRepository = context.read<DataRepository<User>>();
   final storageService = context.read<IStorageService>();
 
-  final body = await context.request.json() as Map<String, dynamic>;
-
-  // GCS Pub/Sub notifications are wrapped in a 'message' object.
-  final message = body['message'] as Map<String, dynamic>?;
-  if (message == null) {
-    _log.warning('Invalid GCS notification format: missing "message" object.');
-    throw const BadRequestException('Invalid GCS notification format.');
-  }
-
-  final messageId = message['messageId'] as String?;
-  final attributes = message['attributes'] as Map<String, dynamic>?;
-
-  if (messageId == null || attributes == null) {
-    _log.warning('Invalid GCS notification: missing messageId or attributes.');
-    throw const BadRequestException('Invalid GCS notification format.');
-  }
+  final notification = GcsNotification.fromJson(
+    await context.request.json() as Map<String, dynamic>,
+  );
+  final messageId = notification.message.messageId;
 
   // 1. Idempotency Check
   if (await idempotencyService.isEventProcessed(messageId)) {
@@ -48,13 +34,8 @@ Future<Response> onRequest(RequestContext context) async {
   }
 
   // 2. Process Event
-  final eventType = attributes['eventType'] as String?;
-  final objectId = attributes['objectId'] as String?; // This is the storagePath
-
-  if (objectId == null) {
-    _log.info('Ignoring GCS event of type "$eventType". Acknowledging.');
-    return Response(statusCode: HttpStatus.ok);
-  }
+  final eventType = notification.message.attributes.eventType;
+  final objectId = notification.message.attributes.objectId;
 
   _log.info('Processing GCS event "$eventType" for path: "$objectId"');
 
