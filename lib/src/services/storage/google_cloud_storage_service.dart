@@ -8,6 +8,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/storag
 import 'package:http_client/http_client.dart';
 import 'package:jose/jose.dart';
 import 'package:logging/logging.dart';
+import 'package:meta/meta.dart';
 
 /// {@template google_cloud_storage_service}
 /// A concrete implementation of [IStorageService] that interacts with
@@ -23,17 +24,20 @@ class GoogleCloudStorageService implements IStorageService {
   GoogleCloudStorageService({
     required IGoogleAuthService? googleAuthService,
     required Logger log,
+    @visibleForTesting HttpClient? httpClient,
   }) : _googleAuthService = googleAuthService,
        _log = log {
-    _storageHttpClient = HttpClient(
-      baseUrl: 'https://storage.googleapis.com',
-      tokenProvider: () =>
-          _googleAuthService?.getAccessToken(
-            scope: 'https://www.googleapis.com/auth/devstorage.read_write',
-          ) ??
-          Future.value(null),
-      logger: Logger('GcsHttpClient'),
-    );
+    _storageHttpClient =
+        httpClient ??
+        HttpClient(
+          baseUrl: 'https://storage.googleapis.com',
+          tokenProvider: () =>
+              _googleAuthService?.getAccessToken(
+                scope: 'https://www.googleapis.com/auth/devstorage.read_write',
+              ) ??
+              Future.value(null),
+          logger: Logger('GcsHttpClient'),
+        );
   }
 
   final Logger _log;
