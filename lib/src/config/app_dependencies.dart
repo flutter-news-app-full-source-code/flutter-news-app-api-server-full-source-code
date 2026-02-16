@@ -11,6 +11,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/e
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_onesignal_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_sendgrid_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/gcs_jwt_verifier.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/database/migrations/all_migrations.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/idempotency_record.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
@@ -113,6 +114,8 @@ class AppDependencies {
   late final IdempotencyService idempotencyService;
   late final IStorageService storageService;
   late final RewardsService rewardsService;
+
+  late final IGcsJwtVerifier gcsJwtVerifier;
 
   /// Initializes all application dependencies.
   ///
@@ -588,6 +591,8 @@ class AppDependencies {
         admobVerifier: admobVerifier,
         log: Logger('RewardsService'),
       );
+
+      gcsJwtVerifier = GcsJwtVerifier(log: Logger('GcsJwtVerifier'));
 
       // --- Analytics Services ---
       final gaPropertyId = EnvironmentConfig.googleAnalyticsPropertyId;
