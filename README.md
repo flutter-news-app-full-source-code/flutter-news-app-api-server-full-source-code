@@ -124,14 +124,15 @@ A complete, multi-provider analytics engine that transforms raw data from both e
 <details>
 <summary><strong>🖼️ Media & File Management</strong></summary>
 
-### ☁️ A Scalable, Professional-Grade Upload Architecture
-A robust, secure, and cost-effective system for handling file uploads, built on definitive industry best practices.
- - **Direct-to-Cloud Uploads:** Clients upload files directly to a scalable cloud object storage, keeping the API server lightweight and responsive by offloading heavy data transfers.
+### ☁️ A Scalable, Provider-Agnostic Upload Architecture
+A robust, secure, and cost-effective system for handling file uploads, built on definitive industry best practices and designed for provider independence.
+ - **Provider-Agnostic by Design:** The entire storage system is built on a clean abstraction (`IStorageService`), allowing you to swap out the underlying cloud provider (e.g., Google Cloud Storage, AWS S3) with a simple configuration change, avoiding vendor lock-in.
+ - **Direct-to-Cloud Uploads:** Clients upload files directly to your chosen cloud object storage, keeping the API server lightweight and responsive by offloading heavy data transfers.
  - **Purpose-Based Authorization:** The API remains the central authority, performing granular permission checks before granting a temporary upload credential. This ensures different user roles have appropriate upload capabilities.
  - **Automated Lifecycle Management:** The system uses secure, cryptographically-verified webhooks to manage the entire asset lifecycle. It handles creation, deletion, and update events to ensure the application database and cloud storage are always perfectly synchronized, preventing orphaned files and broken links.
  - **Intelligent Cleanup:** The architecture includes an "Update-with-Cleanup" pattern that automatically removes a user's old assets (like a profile photo) when a new one is uploaded. It also purges all of a user's stored media upon account deletion.
  - **Idempotent & Resilient:** All background processing is fully idempotent, guaranteeing that even if a notification is delivered multiple times, the logic is executed exactly once, preventing data corruption.
-> **Your Advantage:** You get a professional-grade file management system that is infinitely scalable, highly secure, and cost-efficient. It guarantees data consistency across the entire asset lifecycle and protects against common abuse vectors, providing a superior and reliable user experience.
+> **Your Advantage:** You get a professional-grade file management system that is infinitely scalable, highly secure, and cost-efficient. It guarantees data consistency across the entire asset lifecycle, protects against common abuse vectors, and gives you the freedom to choose your storage provider, providing a superior and reliable user experience.
 
 </details>
 
