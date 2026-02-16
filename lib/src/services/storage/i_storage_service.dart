@@ -12,11 +12,14 @@ abstract class IStorageService {
   /// - [storagePath]: The full, unique path in the storage bucket where the
   ///   file will be stored (e.g., 'user-media/user-id/uuid.jpg').
   /// - [contentType]: The MIME type of the file to be uploaded (e.g., 'image/jpeg').
+  /// - [maxSizeInBytes]: The maximum allowed size of the file in bytes.
   ///
-  /// Returns a [Future] that completes with the signed URL string.
-  Future<String> generateUploadUrl({
+  /// Returns a [Future] that completes with the details required for a V4
+  /// policy-signed POST request.
+  Future<Map<String, dynamic>> generateUploadUrl({
     required String storagePath,
     required String contentType,
+    required int maxSizeInBytes,
   });
 
   /// Deletes an object from the cloud storage bucket.
