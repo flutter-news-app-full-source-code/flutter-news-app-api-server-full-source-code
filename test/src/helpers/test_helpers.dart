@@ -4,6 +4,7 @@ import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:dart_frog_test/dart_frog_test.dart';
 import 'package:data_repository/data_repository.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/request_id.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
@@ -11,8 +12,11 @@ import 'package:flutter_news_app_api_server_full_source_code/src/registry/data_o
 import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_registry.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
+import 'package:jose/jose.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockRequestContext extends Mock implements RequestContext {}
@@ -33,6 +37,12 @@ class MockUserActionLimitService extends Mock
 class MockDataOperationRegistry extends Mock implements DataOperationRegistry {}
 
 class MockDataRepository<T> extends Mock implements DataRepository<T> {}
+
+class MockStorageService extends Mock implements IStorageService {}
+
+class MockMediaAssetRepository extends MockDataRepository<MediaAsset> {}
+
+class MockIdempotencyService extends Mock implements IdempotencyService {}
 
 class MockHeadlineRepository extends MockDataRepository<Headline> {}
 
@@ -145,6 +155,9 @@ RequestContext createMockRequestContext({
   DataRepository<Engagement>? engagementRepository,
   DataRepository<AppReview>? appReviewRepository,
   DataRepository<UserContentPreferences>? userContentPreferencesRepository,
+  IStorageService? storageService,
+  DataRepository<MediaAsset>? mediaAssetRepository,
+  IdempotencyService? idempotencyService,
   CountryQueryService? countryQueryService,
 }) {
   // If a request object is provided, extract values from it.
@@ -278,6 +291,15 @@ RequestContext createMockRequestContext({
   if (countryQueryService != null) {
     testContext.provide<CountryQueryService>(countryQueryService);
   }
+  if (storageService != null) {
+    testContext.provide<IStorageService>(storageService);
+  }
+  if (mediaAssetRepository != null) {
+    testContext.provide<DataRepository<MediaAsset>>(mediaAssetRepository);
+  }
+  if (idempotencyService != null) {
+    testContext.provide<IdempotencyService>(idempotencyService);
+  }
 
   // Return the ProxyRequestContext to ensure extension methods work correctly.
   return ProxyRequestContext(testContext.context);
@@ -288,6 +310,7 @@ User createTestUser({
   String id = 'user-id',
   String email = 'test@example.com',
   UserRole role = UserRole.user,
+  bool isAnonymous = false,
   AccessTier tier = AccessTier.standard,
 }) {
   return User(
@@ -296,5 +319,100 @@ User createTestUser({
     role: role,
     tier: tier,
     createdAt: DateTime.now(),
+    isAnonymous: isAnonymous,
   );
+}
+
+MediaAsset createTestMediaAsset({
+  String id = 'media-asset-id',
+  String userId = 'user-id',
+  MediaAssetPurpose purpose = MediaAssetPurpose.userProfilePhoto,
+  MediaAssetStatus status = MediaAssetStatus.pendingUpload,
+  String storagePath = 'user-media/user-id/file.jpg',
+  String contentType = 'image/jpeg',
+  String? publicUrl,
+}) {
+  return MediaAsset(
+    id: id,
+    userId: userId,
+    purpose: purpose,
+    status: status,
+    storagePath: storagePath,
+    contentType: contentType,
+    publicUrl: publicUrl,
+    createdAt: DateTime.now(),
+    updatedAt: DateTime.now(),
+  );
+}
+
+Map<String, dynamic> createGcsNotificationPayload(
+  String messageId,
+  String eventType,
+  String objectId,
+) {
+  return {
+    'message': {
+      'messageId': messageId,
+      'attributes': {
+        'eventType': eventType,
+        'objectId': objectId,
+      },
+    },
+  };
+}
+
+class _MockJsonWebSignature extends Mock implements JsonWebSignature {}
+
+class _MockJsonWebKeyStore extends Mock implements JsonWebKeyStore {}
+
+class _MockJsonWebToken extends Mock implements JsonWebToken {}
+
+void mockGcsJwtVerification() {
+  final mockJws = _MockJsonWebSignature();
+  final mockKeyStore = _MockJsonWebKeyStore();
+
+  // Mock the static `fromCompactSerialization` method
+  when(
+    () => JsonWebSignature.fromCompactSerialization(any()),
+  ).thenAnswer((invocation) {
+    final token = invocation.positionalArguments.first as String;
+    final claims = <String, dynamic>{
+      'iss': 'https://accounts.google.com',
+      'aud': 'localhost',
+      'exp':
+          DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch ~/
+          1000,
+    };
+
+    if (token == 'invalid-issuer-token') {
+      claims['iss'] = 'invalid-issuer';
+    } else if (token == 'invalid-audience-token') {
+      claims['aud'] = 'invalid-audience';
+    } else if (token == 'expired-token') {
+      claims['exp'] =
+          DateTime.now()
+              .subtract(const Duration(hours: 1))
+              .millisecondsSinceEpoch ~/
+          1000;
+    }
+
+    when(
+      () => mockJws.unverifiedPayload,
+    ).thenReturn(JsonWebToken.fromMap(claims));
+    when(
+      () => mockJws.verify(any()),
+    ).thenAnswer((_) async => token != 'invalid-signature-token');
+
+    return mockJws;
+  });
+
+  // Mock the JsonWebKeyStore
+  when(JsonWebKeyStore.new).thenReturn(mockKeyStore);
+  when(
+    () => mockKeyStore.addKeySetUrl(any()),
+  ).thenAnswer((_) async {});
+}
+
+void mockEnvironmentConfig() {
+  EnvironmentConfig.setOverride('GCS_BUCKET_NAME', 'test-bucket');
 }
