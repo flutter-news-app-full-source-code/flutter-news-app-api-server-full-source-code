@@ -189,8 +189,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "8103818e7659e3c9330d23a6c30f79a934e10271"
-      resolved-ref: "8103818e7659e3c9330d23a6c30f79a934e10271"
+      ref: "0abb73624e0318694b90ef3a92bc10c492978579"
+      resolved-ref: "0abb73624e0318694b90ef3a92bc10c492978579"
       url: "https://github.com/flutter-news-app-full-source-code/core.git"
     source: git
     version: "1.8.0"
@@ -517,10 +517,10 @@ packages:
     dependency: transitive
     description:
       name: mime
-      sha256: "41a20518f0cb1256669420fdba0cd90d21561e560ac240f26ef8322e45bb7ed6"
+      sha256: "801fd0b26f14a4a58ccb09d5892c3fbdeff209594300a542492cf13fba9d247a"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.0"
+    version: "1.0.6"
   mocktail:
     dependency: "direct dev"
     description:
