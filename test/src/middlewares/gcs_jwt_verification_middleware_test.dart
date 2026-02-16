@@ -7,7 +7,6 @@ import 'package:test/test.dart';
 
 import '../helpers/test_helpers.dart';
 
-
 class MockJsonWebSignature extends Mock implements JsonWebSignature {}
 
 class MockJsonWebKeyStore extends Mock implements JsonWebKeyStore {}

@@ -8,7 +8,6 @@ import 'package:test/test.dart';
 import '../../../../../../routes/api/v1/webhooks/storage/gcs-notifications.dart';
 import '../../../../../src/helpers/test_helpers.dart';
 
-
 void main() {
   group('POST /webhooks/storage/gcs-notifications', () {
     late MockIdempotencyService mockIdempotencyService;

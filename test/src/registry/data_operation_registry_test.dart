@@ -515,7 +515,9 @@ void main() {
 
       test('succeeds when regular user updates their own name', () async {
         final updater = registry.itemUpdaters['user']!;
-        final updatedUser = userToUpdate.copyWith(name: const ValueWrapper('New Name'));
+        final updatedUser = userToUpdate.copyWith(
+          name: const ValueWrapper('New Name'),
+        );
         final requestBody = updatedUser.toJson();
 
         when(
