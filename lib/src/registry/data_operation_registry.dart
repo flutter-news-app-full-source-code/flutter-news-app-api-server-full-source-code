@@ -651,7 +651,7 @@ class DataOperationRegistry {
           // Critical fields like 'email', 'role', 'tier', 'isAnonymous' are
           // immutable via this endpoint.
           final permissibleUpdate = userToUpdate.copyWith(
-            name: requestedUpdateUser.name,
+            name: ValueWrapper(requestedUpdateUser.name),
             photoUrl: ValueWrapper(requestedUpdateUser.photoUrl),
             mediaAssetId: ValueWrapper(requestedUpdateUser.mediaAssetId),
           );
