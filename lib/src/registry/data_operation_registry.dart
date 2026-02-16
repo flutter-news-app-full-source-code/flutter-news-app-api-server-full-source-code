@@ -803,16 +803,29 @@ class DataOperationRegistry {
         final storageService = context.read<IStorageService>();
         final mediaAssetRepository = context.read<DataRepository<MediaAsset>>();
 
-        // First, fetch the asset to get its storage path.
+        // First, fetch the asset to get its status and storage path.
         final assetToDelete = await mediaAssetRepository.read(id: id);
 
-        // 1. Delete the file from Google Cloud Storage.
-        await storageService.deleteObject(
-          storagePath: assetToDelete.storagePath,
-        );
-        _log.info('Deleted file from GCS: ${assetToDelete.storagePath}');
+        // 1. If the asset was successfully uploaded, delete the corresponding
+        // file from the cloud storage provider.
+        if (assetToDelete.status == MediaAssetStatus.completed) {
+          try {
+            await storageService.deleteObject(
+              storagePath: assetToDelete.storagePath,
+            );
+            _log.info(
+              'Deleted file from cloud storage: ${assetToDelete.storagePath}',
+            );
+          } catch (e, s) {
+            _log.warning(
+              'Failed to delete file from cloud storage, but proceeding with DB deletion.',
+              e,
+              s,
+            );
+          }
+        }
 
-        // 2. Only after successful GCS deletion, delete the database record.
+        // 2. Delete the database record.
         await mediaAssetRepository.delete(id: id);
         _log.info('Deleted MediaAsset record from database: $id');
       },
