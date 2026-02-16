@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
@@ -15,7 +16,7 @@ void main() {
     late MockMediaAssetRepository mockMediaAssetRepository;
     late MockPermissionService mockPermissionService;
 
-    const signedUrl = 'https://storage.googleapis.com/signed-url';
+    const url = 'https://storage.googleapis.com/signed-url';
 
     setUpAll(registerSharedFallbackValues);
 
@@ -28,8 +29,11 @@ void main() {
         () => mockStorageService.generateUploadUrl(
           storagePath: any<String>(named: 'storagePath'),
           contentType: any<String>(named: 'contentType'),
+          maxSizeInBytes: any<int>(named: 'maxSizeInBytes'),
         ),
-      ).thenAnswer((_) async => signedUrl);
+      ).thenAnswer(
+        (_) async => {'url': url, 'fields': <String, String>{}},
+      );
 
       when(
         () => mockMediaAssetRepository.create(
@@ -46,6 +50,9 @@ void main() {
         method: HttpMethod.post,
         body: <String, dynamic>{},
         authenticatedUser: user,
+        storageService: mockStorageService,
+        mediaAssetRepository: mockMediaAssetRepository,
+        permissionService: mockPermissionService,
       );
 
       final response = await onRequest(context);
@@ -63,12 +70,15 @@ void main() {
           'purpose': 'userProfilePhoto',
         },
         authenticatedUser: anonymousUser,
+        storageService: mockStorageService,
+        mediaAssetRepository: mockMediaAssetRepository,
         permissionService: mockPermissionService,
       );
 
-      final response = await onRequest(context);
-
-      expect(response.statusCode, HttpStatus.forbidden);
+      await expectLater(
+        () => onRequest(context),
+        throwsA(isA<ForbiddenException>()),
+      );
     });
 
     test(
@@ -88,12 +98,15 @@ void main() {
             'purpose': 'headlineImage',
           },
           authenticatedUser: user,
+          storageService: mockStorageService,
+          mediaAssetRepository: mockMediaAssetRepository,
           permissionService: mockPermissionService,
         );
 
-        final response = await onRequest(context);
-
-        expect(response.statusCode, HttpStatus.forbidden);
+        await expectLater(
+          () => onRequest(context),
+          throwsA(isA<ForbiddenException>()),
+        );
         verify(
           () => mockPermissionService.hasAnyPermission(user, {
             Permissions.headlineCreate,
@@ -129,7 +142,7 @@ void main() {
 
       expect(response.statusCode, HttpStatus.ok);
       final json = await response.json() as Map<String, dynamic>;
-      expect(json['signedUrl'], signedUrl);
+      expect(json['url'], url);
       expect(json['mediaAssetId'], isA<String>());
     });
 
@@ -173,11 +186,12 @@ void main() {
           () => mockStorageService.generateUploadUrl(
             storagePath: capturedAsset.storagePath,
             contentType: 'image/jpeg',
+            maxSizeInBytes: EnvironmentConfig.mediaProfilePhotoMaxSizeInBytes,
           ),
         ).called(1);
 
         final json = await response.json() as Map<String, dynamic>;
-        expect(json['signedUrl'], signedUrl);
+        expect(json['url'], url);
         expect(json['mediaAssetId'], capturedAsset.id);
       },
     );
