@@ -26,9 +26,14 @@ Future<Response> _post(RequestContext context, User user) async {
   final storageService = context.read<IStorageService>();
   final mediaAssetRepository = context.read<DataRepository<MediaAsset>>();
   final permissionService = context.read<PermissionService>();
-  final request = RequestUploadUrlRequest.fromJson(
-    await context.request.json() as Map<String, dynamic>,
-  );
+  late final RequestUploadUrlRequest request;
+  try {
+    request = RequestUploadUrlRequest.fromJson(
+      await context.request.json() as Map<String, dynamic>,
+    );
+  } catch (_) {
+    return Response(statusCode: HttpStatus.badRequest);
+  }
   final purpose = request.purpose;
   final fileName = request.fileName;
   final contentType = request.contentType;
