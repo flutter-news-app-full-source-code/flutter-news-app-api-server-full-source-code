@@ -260,4 +260,74 @@ abstract final class EnvironmentConfig {
   /// Retrieves the Google Cloud Storage bucket name from the environment.
   /// The value is read from the `GCS_BUCKET_NAME` environment variable, if available.
   static String? get gcsBucketName => _getEnv('GCS_BUCKET_NAME');
+
+  /// Retrieves the whitelisted MIME types for profile photo uploads.
+  /// Defaults to common image types if not set.
+  static List<String> get mediaProfilePhotoMimeTypes {
+    final types = _getEnv('MEDIA_PROFILE_PHOTO_MIME_TYPES');
+    if (types == null || types.isEmpty) {
+      return ['image/jpeg', 'image/png', 'image/webp'];
+    }
+    return types.split(',').map((e) => e.trim()).toList();
+  }
+
+  /// Retrieves the maximum file size in bytes for profile photo uploads.
+  /// Defaults to 5MB if not set or if parsing fails.
+  static int get mediaProfilePhotoMaxSizeInBytes {
+    final mb = int.tryParse(_getEnv('MEDIA_PROFILE_PHOTO_MAX_SIZE_MB') ?? '5');
+    return (mb ?? 5) * 1024 * 1024;
+  }
+
+  /// Retrieves the whitelisted MIME types for headline image uploads.
+  /// Defaults to common image types if not set.
+  static List<String> get mediaHeadlineImageMimeTypes {
+    final types = _getEnv('MEDIA_HEADLINE_IMAGE_MIME_TYPES');
+    if (types == null || types.isEmpty) {
+      return ['image/jpeg', 'image/png', 'image/webp'];
+    }
+    return types.split(',').map((e) => e.trim()).toList();
+  }
+
+  /// Retrieves the maximum file size in bytes for headline image uploads.
+  /// Defaults to 10MB if not set or if parsing fails.
+  static int get mediaHeadlineImageMaxSizeInBytes {
+    final mb = int.tryParse(
+      _getEnv('MEDIA_HEADLINE_IMAGE_MAX_SIZE_MB') ?? '10',
+    );
+    return (mb ?? 10) * 1024 * 1024;
+  }
+
+  /// Retrieves the whitelisted MIME types for topic image uploads.
+  /// Defaults to common image types if not set.
+  static List<String> get mediaTopicImageMimeTypes {
+    final types = _getEnv('MEDIA_TOPIC_IMAGE_MIME_TYPES');
+    if (types == null || types.isEmpty) {
+      return ['image/jpeg', 'image/png', 'image/webp'];
+    }
+    return types.split(',').map((e) => e.trim()).toList();
+  }
+
+  /// Retrieves the maximum file size in bytes for topic image uploads.
+  /// Defaults to 2MB if not set or if parsing fails.
+  static int get mediaTopicImageMaxSizeInBytes {
+    final mb = int.tryParse(_getEnv('MEDIA_TOPIC_IMAGE_MAX_SIZE_MB') ?? '2');
+    return (mb ?? 2) * 1024 * 1024;
+  }
+
+  /// Retrieves the whitelisted MIME types for source image uploads.
+  /// Defaults to common image types if not set.
+  static List<String> get mediaSourceImageMimeTypes {
+    final types = _getEnv('MEDIA_SOURCE_IMAGE_MIME_TYPES');
+    if (types == null || types.isEmpty) {
+      return ['image/jpeg', 'image/png', 'image/webp'];
+    }
+    return types.split(',').map((e) => e.trim()).toList();
+  }
+
+  /// Retrieves the maximum file size in bytes for source image uploads.
+  /// Defaults to 2MB if not set or if parsing fails.
+  static int get mediaSourceImageMaxSizeInBytes {
+    final mb = int.tryParse(_getEnv('MEDIA_SOURCE_IMAGE_MAX_SIZE_MB') ?? '2');
+    return (mb ?? 2) * 1024 * 1024;
+  }
 }
