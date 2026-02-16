@@ -10,7 +10,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/idempo
 import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
 import 'package:logging/logging.dart';
 
-final _log = Logger('GcsNotificationsWebhook');
+final _log = Logger('StorageNotificationsWebhook');
 
 Future<Response> onRequest(RequestContext context) async {
   if (context.request.method != HttpMethod.post) {
@@ -33,7 +33,7 @@ Future<Response> onRequest(RequestContext context) async {
 
     // 1. Idempotency Check
     if (await idempotencyService.isEventProcessed(messageId)) {
-      _log.info('GCS event $messageId already processed. Acknowledging.');
+      _log.info('Storage event $messageId already processed. Acknowledging.');
       return Response(statusCode: HttpStatus.ok);
     }
 
@@ -41,7 +41,7 @@ Future<Response> onRequest(RequestContext context) async {
     final eventType = notification.message.attributes.eventType;
     final objectId = notification.message.attributes.objectId;
 
-    _log.info('Processing GCS event "$eventType" for path: "$objectId"');
+    _log.info('Processing storage event "$eventType" for path: "$objectId"');
 
     // 3. Find MediaAsset by its storage path.
     final results = await mediaAssetRepository.readAll(
@@ -51,7 +51,7 @@ Future<Response> onRequest(RequestContext context) async {
 
     if (results.items.isEmpty) {
       _log.severe(
-        'Received GCS notification for unknown storagePath: "$objectId"',
+        'Received storage notification for unknown storagePath: "$objectId"',
       );
       // Acknowledge to prevent retries for an unrecoverable error.
       return Response(statusCode: HttpStatus.ok);
@@ -80,7 +80,7 @@ Future<Response> onRequest(RequestContext context) async {
           mediaAssetRepository: mediaAssetRepository,
         );
       default:
-        _log.info('Ignoring unhandled GCS event type "$eventType".');
+        _log.info('Ignoring unhandled storage event type "$eventType".');
     }
 
     // 5. Record Idempotency
@@ -88,7 +88,7 @@ Future<Response> onRequest(RequestContext context) async {
 
     return Response(statusCode: HttpStatus.noContent);
   } catch (e, s) {
-    _log.severe('GCS notification handler failed. Returning 500.', e, s);
+    _log.severe('Storage notification handler failed. Returning 500.', e, s);
     // Return a non-2xx status code to signal failure to Pub/Sub,
     // which will trigger a retry according to the subscription's policy.
     return Response(statusCode: HttpStatus.internalServerError);
@@ -155,6 +155,16 @@ Future<void> _handleObjectFinalize({
         _log.info(
           'Found headline ${headlineToUpdate.id} linked to asset ${mediaAsset.id}. Updating imageUrl.',
         );
+
+        // Fire-and-forget cleanup of old image.
+        unawaited(
+          _cleanupOldEntityAsset(
+            oldUrl: headlineToUpdate.imageUrl,
+            mediaAssetRepository: mediaAssetRepository,
+            storageService: storageService,
+          ),
+        );
+
         await headlineRepository.update(
           id: headlineToUpdate.id,
           item: headlineToUpdate.copyWith(
@@ -174,6 +184,16 @@ Future<void> _handleObjectFinalize({
         _log.info(
           'Found topic ${topicToUpdate.id} linked to asset ${mediaAsset.id}. Updating iconUrl.',
         );
+
+        // Fire-and-forget cleanup of old image.
+        unawaited(
+          _cleanupOldEntityAsset(
+            oldUrl: topicToUpdate.iconUrl,
+            mediaAssetRepository: mediaAssetRepository,
+            storageService: storageService,
+          ),
+        );
+
         await topicRepository.update(
           id: topicToUpdate.id,
           item: topicToUpdate.copyWith(
@@ -193,6 +213,16 @@ Future<void> _handleObjectFinalize({
         _log.info(
           'Found source ${sourceToUpdate.id} linked to asset ${mediaAsset.id}. Updating logoUrl.',
         );
+
+        // Fire-and-forget cleanup of old image.
+        unawaited(
+          _cleanupOldEntityAsset(
+            oldUrl: sourceToUpdate.logoUrl,
+            mediaAssetRepository: mediaAssetRepository,
+            storageService: storageService,
+          ),
+        );
+
         await sourceRepository.update(
           id: sourceToUpdate.id,
           item: sourceToUpdate.copyWith(
@@ -305,5 +335,39 @@ Future<void> _cleanupOldProfilePhoto({
     } catch (e, s) {
       _log.severe('Failed to clean up old asset ${oldAsset.id}', e, s);
     }
+  }
+}
+
+Future<void> _cleanupOldEntityAsset({
+  required String? oldUrl,
+  required DataRepository<MediaAsset> mediaAssetRepository,
+  required IStorageService storageService,
+}) async {
+  if (oldUrl == null || oldUrl.isEmpty) {
+    return; // No old asset to clean up.
+  }
+
+  // Find the old MediaAsset by its publicUrl.
+  final oldAssets = await mediaAssetRepository.readAll(
+    filter: {'publicUrl': oldUrl},
+    pagination: const PaginationOptions(limit: 1),
+  );
+
+  if (oldAssets.items.isEmpty) {
+    _log.warning('Could not find old MediaAsset to clean up for URL: $oldUrl');
+    return;
+  }
+
+  final oldAsset = oldAssets.items.first;
+  _log.info('Found old asset ${oldAsset.id} to clean up for URL: $oldUrl');
+
+  try {
+    // Delete the file from cloud storage.
+    await storageService.deleteObject(storagePath: oldAsset.storagePath);
+    // Delete the database record.
+    await mediaAssetRepository.delete(id: oldAsset.id);
+    _log.info('Cleaned up old asset: ${oldAsset.id}');
+  } catch (e, s) {
+    _log.severe('Failed to clean up old asset ${oldAsset.id}', e, s);
   }
 }
