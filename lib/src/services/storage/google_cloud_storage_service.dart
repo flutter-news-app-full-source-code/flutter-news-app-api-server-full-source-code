@@ -45,9 +45,10 @@ class GoogleCloudStorageService implements IStorageService {
   late final HttpClient _storageHttpClient;
 
   @override
-  Future<String> generateUploadUrl({
+  Future<Map<String, dynamic>> generateUploadUrl({
     required String storagePath,
     required String contentType,
+    required int maxSizeInBytes,
   }) async {
     final bucketName = EnvironmentConfig.gcsBucketName;
     if (bucketName == null || bucketName.isEmpty) {
@@ -72,38 +73,47 @@ class GoogleCloudStorageService implements IStorageService {
     }
 
     try {
-      _log.info(
-        'Generating V2 signed URL for path: "$storagePath" in bucket: "$bucketName".',
-      );
+      _log.info('Generating V4 signed policy for path: "$storagePath".');
 
       final expiration = DateTime.now().toUtc().add(
         const Duration(minutes: 15),
       );
-      final expirationTimestamp = (expiration.millisecondsSinceEpoch / 1000)
-          .round();
 
-      final stringToSign =
-          'PUT\n\n$contentType\n$expirationTimestamp\n'
-          '/$bucketName/$storagePath';
+      final policy = {
+        'conditions': [
+          ['content-length-range', 0, maxSizeInBytes],
+          {'bucket': bucketName},
+          {'key': storagePath},
+          {'Content-Type': contentType},
+        ],
+        'expiration': expiration.toIso8601String(),
+      };
+
+      final policyJson = jsonEncode(policy);
+      final policyBase64 = base64Encode(utf8.encode(policyJson));
 
       final jwk = JsonWebKey.fromPem(
         privateKeyPem.replaceAll(r'\n', '\n'),
       );
 
       final signatureBytes = jwk.sign(
-        utf8.encode(stringToSign),
+        utf8.encode(policyBase64),
         algorithm: 'RS256',
       );
       final signature = base64Encode(signatureBytes);
 
-      final signedUrl =
-          'https://storage.googleapis.com/$bucketName/$storagePath'
-          '?GoogleAccessId=$serviceAccountEmail'
-          '&Expires=$expirationTimestamp'
-          '&Signature=${Uri.encodeComponent(signature)}';
+      final fields = {
+        'key': storagePath,
+        'Content-Type': contentType,
+        'GoogleAccessId': serviceAccountEmail,
+        'policy': policyBase64,
+        'signature': signature,
+      };
 
-      _log.info('Successfully generated signed URL.');
-      return signedUrl;
+      final url = 'https://storage.googleapis.com/$bucketName';
+
+      _log.info('Successfully generated V4 signed policy.');
+      return {'url': url, 'fields': fields};
     } catch (e, s) {
       _log.severe('Failed to generate signed URL', e, s);
       throw OperationFailedException('Failed to generate signed URL: $e');
