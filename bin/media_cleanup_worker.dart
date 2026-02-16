@@ -61,7 +61,9 @@ Future<void> main(List<String> args) async {
       _log.info('Found ${orphanedAssets.length} orphaned assets to delete.');
       for (final asset in orphanedAssets) {
         _log.info('Deleting orphaned asset: ${asset.id}');
-        // The custom deleter for MediaAsset also handles GCS file deletion.
+        // Deleting the database record for a 'pendingUpload' asset. Since the
+        // upload never completed, there is no corresponding file in cloud
+        // storage to delete.
         await mediaAssetRepository.delete(id: asset.id);
       }
       _log.info(
