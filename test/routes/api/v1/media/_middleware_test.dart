@@ -1,3 +1,4 @@
+import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 
 import 'package:test/test.dart';
@@ -7,6 +8,8 @@ import '../../../../src/helpers/test_helpers.dart';
 
 void main() {
   group('Media Middleware', () {
+    setUpAll(registerSharedFallbackValues);
+
     test('when user is not authenticated, the request is rejected '
         'before reaching the handler', () async {
       // This test verifies the *effect* of the `requireAuthentication` middleware
@@ -29,7 +32,7 @@ void main() {
       // The default error-handling middleware in Dart Frog converts this to a
       // proper response. We test that the exception is thrown, as that is the
       // direct behavior of the authentication middleware.
-      expect(() => handler(context), throwsA(isA<StateError>()));
+      expect(() => handler(context), throwsA(isA<UnauthorizedException>()));
     });
 
     test('when user is authenticated, proceeds to the next handler', () async {
