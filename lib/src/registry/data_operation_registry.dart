@@ -10,6 +10,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/countr
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/utils/media_asset_utils.dart';
 import 'package:logging/logging.dart';
 
 // --- Typedefs for Data Operations ---
@@ -763,12 +764,71 @@ class DataOperationRegistry {
 
     // --- Register Item Deleters ---
     _itemDeleters.addAll({
-      'headline': (c, id, uid) =>
-          c.read<DataRepository<Headline>>().delete(id: id, userId: uid),
-      'topic': (c, id, uid) =>
-          c.read<DataRepository<Topic>>().delete(id: id, userId: uid),
-      'source': (c, id, uid) =>
-          c.read<DataRepository<Source>>().delete(id: id, userId: uid),
+      'headline': (context, id, uid) async {
+        _log.info('Executing custom deleter for headline ID: $id.');
+        final headlineRepository = context.read<DataRepository<Headline>>();
+        final mediaAssetRepository = context.read<DataRepository<MediaAsset>>();
+        final storageService = context.read<IStorageService>();
+
+        final headline = await headlineRepository.read(id: id);
+
+        if (headline.imageUrl != null && headline.imageUrl!.isNotEmpty) {
+          unawaited(
+            cleanupMediaAssetByUrl(
+              url: headline.imageUrl,
+              mediaAssetRepository: mediaAssetRepository,
+              storageService: storageService,
+            ).catchError(
+              (Object e, StackTrace s) =>
+                  _log.severe('Asset cleanup failed.', e, s),
+            ),
+          );
+        }
+
+        await headlineRepository.delete(id: id, userId: uid);
+      },
+      'topic': (context, id, uid) async {
+        _log.info('Executing custom deleter for topic ID: $id.');
+        final topicRepository = context.read<DataRepository<Topic>>();
+        final mediaAssetRepository = context.read<DataRepository<MediaAsset>>();
+        final storageService = context.read<IStorageService>();
+
+        final topic = await topicRepository.read(id: id);
+        if (topic.iconUrl != null && topic.iconUrl!.isNotEmpty) {
+          unawaited(
+            cleanupMediaAssetByUrl(
+              url: topic.iconUrl,
+              mediaAssetRepository: mediaAssetRepository,
+              storageService: storageService,
+            ).catchError(
+              (Object e, StackTrace s) =>
+                  _log.severe('Asset cleanup failed.', e, s),
+            ),
+          );
+        }
+        await topicRepository.delete(id: id, userId: uid);
+      },
+      'source': (context, id, uid) async {
+        _log.info('Executing custom deleter for source ID: $id.');
+        final sourceRepository = context.read<DataRepository<Source>>();
+        final mediaAssetRepository = context.read<DataRepository<MediaAsset>>();
+        final storageService = context.read<IStorageService>();
+
+        final source = await sourceRepository.read(id: id);
+        if (source.logoUrl != null && source.logoUrl!.isNotEmpty) {
+          unawaited(
+            cleanupMediaAssetByUrl(
+              url: source.logoUrl,
+              mediaAssetRepository: mediaAssetRepository,
+              storageService: storageService,
+            ).catchError(
+              (Object e, StackTrace s) =>
+                  _log.severe('Asset cleanup failed.', e, s),
+            ),
+          );
+        }
+        await sourceRepository.delete(id: id, userId: uid);
+      },
       'country': (c, id, uid) =>
           c.read<DataRepository<Country>>().delete(id: id, userId: uid),
       'language': (c, id, uid) =>
