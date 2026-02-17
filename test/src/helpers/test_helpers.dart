@@ -4,7 +4,6 @@ import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:dart_frog_test/dart_frog_test.dart';
 import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/request_id.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
@@ -12,11 +11,11 @@ import 'package:flutter_news_app_api_server_full_source_code/src/registry/data_o
 import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_registry.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/gcs_jwt_verifier.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
-import 'package:jose/jose.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockRequestContext extends Mock implements RequestContext {}
@@ -38,13 +37,17 @@ class MockDataOperationRegistry extends Mock implements DataOperationRegistry {}
 
 class MockDataRepository<T> extends Mock implements DataRepository<T> {}
 
+class MockHeadlineRepository extends MockDataRepository<Headline> {}
+
+class MockTopicRepository extends MockDataRepository<Topic> {}
+
+class MockSourceRepository extends MockDataRepository<Source> {}
+
 class MockStorageService extends Mock implements IStorageService {}
 
 class MockMediaAssetRepository extends MockDataRepository<MediaAsset> {}
 
 class MockIdempotencyService extends Mock implements IdempotencyService {}
-
-class MockHeadlineRepository extends MockDataRepository<Headline> {}
 
 class MockUserRepository extends MockDataRepository<User> {}
 
@@ -92,6 +95,8 @@ void registerSharedFallbackValues() {
       savedSourceFilters: [],
     ),
   );
+  registerFallbackValue(createTestHeadline());
+  registerFallbackValue(createTestMediaAsset());
 }
 
 /// A proxy implementation of [RequestContext] that delegates to another context.
@@ -152,6 +157,9 @@ RequestContext createMockRequestContext({
   DataOperationRegistry? dataOperationRegistry,
   FetchedItem<dynamic>? fetchedItem,
   DataRepository<User>? userRepository,
+  DataRepository<Headline>? headlineRepository,
+  DataRepository<Topic>? topicRepository,
+  DataRepository<Source>? sourceRepository,
   DataRepository<Engagement>? engagementRepository,
   DataRepository<AppReview>? appReviewRepository,
   DataRepository<UserContentPreferences>? userContentPreferencesRepository,
@@ -159,6 +167,7 @@ RequestContext createMockRequestContext({
   DataRepository<MediaAsset>? mediaAssetRepository,
   IdempotencyService? idempotencyService,
   CountryQueryService? countryQueryService,
+  IGcsJwtVerifier? gcsJwtVerifier,
 }) {
   // If a request object is provided, extract values from it.
   var effectiveMethod = method;
@@ -277,6 +286,15 @@ RequestContext createMockRequestContext({
   if (userRepository != null) {
     testContext.provide<DataRepository<User>>(userRepository);
   }
+  if (headlineRepository != null) {
+    testContext.provide<DataRepository<Headline>>(headlineRepository);
+  }
+  if (topicRepository != null) {
+    testContext.provide<DataRepository<Topic>>(topicRepository);
+  }
+  if (sourceRepository != null) {
+    testContext.provide<DataRepository<Source>>(sourceRepository);
+  }
   if (engagementRepository != null) {
     testContext.provide<DataRepository<Engagement>>(engagementRepository);
   }
@@ -300,6 +318,9 @@ RequestContext createMockRequestContext({
   if (idempotencyService != null) {
     testContext.provide<IdempotencyService>(idempotencyService);
   }
+  if (gcsJwtVerifier != null) {
+    testContext.provide<IGcsJwtVerifier>(gcsJwtVerifier);
+  }
 
   // Return the ProxyRequestContext to ensure extension methods work correctly.
   return ProxyRequestContext(testContext.context);
@@ -312,6 +333,7 @@ User createTestUser({
   UserRole role = UserRole.user,
   bool isAnonymous = false,
   AccessTier tier = AccessTier.standard,
+  String? photoUrl,
 }) {
   return User(
     id: id,
@@ -320,6 +342,57 @@ User createTestUser({
     tier: tier,
     createdAt: DateTime.now(),
     isAnonymous: isAnonymous,
+    photoUrl: photoUrl,
+  );
+}
+
+Headline createTestHeadline({
+  String id = 'headline-id',
+  String title = 'Test Headline',
+  String url = 'http://example.com/headline',
+  String? imageUrl,
+  String? mediaAssetId,
+  Source? source,
+  Country? eventCountry,
+  Topic? topic,
+  bool isBreaking = false,
+  ContentStatus status = ContentStatus.active,
+}) {
+  return Headline(
+    id: id,
+    title: title,
+    url: url,
+    imageUrl: imageUrl,
+    mediaAssetId: mediaAssetId,
+    source:
+        source ??
+        Source(
+          id: 'source-id',
+          name: 'Test Source',
+          description: '',
+          url: '',
+          sourceType: SourceType.other,
+          language: languagesFixturesData.first,
+          headquarters: countriesFixturesData.first,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          status: ContentStatus.active,
+        ),
+    eventCountry: eventCountry ?? countriesFixturesData.first,
+    topic:
+        topic ??
+        Topic(
+          id: 'topic-id',
+          name: 'Test Topic',
+          description: '',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          status: ContentStatus.active,
+        ),
+    isBreaking: isBreaking,
+    status: status,
+    createdAt: DateTime.now(),
+    updatedAt: DateTime.now(),
   );
 }
 
@@ -331,6 +404,8 @@ MediaAsset createTestMediaAsset({
   String storagePath = 'user-media/user-id/file.jpg',
   String contentType = 'image/jpeg',
   String? publicUrl,
+  String? associatedEntityId,
+  MediaAssetEntityType? associatedEntityType,
 }) {
   return MediaAsset(
     id: id,
@@ -342,6 +417,8 @@ MediaAsset createTestMediaAsset({
     publicUrl: publicUrl,
     createdAt: DateTime.now(),
     updatedAt: DateTime.now(),
+    associatedEntityId: associatedEntityId,
+    associatedEntityType: associatedEntityType,
   );
 }
 
@@ -359,60 +436,4 @@ Map<String, dynamic> createGcsNotificationPayload(
       },
     },
   };
-}
-
-class _MockJsonWebSignature extends Mock implements JsonWebSignature {}
-
-class _MockJsonWebKeyStore extends Mock implements JsonWebKeyStore {}
-
-class _MockJsonWebToken extends Mock implements JsonWebToken {}
-
-void mockGcsJwtVerification() {
-  final mockJws = _MockJsonWebSignature();
-  final mockKeyStore = _MockJsonWebKeyStore();
-
-  // Mock the static `fromCompactSerialization` method
-  when(
-    () => JsonWebSignature.fromCompactSerialization(any()),
-  ).thenAnswer((invocation) {
-    final token = invocation.positionalArguments.first as String;
-    final claims = <String, dynamic>{
-      'iss': 'https://accounts.google.com',
-      'aud': 'localhost',
-      'exp':
-          DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch ~/
-          1000,
-    };
-
-    if (token == 'invalid-issuer-token') {
-      claims['iss'] = 'invalid-issuer';
-    } else if (token == 'invalid-audience-token') {
-      claims['aud'] = 'invalid-audience';
-    } else if (token == 'expired-token') {
-      claims['exp'] =
-          DateTime.now()
-              .subtract(const Duration(hours: 1))
-              .millisecondsSinceEpoch ~/
-          1000;
-    }
-
-    when(
-      () => mockJws.unverifiedPayload,
-    ).thenReturn(JsonWebToken.fromMap(claims));
-    when(
-      () => mockJws.verify(any()),
-    ).thenAnswer((_) async => token != 'invalid-signature-token');
-
-    return mockJws;
-  });
-
-  // Mock the JsonWebKeyStore
-  when(JsonWebKeyStore.new).thenReturn(mockKeyStore);
-  when(
-    () => mockKeyStore.addKeySetUrl(any()),
-  ).thenAnswer((_) async {});
-}
-
-void mockEnvironmentConfig() {
-  EnvironmentConfig.setOverride('GCS_BUCKET_NAME', 'test-bucket');
 }
