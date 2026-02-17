@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
@@ -14,18 +15,23 @@ void main() {
     late MockMediaAssetRepository mockMediaAssetRepository;
     late MockUserRepository mockUserRepository;
     late MockStorageService mockStorageService;
+    late MockHeadlineRepository mockHeadlineRepository;
+    late MockTopicRepository mockTopicRepository;
+    late MockSourceRepository mockSourceRepository;
 
     setUpAll(() {
       registerSharedFallbackValues();
-      mockGcsJwtVerification();
-      mockEnvironmentConfig();
+      EnvironmentConfig.setOverride('GCS_BUCKET_NAME', 'test-bucket');
     });
 
     setUp(() {
       mockIdempotencyService = MockIdempotencyService();
       mockMediaAssetRepository = MockMediaAssetRepository();
       mockUserRepository = MockUserRepository();
+      mockHeadlineRepository = MockHeadlineRepository();
       mockStorageService = MockStorageService();
+      mockTopicRepository = MockTopicRepository();
+      mockSourceRepository = MockSourceRepository();
 
       when(
         () => mockIdempotencyService.isEventProcessed(any()),
@@ -53,6 +59,12 @@ void main() {
           item: any(named: 'item'),
         ),
       ).thenAnswer((inv) async => inv.namedArguments[#item] as MediaAsset);
+      when(
+        () => mockHeadlineRepository.update(
+          id: any(named: 'id'),
+          item: any(named: 'item'),
+        ),
+      ).thenAnswer((inv) async => inv.namedArguments[#item] as Headline);
     });
 
     test('returns 405 for non-POST methods', () async {
@@ -74,6 +86,12 @@ void main() {
           'path',
         ),
         idempotencyService: mockIdempotencyService,
+        mediaAssetRepository: mockMediaAssetRepository,
+        userRepository: mockUserRepository,
+        headlineRepository: mockHeadlineRepository,
+        storageService: mockStorageService,
+        topicRepository: mockTopicRepository,
+        sourceRepository: mockSourceRepository,
       );
 
       final response = await onRequest(context);
@@ -88,7 +106,10 @@ void main() {
 
     test('returns 200 OK if media asset is not found', () async {
       when(
-        () => mockMediaAssetRepository.readAll(filter: any(named: 'filter')),
+        () => mockMediaAssetRepository.readAll(
+          filter: any(named: 'filter'),
+          pagination: any(named: 'pagination'),
+        ),
       ).thenAnswer(
         (_) async => const PaginatedResponse(
           items: [],
@@ -106,6 +127,11 @@ void main() {
         ),
         idempotencyService: mockIdempotencyService,
         mediaAssetRepository: mockMediaAssetRepository,
+        userRepository: mockUserRepository,
+        headlineRepository: mockHeadlineRepository,
+        storageService: mockStorageService,
+        topicRepository: mockTopicRepository,
+        sourceRepository: mockSourceRepository,
       );
 
       final response = await onRequest(context);
@@ -116,21 +142,22 @@ void main() {
       test(
         'updates asset status and user photoUrl on userProfilePhoto finalize',
         () async {
-          final user = createTestUser(photoUrl: 'old-url');
+          final oldAsset = createTestMediaAsset(
+            id: 'old-asset-id',
+            storagePath: 'old/path.jpg',
+            publicUrl:
+                'https://storage.googleapis.com/test-bucket/old/path.jpg',
+          );
+          final user = createTestUser(photoUrl: oldAsset.publicUrl);
           final newAsset = createTestMediaAsset(
             purpose: MediaAssetPurpose.userProfilePhoto,
             userId: user.id,
-          );
-          final oldAsset = createTestMediaAsset(
-            id: 'old-asset-id',
-            purpose: MediaAssetPurpose.userProfilePhoto,
-            userId: user.id,
-            storagePath: 'old/path.jpg',
           );
 
           when(
             () => mockMediaAssetRepository.readAll(
               filter: {'storagePath': newAsset.storagePath},
+              pagination: any(named: 'pagination'),
             ),
           ).thenAnswer(
             (_) async => PaginatedResponse(
@@ -140,15 +167,34 @@ void main() {
             ),
           );
           when(
-            () => mockUserRepository.read(id: user.id),
-          ).thenAnswer((_) async => user);
+            () => mockUserRepository.readAll(
+              filter: any(
+                named: 'filter',
+                that: predicate<Map<String, Object?>>(
+                  (f) => f['mediaAssetId'] == newAsset.id,
+                ),
+              ),
+            ),
+          ).thenAnswer(
+            (_) async =>
+                PaginatedResponse(items: [user], cursor: null, hasMore: false),
+          );
           when(
             () => mockMediaAssetRepository.readAll(
-              filter: {
-                'userId': user.id,
-                'purpose': MediaAssetPurpose.userProfilePhoto.name,
-                '_id': {r'$ne': newAsset.id},
-              },
+              filter: {'storagePath': oldAsset.storagePath},
+              pagination: any(named: 'pagination'),
+            ),
+          ).thenAnswer(
+            (_) async => PaginatedResponse(
+              items: [oldAsset],
+              cursor: null,
+              hasMore: false,
+            ),
+          );
+          when(
+            () => mockMediaAssetRepository.readAll(
+              filter: {'publicUrl': oldAsset.publicUrl},
+              pagination: any(named: 'pagination'),
             ),
           ).thenAnswer(
             (_) async => PaginatedResponse(
@@ -168,11 +214,18 @@ void main() {
             idempotencyService: mockIdempotencyService,
             mediaAssetRepository: mockMediaAssetRepository,
             userRepository: mockUserRepository,
+            headlineRepository: mockHeadlineRepository,
             storageService: mockStorageService,
+            topicRepository: mockTopicRepository,
+            sourceRepository: mockSourceRepository,
           );
 
           final response = await onRequest(context);
           expect(response.statusCode, HttpStatus.noContent);
+
+          // Allow unawaited fire-and-forget cleanup tasks to complete.
+          // ignore: inference_failure_on_instance_creation
+          await Future.delayed(const Duration(milliseconds: 100));
 
           // Verify cleanup of old asset
           verify(
@@ -193,7 +246,10 @@ void main() {
                     ),
                   ).captured.single
                   as User;
-          expect(capturedUser.photoUrl, contains(newAsset.storagePath));
+          expect(
+            capturedUser.photoUrl,
+            'https://storage.googleapis.com/test-bucket/${newAsset.storagePath}',
+          );
 
           // Verify asset update
           final capturedAsset =
@@ -205,6 +261,8 @@ void main() {
                   ).captured.single
                   as MediaAsset;
           expect(capturedAsset.status, MediaAssetStatus.completed);
+          expect(capturedAsset.associatedEntityId, user.id);
+          expect(capturedAsset.associatedEntityType, MediaAssetEntityType.user);
           expect(capturedAsset.publicUrl, isNotNull);
 
           // Verify idempotency
@@ -213,19 +271,74 @@ void main() {
       );
 
       test(
-        'only updates asset status for non-userProfilePhoto finalize',
+        'updates asset status and headline imageUrl on headlineImage finalize',
         () async {
+          final oldAsset = createTestMediaAsset(
+            id: 'old-asset-id',
+            storagePath: 'old/path.jpg',
+            publicUrl:
+                'https://storage.googleapis.com/test-bucket/old/path.jpg',
+          );
+          final headline = createTestHeadline(imageUrl: oldAsset.publicUrl);
           final asset = createTestMediaAsset(
             purpose: MediaAssetPurpose.headlineImage,
+            userId: 'admin-id',
           );
+          when(
+            () => mockHeadlineRepository.update(
+              id: any(named: 'id'),
+              item: any(named: 'item'),
+            ),
+          ).thenAnswer((inv) async => inv.namedArguments[#item] as Headline);
 
           when(
             () => mockMediaAssetRepository.readAll(
               filter: {'storagePath': asset.storagePath},
+              pagination: any(named: 'pagination'),
             ),
           ).thenAnswer(
             (_) async => PaginatedResponse(
               items: [asset],
+              cursor: null,
+              hasMore: false,
+            ),
+          );
+          when(
+            () => mockHeadlineRepository.readAll(
+              filter: any(
+                named: 'filter',
+                that: predicate<Map<String, Object?>>(
+                  (f) => f['mediaAssetId'] == asset.id,
+                ),
+              ),
+            ),
+          ).thenAnswer(
+            (_) async => PaginatedResponse(
+              items: [headline],
+              cursor: null,
+              hasMore: false,
+            ),
+          );
+          when(
+            () => mockMediaAssetRepository.readAll(
+              filter: {'storagePath': oldAsset.storagePath},
+              pagination: any(named: 'pagination'),
+            ),
+          ).thenAnswer(
+            (_) async => PaginatedResponse(
+              items: [oldAsset],
+              cursor: null,
+              hasMore: false,
+            ),
+          );
+          when(
+            () => mockMediaAssetRepository.readAll(
+              filter: {'publicUrl': oldAsset.publicUrl},
+              pagination: any(named: 'pagination'),
+            ),
+          ).thenAnswer(
+            (_) async => PaginatedResponse(
+              items: [oldAsset],
               cursor: null,
               hasMore: false,
             ),
@@ -240,19 +353,43 @@ void main() {
             ),
             idempotencyService: mockIdempotencyService,
             mediaAssetRepository: mockMediaAssetRepository,
+            headlineRepository: mockHeadlineRepository,
             userRepository: mockUserRepository,
             storageService: mockStorageService,
+            topicRepository: mockTopicRepository,
+            sourceRepository: mockSourceRepository,
           );
 
           final response = await onRequest(context);
           expect(response.statusCode, HttpStatus.noContent);
 
-          verifyNever(
-            () => mockUserRepository.update(
-              id: any(named: 'id'),
-              item: any(named: 'item'),
+          // Allow unawaited fire-and-forget cleanup tasks to complete.
+          // ignore: inference_failure_on_instance_creation
+          await Future.delayed(const Duration(milliseconds: 100));
+
+          // Verify cleanup of old asset
+          verify(
+            () => mockStorageService.deleteObject(
+              storagePath: oldAsset.storagePath,
             ),
+          ).called(1);
+          verify(
+            () => mockMediaAssetRepository.delete(id: oldAsset.id),
+          ).called(1);
+
+          final capturedHeadline =
+              verify(
+                    () => mockHeadlineRepository.update(
+                      id: any(named: 'id'),
+                      item: captureAny(named: 'item'),
+                    ),
+                  ).captured.single
+                  as Headline;
+          expect(
+            capturedHeadline.imageUrl,
+            'https://storage.googleapis.com/test-bucket/${asset.storagePath}',
           );
+          expect(capturedHeadline.mediaAssetId, isNull);
 
           final capturedAsset =
               verify(
@@ -263,6 +400,11 @@ void main() {
                   ).captured.single
                   as MediaAsset;
           expect(capturedAsset.status, MediaAssetStatus.completed);
+          expect(capturedAsset.associatedEntityId, headline.id);
+          expect(
+            capturedAsset.associatedEntityType,
+            MediaAssetEntityType.headline,
+          );
           expect(capturedAsset.publicUrl, isNotNull);
 
           verify(() => mockIdempotencyService.recordEvent('msg-123')).called(1);
@@ -274,9 +416,12 @@ void main() {
       test(
         'deletes asset record and nullifies user photoUrl on userProfilePhoto delete',
         () async {
+          const publicUrl = 'http://public/url';
           final asset = createTestMediaAsset(
             purpose: MediaAssetPurpose.userProfilePhoto,
-            publicUrl: 'http://public/url',
+            publicUrl: publicUrl,
+            associatedEntityId: 'user-id',
+            associatedEntityType: MediaAssetEntityType.user,
           );
           final user = createTestUser(
             id: asset.userId,
@@ -286,6 +431,7 @@ void main() {
           when(
             () => mockMediaAssetRepository.readAll(
               filter: {'storagePath': asset.storagePath},
+              pagination: any(named: 'pagination'),
             ),
           ).thenAnswer(
             (_) async => PaginatedResponse(
@@ -308,6 +454,10 @@ void main() {
             idempotencyService: mockIdempotencyService,
             mediaAssetRepository: mockMediaAssetRepository,
             userRepository: mockUserRepository,
+            headlineRepository: mockHeadlineRepository,
+            storageService: mockStorageService,
+            topicRepository: mockTopicRepository,
+            sourceRepository: mockSourceRepository,
           );
 
           final response = await onRequest(context);
@@ -336,6 +486,8 @@ void main() {
         final asset = createTestMediaAsset(
           purpose: MediaAssetPurpose.userProfilePhoto,
           publicUrl: 'http://public/url',
+          associatedEntityId: 'user-id',
+          associatedEntityType: MediaAssetEntityType.user,
         );
         // User has a *different* photo URL
         final user = createTestUser(
@@ -346,6 +498,7 @@ void main() {
         when(
           () => mockMediaAssetRepository.readAll(
             filter: {'storagePath': asset.storagePath},
+            pagination: any(named: 'pagination'),
           ),
         ).thenAnswer(
           (_) async => PaginatedResponse(
@@ -368,6 +521,10 @@ void main() {
           idempotencyService: mockIdempotencyService,
           mediaAssetRepository: mockMediaAssetRepository,
           userRepository: mockUserRepository,
+          headlineRepository: mockHeadlineRepository,
+          storageService: mockStorageService,
+          topicRepository: mockTopicRepository,
+          sourceRepository: mockSourceRepository,
         );
 
         await onRequest(context);
@@ -386,11 +543,13 @@ void main() {
         () async {
           final asset = createTestMediaAsset(
             purpose: MediaAssetPurpose.headlineImage,
+            associatedEntityId: null,
           );
 
           when(
             () => mockMediaAssetRepository.readAll(
               filter: {'storagePath': asset.storagePath},
+              pagination: any(named: 'pagination'),
             ),
           ).thenAnswer(
             (_) async => PaginatedResponse(
@@ -409,13 +568,17 @@ void main() {
             ),
             idempotencyService: mockIdempotencyService,
             mediaAssetRepository: mockMediaAssetRepository,
+            headlineRepository: mockHeadlineRepository,
             userRepository: mockUserRepository,
+            storageService: mockStorageService,
+            topicRepository: mockTopicRepository,
+            sourceRepository: mockSourceRepository,
           );
 
           final response = await onRequest(context);
           expect(response.statusCode, HttpStatus.noContent);
 
-          verifyNever(() => mockUserRepository.read(id: any(named: 'id')));
+          verifyNever(() => mockHeadlineRepository.read(id: any(named: 'id')));
           verify(() => mockMediaAssetRepository.delete(id: asset.id)).called(1);
           verify(() => mockIdempotencyService.recordEvent('msg-123')).called(1);
         },
