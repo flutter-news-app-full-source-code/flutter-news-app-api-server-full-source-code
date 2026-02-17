@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:core/core.dart';
+import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/app_dependencies.dart';
 import 'package:logging/logging.dart';
 
@@ -34,42 +35,15 @@ Future<void> main(List<String> args) async {
   await AppDependencies.instance.init();
 
   try {
-    _log.info('Starting media cleanup process...');
-    final mediaAssetRepository = AppDependencies.instance.mediaAssetRepository;
+    _log.info('Starting media cleanup worker...');
 
-    // Define the grace period for pending uploads.
-    const gracePeriod = Duration(hours: 24);
-    final cutoffDate = DateTime.now().toUtc().subtract(gracePeriod);
+    // Task 1: Clean up stale 'pendingUpload' records from the database.
+    await _cleanupPendingUploads();
 
-    _log.info(
-      'Searching for orphaned MediaAssets with status "pendingUpload" created before $cutoffDate.',
-    );
+    // Task 2: Clean up 'completed' assets that are no longer referenced.
+    await _cleanupOrphanedAssets();
 
-    // Find all assets that are still pending after the grace period.
-    final orphanedAssetsResponse = await mediaAssetRepository.readAll(
-      filter: {
-        'status': MediaAssetStatus.pendingUpload.name,
-        'createdAt': {r'$lt': cutoffDate.toIso8601String()},
-      },
-    );
-
-    final orphanedAssets = orphanedAssetsResponse.items;
-
-    if (orphanedAssets.isEmpty) {
-      _log.info('No orphaned media assets found. Cleanup complete.');
-    } else {
-      _log.info('Found ${orphanedAssets.length} orphaned assets to delete.');
-      for (final asset in orphanedAssets) {
-        _log.info('Deleting orphaned asset: ${asset.id}');
-        // Deleting the database record for a 'pendingUpload' asset. Since the
-        // upload never completed, there is no corresponding file in cloud
-        // storage to delete.
-        await mediaAssetRepository.delete(id: asset.id);
-      }
-      _log.info(
-        'Successfully deleted ${orphanedAssets.length} orphaned assets.',
-      );
-    }
+    _log.info('Media cleanup worker finished successfully.');
   } catch (e, s) {
     _log.severe('An error occurred during the media cleanup process.', e, s);
     exit(1);
@@ -77,4 +51,142 @@ Future<void> main(List<String> args) async {
     await AppDependencies.instance.dispose();
     exit(0);
   }
+}
+
+/// Finds and deletes [MediaAsset] records that have been in the
+/// `pendingUpload` state for longer than the grace period.
+///
+/// These records represent uploads that were initiated but never completed,
+/// so there is no corresponding file in cloud storage to delete.
+Future<void> _cleanupPendingUploads() async {
+  _log.info('--- Starting Task: Cleanup Stale Pending Uploads ---');
+  final mediaAssetRepository = AppDependencies.instance.mediaAssetRepository;
+
+  const gracePeriod = Duration(hours: 24);
+  final cutoffDate = DateTime.now().toUtc().subtract(gracePeriod);
+
+  _log.info(
+    'Searching for stale MediaAssets with status "pendingUpload" created before $cutoffDate.',
+  );
+
+  final pendingAssetsResponse = await mediaAssetRepository.readAll(
+    filter: {
+      'status': MediaAssetStatus.pendingUpload.name,
+      'createdAt': {r'$lt': cutoffDate.toIso8601String()},
+    },
+  );
+
+  final pendingAssets = pendingAssetsResponse.items;
+
+  if (pendingAssets.isEmpty) {
+    _log.info('No stale pending uploads found.');
+  } else {
+    _log.info('Found ${pendingAssets.length} stale pending assets to delete.');
+    for (final asset in pendingAssets) {
+      _log.info('Deleting stale pending asset record: ${asset.id}');
+      await mediaAssetRepository.delete(id: asset.id);
+    }
+    _log.info(
+      'Successfully deleted ${pendingAssets.length} stale pending asset records.',
+    );
+  }
+  _log.info('--- Finished Task: Cleanup Stale Pending Uploads ---');
+}
+
+/// Finds and deletes [MediaAsset]s that have a `completed` status but are no
+/// longer referenced by any parent entity (User, Headline, Topic, Source).
+///
+/// This is a critical task for cost management, as it removes unused files
+/// from cloud storage.
+Future<void> _cleanupOrphanedAssets() async {
+  _log.info('--- Starting Task: Cleanup Orphaned Completed Assets ---');
+  final mediaAssetRepository = AppDependencies.instance.mediaAssetRepository;
+  final storageService = AppDependencies.instance.storageService;
+
+  // 1. Fetch all actively referenced mediaAssetIds from parent entities.
+  _log.info('Fetching all active media asset references...');
+  final referencedIds = <String>{};
+
+  final repositories = <String, DataRepository<dynamic>>{
+    'User': AppDependencies.instance.userRepository,
+    'Headline': AppDependencies.instance.headlineRepository,
+    'Topic': AppDependencies.instance.topicRepository,
+    'Source': AppDependencies.instance.sourceRepository,
+  };
+
+  for (final entry in repositories.entries) {
+    final repoName = entry.key;
+    final repo = entry.value;
+    _log.finer('Querying $repoName for mediaAssetId references...');
+
+    // Fetch all documents that have a non-null mediaAssetId.
+    // The sparse index on `mediaAssetId` makes this query efficient.
+    final response = await repo.readAll(
+      filter: {
+        'mediaAssetId': {r'$exists': true, r'$ne': null},
+      },
+      pagination: const PaginationOptions(limit: 100000),
+    );
+
+    for (final item in response.items) {
+      final mediaAssetId = (item as dynamic).mediaAssetId as String?;
+      if (mediaAssetId != null && mediaAssetId.isNotEmpty) {
+        referencedIds.add(mediaAssetId);
+      }
+    }
+    _log.finer('Found ${response.items.length} references in $repoName.');
+  }
+  _log.info(
+    'Found a total of ${referencedIds.length} unique active media asset references.',
+  );
+
+  // 2. Fetch all 'completed' media assets.
+  _log.info('Fetching all "completed" media assets...');
+  final completedAssetsResponse = await mediaAssetRepository.readAll(
+    filter: {'status': MediaAssetStatus.completed.name},
+    pagination: const PaginationOptions(limit: 100000),
+  );
+  final allCompletedAssets = completedAssetsResponse.items;
+  _log.info('Found ${allCompletedAssets.length} total "completed" assets.');
+
+  // 3. Identify orphans by finding assets not in the referenced set.
+  final orphanedAssets = allCompletedAssets
+      .where((asset) => !referencedIds.contains(asset.id))
+      .toList();
+
+  if (orphanedAssets.isEmpty) {
+    _log.info('No orphaned media assets found.');
+    _log.info('--- Finished Task: Cleanup Orphaned Completed Assets ---');
+    return;
+  }
+
+  _log.info('Found ${orphanedAssets.length} orphaned assets to delete.');
+
+  // 4. Delete the orphaned assets and their corresponding files.
+  var successCount = 0;
+  var failureCount = 0;
+  for (final asset in orphanedAssets) {
+    try {
+      _log.info(
+        'Deleting orphaned asset: ID=${asset.id}, Path=${asset.storagePath}',
+      );
+      // First, delete the file from cloud storage.
+      await storageService.deleteObject(storagePath: asset.storagePath);
+      // Then, delete the database record.
+      await mediaAssetRepository.delete(id: asset.id);
+      successCount++;
+    } catch (e, s) {
+      _log.severe(
+        'Failed to delete orphaned asset ID: ${asset.id}',
+        e,
+        s,
+      );
+      failureCount++;
+    }
+  }
+
+  _log.info(
+    'Orphaned asset cleanup finished. Success: $successCount, Failed: $failureCount.',
+  );
+  _log.info('--- Finished Task: Cleanup Orphaned Completed Assets ---');
 }
