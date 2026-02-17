@@ -514,6 +514,12 @@ class DatabaseSeedingService {
             'name': 'storagePath_unique_index',
             'unique': true,
           },
+          {
+            // Optimizes finding assets by their status, crucial for the
+            // cleanup worker.
+            'key': {'status': 1},
+            'name': 'status_index',
+          },
         ],
       });
       _log.info('Ensured indexes for "media_assets".');
@@ -524,6 +530,54 @@ class DatabaseSeedingService {
       // We rethrow here because if indexes can't be created,
       // critical features like search will fail.
       rethrow;
+    }
+
+    // --- Indexes for Orphaned Media Cleanup ---
+    // These indexes are crucial for the performance of the media cleanup worker.
+    try {
+      await _db.runCommand({
+        'createIndexes': 'users',
+        'indexes': [
+          {
+            'key': {'mediaAssetId': 1},
+            'name': 'mediaAssetId_sparse_index',
+            'sparse': true,
+          },
+        ],
+      });
+      await _db.runCommand({
+        'createIndexes': 'headlines',
+        'indexes': [
+          {
+            'key': {'mediaAssetId': 1},
+            'name': 'mediaAssetId_sparse_index',
+            'sparse': true,
+          },
+        ],
+      });
+      await _db.runCommand({
+        'createIndexes': 'topics',
+        'indexes': [
+          {
+            'key': {'mediaAssetId': 1},
+            'name': 'mediaAssetId_sparse_index',
+            'sparse': true,
+          },
+        ],
+      });
+      await _db.runCommand({
+        'createIndexes': 'sources',
+        'indexes': [
+          {
+            'key': {'mediaAssetId': 1},
+            'name': 'mediaAssetId_sparse_index',
+            'sparse': true,
+          },
+        ],
+      });
+      _log.info('Ensured sparse indexes for mediaAssetId references.');
+    } on Exception catch (e, s) {
+      _log.severe('Failed to create mediaAssetId sparse indexes.', e, s);
     }
   }
 
