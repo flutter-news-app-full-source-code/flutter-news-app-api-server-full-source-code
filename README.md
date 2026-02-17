@@ -72,6 +72,19 @@ The API automatically validates the structure of all incoming data, ensuring tha
 </details>
 
 <details>
+<summary><strong>☁️ Cloud-Native Media & Storage</strong></summary>
+
+### 🚀 High-Performance, Direct-to-Cloud Uploads
+A modern, two-stage upload architecture ensures your API server remains fast and responsive by offloading all bandwidth-intensive file transfers directly to your cloud storage provider.
+- **Secure, Signed Policies:** The API first authorizes an upload request and then generates a short-lived, signed policy that grants the client temporary permission to upload a file directly to a specific, secure location in your storage bucket.
+- **Asynchronous Confirmation:** A secure webhook, authenticated with JWT, confirms when an upload is complete. This triggers the finalization process, which includes denormalizing the public URL to the relevant database record (e.g., updating a user's profile photo URL).
+- **Resilient & Self-Healing:** The system is built for the real world. A standalone worker process automatically cleans up any abandoned uploads, ensuring your database remains pristine. If a file is deleted from cloud storage, a webhook ensures the corresponding database records are also cleaned up.
+- **Provider-Agnostic Design:** While configured for Google Cloud Storage out of the box, the core interfaces (`IStorageService`) are designed to be provider-agnostic, allowing you to implement support for other services like Amazon S3 or Azure Blob Storage.
+> **Your Advantage:** Get a production-grade, highly scalable, and secure media handling pipeline that follows modern best practices. This architecture protects your API from heavy traffic, reduces operational costs, and ensures a fast, reliable experience for your users.
+
+</details>
+
+<details>
 <summary><strong>📧 Email & Transactional Messaging</strong></summary>
 
 ### 📨 Reliable Email Delivery
@@ -118,21 +131,6 @@ A complete, multi-provider analytics engine that transforms raw data from both e
 - **High-Performance Dashboard:** The web dashboard reads this pre-aggregated data, resulting in near-instant load times for all analytics charts and metrics. This architecture avoids slow, direct, on-the-fly queries from the client to the analytics provider.
 - **Provider-Agnostic & Extensible:** The engine is built on a clean, abstract interface, decoupling the core logic from any specific provider. Switch between Google Analytics and Mixpanel with a simple configuration change, or integrate a new provider by implementing a single, well-defined contract. Adding new charts or KPIs is as simple as defining a new metric mapping.
 > **Your Advantage:** Get a complete, production-grade BI pipeline out of the box. Deliver a fast, responsive dashboard and gain a holistic view of your business by combining user behavior analytics with real-time operational metrics—a capability that external analytics tools alone cannot provide.
-
-</details>
-
-<details>
-<summary><strong>🖼️ Media & File Management</strong></summary>
-
-### ☁️ A Scalable, Provider-Agnostic Upload Architecture
-A robust, secure, and cost-effective system for handling file uploads, built on definitive industry best practices and designed for provider independence.
- - **Provider-Agnostic by Design:** The entire storage system is built on a clean abstraction (`IStorageService`), allowing you to swap out the underlying cloud provider (e.g., Google Cloud Storage, AWS S3) with a simple configuration change, avoiding vendor lock-in.
- - **Direct-to-Cloud Uploads:** Clients upload files directly to your chosen cloud object storage, keeping the API server lightweight and responsive by offloading heavy data transfers.
- - **Purpose-Based Authorization:** The API remains the central authority, performing granular permission checks before granting a temporary upload credential. This ensures different user roles have appropriate upload capabilities.
- - **Automated Lifecycle Management:** The system uses secure, cryptographically-verified webhooks to manage the entire asset lifecycle. It handles creation, deletion, and update events to ensure the application database and cloud storage are always perfectly synchronized, preventing orphaned files and broken links.
- - **Intelligent Cleanup:** The architecture includes an "Update-with-Cleanup" pattern that automatically removes a user's old assets (like a profile photo) when a new one is uploaded. It also purges all of a user's stored media upon account deletion.
- - **Idempotent & Resilient:** All background processing is fully idempotent, guaranteeing that even if a notification is delivered multiple times, the logic is executed exactly once, preventing data corruption.
-> **Your Advantage:** You get a professional-grade file management system that is infinitely scalable, highly secure, and cost-efficient. It guarantees data consistency across the entire asset lifecycle, protects against common abuse vectors, and gives you the freedom to choose your storage provider, providing a superior and reliable user experience.
 
 </details>
 
