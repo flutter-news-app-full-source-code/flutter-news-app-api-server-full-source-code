@@ -8,6 +8,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/config/environm
 import 'package:flutter_news_app_api_server_full_source_code/src/models/storage/gcs_notification.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/utils/media_asset_utils.dart';
 import 'package:logging/logging.dart';
 
 final _log = Logger('StorageNotificationsWebhook');
@@ -126,13 +127,15 @@ Future<void> _handleObjectFinalize({
           'Found user ${userToUpdate.id} linked to asset ${mediaAsset.id}. Updating photoUrl.',
         );
 
-        // Fire-and-forget cleanup of old photo.
+        // Fire-and-forget cleanup of the old asset using its URL.
         unawaited(
-          _cleanupOldProfilePhoto(
-            user: userToUpdate,
-            newAsset: mediaAsset,
+          cleanupMediaAssetByUrl(
+            url: userToUpdate.photoUrl,
             mediaAssetRepository: mediaAssetRepository,
             storageService: storageService,
+          ).catchError(
+            (Object e, StackTrace s) =>
+                _log.severe('Asset cleanup failed.', e, s),
           ),
         );
 
@@ -158,10 +161,13 @@ Future<void> _handleObjectFinalize({
 
         // Fire-and-forget cleanup of old image.
         unawaited(
-          _cleanupOldEntityAsset(
-            oldUrl: headlineToUpdate.imageUrl,
+          cleanupMediaAssetByUrl(
+            url: headlineToUpdate.imageUrl,
             mediaAssetRepository: mediaAssetRepository,
             storageService: storageService,
+          ).catchError(
+            (Object e, StackTrace s) =>
+                _log.severe('Asset cleanup failed.', e, s),
           ),
         );
 
@@ -187,10 +193,13 @@ Future<void> _handleObjectFinalize({
 
         // Fire-and-forget cleanup of old image.
         unawaited(
-          _cleanupOldEntityAsset(
-            oldUrl: topicToUpdate.iconUrl,
+          cleanupMediaAssetByUrl(
+            url: topicToUpdate.iconUrl,
             mediaAssetRepository: mediaAssetRepository,
             storageService: storageService,
+          ).catchError(
+            (Object e, StackTrace s) =>
+                _log.severe('Asset cleanup failed.', e, s),
           ),
         );
 
@@ -216,10 +225,13 @@ Future<void> _handleObjectFinalize({
 
         // Fire-and-forget cleanup of old image.
         unawaited(
-          _cleanupOldEntityAsset(
-            oldUrl: sourceToUpdate.logoUrl,
+          cleanupMediaAssetByUrl(
+            url: sourceToUpdate.logoUrl,
             mediaAssetRepository: mediaAssetRepository,
             storageService: storageService,
+          ).catchError(
+            (Object e, StackTrace s) =>
+                _log.severe('Asset cleanup failed.', e, s),
           ),
         );
 
@@ -308,66 +320,4 @@ Future<void> _handleObjectDelete({
   // Delete the corresponding MediaAsset record from the database.
   await mediaAssetRepository.delete(id: mediaAsset.id);
   _log.info('Deleted MediaAsset record ${mediaAsset.id} from database.');
-}
-
-Future<void> _cleanupOldProfilePhoto({
-  required User user,
-  required MediaAsset newAsset,
-  required DataRepository<MediaAsset> mediaAssetRepository,
-  required IStorageService storageService,
-}) async {
-  final oldAssets = await mediaAssetRepository.readAll(
-    filter: {
-      'userId': user.id,
-      'purpose': MediaAssetPurpose.userProfilePhoto.name,
-      '_id': {r'$ne': newAsset.id}, // Exclude the newly uploaded asset
-    },
-  );
-
-  if (oldAssets.items.isEmpty) return;
-
-  _log.info('Found ${oldAssets.items.length} old profile photos to clean up.');
-  for (final oldAsset in oldAssets.items) {
-    try {
-      await storageService.deleteObject(storagePath: oldAsset.storagePath);
-      await mediaAssetRepository.delete(id: oldAsset.id);
-      _log.info('Cleaned up old asset: ${oldAsset.id}');
-    } catch (e, s) {
-      _log.severe('Failed to clean up old asset ${oldAsset.id}', e, s);
-    }
-  }
-}
-
-Future<void> _cleanupOldEntityAsset({
-  required String? oldUrl,
-  required DataRepository<MediaAsset> mediaAssetRepository,
-  required IStorageService storageService,
-}) async {
-  if (oldUrl == null || oldUrl.isEmpty) {
-    return; // No old asset to clean up.
-  }
-
-  // Find the old MediaAsset by its publicUrl.
-  final oldAssets = await mediaAssetRepository.readAll(
-    filter: {'publicUrl': oldUrl},
-    pagination: const PaginationOptions(limit: 1),
-  );
-
-  if (oldAssets.items.isEmpty) {
-    _log.warning('Could not find old MediaAsset to clean up for URL: $oldUrl');
-    return;
-  }
-
-  final oldAsset = oldAssets.items.first;
-  _log.info('Found old asset ${oldAsset.id} to clean up for URL: $oldUrl');
-
-  try {
-    // Delete the file from cloud storage.
-    await storageService.deleteObject(storagePath: oldAsset.storagePath);
-    // Delete the database record.
-    await mediaAssetRepository.delete(id: oldAsset.id);
-    _log.info('Cleaned up old asset: ${oldAsset.id}');
-  } catch (e, s) {
-    _log.severe('Failed to clean up old asset ${oldAsset.id}', e, s);
-  }
 }
