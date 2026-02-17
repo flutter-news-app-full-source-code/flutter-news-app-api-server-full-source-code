@@ -11,7 +11,6 @@ import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/e
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_onesignal_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_sendgrid_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/gcs_jwt_verifier.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/database/migrations/all_migrations.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/idempotency_record.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
@@ -23,6 +22,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/databa
 import 'package:flutter_news_app_api_server_full_source_code/src/services/database_seeding_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/default_user_action_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/email/email_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/gcs_jwt_verifier.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/jwt_auth_token_service.dart';
@@ -79,9 +79,9 @@ class AppDependencies {
   late final DataRepository<UserContext> userContextRepository;
   late final DataRepository<AppSettings> appSettingsRepository;
   late final DataRepository<UserContentPreferences>
-  userContentPreferencesRepository;
+      userContentPreferencesRepository;
   late final DataRepository<PushNotificationDevice>
-  pushNotificationDeviceRepository;
+      pushNotificationDeviceRepository;
   late final DataRepository<RemoteConfig> remoteConfigRepository;
   late final DataRepository<UserRewards> userRewardsRepository;
   late final DataRepository<InAppNotification> inAppNotificationRepository;
@@ -284,6 +284,7 @@ class AppDependencies {
         toJson: (item) => item.toJson(),
         logger: Logger('DataMongodb<InAppNotification>'),
       );
+      _log.info('Initialized data client for InAppNotification.');
 
       final kpiCardDataClient = DataMongodb<KpiCardData>(
         connectionManager: _mongoDbConnectionManager,
@@ -303,7 +304,6 @@ class AppDependencies {
         fromJson: RankedListCardData.fromJson,
         toJson: (item) => item.toJson(),
       );
-      _log.info('Initialized data client for InAppNotification.');
 
       final engagementClient = DataMongodb<Engagement>(
         connectionManager: _mongoDbConnectionManager,
@@ -335,37 +335,7 @@ class AppDependencies {
       final fcmProjectId = EnvironmentConfig.firebaseProjectId;
       final fcmClientEmail = EnvironmentConfig.firebaseClientEmail;
       final fcmPrivateKey = EnvironmentConfig.firebasePrivateKey;
-
-      if (fcmProjectId != null &&
-          fcmClientEmail != null &&
-          fcmPrivateKey != null) {
-        _log.info(
-          'Firebase credentials found. Initializing Firebase client.',
-        );
-        googleAuthService = GoogleAuthService(
-          log: Logger('GoogleAuthService'),
-        );
-
-        final firebaseHttpClient = HttpClient(
-          baseUrl: 'https://fcm.googleapis.com/v1/projects/$fcmProjectId/',
-          tokenProvider: () => googleAuthService!.getAccessToken(
-            scope: 'https://www.googleapis.com/auth/cloud-platform',
-          ),
-          logger: Logger('FirebasePushNotificationClient'),
-        );
-
-        firebasePushNotificationClient = FirebasePushNotificationClient(
-          httpClient: firebaseHttpClient,
-          projectId: fcmProjectId,
-          log: Logger('FirebasePushNotificationClient'),
-        );
-      } else {
-        _log.warning(
-          'One or more Firebase credentials not found. Firebase push notifications will be disabled.',
-        );
-        googleAuthService = null;
-        firebasePushNotificationClient = null;
-      }
+      // This is initialized later, just before it's needed.
 
       // OneSignal
       final osAppId = EnvironmentConfig.oneSignalAppId;
@@ -511,6 +481,66 @@ class AppDependencies {
         log: Logger('EmailService'),
       );
 
+      // --- Initialize Google Auth & Storage Services ---
+      // This block must come before any services that depend on them,
+      // particularly AuthService.
+
+      // 1. Initialize GoogleAuthService
+      if (fcmProjectId != null &&
+          fcmClientEmail != null &&
+          fcmPrivateKey != null) {
+        _log.info(
+          'Firebase credentials found. Initializing GoogleAuthService.',
+        );
+        googleAuthService = GoogleAuthService(
+          log: Logger('GoogleAuthService'),
+        );
+      } else {
+        _log.warning(
+          'One or more Firebase credentials not found. Services requiring Google Auth (like GCS) may be disabled.',
+        );
+        googleAuthService = null;
+      }
+
+      // 2. Initialize StorageService (depends on GoogleAuthService)
+      if (googleAuthService != null) {
+        storageService = GoogleCloudStorageService(
+          googleAuthService: googleAuthService!,
+          log: Logger('GoogleCloudStorageService'),
+        );
+        _log.info('GoogleCloudStorageService initialized.');
+      } else {
+        _log.severe(
+          'GoogleAuthService is not available, cannot initialize GoogleCloudStorageService. Media features will fail.',
+        );
+        // Let this fail hard at startup if GCS is essential.
+        throw StateError(
+          'GoogleCloudStorageService requires GoogleAuthService, which could not be initialized.',
+        );
+      }
+
+      // 3. Initialize Firebase Push Client (depends on GoogleAuthService)
+      if (googleAuthService != null && fcmProjectId != null) {
+        final firebaseHttpClient = HttpClient(
+          baseUrl: 'https://fcm.googleapis.com/v1/projects/$fcmProjectId/',
+          tokenProvider: () => googleAuthService!.getAccessToken(
+            scope: 'https://www.googleapis.com/auth/cloud-platform',
+          ),
+          logger: Logger('FirebasePushNotificationClient'),
+        );
+        firebasePushNotificationClient = FirebasePushNotificationClient(
+          httpClient: firebaseHttpClient,
+          projectId: fcmProjectId,
+          log: Logger('FirebasePushNotificationClient'),
+        );
+        _log.info('FirebasePushNotificationClient initialized.');
+      } else {
+        firebasePushNotificationClient = null;
+        _log.warning(
+          'FirebasePushNotificationClient disabled due to missing credentials or auth service.',
+        );
+      }
+
       // 5. Initialize Services
       tokenBlacklistService = MongoDbTokenBlacklistService(
         connectionManager: _mongoDbConnectionManager,
@@ -568,11 +598,6 @@ class AppDependencies {
       idempotencyService = IdempotencyService(
         repository: idempotencyRepository,
         log: Logger('IdempotencyService'),
-      );
-
-      storageService = GoogleCloudStorageService(
-        googleAuthService: googleAuthService,
-        log: Logger('GoogleCloudStorageService'),
       );
 
       // --- Rewards Services ---
