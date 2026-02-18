@@ -1,7 +1,7 @@
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/gcs_jwt_verification_middleware.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/gcs_jwt_verifier.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/util/gcs_jwt_verifier.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
