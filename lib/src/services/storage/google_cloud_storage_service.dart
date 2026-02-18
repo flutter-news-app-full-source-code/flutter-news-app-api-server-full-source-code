@@ -93,7 +93,7 @@ class GoogleCloudStorageService implements IStorageService {
       final policyBase64 = base64Encode(utf8.encode(policyJson));
 
       final jwk = JsonWebKey.fromPem(
-        privateKeyPem.replaceAll(r'\n', '\n'),
+        privateKeyPem.replaceAll(r'\n', '\n').trim(),
       );
 
       final signatureBytes = jwk.sign(
