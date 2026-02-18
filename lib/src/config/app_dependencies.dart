@@ -22,7 +22,8 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/databa
 import 'package:flutter_news_app_api_server_full_source_code/src/services/database_seeding_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/default_user_action_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/email/email_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/gcs_jwt_verifier.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/util/gcs_jwt_verifier.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/media_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/jwt_auth_token_service.dart';
@@ -37,6 +38,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_l
 import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/admob_ssv_verifier.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/rewards_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/google_cloud_storage_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/s3_storage_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
@@ -79,9 +81,9 @@ class AppDependencies {
   late final DataRepository<UserContext> userContextRepository;
   late final DataRepository<AppSettings> appSettingsRepository;
   late final DataRepository<UserContentPreferences>
-      userContentPreferencesRepository;
+  userContentPreferencesRepository;
   late final DataRepository<PushNotificationDevice>
-      pushNotificationDeviceRepository;
+  pushNotificationDeviceRepository;
   late final DataRepository<RemoteConfig> remoteConfigRepository;
   late final DataRepository<UserRewards> userRewardsRepository;
   late final DataRepository<InAppNotification> inAppNotificationRepository;
@@ -114,6 +116,7 @@ class AppDependencies {
   late final IdempotencyService idempotencyService;
   late final IStorageService storageService;
   late final RewardsService rewardsService;
+  late final MediaService mediaService;
 
   late final IGcsJwtVerifier gcsJwtVerifier;
 
@@ -502,21 +505,38 @@ class AppDependencies {
         googleAuthService = null;
       }
 
-      // 2. Initialize StorageService (depends on GoogleAuthService)
-      if (googleAuthService != null) {
-        storageService = GoogleCloudStorageService(
-          googleAuthService: googleAuthService!,
-          log: Logger('GoogleCloudStorageService'),
+      // 2. Initialize StorageService based on configuration
+      final storageProvider = EnvironmentConfig.storageProvider;
+      _log.info('Initializing Storage Service with provider: $storageProvider');
+
+      if (storageProvider == 's3') {
+        storageService = S3StorageService(
+          log: Logger('S3StorageService'),
+          httpClient: HttpClient(
+            baseUrl: '', // Base URL is dynamic per request in S3Service
+            tokenProvider: () async => null,
+          ),
         );
-        _log.info('GoogleCloudStorageService initialized.');
+        _log.info('S3StorageService initialized.');
       } else {
-        _log.severe(
-          'GoogleAuthService is not available, cannot initialize GoogleCloudStorageService. Media features will fail.',
-        );
-        // Let this fail hard at startup if GCS is essential.
-        throw StateError(
-          'GoogleCloudStorageService requires GoogleAuthService, which could not be initialized.',
-        );
+        // Default to GCS
+        if (googleAuthService != null) {
+          storageService = GoogleCloudStorageService(
+            googleAuthService: googleAuthService!,
+            log: Logger('GoogleCloudStorageService'),
+          );
+          _log.info('GoogleCloudStorageService initialized.');
+        } else {
+          _log.severe(
+            'GoogleAuthService is not available, cannot initialize GoogleCloudStorageService.',
+          );
+          // Only throw if GCS was explicitly requested or is the default and failed.
+          if (storageProvider == 'gcs') {
+            throw StateError(
+              'GoogleCloudStorageService requires GoogleAuthService, which could not be initialized.',
+            );
+          }
+        }
       }
 
       // 3. Initialize Firebase Push Client (depends on GoogleAuthService)
@@ -615,6 +635,16 @@ class AppDependencies {
         idempotencyService: idempotencyService,
         admobVerifier: admobVerifier,
         log: Logger('RewardsService'),
+      );
+
+      mediaService = MediaService(
+        mediaAssetRepository: mediaAssetRepository,
+        userRepository: userRepository,
+        headlineRepository: headlineRepository,
+        topicRepository: topicRepository,
+        sourceRepository: sourceRepository,
+        storageService: storageService,
+        log: Logger('MediaService'),
       );
 
       gcsJwtVerifier = GcsJwtVerifier(log: Logger('GcsJwtVerifier'));
