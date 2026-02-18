@@ -69,27 +69,36 @@ Future<void> _cleanupPendingUploads() async {
     'Searching for stale MediaAssets with status "pendingUpload" created before $cutoffDate.',
   );
 
-  final pendingAssetsResponse = await mediaAssetRepository.readAll(
-    filter: {
-      'status': MediaAssetStatus.pendingUpload.name,
-      'createdAt': {r'$lt': cutoffDate.toIso8601String()},
-    },
-  );
+  String? cursor;
+  var hasMore = true;
+  var deletedCount = 0;
 
-  final pendingAssets = pendingAssetsResponse.items;
+  while (hasMore) {
+    final response = await mediaAssetRepository.readAll(
+      filter: {
+        'status': MediaAssetStatus.pendingUpload.name,
+        'createdAt': {r'$lt': cutoffDate.toIso8601String()},
+      },
+      pagination: PaginationOptions(limit: 100, cursor: cursor),
+    );
 
-  if (pendingAssets.isEmpty) {
-    _log.info('No stale pending uploads found.');
-  } else {
-    _log.info('Found ${pendingAssets.length} stale pending assets to delete.');
+    final pendingAssets = response.items;
+    if (pendingAssets.isEmpty) {
+      hasMore = false;
+      break;
+    }
+
     for (final asset in pendingAssets) {
       _log.info('Deleting stale pending asset record: ${asset.id}');
       await mediaAssetRepository.delete(id: asset.id);
+      deletedCount++;
     }
-    _log.info(
-      'Successfully deleted ${pendingAssets.length} stale pending asset records.',
-    );
+
+    cursor = response.cursor;
+    hasMore = response.hasMore;
   }
+
+  _log.info('Successfully deleted $deletedCount stale pending asset records.');
   _log.info('--- Finished Task: Cleanup Stale Pending Uploads ---');
 }
 
@@ -114,27 +123,37 @@ Future<void> _cleanupOrphanedAssets() async {
     'Source': AppDependencies.instance.sourceRepository,
   };
 
+  // Note: For referencedIds, we still need to load them all to perform the
+  // set difference check efficiently. In a massive scale system, this logic
+  // would move to a database aggregation or a bloom filter.
+  // For now, we paginate the fetching to avoid blowing up memory during the read.
   for (final entry in repositories.entries) {
     final repoName = entry.key;
     final repo = entry.value;
     _log.finer('Querying $repoName for mediaAssetId references...');
 
-    // Fetch all documents that have a non-null mediaAssetId.
-    // The sparse index on `mediaAssetId` makes this query efficient.
-    final response = await repo.readAll(
-      filter: {
-        'mediaAssetId': {r'$exists': true, r'$ne': null},
-      },
-      pagination: const PaginationOptions(limit: 100000),
-    );
+    String? refCursor;
+    var refHasMore = true;
 
-    for (final item in response.items) {
-      final mediaAssetId = (item as dynamic).mediaAssetId as String?;
-      if (mediaAssetId != null && mediaAssetId.isNotEmpty) {
-        referencedIds.add(mediaAssetId);
+    while (refHasMore) {
+      final response = await repo.readAll(
+        filter: {
+          'mediaAssetId': {r'$exists': true, r'$ne': null},
+        },
+        pagination: PaginationOptions(limit: 1000, cursor: refCursor),
+      );
+
+      for (final item in response.items) {
+        final mediaAssetId = (item as dynamic).mediaAssetId as String?;
+        if (mediaAssetId != null && mediaAssetId.isNotEmpty) {
+          referencedIds.add(mediaAssetId);
+        }
       }
+
+      refCursor = response.cursor;
+      refHasMore = response.hasMore;
     }
-    _log.finer('Found ${response.items.length} references in $repoName.');
+    _log.finer('Finished scanning $repoName.');
   }
   _log.info(
     'Found a total of ${referencedIds.length} unique active media asset references.',
@@ -142,47 +161,54 @@ Future<void> _cleanupOrphanedAssets() async {
 
   // 2. Fetch all 'completed' media assets.
   _log.info('Fetching all "completed" media assets...');
-  final completedAssetsResponse = await mediaAssetRepository.readAll(
-    filter: {'status': MediaAssetStatus.completed.name},
-    pagination: const PaginationOptions(limit: 100000),
-  );
-  final allCompletedAssets = completedAssetsResponse.items;
-  _log.info('Found ${allCompletedAssets.length} total "completed" assets.');
 
-  // 3. Identify orphans by finding assets not in the referenced set.
-  final orphanedAssets = allCompletedAssets
-      .where((asset) => !referencedIds.contains(asset.id))
-      .toList();
-
-  if (orphanedAssets.isEmpty) {
-    _log.info('No orphaned media assets found.');
-    _log.info('--- Finished Task: Cleanup Orphaned Completed Assets ---');
-    return;
-  }
-
-  _log.info('Found ${orphanedAssets.length} orphaned assets to delete.');
-
-  // 4. Delete the orphaned assets and their corresponding files.
+  String? assetCursor;
+  var assetHasMore = true;
   var successCount = 0;
   var failureCount = 0;
-  for (final asset in orphanedAssets) {
-    try {
+
+  while (assetHasMore) {
+    final response = await mediaAssetRepository.readAll(
+      filter: {'status': MediaAssetStatus.completed.name},
+      pagination: PaginationOptions(limit: 100, cursor: assetCursor),
+    );
+
+    final batchAssets = response.items;
+
+    // 3. Identify orphans in this batch
+    final orphanedAssets = batchAssets
+        .where((asset) => !referencedIds.contains(asset.id))
+        .toList();
+
+    if (orphanedAssets.isNotEmpty) {
       _log.info(
-        'Deleting orphaned asset: ID=${asset.id}, Path=${asset.storagePath}',
+        'Found ${orphanedAssets.length} orphaned assets in this batch.',
       );
-      // First, delete the file from cloud storage.
-      await storageService.deleteObject(storagePath: asset.storagePath);
-      // Then, delete the database record.
-      await mediaAssetRepository.delete(id: asset.id);
-      successCount++;
-    } catch (e, s) {
-      _log.severe(
-        'Failed to delete orphaned asset ID: ${asset.id}',
-        e,
-        s,
-      );
-      failureCount++;
+
+      // 4. Delete the orphaned assets
+      for (final asset in orphanedAssets) {
+        try {
+          _log.info(
+            'Deleting orphaned asset: ID=${asset.id}, Path=${asset.storagePath}',
+          );
+          // First, delete the file from cloud storage.
+          await storageService.deleteObject(storagePath: asset.storagePath);
+          // Then, delete the database record.
+          await mediaAssetRepository.delete(id: asset.id);
+          successCount++;
+        } catch (e, s) {
+          _log.severe(
+            'Failed to delete orphaned asset ID: ${asset.id}',
+            e,
+            s,
+          );
+          failureCount++;
+        }
+      }
     }
+
+    assetCursor = response.cursor;
+    assetHasMore = response.hasMore;
   }
 
   _log.info(
