@@ -261,6 +261,31 @@ abstract final class EnvironmentConfig {
   /// The value is read from the `GCS_BUCKET_NAME` environment variable, if available.
   static String? get gcsBucketName => _getEnv('GCS_BUCKET_NAME');
 
+  /// Retrieves the AWS Access Key ID from the environment.
+  static String? get awsAccessKeyId => _getEnv('AWS_ACCESS_KEY_ID');
+
+  /// Retrieves the AWS Secret Access Key from the environment.
+  static String? get awsSecretAccessKey => _getEnv('AWS_SECRET_ACCESS_KEY');
+
+  /// Retrieves the AWS Region from the environment.
+  static String? get awsRegion => _getEnv('AWS_REGION');
+
+  /// Retrieves the AWS S3 Bucket Name from the environment.
+  static String? get awsBucketName => _getEnv('AWS_BUCKET_NAME');
+
+  /// Retrieves the AWS S3 Endpoint from the environment (optional).
+  static String? get awsS3Endpoint => _getEnv('AWS_S3_ENDPOINT');
+
+  /// Retrieves the shared secret for S3 webhook verification.
+  static String? get s3WebhookSecret => _getEnv('S3_WEBHOOK_SECRET');
+
+  /// Retrieves the selected storage provider.
+  ///
+  /// Expected values: 'gcs', 's3'.
+  /// Defaults to 'gcs' if not set.
+  static String get storageProvider =>
+      _getEnv('STORAGE_PROVIDER')?.toLowerCase() ?? 'gcs';
+
   /// Retrieves the whitelisted MIME types for profile photo uploads.
   /// Defaults to common image types if not set.
   static List<String> get mediaProfilePhotoMimeTypes {
