@@ -72,19 +72,6 @@ The API automatically validates the structure of all incoming data, ensuring tha
 </details>
 
 <details>
-<summary><strong>☁️ Cloud-Native Media & Storage</strong></summary>
-
-### 🚀 High-Performance, Direct-to-Cloud Uploads
-A modern, two-stage upload architecture ensures your API server remains fast and responsive by offloading all bandwidth-intensive file transfers directly to your cloud storage provider.
-- **Secure, Signed Policies:** The API first authorizes an upload request and then generates a short-lived, signed policy that grants the client temporary permission to upload a file directly to a specific, secure location in your storage bucket.
-- **Asynchronous Confirmation:** A secure webhook, authenticated with JWT, confirms when an upload is complete. This triggers the finalization process, which includes denormalizing the public URL to the relevant database record (e.g., updating a user's profile photo URL).
-- **Resilient & Self-Healing:** The system is built for the real world. A standalone worker process automatically cleans up any abandoned uploads, ensuring your database remains pristine. If a file is deleted from cloud storage, a webhook ensures the corresponding database records are also cleaned up.
-- **Provider-Agnostic Design:** While configured for Google Cloud Storage out of the box, the core interfaces (`IStorageService`) are designed to be provider-agnostic, allowing you to implement support for other services like Amazon S3 or Azure Blob Storage.
-> **Your Advantage:** Get a production-grade, highly scalable, and secure media handling pipeline that follows modern best practices. This architecture protects your API from heavy traffic, reduces operational costs, and ensures a fast, reliable experience for your users.
-
-</details>
-
-<details>
 <summary><strong>📧 Email & Transactional Messaging</strong></summary>
 
 ### 📨 Reliable Email Delivery
@@ -119,6 +106,19 @@ A secure, server-side verified reward system that incentivizes user engagement (
 - **Remote Config Driven:** The value and duration of rewards (e.g., "24 Hours Ad-Free") are controlled entirely by your Remote Config, acting as the single source of truth. This decouples business logic from ad network settings.
 - **Idempotent Processing:** A dedicated idempotency layer ensures that each reward transaction is processed exactly once, preventing duplicate grants even if the ad network retries callbacks.
 > **Your Advantage:** Safely monetize your app with rewarded ads, knowing that your premium features are protected by banking-grade verification logic.
+
+</details>
+
+<details>
+<summary><strong>☁️ Cloud Storage & Media Management</strong></summary>
+
+### 🗄️ Enterprise-Grade Asset Handling
+A robust, multi-provider media system designed for security, scalability, and cost control.
+- **Provider Agnostic:** Seamlessly switch between **Google Cloud Storage (GCS)** and **AWS S3** via simple configuration, preventing vendor lock-in.
+- **Secure Direct-to-Cloud Uploads:** Offloads binary traffic from your API server using signed URLs (V4 Policy), ensuring your backend remains lightweight and secure.
+- **Event-Driven Consistency:** Updates your database only after a confirmed upload via secure webhooks, preventing "ghost" assets and broken links.
+- **Automated Hygiene:** A dedicated worker process automatically detects and prunes orphaned files and stale pending uploads, keeping your storage costs optimized.
+> **Your Advantage:** Manage user-generated content and media assets with the same architectural rigor as the tech giants, ensuring security, performance, and zero wasted storage costs.
 
 </details>
 
