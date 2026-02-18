@@ -10,7 +10,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/countr
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/utils/media_asset_utils.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/util/media_asset_utils.dart';
 import 'package:logging/logging.dart';
 
 // --- Typedefs for Data Operations ---
