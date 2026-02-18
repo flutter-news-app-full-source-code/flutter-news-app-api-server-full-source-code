@@ -11,7 +11,8 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_s
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/email/email_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/gcs_jwt_verifier.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/util/gcs_jwt_verifier.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/media_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
@@ -215,6 +216,7 @@ Handler middleware(Handler handler) {
                 provider<CountryQueryService>((_) => deps.countryQueryService),
               )
               .use(provider<RewardsService>((_) => deps.rewardsService))
+              .use(provider<MediaService>((_) => deps.mediaService))
               .use(
                 provider<DataRepository<MediaAsset>>(
                   (_) => deps.mediaAssetRepository,
