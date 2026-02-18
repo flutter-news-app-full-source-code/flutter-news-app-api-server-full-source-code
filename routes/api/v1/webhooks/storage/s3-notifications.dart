@@ -6,8 +6,11 @@ import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/storage/s3_notification.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/storage/sns_notification.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/media_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/util/sns_message_handler.dart';
 import 'package:logging/logging.dart';
 
 final _log = Logger('S3NotificationsWebhook');
@@ -21,49 +24,61 @@ Future<Response> onRequest(RequestContext context) async {
     final idempotencyService = context.read<IdempotencyService>();
     final mediaService = context.read<MediaService>();
     final mediaAssetRepository = context.read<DataRepository<MediaAsset>>();
+    final snsMessageHandler = context.read<SnsMessageHandler>();
 
     final bodyString = await context.request.body();
     final jsonBody = jsonDecode(bodyString) as Map<String, dynamic>;
 
-    // 1. Handle AWS SNS Subscription Confirmation (if applicable)
-    if (jsonBody['Type'] == 'SubscriptionConfirmation') {
-      _log.info(
-        'Received SNS SubscriptionConfirmation. Log URL to confirm manually or implement auto-confirm.',
-      );
-      _log.info('SubscribeURL: ${jsonBody['SubscribeURL']}');
+    // Attempt to parse as an SNS Notification first (wrapping S3 event).
+    SnsNotification? snsPayload;
+    try {
+      // Check if it looks like an SNS payload before parsing to avoid noise.
+      if (jsonBody.containsKey('Type') && jsonBody.containsKey('MessageId')) {
+        snsPayload = SnsNotification.fromJson(jsonBody);
+      }
+    } catch (e) {
+      _log.fine('Payload is not a valid SNS notification: $e');
+    }
+
+    // 1. Handle AWS SNS Subscription Confirmation
+    if (snsPayload != null && snsPayload.type == 'SubscriptionConfirmation') {
+      final subscribeUrl = snsPayload.subscribeUrl;
+      if (subscribeUrl != null) {
+        await snsMessageHandler.confirmSubscription(subscribeUrl);
+      } else {
+        _log.warning(
+          'Received SubscriptionConfirmation but SubscribeURL is null.',
+        );
+      }
       return Response(statusCode: HttpStatus.ok);
     }
 
-    // 2. Unwrap SNS Message if present
-    var recordsJson = jsonBody;
-    if (jsonBody['Type'] == 'Notification' && jsonBody.containsKey('Message')) {
-      try {
-        recordsJson =
-            jsonDecode(jsonBody['Message'] as String) as Map<String, dynamic>;
-      } catch (e) {
-        _log.warning(
-          'Failed to parse SNS Message body as JSON. It might be raw text.',
-        );
+    // 2. Extract S3 Notification Data
+    late final S3Notification s3Notification;
+    try {
+      if (snsPayload != null && snsPayload.type == 'Notification') {
+        // Unwrap SNS Message
+        final messageJson =
+            jsonDecode(snsPayload.message ?? '{}') as Map<String, dynamic>;
+        s3Notification = S3Notification.fromJson(messageJson);
+      } else {
+        // Assume direct S3 invocation
+        s3Notification = S3Notification.fromJson(jsonBody);
       }
+    } catch (e) {
+      _log.warning('Failed to parse S3 notification structure.', e);
+      // If we can't parse it as S3, ignore it.
+      return Response(statusCode: HttpStatus.ok);
     }
 
-    if (!recordsJson.containsKey('Records')) {
+    if (s3Notification.records.isEmpty) {
       _log.info('No Records found in S3 notification. Ignoring.');
       return Response(statusCode: HttpStatus.ok);
     }
 
-    final records = recordsJson['Records'] as List<dynamic>;
-
-    for (final record in records) {
-      final recordMap = record as Map<String, dynamic>;
-      final eventName = recordMap['eventName'] as String?;
-      final s3 = recordMap['s3'] as Map<String, dynamic>?;
-
-      if (eventName == null || s3 == null) continue;
-
-      final objectKey = Uri.decodeFull(
-        (s3['object'] as Map<String, dynamic>)['key'] as String,
-      );
+    for (final record in s3Notification.records) {
+      final eventName = record.eventName;
+      final objectKey = record.s3.object.decodedKey;
 
       // Use a composite ID for idempotency: EventName + ObjectKey
       // S3 doesn't provide a single unique message ID for the whole batch in the same way GCS does.
