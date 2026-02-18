@@ -12,10 +12,26 @@ final _log = Logger('MediaCleanupWorker');
 /// This script initializes application dependencies and performs cleanup tasks
 /// for the media library. Specifically, it finds and deletes `MediaAsset`
 /// records that have been in the `pendingUpload` state for more than a
-/// configured grace period (e.g., 24 hours).
+/// configured grace period (e.g., 24 hours) and removes "orphaned" assets
+/// that are no longer referenced by any content.
 ///
 /// This executable can be compiled into a native binary and run by a scheduler
 /// (e.g., a cron job) to automate database hygiene.
+///
+/// ### Operational Guidelines
+///
+/// **Resource Intensity:** High (I/O Bound)
+/// - **Task 1 (Stale Pending):** Low impact. Queries by index.
+/// - **Task 2 (Orphan Cleanup):** High impact. This task performs a full
+///   "Scan-and-Compare" operation. It iterates through ALL `User`, `Headline`,
+///   `Topic`, and `Source` documents to build a reference set, then iterates
+///   through ALL `completed` media assets to find non-referenced ones.
+///
+/// **Recommended Schedule:**
+/// - Run this worker **once every 24 hours** (e.g., at 03:00 UTC) or
+///   **weekly** during off-peak hours.
+/// - Do NOT run this frequently (e.g., every 5 minutes) as it puts significant
+///   read pressure on the primary database collections.
 Future<void> main(List<String> args) async {
   // Configure logger for console output.
   Logger.root.level = Level.ALL;
