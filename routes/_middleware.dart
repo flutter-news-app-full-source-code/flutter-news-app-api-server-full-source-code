@@ -12,6 +12,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_t
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/email/email_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/util/gcs_jwt_verifier.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/util/sns_message_handler.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/media_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification/push_notification_service.dart';
@@ -224,6 +225,7 @@ Handler middleware(Handler handler) {
               )
               .use(provider<IStorageService>((_) => deps.storageService))
               .use(provider<IGcsJwtVerifier>((_) => deps.gcsJwtVerifier))
+              .use(provider<SnsMessageHandler>((_) => deps.snsMessageHandler))
               .call(context);
         };
       });
