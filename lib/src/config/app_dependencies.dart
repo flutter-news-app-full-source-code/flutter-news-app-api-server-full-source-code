@@ -23,6 +23,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/databa
 import 'package:flutter_news_app_api_server_full_source_code/src/services/default_user_action_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/email/email_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/util/gcs_jwt_verifier.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/util/sns_message_handler.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/media_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
@@ -119,6 +120,7 @@ class AppDependencies {
   late final MediaService mediaService;
 
   late final IGcsJwtVerifier gcsJwtVerifier;
+  late final SnsMessageHandler snsMessageHandler;
 
   /// Initializes all application dependencies.
   ///
@@ -648,6 +650,14 @@ class AppDependencies {
       );
 
       gcsJwtVerifier = GcsJwtVerifier(log: Logger('GcsJwtVerifier'));
+
+      snsMessageHandler = SnsMessageHandler(
+        httpClient: HttpClient(
+          baseUrl: '', // Base URL is dynamic (provided by SNS)
+          tokenProvider: () async => null,
+        ),
+        log: Logger('SnsMessageHandler'),
+      );
 
       // --- Analytics Services ---
       final gaPropertyId = EnvironmentConfig.googleAnalyticsPropertyId;
