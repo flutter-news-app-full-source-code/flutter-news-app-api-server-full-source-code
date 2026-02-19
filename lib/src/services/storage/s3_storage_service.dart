@@ -34,7 +34,6 @@ class S3StorageService implements IStorageService {
     final secretKey = EnvironmentConfig.awsSecretAccessKey;
     final region = EnvironmentConfig.awsRegion;
     final bucket = EnvironmentConfig.awsBucketName;
-    final endpoint = EnvironmentConfig.awsS3Endpoint;
 
     if (accessKey == null ||
         secretKey == null ||
@@ -89,7 +88,7 @@ class S3StorageService implements IStorageService {
 
       // Determine the URL. Use custom endpoint if provided (e.g. MinIO),
       // otherwise standard AWS S3 URL.
-      final url = endpoint ?? 'https://$bucket.s3.$region.amazonaws.com';
+      final url = 'https://$bucket.s3.$region.amazonaws.com';
 
       _log.info('Successfully generated S3 Presigned POST policy.');
       return {'url': url, 'fields': fields};
@@ -105,7 +104,6 @@ class S3StorageService implements IStorageService {
     final secretKey = EnvironmentConfig.awsSecretAccessKey;
     final region = EnvironmentConfig.awsRegion;
     final bucket = EnvironmentConfig.awsBucketName;
-    final endpoint = EnvironmentConfig.awsS3Endpoint;
 
     if (accessKey == null ||
         secretKey == null ||
@@ -129,9 +127,7 @@ class S3StorageService implements IStorageService {
       final queryString = '';
       // Host header is required for SigV4.
       // If using custom endpoint, parse it. Else construct standard AWS host.
-      final host = endpoint != null
-          ? Uri.parse(endpoint).host
-          : '$bucket.s3.$region.amazonaws.com';
+      final host = '$bucket.s3.$region.amazonaws.com';
 
       final payloadHash = sha256
           .convert(utf8.encode(''))
@@ -158,9 +154,8 @@ class S3StorageService implements IStorageService {
 
       // Execute Request.
       // We construct the full URL, which overrides any baseUrl configured in the HttpClient.
-      final requestUrl = endpoint != null
-          ? '$endpoint/$bucket/$storagePath'
-          : 'https://$bucket.s3.$region.amazonaws.com/$storagePath';
+      final requestUrl =
+          'https://$bucket.s3.$region.amazonaws.com/$storagePath';
 
       await _httpClient.delete<void>(
         requestUrl,

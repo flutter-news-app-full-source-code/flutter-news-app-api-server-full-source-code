@@ -273,9 +273,6 @@ abstract final class EnvironmentConfig {
   /// Retrieves the AWS S3 Bucket Name from the environment.
   static String? get awsBucketName => _getEnv('AWS_BUCKET_NAME');
 
-  /// Retrieves the AWS S3 Endpoint from the environment (optional).
-  static String? get awsS3Endpoint => _getEnv('AWS_S3_ENDPOINT');
-
   /// Retrieves the shared secret for S3 webhook verification.
   static String? get s3WebhookSecret => _getEnv('S3_WEBHOOK_SECRET');
 

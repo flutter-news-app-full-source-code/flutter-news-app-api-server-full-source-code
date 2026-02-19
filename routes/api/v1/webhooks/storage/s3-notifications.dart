@@ -110,12 +110,10 @@ Future<Response> onRequest(RequestContext context) async {
       if (eventName.startsWith('ObjectCreated:')) {
         final bucketName = EnvironmentConfig.awsBucketName;
         final region = EnvironmentConfig.awsRegion;
-        final endpoint = EnvironmentConfig.awsS3Endpoint;
 
         // Construct public URL. If custom endpoint (MinIO), use that. Else standard AWS.
-        final publicUrl = endpoint != null
-            ? '$endpoint/$bucketName/$objectKey'
-            : 'https://$bucketName.s3.$region.amazonaws.com/$objectKey';
+        final publicUrl =
+            'https://$bucketName.s3.$region.amazonaws.com/$objectKey';
 
         await mediaService.finalizeUpload(
           mediaAsset: asset,
