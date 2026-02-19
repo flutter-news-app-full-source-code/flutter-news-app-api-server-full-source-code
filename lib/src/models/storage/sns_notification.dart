@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/storage/s3_notification.dart' show S3Notification;
+import 'package:flutter_news_app_api_server_full_source_code/src/models/storage/s3_notification.dart'
+    show S3Notification;
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 

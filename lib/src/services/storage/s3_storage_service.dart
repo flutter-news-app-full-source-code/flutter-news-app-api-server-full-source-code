@@ -122,9 +122,9 @@ class S3StorageService implements IStorageService {
           "${dateStamp}T${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}Z";
 
       // 1. Canonical Request
-      final method = 'DELETE';
+      const method = 'DELETE';
       final uri = '/$storagePath'; // Key is the path
-      final queryString = '';
+      const queryString = '';
       // Host header is required for SigV4.
       // If using custom endpoint, parse it. Else construct standard AWS host.
       final host = '$bucket.s3.$region.amazonaws.com';
@@ -134,12 +134,12 @@ class S3StorageService implements IStorageService {
           .toString(); // Empty payload
       final canonicalHeaders =
           'host:$host\nx-amz-content-sha256:$payloadHash\nx-amz-date:$amzDate\n';
-      final signedHeaders = 'host;x-amz-content-sha256;x-amz-date';
+      const signedHeaders = 'host;x-amz-content-sha256;x-amz-date';
       final canonicalRequest =
           '$method\n$uri\n$queryString\n$canonicalHeaders\n$signedHeaders\n$payloadHash';
 
       // 2. String to Sign
-      final algorithm = 'AWS4-HMAC-SHA256';
+      const algorithm = 'AWS4-HMAC-SHA256';
       final credentialScope = '$dateStamp/$region/s3/aws4_request';
       final stringToSign =
           '$algorithm\n$amzDate\n$credentialScope\n${sha256.convert(utf8.encode(canonicalRequest))}';
