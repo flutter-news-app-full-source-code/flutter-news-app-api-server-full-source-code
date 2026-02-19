@@ -87,6 +87,10 @@ Future<Response> onRequest(RequestContext context) async {
     final filePath = p.join(basePath, mediaAsset.storagePath);
     file = File(filePath);
 
+    // Read the file bytes in the main isolate. A Uint8List is a sendable
+    // object that can be passed to the new isolate.
+    final fileBytes = await filePart.readAsBytes();
+
     // Offload the blocking file I/O to a separate isolate to keep the main
     // event loop responsive.
     await Isolate.run(() async {
@@ -94,9 +98,7 @@ Future<Response> onRequest(RequestContext context) async {
       if (!parentDir.existsSync()) {
         parentDir.createSync(recursive: true);
       }
-      final fileSink = file.openWrite();
-      await filePart.readAsBytes().then(fileSink.add);
-      await fileSink.close();
+      await file.writeAsBytes(fileBytes);
     });
 
     _log.info('Successfully wrote file to: $filePath');
