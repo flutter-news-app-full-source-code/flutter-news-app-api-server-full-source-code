@@ -36,7 +36,10 @@ class UploadTokenService {
         _log.warning('Upload token not found or already consumed: $tokenId');
         return null;
       }
-      return LocalUploadToken.fromJson(result);
+      // Manually map the '_id' from the database to the 'id' for the model.
+      final mappedResult = Map<String, dynamic>.from(result)
+        ..['id'] = (result['_id'] as ObjectId).oid;
+      return LocalUploadToken.fromJson(mappedResult);
     } catch (e, s) {
       _log.severe('Error consuming upload token $tokenId', e, s);
       throw const ServerException('Database error during token consumption.');

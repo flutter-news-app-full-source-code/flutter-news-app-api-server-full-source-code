@@ -38,7 +38,10 @@ class FinalizationJobService {
       if (result == null) {
         return null;
       }
-      return LocalMediaFinalizationJob.fromJson(result);
+      // Manually map the '_id' from the database to the 'id' for the model.
+      final mappedResult = Map<String, dynamic>.from(result)
+        ..['id'] = (result['_id'] as ObjectId).oid;
+      return LocalMediaFinalizationJob.fromJson(mappedResult);
     } catch (e, s) {
       _log.severe('Error claiming finalization job', e, s);
       throw const ServerException('Database error while claiming job.');

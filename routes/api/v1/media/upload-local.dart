@@ -8,7 +8,7 @@ import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/storage/local_media_finalization_job.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/upload_token_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/upload_token_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart' show ObjectId;
 import 'package:path/path.dart' as p;
