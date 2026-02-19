@@ -524,6 +524,36 @@ class DatabaseSeedingService {
       });
       _log.info('Ensured indexes for "media_assets".');
 
+      // Indexes for local_upload_tokens
+      await _db.runCommand({
+        'createIndexes': 'local_upload_tokens',
+        'indexes': [
+          {
+            // This is a TTL index. MongoDB will automatically delete documents
+            // (upload tokens) 15 minutes after they are created.
+            'key': {'createdAt': 1},
+            'name': 'createdAt_ttl_index',
+            'expireAfterSeconds': 900, // 15 minutes
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "local_upload_tokens".');
+
+      // Indexes for local_media_finalization_jobs
+      await _db.runCommand({
+        'createIndexes': 'local_media_finalization_jobs',
+        'indexes': [
+          {
+            // This is a TTL index. MongoDB will automatically delete jobs
+            // that haven't been processed within 24 hours.
+            'key': {'createdAt': 1},
+            'name': 'createdAt_ttl_index',
+            'expireAfterSeconds': 86400, // 24 hours
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "local_media_finalization_jobs".');
+
       _log.info('Database indexes are set up correctly.');
     } on Exception catch (e, s) {
       _log.severe('Failed to create database indexes.', e, s);
