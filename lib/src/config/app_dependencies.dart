@@ -24,7 +24,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/databa
 import 'package:flutter_news_app_api_server_full_source_code/src/services/database_seeding_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/default_user_action_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/email/email_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/finalization_job_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/local_media_finalization_job_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/jwt_auth_token_service.dart';
@@ -127,7 +127,7 @@ class AppDependencies {
   late final RewardsService rewardsService;
   late final MediaService mediaService;
   late final UploadTokenService uploadTokenService;
-  late final FinalizationJobService finalizationJobService;
+  late final LocalMediaFinalizationJobService finalizationJobService;
 
   late final IGcsJwtVerifier gcsJwtVerifier;
   late final SnsMessageHandler snsMessageHandler;
@@ -697,7 +697,7 @@ class AppDependencies {
         log: Logger('UploadTokenService'),
       );
 
-      finalizationJobService = FinalizationJobService(
+      finalizationJobService = LocalMediaFinalizationJobService(
         connectionManager: _mongoDbConnectionManager,
         log: Logger('FinalizationJobService'),
       );

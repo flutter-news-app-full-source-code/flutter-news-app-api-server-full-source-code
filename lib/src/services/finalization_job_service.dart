@@ -30,7 +30,7 @@ class FinalizationJobService {
     _log.finer('Attempting to claim a finalization job...');
     try {
       final result = await _collection.findAndModify(
-        query: {}, // Find any document
+        query: <String, dynamic>{}, // Find any document
         sort: {'createdAt': 1}, // Process oldest first
         remove: true,
       );
