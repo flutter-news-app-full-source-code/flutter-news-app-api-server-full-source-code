@@ -130,10 +130,13 @@ Future<Response> _post(RequestContext context, User user) async {
     maxSizeInBytes: maxSizeInBytes,
   );
 
+  final response = RequestUploadUrlResponse(
+    url: uploadData['url'] as String,
+    fields: uploadData['fields'] as Map<String, String>,
+    mediaAssetId: mediaAsset.id,
+  );
+
   return Response.json(
-    body: {
-      ...uploadData,
-      'mediaAssetId': mediaAsset.id,
-    },
+    body: response.toJson(),
   );
 }
