@@ -13,6 +13,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_s
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/email/email_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/finalization_job_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/media_service.dart';
@@ -240,6 +241,7 @@ Handler middleware(Handler handler) {
               .use(provider<IStorageService>((_) => deps.storageService))
               .use(provider<IGcsJwtVerifier>((_) => deps.gcsJwtVerifier))
               .use(provider<SnsMessageHandler>((_) => deps.snsMessageHandler))
+              .use(provider<IdempotencyService>((_) => deps.idempotencyService))
               .use(
                 provider<UploadTokenService>((_) => deps.uploadTokenService),
               )
