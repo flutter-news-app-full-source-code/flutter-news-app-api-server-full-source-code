@@ -13,6 +13,8 @@ import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/e
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/database/migrations/all_migrations.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/idempotency_record.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/storage/local_media_finalization_job.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/storage/local_upload_token.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/analytics/analytics.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_service.dart';
@@ -22,12 +24,11 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/databa
 import 'package:flutter_news_app_api_server_full_source_code/src/services/database_seeding_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/default_user_action_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/email/email_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/util/gcs_jwt_verifier.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/util/sns_message_handler.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/media_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/finalization_job_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/jwt_auth_token_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/media_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_rate_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_verification_code_storage_service.dart';
@@ -39,11 +40,15 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_l
 import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/admob_ssv_verifier.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/rewards_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/google_cloud_storage_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/s3_storage_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/local_storage_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/s3_storage_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/upload_token_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/verification_code_storage_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/util/gcs_jwt_verifier.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/util/sns_message_handler.dart';
 import 'package:http_client/http_client.dart';
 import 'package:logging/logging.dart';
 
@@ -92,7 +97,10 @@ class AppDependencies {
   late final DataRepository<ChartCardData> chartCardDataRepository;
   late final DataRepository<RankedListCardData> rankedListCardDataRepository;
   late final DataRepository<IdempotencyRecord> idempotencyRepository;
+  late final DataRepository<LocalMediaFinalizationJob>
+  localMediaFinalizationJobRepository;
 
+  late final DataRepository<LocalUploadToken> uploadTokenRepository;
   late final DataRepository<MediaAsset> mediaAssetRepository;
   late final DataRepository<Engagement> engagementRepository;
   late final DataRepository<Report> reportRepository;
@@ -118,6 +126,8 @@ class AppDependencies {
   late final IStorageService storageService;
   late final RewardsService rewardsService;
   late final MediaService mediaService;
+  late final UploadTokenService uploadTokenService;
+  late final FinalizationJobService finalizationJobService;
 
   late final IGcsJwtVerifier gcsJwtVerifier;
   late final SnsMessageHandler snsMessageHandler;
@@ -263,6 +273,23 @@ class AppDependencies {
         fromJson: IdempotencyRecord.fromJson,
         toJson: (item) => item.toJson(),
         logger: Logger('DataMongodb<IdempotencyRecord>'),
+      );
+
+      final localMediaFinalizationJobClient =
+          DataMongodb<LocalMediaFinalizationJob>(
+            connectionManager: _mongoDbConnectionManager,
+            modelName: 'local_media_finalization_jobs',
+            fromJson: LocalMediaFinalizationJob.fromJson,
+            toJson: (item) => item.toJson(),
+            logger: Logger('DataMongodb<LocalMediaFinalizationJob>'),
+          );
+
+      final uploadTokenClient = DataMongodb<LocalUploadToken>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'local_upload_tokens',
+        fromJson: LocalUploadToken.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<UploadToken>'),
       );
 
       final mediaAssetClient = DataMongodb<MediaAsset>(
@@ -411,6 +438,10 @@ class AppDependencies {
         dataClient: rankedListCardDataClient,
       );
       idempotencyRepository = DataRepository(dataClient: idempotencyClient);
+      localMediaFinalizationJobRepository = DataRepository(
+        dataClient: localMediaFinalizationJobClient,
+      );
+      uploadTokenRepository = DataRepository(dataClient: uploadTokenClient);
       mediaAssetRepository = DataRepository(dataClient: mediaAssetClient);
 
       // --- Initialize Email Service ---
@@ -520,6 +551,18 @@ class AppDependencies {
           ),
         );
         _log.info('S3StorageService initialized.');
+      } else if (storageProvider == 'local') {
+        if (EnvironmentConfig.localStoragePath == null) {
+          throw StateError(
+            'STORAGE_PROVIDER is "local" but LOCAL_STORAGE_PATH is not set.',
+          );
+        }
+        storageService = LocalStorageService(
+          log: Logger('LocalStorageService'),
+          uploadTokenRepository: uploadTokenRepository,
+          mediaAssetRepository: mediaAssetRepository,
+        );
+        _log.info('LocalStorageService initialized.');
       } else {
         // Default to GCS
         if (googleAuthService != null) {
@@ -647,6 +690,16 @@ class AppDependencies {
         sourceRepository: sourceRepository,
         storageService: storageService,
         log: Logger('MediaService'),
+      );
+
+      uploadTokenService = UploadTokenService(
+        connectionManager: _mongoDbConnectionManager,
+        log: Logger('UploadTokenService'),
+      );
+
+      finalizationJobService = FinalizationJobService(
+        connectionManager: _mongoDbConnectionManager,
+        log: Logger('FinalizationJobService'),
       );
 
       gcsJwtVerifier = GcsJwtVerifier(log: Logger('GcsJwtVerifier'));
