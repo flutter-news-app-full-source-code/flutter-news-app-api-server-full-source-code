@@ -127,6 +127,13 @@ abstract final class EnvironmentConfig {
   /// Returns `null` if the variable is not set.
   static String? get corsAllowedOrigin => _env['CORS_ALLOWED_ORIGIN'];
 
+  /// Retrieves the public-facing base URL of the API server.
+  ///
+  /// The value is read from the `API_BASE_URL` environment variable.
+  /// Defaults to 'http://localhost:8080' if not set.
+  static String get apiBaseUrl =>
+      _getEnv('API_BASE_URL') ?? 'http://localhost:8080';
+
   /// Retrieves the JWT issuer URL from the environment.
   ///
   /// The value is read from the `JWT_ISSUER` environment variable.
@@ -276,12 +283,16 @@ abstract final class EnvironmentConfig {
   /// Retrieves the shared secret for S3 webhook verification.
   static String? get s3WebhookSecret => _getEnv('S3_WEBHOOK_SECRET');
 
+  /// Retrieves the local storage path for media files.
+  /// Required if STORAGE_PROVIDER is "local".
+  static String? get localStoragePath => _getEnv('LOCAL_STORAGE_PATH');
+
   /// Retrieves the selected storage provider.
   ///
-  /// Expected values: 'gcs', 's3'.
-  /// Defaults to 'gcs' if not set.
+  /// Expected values: 'gcs', 's3', 'local'.
+  /// Defaults to 'local' if not set.
   static String get storageProvider =>
-      _getEnv('STORAGE_PROVIDER')?.toLowerCase() ?? 'gcs';
+      _getEnv('STORAGE_PROVIDER')?.toLowerCase() ?? 'local';
 
   /// Retrieves the whitelisted MIME types for profile photo uploads.
   /// Defaults to common image types if not set.
