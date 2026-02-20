@@ -1,5 +1,6 @@
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
 import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/app_dependencies.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/error_handler.dart';
@@ -29,6 +30,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/util/gcs_jwt_ve
 import 'package:flutter_news_app_api_server_full_source_code/src/util/sns_message_handler.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
+import 'package:shelf_cors_headers/shelf_cors_headers.dart' as shelf_cors;
 
 // --- Middleware Definition ---
 final _log = Logger('RootMiddleware');
@@ -36,6 +38,35 @@ final _log = Logger('RootMiddleware');
 // A flag to ensure the logger is only configured once for the application's
 // entire lifecycle.
 bool _loggerConfigured = false;
+
+/// Checks if the request's origin is allowed based on the environment.
+///
+/// In production (when `CORS_ALLOWED_ORIGIN` is set), it performs a strict
+/// check against the specified origin.
+/// In development, it dynamically allows any `localhost` or `127.0.0.1`
+/// origin to support the Flutter web dev server's random ports.
+bool _isOriginAllowed(String origin) {
+  _log.info('[CORS] Checking origin: "$origin"');
+  final allowedOriginEnv = EnvironmentConfig.corsAllowedOrigin;
+
+  if (allowedOriginEnv != null && allowedOriginEnv.isNotEmpty) {
+    // Production: strict check against the environment variable.
+    final isAllowed = origin == allowedOriginEnv;
+    _log.info(
+      '[CORS] Production check result: ${isAllowed ? 'ALLOWED' : 'DENIED'}',
+    );
+    return isAllowed;
+  } else {
+    // Development: dynamically allow any localhost origin.
+    final isAllowed =
+        origin.startsWith('http://localhost:') ||
+        origin.startsWith('http://127.0.0.1:');
+    _log.info(
+      '[CORS] Development check result: ${isAllowed ? 'ALLOWED' : 'DENIED'}',
+    );
+    return isAllowed;
+  }
+}
 
 Handler middleware(Handler handler) {
   // This is the root middleware for the entire API. It's responsible for
@@ -70,6 +101,26 @@ Handler middleware(Handler handler) {
       // These run after all dependencies have been provided.
       .use(errorHandler())
       .use(requestLogger())
+      // --- CORS Middleware ---
+      // This is applied globally to all routes, including /media/[...].
+      .use((handler) {
+        final corsMiddleware = fromShelfMiddleware(
+          shelf_cors.corsHeaders(
+            originChecker: _isOriginAllowed,
+            headers: {
+              shelf_cors.ACCESS_CONTROL_ALLOW_CREDENTIALS: 'true',
+              shelf_cors.ACCESS_CONTROL_ALLOW_METHODS:
+                  'GET, POST, PUT, DELETE, OPTIONS',
+              shelf_cors.ACCESS_CONTROL_ALLOW_HEADERS:
+                  'Origin, Content-Type, Authorization, Accept',
+              shelf_cors.ACCESS_CONTROL_MAX_AGE: '86400',
+            },
+          ),
+        );
+        return (context) {
+          return corsMiddleware(handler)(context);
+        };
+      })
       // --- Request ID Provider ---
       // This middleware provides a unique ID for each request for tracing.
       // It depends on the Uuid provider, so it must come after it.
