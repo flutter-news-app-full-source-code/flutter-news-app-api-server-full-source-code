@@ -11,6 +11,7 @@ RUN dart pub get
 COPY . .
 
 # Build the Dart Frog server
+RUN dart pub global activate dart_frog_cli
 RUN dart_frog build
 
 # Compile the standalone worker executables
