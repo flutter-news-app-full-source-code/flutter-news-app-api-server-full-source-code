@@ -52,6 +52,7 @@ void main() {
     });
 
     test('handles empty records list', () {
+      // ignore: inference_failure_on_collection_literal
       final json = {'Records': []};
       final notification = S3Notification.fromJson(json);
       expect(notification.records, isEmpty);
