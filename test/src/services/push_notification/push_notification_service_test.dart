@@ -423,7 +423,9 @@ void main() {
 
       test('omits Base64 image from payload', () async {
         final headlineWithBase64 = testHeadline.copyWith(
-          imageUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA',
+          imageUrl: const ValueWrapper(
+            'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA',
+          ),
         );
         when(
           () => userContentPreferencesRepository.readAll(

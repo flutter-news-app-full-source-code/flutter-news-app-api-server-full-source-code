@@ -24,6 +24,11 @@ class MockAppReviewRepository extends Mock
 class MockUserRewardsRepository extends Mock
     implements DataRepository<UserRewards> {}
 
+class MockMediaAssetRepository extends Mock
+    implements DataRepository<MediaAsset> {}
+
+class MockStorageService extends Mock implements helpers.MockStorageService {}
+
 void main() {
   group('DataOperationRegistry', () {
     late DataOperationRegistry registry;
@@ -510,7 +515,9 @@ void main() {
 
       test('succeeds when regular user updates their own name', () async {
         final updater = registry.itemUpdaters['user']!;
-        final updatedUser = userToUpdate.copyWith(name: 'New Name');
+        final updatedUser = userToUpdate.copyWith(
+          name: const ValueWrapper('New Name'),
+        );
         final requestBody = updatedUser.toJson();
 
         when(
@@ -571,7 +578,7 @@ void main() {
         () async {
           final updater = registry.itemUpdaters['user']!;
           final requestBody = userToUpdate
-              .copyWith(name: 'Admin Changed Name')
+              .copyWith(name: const ValueWrapper('Admin Changed Name'))
               .toJson();
 
           final context = helpers.createMockRequestContext(
@@ -587,6 +594,64 @@ void main() {
           );
         },
       );
+    });
+
+    group('MediaAsset Deleter', () {
+      late MockMediaAssetRepository mockMediaAssetRepository;
+      late MockStorageService mockStorageService;
+
+      setUp(() {
+        mockMediaAssetRepository = MockMediaAssetRepository();
+        mockStorageService = MockStorageService();
+      });
+
+      test('deletes from storage first, then deletes from database', () async {
+        final deleter = registry.itemDeleters['media_asset']!;
+        final asset = MediaAsset(
+          id: 'media-asset-id',
+          userId: 'user-id',
+          purpose: MediaAssetPurpose.headlineImage,
+          status: MediaAssetStatus.completed,
+          storagePath: 'path/to/file.jpg',
+          contentType: 'image/jpeg',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+
+        when(
+          () => mockMediaAssetRepository.read(id: asset.id),
+        ).thenAnswer((_) async => asset);
+        when(
+          () => mockStorageService.deleteObject(
+            storagePath: asset.storagePath,
+          ),
+        ).thenAnswer((_) async {});
+        when(
+          () => mockMediaAssetRepository.delete(id: asset.id),
+        ).thenAnswer((_) async {});
+
+        final context = helpers.createMockRequestContext(
+          mediaAssetRepository: mockMediaAssetRepository,
+          storageService: mockStorageService,
+        );
+
+        await deleter(context, asset.id, null);
+
+        // Use `verifyInOrder` to ensure the sequence of operations is correct.
+        verifyInOrder([
+          // 1. Fetch the asset to get its path.
+          () => mockMediaAssetRepository.read(id: asset.id),
+          // 2. Delete the object from cloud storage.
+          () => mockStorageService.deleteObject(
+            storagePath: asset.storagePath,
+          ),
+          // 3. Delete the record from the database.
+          () => mockMediaAssetRepository.delete(id: asset.id),
+        ]);
+
+        verifyNoMoreInteractions(mockStorageService);
+        verifyNoMoreInteractions(mockMediaAssetRepository);
+      });
     });
   });
 }

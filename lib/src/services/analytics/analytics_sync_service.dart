@@ -38,6 +38,7 @@ class AnalyticsSyncService {
     required DataRepository<Engagement> engagementRepository,
     required DataRepository<AppReview> appReviewRepository,
     required DataRepository<UserRewards> userRewardsRepository,
+    required DataRepository<MediaAsset> mediaAssetRepository,
     required AnalyticsReportingClient? googleAnalyticsClient,
     required AnalyticsReportingClient? mixpanelClient,
     required AnalyticsMetricMapper analyticsMetricMapper,
@@ -54,6 +55,7 @@ class AnalyticsSyncService {
        _engagementRepository = engagementRepository,
        _appReviewRepository = appReviewRepository,
        _userRewardsRepository = userRewardsRepository,
+       _mediaAssetRepository = mediaAssetRepository,
        _googleAnalyticsClient = googleAnalyticsClient,
        _mixpanelClient = mixpanelClient,
        _mapper = analyticsMetricMapper,
@@ -73,6 +75,7 @@ class AnalyticsSyncService {
   final DataRepository<Engagement> _engagementRepository;
   final DataRepository<AppReview> _appReviewRepository;
   final DataRepository<UserRewards> _userRewardsRepository;
+  final DataRepository<MediaAsset> _mediaAssetRepository;
   final AnalyticsReportingClient? _googleAnalyticsClient;
   final AnalyticsReportingClient? _mixpanelClient;
   final AnalyticsMetricMapper _mapper;
@@ -661,6 +664,22 @@ class AnalyticsSyncService {
           pipeline: pipeline,
         );
         return result.firstOrNull?['total'] as num? ?? 0;
+      case 'database:media_asset:count':
+        return _mediaAssetRepository.count(
+          filter: {...filter, 'status': 'completed'},
+        );
+      case 'database:media_asset:avg_upload_time':
+        final pipeline = _queryBuilder.buildPipelineForMetric(
+          query,
+          startDate,
+          now,
+        );
+        if (pipeline == null) return 0;
+        final result = await _aggregate(
+          _mediaAssetRepository,
+          pipeline: pipeline,
+        );
+        return result.firstOrNull?['total'] as num? ?? 0;
       default:
         _log.warning('Unsupported database metric total: ${query.metric}');
         return 0;
@@ -774,6 +793,7 @@ class AnalyticsSyncService {
       'topics': _topicRepository,
       'headlines': _headlineRepository,
       'user_rewards': _userRewardsRepository,
+      'media_asset': _mediaAssetRepository,
     };
 
     final repo = repositoryMap[collectionName];

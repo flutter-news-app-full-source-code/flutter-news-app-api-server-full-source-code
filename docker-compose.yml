@@ -1,0 +1,47 @@
+services:
+  api-server:
+    build: .
+    command: server
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mounts the named volume 'media_storage' to the container's /app/storage directory.
+      # This ensures that files uploaded via the 'local' provider are persisted.
+      - media_storage:/app/storage
+    env_file:
+      # Loads environment variables from the .env file in the project root.
+      - .env
+    restart: unless-stopped
+
+  finalize-worker:
+    build: .
+    command: finalize-worker
+    volumes:
+      - media_storage:/app/storage
+    env_file:
+      - .env
+    # This worker is essential for the local storage provider to function.
+    # It should always be running alongside the api-server.
+    restart: unless-stopped
+
+  # The cleanup worker is designed for periodic execution (e.g., via cron)
+  # rather than as a long-running service.
+  # You can run it manually with: docker-compose run --rm cleanup-worker
+  cleanup-worker:
+    build: .
+    command: cleanup-worker
+    volumes:
+      - media_storage:/app/storage
+    env_file:
+      - .env
+
+  # The analytics worker is also designed for periodic execution.
+  # You can run it manually with: docker-compose run --rm analytics-worker
+  analytics-worker:
+    build: .
+    command: analytics-worker
+    env_file:
+      - .env
+
+volumes:
+  media_storage:

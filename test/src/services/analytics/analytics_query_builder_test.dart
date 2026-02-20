@@ -247,6 +247,72 @@ void main() {
           }),
         );
       });
+
+      test('builds correct pipeline for media by purpose', () {
+        const query = StandardMetricQuery(
+          metric: 'database:media_asset:by_purpose',
+        );
+        final pipeline = queryBuilder.buildPipelineForMetric(
+          query,
+          startDate,
+          endDate,
+        );
+
+        final expectedPipeline = [
+          {
+            r'$match': {
+              'createdAt': {
+                r'$gte': startDate.toUtc().toIso8601String(),
+                r'$lt': endDate.toUtc().toIso8601String(),
+              },
+            },
+          },
+          {
+            r'$group': {
+              '_id': r'$purpose',
+              'count': {r'$sum': 1},
+            },
+          },
+          {
+            r'$project': {'label': r'$_id', 'value': r'$count', '_id': 0},
+          },
+        ];
+
+        expect(pipeline, equals(expectedPipeline));
+      });
+
+      test('builds correct pipeline for media status distribution', () {
+        const query = StandardMetricQuery(
+          metric: 'database:media_asset:status_distribution',
+        );
+        final pipeline = queryBuilder.buildPipelineForMetric(
+          query,
+          startDate,
+          endDate,
+        );
+
+        final expectedPipeline = [
+          {
+            r'$match': {
+              'createdAt': {
+                r'$gte': startDate.toUtc().toIso8601String(),
+                r'$lt': endDate.toUtc().toIso8601String(),
+              },
+            },
+          },
+          {
+            r'$group': {
+              '_id': r'$status',
+              'count': {r'$sum': 1},
+            },
+          },
+          {
+            r'$project': {'label': r'$_id', 'value': r'$count', '_id': 0},
+          },
+        ];
+
+        expect(pipeline, equals(expectedPipeline));
+      });
     });
 
     group('Ranked List Queries', () {
@@ -376,6 +442,48 @@ void main() {
           },
           {
             r'$sort': {'label': 1},
+          },
+        ];
+
+        expect(pipeline, equals(expectedPipeline));
+      });
+
+      test('builds correct pipeline for avgUploadTime', () {
+        const query = StandardMetricQuery(
+          metric: 'database:media_asset:avg_upload_time',
+        );
+        final pipeline = queryBuilder.buildPipelineForMetric(
+          query,
+          startDate,
+          endDate,
+        );
+
+        final expectedPipeline = [
+          {
+            r'$match': {
+              'status': 'completed',
+              'updatedAt': {
+                r'$gte': startDate.toUtc().toIso8601String(),
+                r'$lt': endDate.toUtc().toIso8601String(),
+              },
+            },
+          },
+          {
+            r'$group': {
+              '_id': null,
+              'avgUploadTime': {
+                r'$avg': {
+                  r'$subtract': [r'$updatedAt', r'$createdAt'],
+                },
+              },
+            },
+          },
+          {
+            r'$project': {
+              'total': {
+                r'$divide': [r'$avgUploadTime', 1000],
+              },
+            },
           },
         ];
 

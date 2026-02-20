@@ -500,12 +500,130 @@ class DatabaseSeedingService {
       });
       _log.info('Ensured indexes for "idempotency_records".');
 
+      // Indexes for media_assets
+      await _db.runCommand({
+        'createIndexes': 'media_assets',
+        'indexes': [
+          {
+            'key': {'userId': 1},
+            'name': 'userId_index',
+          },
+          {
+            // Ensures that each file path in the bucket is unique.
+            'key': {'storagePath': 1},
+            'name': 'storagePath_unique_index',
+            'unique': true,
+          },
+          {
+            // Optimizes finding assets by their status, crucial for the
+            // cleanup worker.
+            'key': {'status': 1},
+            'name': 'status_index',
+          },
+          {
+            // For analytics: count by status over time (e.g. mediaTotalUploads)
+            // and cleanup jobs (pending uploads older than X).
+            'key': {'status': 1, 'createdAt': 1},
+            'name': 'analytics_media_status_created_index',
+          },
+          {
+            // For analytics: average upload time (status=completed, range on updatedAt).
+            'key': {'status': 1, 'updatedAt': 1},
+            'name': 'analytics_media_status_updated_index',
+          },
+          {
+            // For analytics: uploads by purpose over time.
+            'key': {'createdAt': 1, 'purpose': 1},
+            'name': 'analytics_media_created_purpose_index',
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "media_assets".');
+
+      // Indexes for local_upload_tokens
+      await _db.runCommand({
+        'createIndexes': 'local_upload_tokens',
+        'indexes': [
+          {
+            // This is a TTL index. MongoDB will automatically delete documents
+            // (upload tokens) 15 minutes after they are created.
+            'key': {'createdAt': 1},
+            'name': 'createdAt_ttl_index',
+            'expireAfterSeconds': 900, // 15 minutes
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "local_upload_tokens".');
+
+      // Indexes for local_media_finalization_jobs
+      await _db.runCommand({
+        'createIndexes': 'local_media_finalization_jobs',
+        'indexes': [
+          {
+            // This is a TTL index. MongoDB will automatically delete jobs
+            // that haven't been processed within 24 hours.
+            'key': {'createdAt': 1},
+            'name': 'createdAt_ttl_index',
+            'expireAfterSeconds': 86400, // 24 hours
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "local_media_finalization_jobs".');
+
       _log.info('Database indexes are set up correctly.');
     } on Exception catch (e, s) {
       _log.severe('Failed to create database indexes.', e, s);
       // We rethrow here because if indexes can't be created,
       // critical features like search will fail.
       rethrow;
+    }
+
+    // --- Indexes for Orphaned Media Cleanup ---
+    // These indexes are crucial for the performance of the media cleanup worker.
+    try {
+      await _db.runCommand({
+        'createIndexes': 'users',
+        'indexes': [
+          {
+            'key': {'mediaAssetId': 1},
+            'name': 'mediaAssetId_sparse_index',
+            'sparse': true,
+          },
+        ],
+      });
+      await _db.runCommand({
+        'createIndexes': 'headlines',
+        'indexes': [
+          {
+            'key': {'mediaAssetId': 1},
+            'name': 'mediaAssetId_sparse_index',
+            'sparse': true,
+          },
+        ],
+      });
+      await _db.runCommand({
+        'createIndexes': 'topics',
+        'indexes': [
+          {
+            'key': {'mediaAssetId': 1},
+            'name': 'mediaAssetId_sparse_index',
+            'sparse': true,
+          },
+        ],
+      });
+      await _db.runCommand({
+        'createIndexes': 'sources',
+        'indexes': [
+          {
+            'key': {'mediaAssetId': 1},
+            'name': 'mediaAssetId_sparse_index',
+            'sparse': true,
+          },
+        ],
+      });
+      _log.info('Ensured sparse indexes for mediaAssetId references.');
+    } on Exception catch (e, s) {
+      _log.severe('Failed to create mediaAssetId sparse indexes.', e, s);
     }
   }
 

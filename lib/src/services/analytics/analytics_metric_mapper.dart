@@ -122,6 +122,16 @@ class AnalyticsMetricMapper {
     KpiCardId.rewardsGrantedTotal: const EventCountQuery(
       event: AnalyticsEvent.rewardGranted,
     ),
+    // Media KPIs
+    KpiCardId.mediaTotalUploads: const StandardMetricQuery(
+      metric: 'database:media_asset:count',
+    ),
+    KpiCardId.mediaFailedUploads: const EventCountQuery(
+      event: AnalyticsEvent.mediaUploadFailed,
+    ),
+    KpiCardId.mediaAverageUploadTime: const StandardMetricQuery(
+      metric: 'database:media_asset:avg_upload_time',
+    ),
   };
 
   static final Map<ChartCardId, MetricQuery> _chartQueryMappings = {
@@ -215,6 +225,16 @@ class AnalyticsMetricMapper {
     ),
     ChartCardId.rewardsGrantedOverTime: const EventCountQuery(
       event: AnalyticsEvent.rewardGranted,
+    ),
+    // Media Tab
+    ChartCardId.mediaUploadsOverTime: const EventCountQuery(
+      event: AnalyticsEvent.mediaUploadCompleted,
+    ),
+    ChartCardId.mediaUploadsByPurpose: const StandardMetricQuery(
+      metric: 'database:media_asset:by_purpose',
+    ),
+    ChartCardId.mediaUploadsSuccessVsFailure: const StandardMetricQuery(
+      metric: 'database:media_asset:status_distribution',
     ),
   };
 

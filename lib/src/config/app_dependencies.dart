@@ -13,6 +13,8 @@ import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/e
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/database/migrations/all_migrations.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/idempotency_record.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/storage/local_media_finalization_job.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/storage/local_upload_token.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/analytics/analytics.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_service.dart';
@@ -25,6 +27,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/email/
 import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/jwt_auth_token_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/media_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_rate_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_verification_code_storage_service.dart';
@@ -35,9 +38,17 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/push_n
 import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/admob_ssv_verifier.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/rewards_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/google_cloud_storage_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/local_media_finalization_job_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/local_storage_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/s3_storage_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/upload_token_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/verification_code_storage_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/util/gcs_jwt_verifier.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/util/sns_message_handler.dart';
 import 'package:http_client/http_client.dart';
 import 'package:logging/logging.dart';
 
@@ -86,7 +97,11 @@ class AppDependencies {
   late final DataRepository<ChartCardData> chartCardDataRepository;
   late final DataRepository<RankedListCardData> rankedListCardDataRepository;
   late final DataRepository<IdempotencyRecord> idempotencyRepository;
+  late final DataRepository<LocalMediaFinalizationJob>
+  localMediaFinalizationJobRepository;
 
+  late final DataRepository<LocalUploadToken> uploadTokenRepository;
+  late final DataRepository<MediaAsset> mediaAssetRepository;
   late final DataRepository<Engagement> engagementRepository;
   late final DataRepository<Report> reportRepository;
   late final DataRepository<AppReview> appReviewRepository;
@@ -108,7 +123,14 @@ class AppDependencies {
   late final IPushNotificationClient? firebasePushNotificationClient;
   late final IPushNotificationClient? oneSignalPushNotificationClient;
   late final IdempotencyService idempotencyService;
+  late final IStorageService storageService;
   late final RewardsService rewardsService;
+  late final MediaService mediaService;
+  late final UploadTokenService uploadTokenService;
+  late final LocalMediaFinalizationJobService finalizationJobService;
+
+  late final IGcsJwtVerifier gcsJwtVerifier;
+  late final SnsMessageHandler snsMessageHandler;
 
   /// Initializes all application dependencies.
   ///
@@ -253,6 +275,31 @@ class AppDependencies {
         logger: Logger('DataMongodb<IdempotencyRecord>'),
       );
 
+      final localMediaFinalizationJobClient =
+          DataMongodb<LocalMediaFinalizationJob>(
+            connectionManager: _mongoDbConnectionManager,
+            modelName: 'local_media_finalization_jobs',
+            fromJson: LocalMediaFinalizationJob.fromJson,
+            toJson: (item) => item.toJson(),
+            logger: Logger('DataMongodb<LocalMediaFinalizationJob>'),
+          );
+
+      final uploadTokenClient = DataMongodb<LocalUploadToken>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'local_upload_tokens',
+        fromJson: LocalUploadToken.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<UploadToken>'),
+      );
+
+      final mediaAssetClient = DataMongodb<MediaAsset>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'media_assets',
+        fromJson: MediaAsset.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<MediaAsset>'),
+      );
+
       // Initialize Data Clients for Push Notifications
       final pushNotificationDeviceClient = DataMongodb<PushNotificationDevice>(
         connectionManager: _mongoDbConnectionManager,
@@ -269,6 +316,7 @@ class AppDependencies {
         toJson: (item) => item.toJson(),
         logger: Logger('DataMongodb<InAppNotification>'),
       );
+      _log.info('Initialized data client for InAppNotification.');
 
       final kpiCardDataClient = DataMongodb<KpiCardData>(
         connectionManager: _mongoDbConnectionManager,
@@ -288,7 +336,6 @@ class AppDependencies {
         fromJson: RankedListCardData.fromJson,
         toJson: (item) => item.toJson(),
       );
-      _log.info('Initialized data client for InAppNotification.');
 
       final engagementClient = DataMongodb<Engagement>(
         connectionManager: _mongoDbConnectionManager,
@@ -320,37 +367,7 @@ class AppDependencies {
       final fcmProjectId = EnvironmentConfig.firebaseProjectId;
       final fcmClientEmail = EnvironmentConfig.firebaseClientEmail;
       final fcmPrivateKey = EnvironmentConfig.firebasePrivateKey;
-
-      if (fcmProjectId != null &&
-          fcmClientEmail != null &&
-          fcmPrivateKey != null) {
-        _log.info(
-          'Firebase credentials found. Initializing Firebase client.',
-        );
-        googleAuthService = GoogleAuthService(
-          log: Logger('GoogleAuthService'),
-        );
-
-        final firebaseHttpClient = HttpClient(
-          baseUrl: 'https://fcm.googleapis.com/v1/projects/$fcmProjectId/',
-          tokenProvider: () => googleAuthService!.getAccessToken(
-            scope: 'https://www.googleapis.com/auth/cloud-platform',
-          ),
-          logger: Logger('FirebasePushNotificationClient'),
-        );
-
-        firebasePushNotificationClient = FirebasePushNotificationClient(
-          httpClient: firebaseHttpClient,
-          projectId: fcmProjectId,
-          log: Logger('FirebasePushNotificationClient'),
-        );
-      } else {
-        _log.warning(
-          'One or more Firebase credentials not found. Firebase push notifications will be disabled.',
-        );
-        googleAuthService = null;
-        firebasePushNotificationClient = null;
-      }
+      // This is initialized later, just before it's needed.
 
       // OneSignal
       final osAppId = EnvironmentConfig.oneSignalAppId;
@@ -421,6 +438,11 @@ class AppDependencies {
         dataClient: rankedListCardDataClient,
       );
       idempotencyRepository = DataRepository(dataClient: idempotencyClient);
+      localMediaFinalizationJobRepository = DataRepository(
+        dataClient: localMediaFinalizationJobClient,
+      );
+      uploadTokenRepository = DataRepository(dataClient: uploadTokenClient);
+      mediaAssetRepository = DataRepository(dataClient: mediaAssetClient);
 
       // --- Initialize Email Service ---
       EmailClient? emailClient;
@@ -495,6 +517,95 @@ class AppDependencies {
         log: Logger('EmailService'),
       );
 
+      // --- Initialize Google Auth & Storage Services ---
+      // This block must come before any services that depend on them,
+      // particularly AuthService.
+
+      // 1. Initialize GoogleAuthService
+      if (fcmProjectId != null &&
+          fcmClientEmail != null &&
+          fcmPrivateKey != null) {
+        _log.info(
+          'Firebase credentials found. Initializing GoogleAuthService.',
+        );
+        googleAuthService = GoogleAuthService(
+          log: Logger('GoogleAuthService'),
+        );
+      } else {
+        _log.warning(
+          'One or more Firebase credentials not found. Services requiring Google Auth (like GCS) may be disabled.',
+        );
+        googleAuthService = null;
+      }
+
+      // 2. Initialize StorageService based on configuration
+      final storageProvider = EnvironmentConfig.storageProvider;
+      _log.info('Initializing Storage Service with provider: $storageProvider');
+
+      if (storageProvider == 's3') {
+        storageService = S3StorageService(
+          log: Logger('S3StorageService'),
+          httpClient: HttpClient(
+            baseUrl: '', // Base URL is dynamic per request in S3Service
+            tokenProvider: () async => null,
+          ),
+        );
+        _log.info('S3StorageService initialized.');
+      } else if (storageProvider == 'local') {
+        if (EnvironmentConfig.localStoragePath == null) {
+          throw StateError(
+            'STORAGE_PROVIDER is "local" but LOCAL_STORAGE_PATH is not set.',
+          );
+        }
+        storageService = LocalStorageService(
+          log: Logger('LocalStorageService'),
+          uploadTokenRepository: uploadTokenRepository,
+          mediaAssetRepository: mediaAssetRepository,
+        );
+        _log.info('LocalStorageService initialized.');
+      } else {
+        // Default to GCS
+        if (googleAuthService != null) {
+          storageService = GoogleCloudStorageService(
+            googleAuthService: googleAuthService!,
+            log: Logger('GoogleCloudStorageService'),
+          );
+          _log.info('GoogleCloudStorageService initialized.');
+        } else {
+          _log.severe(
+            'GoogleAuthService is not available, cannot initialize GoogleCloudStorageService.',
+          );
+          // Only throw if GCS was explicitly requested or is the default and failed.
+          if (storageProvider == 'gcs') {
+            throw StateError(
+              'GoogleCloudStorageService requires GoogleAuthService, which could not be initialized.',
+            );
+          }
+        }
+      }
+
+      // 3. Initialize Firebase Push Client (depends on GoogleAuthService)
+      if (googleAuthService != null && fcmProjectId != null) {
+        final firebaseHttpClient = HttpClient(
+          baseUrl: 'https://fcm.googleapis.com/v1/projects/$fcmProjectId/',
+          tokenProvider: () => googleAuthService!.getAccessToken(
+            scope: 'https://www.googleapis.com/auth/cloud-platform',
+          ),
+          logger: Logger('FirebasePushNotificationClient'),
+        );
+        firebasePushNotificationClient = FirebasePushNotificationClient(
+          httpClient: firebaseHttpClient,
+          projectId: fcmProjectId,
+          log: Logger('FirebasePushNotificationClient'),
+        );
+        _log.info('FirebasePushNotificationClient initialized.');
+      } else {
+        firebasePushNotificationClient = null;
+        _log.warning(
+          'FirebasePushNotificationClient disabled due to missing credentials or auth service.',
+        );
+      }
+
       // 5. Initialize Services
       tokenBlacklistService = MongoDbTokenBlacklistService(
         connectionManager: _mongoDbConnectionManager,
@@ -519,6 +630,8 @@ class AppDependencies {
         appSettingsRepository: appSettingsRepository,
         userContextRepository: userContextRepository,
         userContentPreferencesRepository: userContentPreferencesRepository,
+        mediaAssetRepository: mediaAssetRepository,
+        storageService: storageService,
         log: Logger('AuthService'),
         pushNotificationDeviceRepository: pushNotificationDeviceRepository,
       );
@@ -567,6 +680,36 @@ class AppDependencies {
         idempotencyService: idempotencyService,
         admobVerifier: admobVerifier,
         log: Logger('RewardsService'),
+      );
+
+      mediaService = MediaService(
+        mediaAssetRepository: mediaAssetRepository,
+        userRepository: userRepository,
+        headlineRepository: headlineRepository,
+        topicRepository: topicRepository,
+        sourceRepository: sourceRepository,
+        storageService: storageService,
+        log: Logger('MediaService'),
+      );
+
+      uploadTokenService = UploadTokenService(
+        connectionManager: _mongoDbConnectionManager,
+        log: Logger('UploadTokenService'),
+      );
+
+      finalizationJobService = LocalMediaFinalizationJobService(
+        connectionManager: _mongoDbConnectionManager,
+        log: Logger('FinalizationJobService'),
+      );
+
+      gcsJwtVerifier = GcsJwtVerifier(log: Logger('GcsJwtVerifier'));
+
+      snsMessageHandler = SnsMessageHandler(
+        httpClient: HttpClient(
+          baseUrl: '', // Base URL is dynamic (provided by SNS)
+          tokenProvider: () async => null,
+        ),
+        log: Logger('SnsMessageHandler'),
       );
 
       // --- Analytics Services ---
@@ -638,6 +781,7 @@ class AppDependencies {
         engagementRepository: engagementRepository,
         appReviewRepository: appReviewRepository,
         userRewardsRepository: userRewardsRepository,
+        mediaAssetRepository: mediaAssetRepository,
         log: Logger('AnalyticsSyncService'),
       );
 

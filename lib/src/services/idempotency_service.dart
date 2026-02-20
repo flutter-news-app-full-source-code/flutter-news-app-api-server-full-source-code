@@ -24,10 +24,12 @@ class IdempotencyService {
 
   /// Checks if an event with the given [eventId] has already been processed.
   ///
+  /// Optionally accepts a [scope] to namespace the event ID (e.g., 'gcs', 's3').
+  ///
   /// Returns `true` if the event exists, `false` otherwise.
-  Future<bool> isEventProcessed(String eventId) async {
+  Future<bool> isEventProcessed(String eventId, {String? scope}) async {
     try {
-      final dbId = _generateDeterministicId(eventId);
+      final dbId = _generateDeterministicId(eventId, scope);
       await _repository.read(id: dbId);
       return true;
     } on NotFoundException {
@@ -45,10 +47,12 @@ class IdempotencyService {
 
   /// Records an event as processed.
   ///
+  /// Optionally accepts a [scope] to namespace the event ID.
+  ///
   /// Throws [ConflictException] if the event was recorded concurrently.
-  Future<void> recordEvent(String eventId) async {
+  Future<void> recordEvent(String eventId, {String? scope}) async {
     try {
-      final dbId = _generateDeterministicId(eventId);
+      final dbId = _generateDeterministicId(eventId, scope);
       final record = IdempotencyRecord(
         id: dbId,
         createdAt: DateTime.now(),
@@ -64,8 +68,9 @@ class IdempotencyService {
   ///
   /// This is necessary to create a fixed-length, database-compatible string
   /// identifier from an arbitrary event ID for use as a document `_id`.
-  String _generateDeterministicId(String eventId) {
-    final bytes = utf8.encode(eventId);
+  String _generateDeterministicId(String eventId, String? scope) {
+    final input = scope != null ? '$scope:$eventId' : eventId;
+    final bytes = utf8.encode(input);
     final digest = sha256.convert(bytes);
     // SHA-256 produces 64 chars; take the first 24 for a valid ObjectId length.
     return digest.toString().substring(0, 24);

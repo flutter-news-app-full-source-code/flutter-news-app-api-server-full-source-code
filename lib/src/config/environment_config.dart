@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dotenv/dotenv.dart';
 import 'package:logging/logging.dart';
+import 'package:meta/meta.dart';
 
 /// {@template environment_config}
 /// A utility class for accessing environment variables.
@@ -18,6 +19,16 @@ abstract final class EnvironmentConfig {
   static final DotEnv _env = _loadEnv();
 
   static final Map<String, String> _overrides = {};
+
+  /// Overrides an environment variable for testing purposes.
+  @visibleForTesting
+  static void setOverride(String key, String? value) {
+    if (value == null) {
+      _overrides.remove(key);
+    } else {
+      _overrides[key] = value;
+    }
+  }
 
   /// Helper method to load the .env file more robustly.
   ///
@@ -115,6 +126,13 @@ abstract final class EnvironmentConfig {
   /// This is used to configure CORS for production environments.
   /// Returns `null` if the variable is not set.
   static String? get corsAllowedOrigin => _env['CORS_ALLOWED_ORIGIN'];
+
+  /// Retrieves the public-facing base URL of the API server.
+  ///
+  /// The value is read from the `API_BASE_URL` environment variable.
+  /// Defaults to 'http://localhost:8080' if not set.
+  static String get apiBaseUrl =>
+      _getEnv('API_BASE_URL') ?? 'http://localhost:8080';
 
   /// Retrieves the JWT issuer URL from the environment.
   ///
@@ -245,4 +263,104 @@ abstract final class EnvironmentConfig {
   ///
   /// Expected values: 'sendgrid', 'onesignal', 'logging'.
   static String get emailProvider => _getRequiredEnv('EMAIL_PROVIDER');
+
+  /// Retrieves the Google Cloud Storage bucket name from the environment.
+  /// The value is read from the `GCS_BUCKET_NAME` environment variable, if available.
+  static String? get gcsBucketName => _getEnv('GCS_BUCKET_NAME');
+
+  /// Retrieves the AWS Access Key ID from the environment.
+  static String? get awsAccessKeyId => _getEnv('AWS_ACCESS_KEY_ID');
+
+  /// Retrieves the AWS Secret Access Key from the environment.
+  static String? get awsSecretAccessKey => _getEnv('AWS_SECRET_ACCESS_KEY');
+
+  /// Retrieves the AWS Region from the environment.
+  static String? get awsRegion => _getEnv('AWS_REGION');
+
+  /// Retrieves the AWS S3 Bucket Name from the environment.
+  static String? get awsBucketName => _getEnv('AWS_BUCKET_NAME');
+
+  /// Retrieves the shared secret for S3 webhook verification.
+  static String? get s3WebhookSecret => _getEnv('S3_WEBHOOK_SECRET');
+
+  /// Retrieves the local storage path for media files.
+  /// Required if STORAGE_PROVIDER is "local".
+  static String? get localStoragePath => _getEnv('LOCAL_STORAGE_PATH');
+
+  /// Retrieves the selected storage provider.
+  ///
+  /// Expected values: 'gcs', 's3', 'local'.
+  /// Defaults to 'local' if not set.
+  static String get storageProvider =>
+      _getEnv('STORAGE_PROVIDER')?.toLowerCase() ?? 'local';
+
+  /// Retrieves the whitelisted MIME types for profile photo uploads.
+  /// Defaults to common image types if not set.
+  static List<String> get mediaProfilePhotoMimeTypes {
+    final types = _getEnv('MEDIA_PROFILE_PHOTO_MIME_TYPES');
+    if (types == null || types.isEmpty) {
+      return ['image/jpeg', 'image/png', 'image/webp'];
+    }
+    return types.split(',').map((e) => e.trim()).toList();
+  }
+
+  /// Retrieves the maximum file size in bytes for profile photo uploads.
+  /// Defaults to 5MB if not set or if parsing fails.
+  static int get mediaProfilePhotoMaxSizeInBytes {
+    final mb = int.tryParse(_getEnv('MEDIA_PROFILE_PHOTO_MAX_SIZE_MB') ?? '5');
+    return (mb ?? 5) * 1024 * 1024;
+  }
+
+  /// Retrieves the whitelisted MIME types for headline image uploads.
+  /// Defaults to common image types if not set.
+  static List<String> get mediaHeadlineImageMimeTypes {
+    final types = _getEnv('MEDIA_HEADLINE_IMAGE_MIME_TYPES');
+    if (types == null || types.isEmpty) {
+      return ['image/jpeg', 'image/png', 'image/webp'];
+    }
+    return types.split(',').map((e) => e.trim()).toList();
+  }
+
+  /// Retrieves the maximum file size in bytes for headline image uploads.
+  /// Defaults to 10MB if not set or if parsing fails.
+  static int get mediaHeadlineImageMaxSizeInBytes {
+    final mb = int.tryParse(
+      _getEnv('MEDIA_HEADLINE_IMAGE_MAX_SIZE_MB') ?? '10',
+    );
+    return (mb ?? 10) * 1024 * 1024;
+  }
+
+  /// Retrieves the whitelisted MIME types for topic image uploads.
+  /// Defaults to common image types if not set.
+  static List<String> get mediaTopicImageMimeTypes {
+    final types = _getEnv('MEDIA_TOPIC_IMAGE_MIME_TYPES');
+    if (types == null || types.isEmpty) {
+      return ['image/jpeg', 'image/png', 'image/webp'];
+    }
+    return types.split(',').map((e) => e.trim()).toList();
+  }
+
+  /// Retrieves the maximum file size in bytes for topic image uploads.
+  /// Defaults to 2MB if not set or if parsing fails.
+  static int get mediaTopicImageMaxSizeInBytes {
+    final mb = int.tryParse(_getEnv('MEDIA_TOPIC_IMAGE_MAX_SIZE_MB') ?? '2');
+    return (mb ?? 2) * 1024 * 1024;
+  }
+
+  /// Retrieves the whitelisted MIME types for source image uploads.
+  /// Defaults to common image types if not set.
+  static List<String> get mediaSourceImageMimeTypes {
+    final types = _getEnv('MEDIA_SOURCE_IMAGE_MIME_TYPES');
+    if (types == null || types.isEmpty) {
+      return ['image/jpeg', 'image/png', 'image/webp'];
+    }
+    return types.split(',').map((e) => e.trim()).toList();
+  }
+
+  /// Retrieves the maximum file size in bytes for source image uploads.
+  /// Defaults to 2MB if not set or if parsing fails.
+  static int get mediaSourceImageMaxSizeInBytes {
+    final mb = int.tryParse(_getEnv('MEDIA_SOURCE_IMAGE_MAX_SIZE_MB') ?? '2');
+    return (mb ?? 2) * 1024 * 1024;
+  }
 }

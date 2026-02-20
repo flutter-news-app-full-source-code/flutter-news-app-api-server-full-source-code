@@ -11,8 +11,11 @@ import 'package:flutter_news_app_api_server_full_source_code/src/registry/data_o
 import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_registry.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/util/gcs_jwt_verifier.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockRequestContext extends Mock implements RequestContext {}
@@ -35,6 +38,16 @@ class MockDataOperationRegistry extends Mock implements DataOperationRegistry {}
 class MockDataRepository<T> extends Mock implements DataRepository<T> {}
 
 class MockHeadlineRepository extends MockDataRepository<Headline> {}
+
+class MockTopicRepository extends MockDataRepository<Topic> {}
+
+class MockSourceRepository extends MockDataRepository<Source> {}
+
+class MockStorageService extends Mock implements IStorageService {}
+
+class MockMediaAssetRepository extends MockDataRepository<MediaAsset> {}
+
+class MockIdempotencyService extends Mock implements IdempotencyService {}
 
 class MockUserRepository extends MockDataRepository<User> {}
 
@@ -82,6 +95,8 @@ void registerSharedFallbackValues() {
       savedSourceFilters: [],
     ),
   );
+  registerFallbackValue(createTestHeadline());
+  registerFallbackValue(createTestMediaAsset());
 }
 
 /// A proxy implementation of [RequestContext] that delegates to another context.
@@ -142,10 +157,17 @@ RequestContext createMockRequestContext({
   DataOperationRegistry? dataOperationRegistry,
   FetchedItem<dynamic>? fetchedItem,
   DataRepository<User>? userRepository,
+  DataRepository<Headline>? headlineRepository,
+  DataRepository<Topic>? topicRepository,
+  DataRepository<Source>? sourceRepository,
   DataRepository<Engagement>? engagementRepository,
   DataRepository<AppReview>? appReviewRepository,
   DataRepository<UserContentPreferences>? userContentPreferencesRepository,
+  IStorageService? storageService,
+  DataRepository<MediaAsset>? mediaAssetRepository,
+  IdempotencyService? idempotencyService,
   CountryQueryService? countryQueryService,
+  IGcsJwtVerifier? gcsJwtVerifier,
 }) {
   // If a request object is provided, extract values from it.
   var effectiveMethod = method;
@@ -264,6 +286,15 @@ RequestContext createMockRequestContext({
   if (userRepository != null) {
     testContext.provide<DataRepository<User>>(userRepository);
   }
+  if (headlineRepository != null) {
+    testContext.provide<DataRepository<Headline>>(headlineRepository);
+  }
+  if (topicRepository != null) {
+    testContext.provide<DataRepository<Topic>>(topicRepository);
+  }
+  if (sourceRepository != null) {
+    testContext.provide<DataRepository<Source>>(sourceRepository);
+  }
   if (engagementRepository != null) {
     testContext.provide<DataRepository<Engagement>>(engagementRepository);
   }
@@ -278,6 +309,18 @@ RequestContext createMockRequestContext({
   if (countryQueryService != null) {
     testContext.provide<CountryQueryService>(countryQueryService);
   }
+  if (storageService != null) {
+    testContext.provide<IStorageService>(storageService);
+  }
+  if (mediaAssetRepository != null) {
+    testContext.provide<DataRepository<MediaAsset>>(mediaAssetRepository);
+  }
+  if (idempotencyService != null) {
+    testContext.provide<IdempotencyService>(idempotencyService);
+  }
+  if (gcsJwtVerifier != null) {
+    testContext.provide<IGcsJwtVerifier>(gcsJwtVerifier);
+  }
 
   // Return the ProxyRequestContext to ensure extension methods work correctly.
   return ProxyRequestContext(testContext.context);
@@ -288,7 +331,9 @@ User createTestUser({
   String id = 'user-id',
   String email = 'test@example.com',
   UserRole role = UserRole.user,
+  bool isAnonymous = false,
   AccessTier tier = AccessTier.standard,
+  String? photoUrl,
 }) {
   return User(
     id: id,
@@ -296,5 +341,99 @@ User createTestUser({
     role: role,
     tier: tier,
     createdAt: DateTime.now(),
+    isAnonymous: isAnonymous,
+    photoUrl: photoUrl,
   );
+}
+
+Headline createTestHeadline({
+  String id = 'headline-id',
+  String title = 'Test Headline',
+  String url = 'http://example.com/headline',
+  String? imageUrl,
+  String? mediaAssetId,
+  Source? source,
+  Country? eventCountry,
+  Topic? topic,
+  bool isBreaking = false,
+  ContentStatus status = ContentStatus.active,
+}) {
+  return Headline(
+    id: id,
+    title: title,
+    url: url,
+    imageUrl: imageUrl,
+    mediaAssetId: mediaAssetId,
+    source:
+        source ??
+        Source(
+          id: 'source-id',
+          name: 'Test Source',
+          description: '',
+          url: '',
+          sourceType: SourceType.other,
+          language: languagesFixturesData.first,
+          headquarters: countriesFixturesData.first,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          status: ContentStatus.active,
+        ),
+    eventCountry: eventCountry ?? countriesFixturesData.first,
+    topic:
+        topic ??
+        Topic(
+          id: 'topic-id',
+          name: 'Test Topic',
+          description: '',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          status: ContentStatus.active,
+        ),
+    isBreaking: isBreaking,
+    status: status,
+    createdAt: DateTime.now(),
+    updatedAt: DateTime.now(),
+  );
+}
+
+MediaAsset createTestMediaAsset({
+  String id = 'media-asset-id',
+  String userId = 'user-id',
+  MediaAssetPurpose purpose = MediaAssetPurpose.userProfilePhoto,
+  MediaAssetStatus status = MediaAssetStatus.pendingUpload,
+  String storagePath = 'user-media/user-id/file.jpg',
+  String contentType = 'image/jpeg',
+  String? publicUrl,
+  String? associatedEntityId,
+  MediaAssetEntityType? associatedEntityType,
+}) {
+  return MediaAsset(
+    id: id,
+    userId: userId,
+    purpose: purpose,
+    status: status,
+    storagePath: storagePath,
+    contentType: contentType,
+    publicUrl: publicUrl,
+    createdAt: DateTime.now(),
+    updatedAt: DateTime.now(),
+    associatedEntityId: associatedEntityId,
+    associatedEntityType: associatedEntityType,
+  );
+}
+
+Map<String, dynamic> createGcsNotificationPayload(
+  String messageId,
+  String eventType,
+  String objectId,
+) {
+  return {
+    'message': {
+      'messageId': messageId,
+      'attributes': {
+        'eventType': eventType,
+        'objectId': objectId,
+      },
+    },
+  };
 }

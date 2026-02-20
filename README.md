@@ -110,13 +110,35 @@ A secure, server-side verified reward system that incentivizes user engagement (
 </details>
 
 <details>
-<summary><strong>📊 Insightful Analytics Engine</strong></summary>
+<summary><strong>🗄️ Media & Storage Management</strong></summary>
 
-### 📈 A Unified Business Intelligence Engine
-A complete, multi-provider analytics engine that transforms raw data from both external services and your own application database into insightful, aggregated metrics for your dashboard.
+### 🛡️ A Robust, Multi-Provider Media System
+A complete media system designed for security, scalability, and cost control. It implements the **Strategy Pattern** to seamlessly switch between enterprise-grade cloud providers and a production-ready local storage solution.
+
+#### Enterprise-Grade Cloud Integration (GCS & S3)
+- **Provider Agnostic:** Avoid vendor lock-in with out-of-the-box support for **Google Cloud Storage (GCS)** and **AWS S3**. Switch between them with a single environment variable.
+- **Secure Direct-to-Cloud Uploads:** The system offloads all binary traffic from your API server by using **pre-signed URLs** (V4 Policy). Clients upload files directly to the cloud, keeping your API lightweight, secure, and scalable.
+- **Event-Driven Finalization:** Your database is updated only after receiving a cryptographically secure webhook confirmation from the cloud provider, guaranteeing data consistency and preventing "ghost" assets or broken links.
+
+#### Production-Ready Local Storage Provider
+- **Seamless Dev/Prod Parity:** The local provider perfectly emulates the asynchronous, two-stage upload flow of its cloud counterparts. It uses single-use tokens for authorization and a dedicated background worker for finalization, ensuring your application logic remains identical across all environments.
+- **Asynchronous Finalization:** The local provider emulates the asynchronous, webhook-based finalization of cloud providers. After an upload, it queues a job for a separate background worker. This decouples the upload request from the subsequent database updates, ensuring the API endpoint returns immediately and the finalization logic happens reliably in the background.
+- **Zero-Configuration for Docker:** When running with the provided Docker setup, the local storage provider works out of the box with a pre-configured persistent volume.
+
+#### Automated Lifecycle & Cost Control
+- **Automated Hygiene:** A dedicated, schedulable worker process automatically detects and prunes orphaned files and stale pending uploads. This keeps your storage buckets clean and your costs optimized by ensuring you never pay for unused assets.
+> **Your Advantage:** You get an enterprise-grade asset management pipeline that is secure, scalable, and cost-efficient. Whether you're developing locally or deploying to the cloud, the architecture provides a consistent, reliable, and professional solution for handling all media and user-generated content.
+
+</details>
+
+<details>
+<summary><strong>📊 Insightful Analytics System</strong></summary>
+
+### 📈 A Unified Business Intelligence System
+A complete, multi-provider analytics system that transforms raw data from both external services and your own application database into insightful, aggregated metrics for your dashboard.
 - **Dual-Source ETL:** A standalone worker process runs on a schedule to perform a full Extract, Transform, and Load (ETL) operation. It pulls behavioral data from your chosen analytics provider (Google Analytics or Mixpanel) and combines it with operational data by running direct, complex aggregations against the application's own database.
 - **High-Performance Dashboard:** The web dashboard reads this pre-aggregated data, resulting in near-instant load times for all analytics charts and metrics. This architecture avoids slow, direct, on-the-fly queries from the client to the analytics provider.
-- **Provider-Agnostic & Extensible:** The engine is built on a clean, abstract interface, decoupling the core logic from any specific provider. Switch between Google Analytics and Mixpanel with a simple configuration change, or integrate a new provider by implementing a single, well-defined contract. Adding new charts or KPIs is as simple as defining a new metric mapping.
+- **Provider-Agnostic & Extensible:** The system is built on a clean, abstract interface, decoupling the core logic from any specific provider. Switch between Google Analytics and Mixpanel with a simple configuration change, or integrate a new provider by implementing a single, well-defined contract. Adding new charts or KPIs is as simple as defining a new metric mapping.
 > **Your Advantage:** Get a complete, production-grade BI pipeline out of the box. Deliver a fast, responsive dashboard and gain a holistic view of your business by combining user behavior analytics with real-time operational metrics—a capability that external analytics tools alone cannot provide.
 
 </details>

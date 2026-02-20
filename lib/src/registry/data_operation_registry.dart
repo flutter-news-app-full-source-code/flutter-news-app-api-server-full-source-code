@@ -8,14 +8,19 @@ import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification/push_notification_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/util/media_asset_utils.dart';
 import 'package:logging/logging.dart';
 
 // --- Typedefs for Data Operations ---
 
 /// A function that fetches a single item by its ID.
 typedef ItemFetcher =
-    Future<dynamic> Function(RequestContext context, String id);
+    Future<dynamic> Function(
+      RequestContext context,
+      String id,
+    );
 
 /// A function that fetches a paginated list of items.
 typedef AllItemsReader =
@@ -46,7 +51,11 @@ typedef ItemUpdater =
 
 /// A function that deletes an item by its ID.
 typedef ItemDeleter =
-    Future<void> Function(RequestContext context, String id, String? userId);
+    Future<void> Function(
+      RequestContext context,
+      String id,
+      String? userId,
+    );
 
 final _log = Logger('DataOperationRegistry');
 
@@ -116,17 +125,23 @@ class DataOperationRegistry {
           c.read<DataRepository<AppSettings>>().read(id: id, userId: null),
       'user_context': (c, id) =>
           c.read<DataRepository<UserContext>>().read(id: id, userId: null),
-      'user_content_preferences': (c, id) => c
-          .read<DataRepository<UserContentPreferences>>()
-          .read(id: id, userId: null),
+      'user_content_preferences': (c, id) =>
+          c.read<DataRepository<UserContentPreferences>>().read(
+            id: id,
+            userId: null,
+          ),
       'remote_config': (c, id) =>
           c.read<DataRepository<RemoteConfig>>().read(id: id, userId: null),
-      'in_app_notification': (c, id) => c
-          .read<DataRepository<InAppNotification>>()
-          .read(id: id, userId: null),
-      'push_notification_device': (c, id) => c
-          .read<DataRepository<PushNotificationDevice>>()
-          .read(id: id, userId: null),
+      'in_app_notification': (c, id) =>
+          c.read<DataRepository<InAppNotification>>().read(
+            id: id,
+            userId: null,
+          ),
+      'push_notification_device': (c, id) =>
+          c.read<DataRepository<PushNotificationDevice>>().read(
+            id: id,
+            userId: null,
+          ),
       'engagement': (c, id) =>
           c.read<DataRepository<Engagement>>().read(id: id, userId: null),
       'report': (c, id) =>
@@ -137,18 +152,26 @@ class DataOperationRegistry {
           c.read<DataRepository<KpiCardData>>().read(id: id, userId: null),
       'chart_card_data': (c, id) =>
           c.read<DataRepository<ChartCardData>>().read(id: id, userId: null),
-      'ranked_list_card_data': (c, id) => c
-          .read<DataRepository<RankedListCardData>>()
-          .read(id: id, userId: null),
+      'ranked_list_card_data': (c, id) =>
+          c.read<DataRepository<RankedListCardData>>().read(
+            id: id,
+            userId: null,
+          ),
       'user_rewards': (c, id) =>
           c.read<DataRepository<UserRewards>>().read(id: id, userId: null),
+      'media_asset': (c, id) =>
+          c.read<DataRepository<MediaAsset>>().read(id: id, userId: null),
     });
 
     // --- Register "Read All" Readers ---
     _allItemsReaders.addAll({
-      'headline': (c, uid, f, s, p) => c
-          .read<DataRepository<Headline>>()
-          .readAll(userId: uid, filter: f, sort: s, pagination: p),
+      'headline': (c, uid, f, s, p) =>
+          c.read<DataRepository<Headline>>().readAll(
+            userId: uid,
+            filter: f,
+            sort: s,
+            pagination: p,
+          ),
       'topic': (c, uid, f, s, p) => c.read<DataRepository<Topic>>().readAll(
         userId: uid,
         filter: f,
@@ -182,9 +205,13 @@ class DataOperationRegistry {
           pagination: p,
         );
       },
-      'language': (c, uid, f, s, p) => c
-          .read<DataRepository<Language>>()
-          .readAll(userId: uid, filter: f, sort: s, pagination: p),
+      'language': (c, uid, f, s, p) =>
+          c.read<DataRepository<Language>>().readAll(
+            userId: uid,
+            filter: f,
+            sort: s,
+            pagination: p,
+          ),
       'user': (c, uid, f, s, p) => c.read<DataRepository<User>>().readAll(
         userId: uid,
         filter: f,
@@ -284,26 +311,32 @@ class DataOperationRegistry {
           pagination: p,
         );
       },
+      'media_asset': (c, uid, f, s, p) =>
+          c.read<DataRepository<MediaAsset>>().readAll(
+            userId: uid,
+            filter: f,
+            sort: s,
+            pagination: p,
+          ),
     });
 
     // --- Register Item Creators ---
     _itemCreators.addAll({
       'headline': (c, item, uid) async {
+        var headlineToCreate = item as Headline;
+
+        // If a mediaAssetId is provided on creation, ensure imageUrl is null.
+        if (headlineToCreate.mediaAssetId != null) {
+          headlineToCreate = headlineToCreate.copyWith(
+            imageUrl: const ValueWrapper(null),
+          );
+        }
+
         final createdHeadline = await c.read<DataRepository<Headline>>().create(
-          item: item as Headline,
+          item: headlineToCreate,
           userId: uid,
         );
 
-        // If the created headline is marked as breaking news, trigger the
-        // push notification service. The service itself contains all the
-        // logic for fetching subscribers and sending notifications.
-        //
-        // CRITICAL: This is a "fire-and-forget" operation. We do NOT `await`
-        // the result. The API response for creating the headline should return
-        // immediately, while the notification service runs in the background.
-        // The service itself is responsible for its own internal error logging.
-        // We wrap this in a try-catch to prevent any unexpected synchronous
-        // error from crashing the headline creation process.
         if (createdHeadline.isBreaking) {
           try {
             final pushNotificationService = c.read<IPushNotificationService>();
@@ -312,23 +345,42 @@ class DataOperationRegistry {
                 headline: createdHeadline,
               ),
             );
-            _log.info(
-              'Successfully dispatched breaking news notification for headline: ${createdHeadline.id}',
-            );
           } catch (e, s) {
             _log.severe('Failed to send breaking news notification: $e', e, s);
           }
         }
         return createdHeadline;
       },
-      'topic': (c, item, uid) => c.read<DataRepository<Topic>>().create(
-        item: item as Topic,
-        userId: uid,
-      ),
-      'source': (c, item, uid) => c.read<DataRepository<Source>>().create(
-        item: item as Source,
-        userId: uid,
-      ),
+      'topic': (c, item, uid) async {
+        var topicToCreate = item as Topic;
+
+        // If a mediaAssetId is provided on creation, ensure iconUrl is null.
+        if (topicToCreate.mediaAssetId != null) {
+          topicToCreate = topicToCreate.copyWith(
+            iconUrl: const ValueWrapper(null),
+          );
+        }
+
+        return c.read<DataRepository<Topic>>().create(
+          item: topicToCreate,
+          userId: uid,
+        );
+      },
+      'source': (c, item, uid) async {
+        var sourceToCreate = item as Source;
+
+        // If a mediaAssetId is provided on creation, ensure logoUrl is null.
+        if (sourceToCreate.mediaAssetId != null) {
+          sourceToCreate = sourceToCreate.copyWith(
+            logoUrl: const ValueWrapper(null),
+          );
+        }
+
+        return c.read<DataRepository<Source>>().create(
+          item: sourceToCreate,
+          userId: uid,
+        );
+      },
       'country': (c, item, uid) => c.read<DataRepository<Country>>().create(
         item: item as Country,
         userId: uid,
@@ -337,9 +389,11 @@ class DataOperationRegistry {
         item: item as Language,
         userId: uid,
       ),
-      'remote_config': (c, item, uid) => c
-          .read<DataRepository<RemoteConfig>>()
-          .create(item: item as RemoteConfig, userId: uid),
+      'remote_config': (c, item, uid) =>
+          c.read<DataRepository<RemoteConfig>>().create(
+            item: item as RemoteConfig,
+            userId: uid,
+          ),
       'push_notification_device': (context, item, uid) async {
         _log.info('Executing custom creator for push_notification_device.');
         final authenticatedUser = context.read<User>();
@@ -460,7 +514,9 @@ class DataOperationRegistry {
           _log.warning(
             'User ${authenticatedUser.id} attempted to create a second AppReview record.',
           );
-          throw const ConflictException('An app review record already exists.');
+          throw const ConflictException(
+            'An app review record already exists.',
+          );
         }
 
         return context.read<DataRepository<AppReview>>().create(item: item);
@@ -469,27 +525,73 @@ class DataOperationRegistry {
 
     // --- Register Item Updaters ---
     _itemUpdaters.addAll({
-      'headline': (c, id, item, uid) => c
-          .read<DataRepository<Headline>>()
-          .update(id: id, item: item as Headline, userId: uid),
-      'topic': (c, id, item, uid) => c.read<DataRepository<Topic>>().update(
-        id: id,
-        item: item as Topic,
-        userId: uid,
-      ),
-      'source': (c, id, item, uid) => c.read<DataRepository<Source>>().update(
-        id: id,
-        item: item as Source,
-        userId: uid,
-      ),
+      'headline': (c, id, item, uid) async {
+        final headlineToUpdate =
+            c.read<FetchedItem<dynamic>>().data as Headline;
+        final requestedUpdateHeadline = item as Headline;
+
+        // If the mediaAssetId is being changed to a new non-null value,
+        // we should nullify the imageUrl to ensure the webhook-populated URL is used.
+        final finalHeadline =
+            requestedUpdateHeadline.mediaAssetId !=
+                    headlineToUpdate.mediaAssetId &&
+                requestedUpdateHeadline.mediaAssetId != null
+            ? requestedUpdateHeadline.copyWith(
+                imageUrl: const ValueWrapper(null),
+              )
+            : requestedUpdateHeadline;
+
+        return c.read<DataRepository<Headline>>().update(
+          id: id,
+          item: finalHeadline,
+          userId: uid,
+        );
+      },
+      'topic': (c, id, item, uid) async {
+        final topicToUpdate = c.read<FetchedItem<dynamic>>().data as Topic;
+        final requestedUpdateTopic = item as Topic;
+
+        final finalTopic =
+            requestedUpdateTopic.mediaAssetId != topicToUpdate.mediaAssetId &&
+                requestedUpdateTopic.mediaAssetId != null
+            ? requestedUpdateTopic.copyWith(iconUrl: const ValueWrapper(null))
+            : requestedUpdateTopic;
+
+        return c.read<DataRepository<Topic>>().update(
+          id: id,
+          item: finalTopic,
+          userId: uid,
+        );
+      },
+      'source': (c, id, item, uid) async {
+        final sourceToUpdate = c.read<FetchedItem<dynamic>>().data as Source;
+        final requestedUpdateSource = item as Source;
+
+        final finalSource =
+            requestedUpdateSource.mediaAssetId != sourceToUpdate.mediaAssetId &&
+                requestedUpdateSource.mediaAssetId != null
+            ? requestedUpdateSource.copyWith(
+                logoUrl: const ValueWrapper(null),
+              )
+            : requestedUpdateSource;
+
+        return c.read<DataRepository<Source>>().update(
+          id: id,
+          item: finalSource,
+          userId: uid,
+        );
+      },
       'country': (c, id, item, uid) => c.read<DataRepository<Country>>().update(
         id: id,
         item: item as Country,
         userId: uid,
       ),
-      'language': (c, id, item, uid) => c
-          .read<DataRepository<Language>>()
-          .update(id: id, item: item as Language, userId: uid),
+      'language': (c, id, item, uid) =>
+          c.read<DataRepository<Language>>().update(
+            id: id,
+            item: item as Language,
+            userId: uid,
+          ),
       // Custom updater for the 'user' model. This logic is critical for
       // security and architectural consistency.
       //
@@ -546,12 +648,13 @@ class DataOperationRegistry {
 
           // Create a version of the original user with only the fields a
           // regular user is allowed to change applied from the request.
-          // Regular users can only update 'name' and 'photoUrl'.
+          // Regular users can only update 'name', 'photoUrl', and 'mediaAssetId'.
           // Critical fields like 'email', 'role', 'tier', 'isAnonymous' are
           // immutable via this endpoint.
           final permissibleUpdate = userToUpdate.copyWith(
-            name: requestedUpdateUser.name,
-            photoUrl: requestedUpdateUser.photoUrl,
+            name: ValueWrapper(requestedUpdateUser.name),
+            photoUrl: ValueWrapper(requestedUpdateUser.photoUrl),
+            mediaAssetId: ValueWrapper(requestedUpdateUser.mediaAssetId),
           );
 
           // If the user from the request is not identical to the one with
@@ -562,7 +665,7 @@ class DataOperationRegistry {
               'User ${authenticatedUser.id} attempted to update unauthorized fields.',
             );
             throw const ForbiddenException(
-              'You can only update "name" and "photoUrl" via this endpoint.',
+              'You can only update "name", "photoUrl", and "mediaAssetId" via this endpoint.',
             );
           }
           _log.finer(
@@ -581,12 +684,18 @@ class DataOperationRegistry {
           userId: uid,
         );
       },
-      'app_settings': (c, id, item, uid) => c
-          .read<DataRepository<AppSettings>>()
-          .update(id: id, item: item as AppSettings, userId: uid),
-      'user_context': (c, id, item, uid) => c
-          .read<DataRepository<UserContext>>()
-          .update(id: id, item: item as UserContext, userId: uid),
+      'app_settings': (c, id, item, uid) =>
+          c.read<DataRepository<AppSettings>>().update(
+            id: id,
+            item: item as AppSettings,
+            userId: uid,
+          ),
+      'user_context': (c, id, item, uid) =>
+          c.read<DataRepository<UserContext>>().update(
+            id: id,
+            item: item as UserContext,
+            userId: uid,
+          ),
       'user_content_preferences': (context, id, item, uid) async {
         _log.info(
           'Executing custom updater for user_content_preferences ID: $id.',
@@ -626,9 +735,12 @@ class DataOperationRegistry {
           item: preferencesToUpdate,
         );
       },
-      'remote_config': (c, id, item, uid) => c
-          .read<DataRepository<RemoteConfig>>()
-          .update(id: id, item: item as RemoteConfig, userId: uid),
+      'remote_config': (c, id, item, uid) =>
+          c.read<DataRepository<RemoteConfig>>().update(
+            id: id,
+            item: item as RemoteConfig,
+            userId: uid,
+          ),
       'in_app_notification': (c, id, item, uid) =>
           c.read<DataRepository<InAppNotification>>().update(
             id: id,
@@ -652,35 +764,131 @@ class DataOperationRegistry {
 
     // --- Register Item Deleters ---
     _itemDeleters.addAll({
-      'headline': (c, id, uid) =>
-          c.read<DataRepository<Headline>>().delete(id: id, userId: uid),
-      'topic': (c, id, uid) =>
-          c.read<DataRepository<Topic>>().delete(id: id, userId: uid),
-      'source': (c, id, uid) =>
-          c.read<DataRepository<Source>>().delete(id: id, userId: uid),
+      'headline': (context, id, uid) async {
+        _log.info('Executing custom deleter for headline ID: $id.');
+        final headlineRepository = context.read<DataRepository<Headline>>();
+        final mediaAssetRepository = context.read<DataRepository<MediaAsset>>();
+        final storageService = context.read<IStorageService>();
+
+        final headline = await headlineRepository.read(id: id);
+
+        if (headline.imageUrl != null && headline.imageUrl!.isNotEmpty) {
+          unawaited(
+            cleanupMediaAssetByUrl(
+              url: headline.imageUrl,
+              mediaAssetRepository: mediaAssetRepository,
+              storageService: storageService,
+            ).catchError(
+              (Object e, StackTrace s) =>
+                  _log.severe('Asset cleanup failed.', e, s),
+            ),
+          );
+        }
+
+        await headlineRepository.delete(id: id, userId: uid);
+      },
+      'topic': (context, id, uid) async {
+        _log.info('Executing custom deleter for topic ID: $id.');
+        final topicRepository = context.read<DataRepository<Topic>>();
+        final mediaAssetRepository = context.read<DataRepository<MediaAsset>>();
+        final storageService = context.read<IStorageService>();
+
+        final topic = await topicRepository.read(id: id);
+        if (topic.iconUrl != null && topic.iconUrl!.isNotEmpty) {
+          unawaited(
+            cleanupMediaAssetByUrl(
+              url: topic.iconUrl,
+              mediaAssetRepository: mediaAssetRepository,
+              storageService: storageService,
+            ).catchError(
+              (Object e, StackTrace s) =>
+                  _log.severe('Asset cleanup failed.', e, s),
+            ),
+          );
+        }
+        await topicRepository.delete(id: id, userId: uid);
+      },
+      'source': (context, id, uid) async {
+        _log.info('Executing custom deleter for source ID: $id.');
+        final sourceRepository = context.read<DataRepository<Source>>();
+        final mediaAssetRepository = context.read<DataRepository<MediaAsset>>();
+        final storageService = context.read<IStorageService>();
+
+        final source = await sourceRepository.read(id: id);
+        if (source.logoUrl != null && source.logoUrl!.isNotEmpty) {
+          unawaited(
+            cleanupMediaAssetByUrl(
+              url: source.logoUrl,
+              mediaAssetRepository: mediaAssetRepository,
+              storageService: storageService,
+            ).catchError(
+              (Object e, StackTrace s) =>
+                  _log.severe('Asset cleanup failed.', e, s),
+            ),
+          );
+        }
+        await sourceRepository.delete(id: id, userId: uid);
+      },
       'country': (c, id, uid) =>
           c.read<DataRepository<Country>>().delete(id: id, userId: uid),
       'language': (c, id, uid) =>
           c.read<DataRepository<Language>>().delete(id: id, userId: uid),
       'app_settings': (c, id, uid) =>
           c.read<DataRepository<AppSettings>>().delete(id: id, userId: uid),
-      'user_content_preferences': (c, id, uid) => c
-          .read<DataRepository<UserContentPreferences>>()
-          .delete(id: id, userId: uid),
+      'user_content_preferences': (c, id, uid) =>
+          c.read<DataRepository<UserContentPreferences>>().delete(
+            id: id,
+            userId: uid,
+          ),
       'remote_config': (c, id, uid) =>
           c.read<DataRepository<RemoteConfig>>().delete(id: id, userId: uid),
-      'push_notification_device': (c, id, uid) => c
-          .read<DataRepository<PushNotificationDevice>>()
-          .delete(id: id, userId: uid),
-      'in_app_notification': (c, id, uid) => c
-          .read<DataRepository<InAppNotification>>()
-          .delete(id: id, userId: uid),
+      'push_notification_device': (c, id, uid) =>
+          c.read<DataRepository<PushNotificationDevice>>().delete(
+            id: id,
+            userId: uid,
+          ),
+      'in_app_notification': (c, id, uid) =>
+          c.read<DataRepository<InAppNotification>>().delete(
+            id: id,
+            userId: uid,
+          ),
       'engagement': (c, id, uid) =>
           c.read<DataRepository<Engagement>>().delete(id: id, userId: uid),
       'report': (c, id, uid) =>
           c.read<DataRepository<Report>>().delete(id: id, userId: uid),
       'app_review': (c, id, uid) =>
           c.read<DataRepository<AppReview>>().delete(id: id, userId: uid),
+      'media_asset': (context, id, uid) async {
+        _log.info('Executing custom deleter for media_asset ID: $id.');
+        final storageService = context.read<IStorageService>();
+        final mediaAssetRepository = context.read<DataRepository<MediaAsset>>();
+
+        // First, fetch the asset to get its status and storage path.
+        final assetToDelete = await mediaAssetRepository.read(id: id);
+
+        // 1. If the asset was successfully uploaded, delete the corresponding
+        // file from the cloud storage provider.
+        if (assetToDelete.status == MediaAssetStatus.completed) {
+          try {
+            await storageService.deleteObject(
+              storagePath: assetToDelete.storagePath,
+            );
+            _log.info(
+              'Deleted file from cloud storage: ${assetToDelete.storagePath}',
+            );
+          } catch (e, s) {
+            _log.warning(
+              'Failed to delete file from cloud storage, but proceeding with DB deletion.',
+              e,
+              s,
+            );
+          }
+        }
+
+        // 2. Delete the database record.
+        await mediaAssetRepository.delete(id: id);
+        _log.info('Deleted MediaAsset record from database: $id');
+      },
     });
   }
 }
