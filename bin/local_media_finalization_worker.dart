@@ -1,7 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_news_app_api_server_full_source_code/src/config/app_dependencies.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/storage/local_media_finalization_job.dart';
 import 'package:logging/logging.dart';
 
 final _log = Logger('LocalMediaFinalizationWorker');
@@ -20,9 +20,8 @@ final _log = Logger('LocalMediaFinalizationWorker');
 ///   designed to be lightweight.
 ///
 /// **Recommended Schedule:**
-/// - Run this worker as a long-running background process (e.g., via a
-///   `systemd` service or in a separate Docker container).
-/// - The polling interval is configured internally.
+/// - Run this worker frequently to ensure timely processing of local media
+///   uploads. A cron job executing every 2 minute is a reasonable starting point.
 Future<void> main(List<String> args) async {
   // Configure logger for console output.
   Logger.root.level = Level.ALL;
@@ -40,40 +39,53 @@ Future<void> main(List<String> args) async {
   });
 
   await AppDependencies.instance.init();
-  final deps = AppDependencies.instance;
-
-  final finalizationJobService = deps.finalizationJobService;
 
   _log.info('Starting local media finalization worker...');
 
-  // Use a periodic timer to poll for jobs.
-  Timer.periodic(const Duration(seconds: 5), (timer) async {
-    _log.finer('Polling for new finalization jobs...');
-    LocalMediaFinalizationJob? job;
-    try {
-      // Atomically find one pending job and remove it.
-      // Sort by creation time to process oldest jobs first.
-      job = await finalizationJobService.claimJob();
+  try {
+    final deps = AppDependencies.instance;
+    final finalizationJobService = deps.finalizationJobService;
 
-      if (job == null) {
-        return; // No job to process, wait for next poll.
+    // Loop to process jobs in batches until the queue is empty.
+    while (true) {
+      _log.info('Polling for new finalization jobs...');
+      final jobs = await finalizationJobService.claimJobsInBatch(batchSize: 20);
+
+      if (jobs.isEmpty) {
+        _log.info('No more jobs to process. Worker will exit.');
+        break; // Exit the loop if no jobs are found.
       }
 
-      final mediaAsset = await deps.mediaAssetRepository.read(
-        id: job.mediaAssetId,
-      );
+      _log.info('Processing a batch of ${jobs.length} finalization jobs.');
 
-      await deps.mediaService.finalizeUpload(
-        mediaAsset: mediaAsset,
-        publicUrl: job.publicUrl,
-      );
+      // Process all claimed jobs concurrently.
+      final processingFutures = jobs.map((job) async {
+        // Individual try-catch to prevent one failed job from stopping others.
+        try {
+          final mediaAsset = await deps.mediaAssetRepository.read(
+            id: job.mediaAssetId,
+          );
+          await deps.mediaService.finalizeUpload(
+            mediaAsset: mediaAsset,
+            publicUrl: job.publicUrl,
+          );
+          _log.info(
+            'Successfully finalized asset ${mediaAsset.id} for job ${job.id}.',
+          );
+        } catch (e, s) {
+          _log.severe('Error processing job ${job.id}.', e, s);
+          // Optionally, mark the job as failed here if needed.
+        }
+      });
 
-      _log.info('Successfully finalized asset ${mediaAsset.id}.');
-    } catch (e, s) {
-      _log.severe('Error processing finalization job.', e, s);
-      if (job != null) {
-        _log.severe('Job data for failed process: ${job.toJson()}');
-      }
+      await Future.wait(processingFutures);
     }
-  });
+    _log.info('Local media finalization worker finished successfully.');
+  } catch (e, s) {
+    _log.severe('An error occurred during the finalization process.', e, s);
+    exit(1);
+  } finally {
+    await AppDependencies.instance.dispose();
+    exit(0);
+  }
 }
