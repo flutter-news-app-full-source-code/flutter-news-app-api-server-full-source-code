@@ -48,14 +48,16 @@ void main() {
       });
 
       test('generates different IDs for different scopes', () async {
-        // We capture the ID passed to the repo to verify scoping works
-        final capturedIds = <String>[];
         when(
-          () => mockRepo.read(id: captureAny(named: 'id')),
+          () => mockRepo.read(id: any(named: 'id')),
         ).thenThrow(const NotFoundException('Not found'));
 
         await service.isEventProcessed('event-123', scope: 'gcs');
         await service.isEventProcessed('event-123', scope: 's3');
+
+        final capturedIds = verify(
+          () => mockRepo.read(id: captureAny(named: 'id')),
+        ).captured;
 
         expect(capturedIds.length, 2);
         expect(capturedIds[0], isNot(equals(capturedIds[1])));
