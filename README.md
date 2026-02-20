@@ -110,15 +110,24 @@ A secure, server-side verified reward system that incentivizes user engagement (
 </details>
 
 <details>
-<summary><strong>☁️ Cloud Storage & Media Management</strong></summary>
+<summary><strong>🗄️ Media & Storage Management</strong></summary>
 
-### 🗄️ Enterprise-Grade Asset Handling
-A robust, multi-provider media system designed for security, scalability, and cost control.
-- **Provider Agnostic:** Seamlessly switch between **Google Cloud Storage (GCS)** and **AWS S3** via simple configuration, preventing vendor lock-in.
-- **Secure Direct-to-Cloud Uploads:** Offloads binary traffic from your API server using signed URLs (V4 Policy), ensuring your backend remains lightweight and secure.
-- **Event-Driven Consistency:** Updates your database only after a confirmed upload via secure webhooks, preventing "ghost" assets and broken links.
-- **Automated Hygiene:** A dedicated worker process automatically detects and prunes orphaned files and stale pending uploads, keeping your storage costs optimized.
-> **Your Advantage:** Manage user-generated content and media assets with the same architectural rigor as the tech giants, ensuring security, performance, and zero wasted storage costs.
+### 🛡️ A Robust, Multi-Provider Media System
+A complete media system designed for security, scalability, and cost control. It implements the **Strategy Pattern** to seamlessly switch between enterprise-grade cloud providers and a production-ready local storage solution.
+
+#### Enterprise-Grade Cloud Integration (GCS & S3)
+- **Provider Agnostic:** Avoid vendor lock-in with out-of-the-box support for **Google Cloud Storage (GCS)** and **AWS S3**. Switch between them with a single environment variable.
+- **Secure Direct-to-Cloud Uploads:** The system offloads all binary traffic from your API server by using **pre-signed URLs** (V4 Policy). Clients upload files directly to the cloud, keeping your API lightweight, secure, and scalable.
+- **Event-Driven Finalization:** Your database is updated only after receiving a cryptographically secure webhook confirmation from the cloud provider, guaranteeing data consistency and preventing "ghost" assets or broken links.
+
+#### Production-Ready Local Storage Provider
+- **Seamless Dev/Prod Parity:** The local provider perfectly emulates the asynchronous, two-stage upload flow of its cloud counterparts. It uses single-use tokens for authorization and a dedicated background worker for finalization, ensuring your application logic remains identical across all environments.
+- **Asynchronous Finalization:** The local provider emulates the asynchronous, webhook-based finalization of cloud providers. After an upload, it queues a job for a separate background worker. This decouples the upload request from the subsequent database updates, ensuring the API endpoint returns immediately and the finalization logic happens reliably in the background.
+- **Zero-Configuration for Docker:** When running with the provided Docker setup, the local storage provider works out of the box with a pre-configured persistent volume.
+
+#### Automated Lifecycle & Cost Control
+- **Automated Hygiene:** A dedicated, schedulable worker process automatically detects and prunes orphaned files and stale pending uploads. This keeps your storage buckets clean and your costs optimized by ensuring you never pay for unused assets.
+> **Your Advantage:** You get an enterprise-grade asset management pipeline that is secure, scalable, and cost-efficient. Whether you're developing locally or deploying to the cloud, the architecture provides a consistent, reliable, and professional solution for handling all media and user-generated content.
 
 </details>
 
