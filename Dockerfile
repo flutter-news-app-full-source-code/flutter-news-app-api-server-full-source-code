@@ -13,6 +13,7 @@ COPY . .
 # Build the Dart Frog server
 RUN dart pub global activate dart_frog_cli
 RUN dart_frog build
+RUN dart compile exe build/bin/server.dart -o build/dart_frog_server
 
 # Compile the standalone worker executables
 RUN dart compile exe bin/local_media_finalization_worker.dart -o build/local_media_finalization_worker
@@ -20,7 +21,7 @@ RUN dart compile exe bin/media_cleanup_worker.dart -o build/media_cleanup_worker
 RUN dart compile exe bin/analytics_sync_worker.dart -o build/analytics_sync_worker
 
 # Stage 2: Create the runtime image
-FROM scratch
+FROM debian:stable-slim
 
 WORKDIR /app
 
