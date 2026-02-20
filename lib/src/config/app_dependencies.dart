@@ -24,7 +24,6 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/databa
 import 'package:flutter_news_app_api_server_full_source_code/src/services/database_seeding_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/default_user_action_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/email/email_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/local_media_finalization_job_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/jwt_auth_token_service.dart';
@@ -41,10 +40,11 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/reward
 import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/rewards_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/google_cloud_storage_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/local_media_finalization_job_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/local_storage_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/s3_storage_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/upload_token_service.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/verification_code_storage_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/util/gcs_jwt_verifier.dart';
@@ -781,6 +781,7 @@ class AppDependencies {
         engagementRepository: engagementRepository,
         appReviewRepository: appReviewRepository,
         userRewardsRepository: userRewardsRepository,
+        mediaAssetRepository: mediaAssetRepository,
         log: Logger('AnalyticsSyncService'),
       );
 
