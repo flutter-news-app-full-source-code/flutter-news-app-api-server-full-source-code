@@ -20,18 +20,15 @@ RUN dart compile exe bin/media_cleanup_worker.dart -o build/media_cleanup_worker
 RUN dart compile exe bin/analytics_sync_worker.dart -o build/analytics_sync_worker
 
 # Stage 2: Create the runtime image
-FROM google/dart-runtime
+FROM scratch
 
 WORKDIR /app
 
 # Copy the built server and worker executables from the build stage
 COPY --from=build /app/build .
 
-# Copy the entrypoint script
-COPY entrypoint.sh .
-
-# Ensure the entrypoint script is executable
-RUN chmod +x entrypoint.sh
+# Copy the entrypoint script and make it executable
+COPY --chmod=755 entrypoint.sh .
 
 # Define a volume for persistent local storage.
 # This path must match the LOCAL_STORAGE_PATH in your .env file.
