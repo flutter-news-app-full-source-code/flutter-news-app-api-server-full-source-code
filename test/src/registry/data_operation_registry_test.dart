@@ -607,7 +607,16 @@ void main() {
 
       test('deletes from storage first, then deletes from database', () async {
         final deleter = registry.itemDeleters['media_asset']!;
-        final asset = helpers.createTestMediaAsset();
+        final asset = MediaAsset(
+          id: 'media-asset-id',
+          userId: 'user-id',
+          purpose: MediaAssetPurpose.headlineImage,
+          status: MediaAssetStatus.completed,
+          storagePath: 'path/to/file.jpg',
+          contentType: 'image/jpeg',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
 
         when(
           () => mockMediaAssetRepository.read(id: asset.id),
