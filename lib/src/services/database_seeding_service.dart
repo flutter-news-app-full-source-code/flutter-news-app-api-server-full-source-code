@@ -520,6 +520,22 @@ class DatabaseSeedingService {
             'key': {'status': 1},
             'name': 'status_index',
           },
+          {
+            // For analytics: count by status over time (e.g. mediaTotalUploads)
+            // and cleanup jobs (pending uploads older than X).
+            'key': {'status': 1, 'createdAt': 1},
+            'name': 'analytics_media_status_created_index',
+          },
+          {
+            // For analytics: average upload time (status=completed, range on updatedAt).
+            'key': {'status': 1, 'updatedAt': 1},
+            'name': 'analytics_media_status_updated_index',
+          },
+          {
+            // For analytics: uploads by purpose over time.
+            'key': {'createdAt': 1, 'purpose': 1},
+            'name': 'analytics_media_created_purpose_index',
+          },
         ],
       });
       _log.info('Ensured indexes for "media_assets".');
