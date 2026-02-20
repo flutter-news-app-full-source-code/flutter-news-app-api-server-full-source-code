@@ -119,6 +119,28 @@ class AnalyticsQueryBuilder {
           startDate,
           endDate,
         );
+      // Media Queries
+      case 'database:media_asset:by_purpose':
+        return _buildCategoricalCountPipeline(
+          collection: 'media_asset',
+          dateField: 'createdAt',
+          groupByField: r'$purpose',
+          startDate: startDate,
+          endDate: endDate,
+        );
+      case 'database:media_asset:status_distribution':
+        return _buildCategoricalCountPipeline(
+          collection: 'media_asset',
+          dateField: 'createdAt',
+          groupByField: r'$status',
+          startDate: startDate,
+          endDate: endDate,
+        );
+      case 'database:media_asset:avg_upload_time':
+        return _buildAvgUploadTimePipeline(
+          startDate,
+          endDate,
+        );
       // Ranked List Queries
       case 'database:sources:byFollowers':
         _log.info('Building ranked list pipeline for sources by followers.');
@@ -352,6 +374,44 @@ class AnalyticsQueryBuilder {
       // Sort by date
       {
         r'$sort': {'label': 1},
+      },
+    ];
+  }
+
+  /// Creates a pipeline for calculating the average media upload time.
+  List<Map<String, dynamic>> _buildAvgUploadTimePipeline(
+    DateTime startDate,
+    DateTime endDate,
+  ) {
+    _log.info(
+      'Building average upload time pipeline from $startDate to $endDate.',
+    );
+    return [
+      {
+        r'$match': {
+          'status': 'completed',
+          'updatedAt': {
+            r'$gte': startDate.toUtc().toIso8601String(),
+            r'$lt': endDate.toUtc().toIso8601String(),
+          },
+        },
+      },
+      {
+        r'$group': {
+          '_id': null,
+          'avgUploadTime': {
+            r'$avg': {
+              r'$subtract': [r'$updatedAt', r'$createdAt'],
+            },
+          },
+        },
+      },
+      {
+        r'$project': {
+          'total': {
+            r'$divide': [r'$avgUploadTime', 1000], // Convert ms to seconds
+          },
+        },
       },
     ];
   }
