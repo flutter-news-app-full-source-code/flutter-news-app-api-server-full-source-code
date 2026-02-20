@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:isolate';
 
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
@@ -87,19 +86,18 @@ Future<Response> onRequest(RequestContext context) async {
     final filePath = p.join(basePath, mediaAsset.storagePath);
     file = File(filePath);
 
-    // Read the file bytes in the main isolate. A Uint8List is a sendable
-    // object that can be passed to the new isolate.
-    final fileBytes = await filePart.readAsBytes();
+    // Ensure the directory exists.
+    final parentDir = file.parent;
+    if (!parentDir.existsSync()) {
+      parentDir.createSync(recursive: true);
+    }
 
-    // Offload the blocking file I/O to a separate isolate to keep the main
-    // event loop responsive.
-    await Isolate.run(() async {
-      final parentDir = file!.parent;
-      if (!parentDir.existsSync()) {
-        parentDir.createSync(recursive: true);
-      }
-      await file.writeAsBytes(fileBytes);
-    });
+    // Stream the file directly to disk to avoid loading it into memory.
+    // This is the most memory-efficient way to handle file uploads.
+    final fileStream = filePart.openRead();
+    final fileSink = file.openWrite();
+    await fileStream.pipe(fileSink);
+    await fileSink.close();
 
     _log.info('Successfully wrote file to: $filePath');
 
