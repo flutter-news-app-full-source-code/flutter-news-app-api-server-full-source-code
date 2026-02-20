@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:core/core.dart';
-import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/app_dependencies.dart';
 import 'package:logging/logging.dart';
 
@@ -21,17 +20,12 @@ final _log = Logger('MediaCleanupWorker');
 /// ### Operational Guidelines
 ///
 /// **Resource Intensity:** High (I/O Bound)
-/// - **Task 1 (Stale Pending):** Low impact. Queries by index.
-/// - **Task 2 (Orphan Cleanup):** High impact. This task performs a full
-///   "Scan-and-Compare" operation. It iterates through ALL `User`, `Headline`,
-///   `Topic`, and `Source` documents to build a reference set, then iterates
-///   through ALL `completed` media assets to find non-referenced ones.
+/// - **Task 1 (Stale Pending):** Low impact. Performs an indexed query.
+/// - **Task 2 (Orphan Cleanup):** Medium impact. This task now uses a single,
+///   efficient database aggregation pipeline to identify orphaned assets.
 ///
 /// **Recommended Schedule:**
-/// - Run this worker **once every 24 hours** (e.g., at 03:00 UTC) or
-///   **weekly** during off-peak hours.
-/// - Do NOT run this frequently (e.g., every 5 minutes) as it puts significant
-///   read pressure on the primary database collections.
+/// - Run this worker **once every 24 hours** during off-peak hours (e.g., at 03:00 UTC).
 Future<void> main(List<String> args) async {
   // Configure logger for console output.
   Logger.root.level = Level.ALL;
@@ -127,104 +121,98 @@ Future<void> _cleanupOrphanedAssets() async {
   _log.info('--- Starting Task: Cleanup Orphaned Completed Assets ---');
   final mediaAssetRepository = AppDependencies.instance.mediaAssetRepository;
   final storageService = AppDependencies.instance.storageService;
-
-  // 1. Fetch all actively referenced mediaAssetIds from parent entities.
-  _log.info('Fetching all active media asset references...');
-  final referencedIds = <String>{};
-
-  final repositories = <String, DataRepository<dynamic>>{
-    'User': AppDependencies.instance.userRepository,
-    'Headline': AppDependencies.instance.headlineRepository,
-    'Topic': AppDependencies.instance.topicRepository,
-    'Source': AppDependencies.instance.sourceRepository,
-  };
-
-  // Note: For referencedIds, we still need to load them all to perform the
-  // set difference check efficiently. In a massive scale system, this logic
-  // would move to a database aggregation or a bloom filter.
-  // For now, we paginate the fetching to avoid blowing up memory during the read.
-  for (final entry in repositories.entries) {
-    final repoName = entry.key;
-    final repo = entry.value;
-    _log.finer('Querying $repoName for mediaAssetId references...');
-
-    String? refCursor;
-    var refHasMore = true;
-
-    while (refHasMore) {
-      final response = await repo.readAll(
-        filter: {
-          'mediaAssetId': {r'$exists': true, r'$ne': null},
-        },
-        pagination: PaginationOptions(limit: 1000, cursor: refCursor),
-      );
-
-      for (final item in response.items) {
-        final mediaAssetId = (item as dynamic).mediaAssetId as String?;
-        if (mediaAssetId != null && mediaAssetId.isNotEmpty) {
-          referencedIds.add(mediaAssetId);
-        }
-      }
-
-      refCursor = response.cursor;
-      refHasMore = response.hasMore;
-    }
-    _log.finer('Finished scanning $repoName.');
-  }
-  _log.info(
-    'Found a total of ${referencedIds.length} unique active media asset references.',
-  );
-
-  // 2. Fetch all 'completed' media assets.
-  _log.info('Fetching all "completed" media assets...');
-
-  String? assetCursor;
-  var assetHasMore = true;
   var successCount = 0;
   var failureCount = 0;
 
-  while (assetHasMore) {
-    final response = await mediaAssetRepository.readAll(
-      filter: {'status': MediaAssetStatus.completed.name},
-      pagination: PaginationOptions(limit: 100, cursor: assetCursor),
-    );
+  // 1. Use a single, efficient aggregation pipeline to find orphaned assets.
+  _log.info('Executing aggregation pipeline to find orphaned assets...');
+  final pipeline = [
+    // Stage 1: Consider only completed assets.
+    {
+      r'$match': {'status': MediaAssetStatus.completed.name},
+    },
+    // Stage 2-5: Perform a left outer join with each parent collection.
+    {
+      r'$lookup': {
+        'from': 'users',
+        'localField': '_id',
+        'foreignField': 'mediaAssetId',
+        'as': 'userRefs',
+      },
+    },
+    {
+      r'$lookup': {
+        'from': 'headlines',
+        'localField': '_id',
+        'foreignField': 'mediaAssetId',
+        'as': 'headlineRefs',
+      },
+    },
+    {
+      r'$lookup': {
+        'from': 'topics',
+        'localField': '_id',
+        'foreignField': 'mediaAssetId',
+        'as': 'topicRefs',
+      },
+    },
+    {
+      r'$lookup': {
+        'from': 'sources',
+        'localField': '_id',
+        'foreignField': 'mediaAssetId',
+        'as': 'sourceRefs',
+      },
+    },
+    // Stage 6: Filter for documents where ALL reference arrays are empty.
+    {
+      r'$match': {
+        'userRefs': {r'$size': 0},
+        'headlineRefs': {r'$size': 0},
+        'topicRefs': {r'$size': 0},
+        'sourceRefs': {r'$size': 0},
+      },
+    },
+  ];
 
-    final batchAssets = response.items;
+  final aggregationResult = await mediaAssetRepository.aggregate(
+    pipeline: pipeline,
+  );
+  final orphanedAssets = aggregationResult.map((doc) {
+    // Manually map the MongoDB `_id` (ObjectId) to the `id` (String)
+    // field expected by the MediaAsset.fromJson factory. This is a
+    // localized fix to avoid modifying the shared DataMongodb client.
+    final newDoc = Map<String, dynamic>.from(doc);
+    if (newDoc.containsKey('_id') && newDoc['_id'] != null) {
+      newDoc['id'] = (newDoc['_id'] as dynamic).oid;
+    }
+    return MediaAsset.fromJson(newDoc);
+  }).toList();
 
-    // 3. Identify orphans in this batch
-    final orphanedAssets = batchAssets
-        .where((asset) => !referencedIds.contains(asset.id))
-        .toList();
-
-    if (orphanedAssets.isNotEmpty) {
-      _log.info(
-        'Found ${orphanedAssets.length} orphaned assets in this batch.',
-      );
-
-      // 4. Delete the orphaned assets
-      for (final asset in orphanedAssets) {
-        try {
-          _log.info(
-            'Deleting orphaned asset: ID=${asset.id}, Path=${asset.storagePath}',
-          );
-          // First, delete the file from cloud storage.
-          await storageService.deleteObject(storagePath: asset.storagePath);
-          // Then, delete the database record.
-          await mediaAssetRepository.delete(id: asset.id);
-          successCount++;
-        } catch (e, s) {
-          _log.severe(
-            'Failed to delete orphaned asset ID: ${asset.id}',
-            e,
-            s,
-          );
-          failureCount++;
-        }
+  if (orphanedAssets.isEmpty) {
+    _log.info('No orphaned assets found.');
+  } else {
+    _log.info('Found ${orphanedAssets.length} orphaned assets to delete.');
+    // 2. Delete the orphaned assets
+    for (final asset in orphanedAssets) {
+      try {
+        _log.info(
+          'Deleting orphaned asset: ID=${asset.id}, Path=${asset.storagePath}',
+        );
+        // First, delete the file from cloud storage.
+        await storageService.deleteObject(storagePath: asset.storagePath);
+        // Then, delete the database record.
+        await mediaAssetRepository.delete(id: asset.id);
+        successCount++;
+      } catch (e, s) {
+        _log.severe(
+          'Failed to delete orphaned asset ID: ${asset.id}',
+          e,
+          s,
+        );
+        failureCount++;
       }
     }
-
-    assetCursor = response.cursor;
-    assetHasMore = response.hasMore;
   }
 
   _log.info(
