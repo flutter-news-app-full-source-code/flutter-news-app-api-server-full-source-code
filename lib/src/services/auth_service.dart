@@ -34,6 +34,7 @@ class AuthService {
     required DataRepository<PushNotificationDevice>
     pushNotificationDeviceRepository,
     required DataRepository<MediaAsset> mediaAssetRepository,
+    required DataRepository<UserRewards> userRewardsRepository,
     required IStorageService storageService,
     required PermissionService permissionService,
     required Logger log,
@@ -46,6 +47,7 @@ class AuthService {
        _appSettingsRepository = appSettingsRepository,
        _userContentPreferencesRepository = userContentPreferencesRepository,
        _pushNotificationDeviceRepository = pushNotificationDeviceRepository,
+       _userRewardsRepository = userRewardsRepository,
        _mediaAssetRepository = mediaAssetRepository,
        _storageService = storageService,
        _log = log;
@@ -60,6 +62,7 @@ class AuthService {
   _userContentPreferencesRepository;
   final DataRepository<PushNotificationDevice>
   _pushNotificationDeviceRepository;
+  final DataRepository<UserRewards> _userRewardsRepository;
   final DataRepository<MediaAsset> _mediaAssetRepository;
   final IStorageService _storageService;
   final PermissionService _permissionService;
@@ -450,6 +453,9 @@ class AuthService {
       await _appSettingsRepository.delete(id: userId, userId: userId);
       _log.info('Deleted AppSettings for user ${userToDelete.id}.');
 
+      await _userRewardsRepository.delete(id: userId, userId: userId);
+      _log.info('Deleted UserRewards for user ${userToDelete.id}.');
+
       await _userContextRepository.delete(id: userId, userId: userId);
       await _userContentPreferencesRepository.delete(
         id: userId,
@@ -612,6 +618,24 @@ class AuthService {
       );
       await _userContextRepository.create(
         item: defaultUserContext,
+        userId: user.id,
+      );
+    }
+
+    // Check for UserRewards
+    try {
+      await _userRewardsRepository.read(id: user.id, userId: user.id);
+    } on NotFoundException {
+      _log.info(
+        'UserRewards not found for user ${user.id}. Creating with defaults.',
+      );
+      final defaultUserRewards = UserRewards(
+        id: user.id,
+        userId: user.id,
+        activeRewards: const {},
+      );
+      await _userRewardsRepository.create(
+        item: defaultUserRewards,
         userId: user.id,
       );
     }

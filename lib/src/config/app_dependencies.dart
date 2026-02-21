@@ -631,6 +631,7 @@ class AppDependencies {
         userContextRepository: userContextRepository,
         userContentPreferencesRepository: userContentPreferencesRepository,
         mediaAssetRepository: mediaAssetRepository,
+        userRewardsRepository: userRewardsRepository,
         storageService: storageService,
         log: Logger('AuthService'),
         pushNotificationDeviceRepository: pushNotificationDeviceRepository,
