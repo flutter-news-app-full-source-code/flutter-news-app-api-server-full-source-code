@@ -27,7 +27,10 @@ Future<Response> onRequest(RequestContext context) async {
   try {
     // Pass the full URI to the service to ensure access to the raw query string
     // for signature verification.
-    await rewardsService.processAdMobCallback(context.request.uri);
+    await rewardsService.processCallback(
+      AdPlatformType.admob,
+      context.request.uri,
+    );
     return Response(statusCode: HttpStatus.ok);
   } on InvalidInputException catch (e) {
     _log.warning('Invalid AdMob callback: ${e.message}');
