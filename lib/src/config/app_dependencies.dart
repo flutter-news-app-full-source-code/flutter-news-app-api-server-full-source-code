@@ -676,20 +676,7 @@ class AppDependencies {
         log: Logger('AdMobSsvVerifier'),
       );
 
-      // TODO(fulleni): Uncomment when AppLovin account is approved and key is available.
-      // final appLovinKey = EnvironmentConfig.appLovinS2sSigningKey;
-      // final appLovinVerifier = appLovinKey != null
-      //     ? AppLovinSsvVerifier(
-      //         signingKey: appLovinKey,
-      //         log: Logger('AppLovinSsvVerifier'),
-      //       )
-      //     : null;
-
-      // if (appLovinVerifier == null) {
-      //   _log.warning(
-      //     'AppLovin signing key not found. AppLovin rewards will be disabled.',
-      //   );
-      // }
+      // TODO(fulleni): Add IronSource and AppLovin verifiers when accounts are approved and keys are available.
 
       rewardsService = RewardsService(
         userRewardsRepository: userRewardsRepository,
@@ -697,8 +684,6 @@ class AppDependencies {
         idempotencyService: idempotencyService,
         verifiers: {
           AdPlatformType.admob: admobVerifier,
-          // if (appLovinVerifier != null)
-          //   AdPlatformType.appLovin: appLovinVerifier,
         },
         log: Logger('RewardsService'),
       );
