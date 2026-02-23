@@ -43,7 +43,10 @@ class RewardsService {
     _log.info('Processing reward callback for platform: $platform');
     final verifier = _verifiers[platform];
     if (verifier == null) {
-      throw const ServerException('No verifier configured for this platform.');
+      _log.severe('No verifier configured for platform: $platform');
+      throw ServerException(
+        'No verifier configured for platform: ${platform.name}',
+      );
     }
 
     // 1. Verify & Parse
