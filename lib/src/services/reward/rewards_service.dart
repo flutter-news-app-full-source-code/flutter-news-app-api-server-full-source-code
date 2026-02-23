@@ -1,8 +1,7 @@
 import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/reward/admob_reward_callback.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/admob_ssv_verifier.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/reward_verifier.dart';
 import 'package:logging/logging.dart';
 
 /// {@template rewards_service}
@@ -17,67 +16,55 @@ class RewardsService {
     required DataRepository<UserRewards> userRewardsRepository,
     required DataRepository<RemoteConfig> remoteConfigRepository,
     required IdempotencyService idempotencyService,
-    required AdMobSsvVerifier admobVerifier,
+    required Map<AdPlatformType, RewardVerifier> verifiers,
     required Logger log,
   }) : _userRewardsRepository = userRewardsRepository,
        _remoteConfigRepository = remoteConfigRepository,
        _idempotencyService = idempotencyService,
-       _admobVerifier = admobVerifier,
+       _verifiers = verifiers,
        _log = log;
 
   final DataRepository<UserRewards> _userRewardsRepository;
   final DataRepository<RemoteConfig> _remoteConfigRepository;
   final IdempotencyService _idempotencyService;
-  final AdMobSsvVerifier _admobVerifier;
+  final Map<AdPlatformType, RewardVerifier> _verifiers;
   final Logger _log;
 
   // Assuming a fixed ID for the RemoteConfig document
   static const String _remoteConfigId = kRemoteConfigId;
 
-  /// Processes an incoming AdMob Server-Side Verification callback.
+  /// Processes an incoming reward callback from a specific platform.
   ///
-  /// 1. Parses the URI into a strongly-typed [AdMobRewardCallback].
-  /// 2. Verifies the cryptographic signature.
-  /// 3. Checks idempotency using the transaction ID.
-  /// 4. Grants the reward to the user.
-  ///
-  /// [uri] is the full request URI containing the query parameters.
-  Future<void> processAdMobCallback(Uri uri) async {
-    _log.info('Processing AdMob reward callback.');
+  /// 1. Selects the appropriate verifier.
+  /// 2. Verifies the signature and parses the payload.
+  /// 3. Checks idempotency.
+  /// 4. Grants the reward.
+  Future<void> processCallback(AdPlatformType platform, Uri uri) async {
+    _log.info('Processing reward callback for platform: $platform');
+    final verifier = _verifiers[platform];
+    if (verifier == null) {
+      throw const ServerException('No verifier configured for this platform.');
+    }
 
-    // 1. Parse & Validate Input
-    final callback = AdMobRewardCallback.fromUri(uri);
-    _log.finer('Parsed AdMob callback: ${callback.props}');
+    // 1. Verify & Parse
+    final payload = await verifier.verify(uri);
 
-    // 2. Verify Signature
-    await _admobVerifier.verify(callback);
-
-    // 3. Idempotency Check
-    if (await _idempotencyService.isEventProcessed(callback.transactionId)) {
+    // 2. Idempotency Check
+    if (await _idempotencyService.isEventProcessed(payload.transactionId)) {
       _log.info(
-        'Reward transaction ${callback.transactionId} already processed.',
+        'Reward transaction ${payload.transactionId} already processed.',
       );
       return;
     }
 
-    // 4. Map Reward Item to RewardType
-    // We perform a case-insensitive lookup to be robust against client/console variations.
-    final rewardType = RewardType.values.firstWhere(
-      (e) => e.name.toLowerCase() == callback.rewardItem.toLowerCase(),
-      orElse: () => throw const BadRequestException('Unknown reward type.'),
-    );
-
-    // 5. Grant Reward
-    // Note: We intentionally ignore `callback.rewardAmount` for the duration
-    // calculation to enforce RemoteConfig as the single source of truth.
     await _grantReward(
-      userId: callback.userId,
-      rewardType: rewardType,
-      transactionId: callback.transactionId,
+      userId: payload.userId,
+      rewardType: payload.rewardType,
+      transactionId: payload.transactionId,
     );
 
     _log.info(
-      'Successfully granted $rewardType to user ${callback.userId}.',
+      'Successfully granted ${payload.rewardType} to user ${payload.userId}.',
     );
   }
 
