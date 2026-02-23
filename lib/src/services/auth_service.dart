@@ -593,7 +593,6 @@ class AuthService {
         followedTopics: const [],
         savedHeadlines: const [],
         savedHeadlineFilters: const [],
-        savedSourceFilters: const [],
       );
       await _userContentPreferencesRepository.create(
         item: defaultUserPreferences,

@@ -46,7 +46,6 @@ class DefaultUserActionLimitService implements UserActionLimitService {
       followedItemsLimit,
       savedHeadlinesLimit,
       savedHeadlineFiltersLimit,
-      savedSourceFiltersLimit,
     ) = _getPreferenceLimitsForTier(
       user.tier,
       limits,
@@ -165,36 +164,6 @@ class DefaultUserActionLimitService implements UserActionLimitService {
       }
     }
 
-    // --- 3. Check saved source filter limits ---
-    // Validate the total number of saved source filters.
-    if (updatedPreferences.savedSourceFilters.length >
-        savedSourceFiltersLimit.total) {
-      _log.warning(
-        'User ${user.id} exceeded total saved source filter limit: '
-        '${savedSourceFiltersLimit.total} (attempted '
-        '${updatedPreferences.savedSourceFilters.length}).',
-      );
-      throw ForbiddenException(
-        'You have reached your limit of ${savedSourceFiltersLimit.total} '
-        'saved source filters.',
-      );
-    }
-
-    // Validate the number of pinned saved source filters.
-    final pinnedSourceFilterCount = updatedPreferences.savedSourceFilters
-        .where((f) => f.isPinned)
-        .length;
-    if (pinnedSourceFilterCount > savedSourceFiltersLimit.pinned) {
-      _log.warning(
-        'User ${user.id} exceeded pinned saved source filter limit: '
-        '${savedSourceFiltersLimit.pinned} (attempted $pinnedSourceFilterCount).',
-      );
-      throw ForbiddenException(
-        'You have reached your limit of ${savedSourceFiltersLimit.pinned} '
-        'pinned saved source filters.',
-      );
-    }
-
     _log.info(
       'All user content preferences limits check passed for user ${user.id}.',
     );
@@ -208,7 +177,6 @@ class DefaultUserActionLimitService implements UserActionLimitService {
     int followedItemsLimit,
     int savedHeadlinesLimit,
     SavedFilterLimits savedHeadlineFiltersLimit,
-    SavedFilterLimits savedSourceFiltersLimit,
   )
   _getPreferenceLimitsForTier(
     AccessTier tier,
@@ -231,18 +199,10 @@ class DefaultUserActionLimitService implements UserActionLimitService {
       );
     }
 
-    final savedSourceFiltersLimit = limits.savedSourceFilters[tier];
-    if (savedSourceFiltersLimit == null) {
-      throw StateError(
-        'Saved source filters limit not configured for tier: $tier',
-      );
-    }
-
     return (
       followedItemsLimit,
       savedHeadlinesLimit,
       savedHeadlineFiltersLimit,
-      savedSourceFiltersLimit,
     );
   }
 
