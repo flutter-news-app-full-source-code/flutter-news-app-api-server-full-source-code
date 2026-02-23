@@ -140,7 +140,6 @@ void main() {
           primaryProvider: PushNotificationProviders.firebase,
           deliveryConfigs: {
             PushNotificationSubscriptionDeliveryType.breakingOnly: true,
-            PushNotificationSubscriptionDeliveryType.dailyDigest: false,
           },
         ),
       ),
@@ -210,7 +209,6 @@ void main() {
                 followedTopics: const [],
                 savedHeadlines: const [],
                 savedHeadlineFilters: [matchingFilter],
-                savedSourceFilters: const [],
               ),
             ],
             cursor: null,
@@ -261,7 +259,6 @@ void main() {
                   followedTopics: const [],
                   savedHeadlines: const [],
                   savedHeadlineFilters: [nonMatchingFilter],
-                  savedSourceFilters: const [],
                 ),
               ],
               cursor: null,
@@ -350,7 +347,6 @@ void main() {
                 followedTopics: const [],
                 savedHeadlines: const [],
                 savedHeadlineFilters: [matchingFilter],
-                savedSourceFilters: const [],
               ),
             ],
             cursor: null,
@@ -442,7 +438,6 @@ void main() {
                 followedTopics: const [],
                 savedHeadlines: const [],
                 savedHeadlineFilters: [matchingFilter],
-                savedSourceFilters: const [],
               ),
             ],
             cursor: null,
@@ -527,7 +522,6 @@ void main() {
                 followedTopics: const [],
                 savedHeadlines: const [],
                 savedHeadlineFilters: [matchingFilter],
-                savedSourceFilters: const [],
               ),
             ],
             cursor: null,
@@ -587,7 +581,6 @@ void main() {
                   followedTopics: const [],
                   savedHeadlines: const [],
                   savedHeadlineFilters: [matchingFilter],
-                  savedSourceFilters: const [],
                 ),
               ],
               cursor: null,
@@ -655,7 +648,6 @@ void main() {
                     followedTopics: const [],
                     savedHeadlines: const [],
                     savedHeadlineFilters: [wildcardFilter],
-                    savedSourceFilters: const [],
                   ),
                 ],
                 cursor: null,
@@ -717,47 +709,6 @@ void main() {
                   followedTopics: const [],
                   savedHeadlines: const [],
                   savedHeadlineFilters: [wrongTopicFilter],
-                  savedSourceFilters: const [],
-                ),
-              ],
-              cursor: null,
-              hasMore: false,
-            ),
-          );
-
-          await service.sendBreakingNewsNotification(headline: testHeadline);
-
-          verifyNever(
-            () => firebaseClient.sendBulkNotifications(
-              deviceTokens: any(named: 'deviceTokens'),
-              payload: any(named: 'payload'),
-            ),
-          );
-        });
-
-        test('does NOT send when filter is for dailyDigest only', () async {
-          final dailyDigestFilter = matchingFilter.copyWith(
-            deliveryTypes: {
-              PushNotificationSubscriptionDeliveryType.dailyDigest,
-            },
-          );
-
-          when(
-            () => userContentPreferencesRepository.readAll(
-              filter: any(named: 'filter'),
-              pagination: any(named: 'pagination'),
-            ),
-          ).thenAnswer(
-            (_) async => PaginatedResponse(
-              items: [
-                UserContentPreferences(
-                  id: testUser.id,
-                  followedCountries: const [],
-                  followedSources: const [],
-                  followedTopics: const [],
-                  savedHeadlines: const [],
-                  savedHeadlineFilters: [dailyDigestFilter],
-                  savedSourceFilters: const [],
                 ),
               ],
               cursor: null,
@@ -801,7 +752,6 @@ void main() {
                     followedTopics: const [],
                     savedHeadlines: const [],
                     savedHeadlineFilters: [sourceOnlyFilter],
-                    savedSourceFilters: const [],
                   ),
                 ],
                 cursor: null,
@@ -858,7 +808,6 @@ void main() {
                 followedTopics: const [],
                 savedHeadlines: const [],
                 savedHeadlineFilters: [matchingFilter],
-                savedSourceFilters: const [],
               ),
             ],
             cursor: null,
