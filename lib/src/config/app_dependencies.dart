@@ -676,7 +676,7 @@ class AppDependencies {
         log: Logger('AdMobSsvVerifier'),
       );
 
-      // TODO: Uncomment when AppLovin account is approved and key is available.
+      // TODO(fulleni): Uncomment when AppLovin account is approved and key is available.
       // final appLovinKey = EnvironmentConfig.appLovinS2sSigningKey;
       // final appLovinVerifier = appLovinKey != null
       //     ? AppLovinSsvVerifier(

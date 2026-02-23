@@ -40,7 +40,7 @@ class AdMobSsvVerifier implements RewardVerifier {
 
   /// Verifies the signature of an incoming AdMob SSV callback.
   ///
-  /// [callback] is the parsed callback model.
+  /// "callback" is the parsed callback model.
   ///
   /// Throws [InvalidInputException] if the signature is invalid.
   /// Throws [OperationFailedException] if keys cannot be fetched or verification fails.
