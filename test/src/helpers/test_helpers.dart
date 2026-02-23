@@ -92,7 +92,6 @@ void registerSharedFallbackValues() {
       followedTopics: [],
       savedHeadlines: [],
       savedHeadlineFilters: [],
-      savedSourceFilters: [],
     ),
   );
   registerFallbackValue(createTestHeadline());
