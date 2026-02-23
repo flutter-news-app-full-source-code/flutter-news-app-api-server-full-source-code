@@ -1,8 +1,8 @@
 import 'package:core/core.dart';
 import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/reward/admob_reward_callback.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/reward/verified_reward_payload.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/admob_ssv_verifier.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/reward_verifier.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/rewards_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
@@ -12,7 +12,7 @@ class MockDataRepository<T> extends Mock implements DataRepository<T> {}
 
 class MockIdempotencyService extends Mock implements IdempotencyService {}
 
-class MockAdMobSsvVerifier extends Mock implements AdMobSsvVerifier {}
+class MockRewardVerifier extends Mock implements RewardVerifier {}
 
 void main() {
   group('RewardsService', () {
@@ -20,7 +20,7 @@ void main() {
     late MockDataRepository<UserRewards> mockUserRewardsRepo;
     late MockDataRepository<RemoteConfig> mockRemoteConfigRepo;
     late MockIdempotencyService mockIdempotencyService;
-    late MockAdMobSsvVerifier mockVerifier;
+    late MockRewardVerifier mockVerifier;
 
     final uri = Uri.parse(
       'https://e.com?transaction_id=tx1&user_id=user1&custom_data=adFree&reward_amount=10&signature=sig&key_id=k',
@@ -131,35 +131,32 @@ void main() {
       mockUserRewardsRepo = MockDataRepository<UserRewards>();
       mockRemoteConfigRepo = MockDataRepository<RemoteConfig>();
       mockIdempotencyService = MockIdempotencyService();
-      mockVerifier = MockAdMobSsvVerifier();
+      mockVerifier = MockRewardVerifier();
 
       service = RewardsService(
         userRewardsRepository: mockUserRewardsRepo,
         remoteConfigRepository: mockRemoteConfigRepo,
         idempotencyService: mockIdempotencyService,
-        admobVerifier: mockVerifier,
+        verifiers: {AdPlatformType.admob: mockVerifier},
         log: Logger('TestRewardsService'),
       );
 
       registerFallbackValue(
-        AdMobRewardCallback(
-          transactionId: '',
-          userId: '',
-          rewardItem: '',
-          rewardAmount: 0,
-          signature: '',
-          keyId: '',
-          originalUri: Uri(),
-        ),
-      );
-      registerFallbackValue(
         const UserRewards(id: '', userId: '', activeRewards: {}),
       );
+      registerFallbackValue(Uri());
 
       // Default mocks
       when(
         () => mockVerifier.verify(any()),
-      ).thenAnswer((_) async {});
+      ).thenAnswer(
+        (_) async => const VerifiedRewardPayload(
+          transactionId: 'tx1',
+          userId: 'user1',
+          rewardType: RewardType.adFree,
+        ),
+      );
+
       when(
         () => mockIdempotencyService.isEventProcessed(any()),
       ).thenAnswer((_) async => false);
@@ -201,17 +198,17 @@ void main() {
       );
     });
 
-    test('processAdMobCallback verifies signature first', () async {
-      await service.processAdMobCallback(uri);
+    test('processCallback verifies signature first', () async {
+      await service.processCallback(AdPlatformType.admob, uri);
       verify(() => mockVerifier.verify(any())).called(1);
     });
 
-    test('processAdMobCallback skips if event already processed', () async {
+    test('processCallback skips if event already processed', () async {
       when(
         () => mockIdempotencyService.isEventProcessed('tx1'),
       ).thenAnswer((_) async => true);
 
-      await service.processAdMobCallback(uri);
+      await service.processCallback(AdPlatformType.admob, uri);
 
       verifyNever(
         () => mockUserRewardsRepo.update(
@@ -221,20 +218,7 @@ void main() {
       );
     });
 
-    test(
-      'processAdMobCallback throws BadRequest for unknown reward type',
-      () async {
-        final badUri = Uri.parse(
-          'https://e.com?transaction_id=tx1&user_id=user1&custom_data=UNKNOWN&signature=s&key_id=k',
-        );
-        expect(
-          () => service.processAdMobCallback(badUri),
-          throwsA(isA<BadRequestException>()),
-        );
-      },
-    );
-
-    test('processAdMobCallback throws Forbidden if reward disabled', () async {
+    test('processCallback throws Forbidden if reward disabled', () async {
       final disabledConfig = remoteConfig.copyWith(
         features: remoteConfig.features.copyWith(
           rewards: const RewardsConfig(
@@ -250,17 +234,17 @@ void main() {
       ).thenAnswer((_) async => disabledConfig);
 
       expect(
-        () => service.processAdMobCallback(uri),
+        () => service.processCallback(AdPlatformType.admob, uri),
         throwsA(isA<ForbiddenException>()),
       );
     });
 
     test(
-      'processAdMobCallback grants reward using RemoteConfig duration (ignoring AdMob amount)',
+      'processCallback grants reward using RemoteConfig duration',
       () async {
         // Setup: User has no existing rewards (default stub handles this)
 
-        await service.processAdMobCallback(uri);
+        await service.processCallback(AdPlatformType.admob, uri);
 
         final captured =
             verify(
@@ -287,7 +271,7 @@ void main() {
       },
     );
 
-    test('processAdMobCallback extends existing reward', () async {
+    test('processCallback extends existing reward', () async {
       // Setup: User has active reward expiring in 5 hours
       final existingExpiry = DateTime.now().add(const Duration(hours: 5));
       final existingRewards = UserRewards(
@@ -306,7 +290,7 @@ void main() {
         ),
       ).thenAnswer((_) async => existingRewards);
 
-      await service.processAdMobCallback(uri);
+      await service.processCallback(AdPlatformType.admob, uri);
 
       final captured =
           verify(
@@ -323,8 +307,8 @@ void main() {
       expect(difference, closeTo(29, 1));
     });
 
-    test('processAdMobCallback records idempotency after success', () async {
-      await service.processAdMobCallback(uri);
+    test('processCallback records idempotency after success', () async {
+      await service.processCallback(AdPlatformType.admob, uri);
 
       verify(() => mockIdempotencyService.recordEvent('tx1')).called(1);
     });
