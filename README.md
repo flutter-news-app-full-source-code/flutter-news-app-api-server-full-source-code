@@ -102,7 +102,7 @@ A complete, multi-provider notification engine empowers you to engage users with
 
 ### 🏆 Time-Based Reward System
 A secure, server-side verified reward system that incentivizes user engagement (e.g., watching ads) with tangible benefits.
-- **Multi-Provider Server-Side Verification (SSV):** Securely verifies reward callbacks from **Google AdMob** (ECDSA) and **AppLovin MAX** (HMAC/MD5), ensuring that every reward grant originates directly from the ad network's servers.
+- **Multi-Provider Server-Side Verification (SSV):** Securely verifies reward callbacks from **Google AdMob** (ECDSA) and more, ensuring that every reward grant originates directly from the ad network's servers.
 - **Remote Config Driven:** The value and duration of rewards (e.g., "24 Hours Ad-Free") are controlled entirely by your Remote Config, acting as the single source of truth. This decouples business logic from ad network settings.
 - **Idempotent Processing:** A dedicated idempotency layer ensures that each reward transaction is processed exactly once, preventing duplicate grants even if the ad network retries callbacks.
 > **Your Advantage:** Safely monetize your app with rewarded ads from multiple providers, knowing that your premium features are protected by banking-grade verification logic.

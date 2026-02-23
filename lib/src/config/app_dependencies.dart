@@ -37,7 +37,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/push_n
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/admob_ssv_verifier.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/applovin_ssv_verifier.dart';
+// import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/applovin_ssv_verifier.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/rewards_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/google_cloud_storage_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
@@ -676,19 +676,20 @@ class AppDependencies {
         log: Logger('AdMobSsvVerifier'),
       );
 
-      final appLovinKey = EnvironmentConfig.appLovinS2sSigningKey;
-      final appLovinVerifier = appLovinKey != null
-          ? AppLovinSsvVerifier(
-              signingKey: appLovinKey,
-              log: Logger('AppLovinSsvVerifier'),
-            )
-          : null;
+      // TODO: Uncomment when AppLovin account is approved and key is available.
+      // final appLovinKey = EnvironmentConfig.appLovinS2sSigningKey;
+      // final appLovinVerifier = appLovinKey != null
+      //     ? AppLovinSsvVerifier(
+      //         signingKey: appLovinKey,
+      //         log: Logger('AppLovinSsvVerifier'),
+      //       )
+      //     : null;
 
-      if (appLovinVerifier == null) {
-        _log.warning(
-          'AppLovin signing key not found. AppLovin rewards will be disabled.',
-        );
-      }
+      // if (appLovinVerifier == null) {
+      //   _log.warning(
+      //     'AppLovin signing key not found. AppLovin rewards will be disabled.',
+      //   );
+      // }
 
       rewardsService = RewardsService(
         userRewardsRepository: userRewardsRepository,
@@ -696,8 +697,8 @@ class AppDependencies {
         idempotencyService: idempotencyService,
         verifiers: {
           AdPlatformType.admob: admobVerifier,
-          if (appLovinVerifier != null)
-            AdPlatformType.appLovin: appLovinVerifier,
+          // if (appLovinVerifier != null)
+          //   AdPlatformType.appLovin: appLovinVerifier,
         },
         log: Logger('RewardsService'),
       );

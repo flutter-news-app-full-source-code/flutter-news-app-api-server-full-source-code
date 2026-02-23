@@ -248,10 +248,6 @@ abstract final class EnvironmentConfig {
   static String? get googleAnalyticsPropertyId =>
       _getEnv('GOOGLE_ANALYTICS_PROPERTY_ID');
 
-  /// Retrieves the AppLovin S2S signing key from the environment.
-  static String? get appLovinS2sSigningKey =>
-      _getEnv('APPLOVIN_S2S_SIGNING_KEY');
-
   /// Retrieves the Mixpanel Project ID from the environment.
   static String? get mixpanelProjectId => _getEnv('MIXPANEL_PROJECT_ID');
 
