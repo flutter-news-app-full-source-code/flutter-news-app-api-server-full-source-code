@@ -22,7 +22,7 @@ class IronSourceSsvVerifier implements RewardVerifier {
 
   @override
   Future<VerifiedRewardPayload> verify(Uri uri) async {
-    //TODO(fulleni): repace witjh EnvironmentConfig.ironSourceSsvPrivateKey when account is approved;
+    //TODO(fulleni): replace with EnvironmentConfig.ironSourceSsvPrivateKey when account is approved;
     const privateKey = '';
 
     final callback = IronSourceRewardCallback.fromUri(uri);
