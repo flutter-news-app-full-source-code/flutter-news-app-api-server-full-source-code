@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:asn1lib/asn1lib.dart' as asn1;
 import 'package:core/core.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/reward/admob_reward_callback.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/reward/verified_reward_payload.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/admob_ssv_verifier.dart';
 import 'package:http_client/http_client.dart';
 import 'package:jose/jose.dart';
@@ -104,8 +104,6 @@ iTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==
         '$baseUri&key_id=test-key-id&signature=$signature',
       );
 
-      final callback = AdMobRewardCallback.fromUri(fullUri);
-
       // 2. Mock Keys Response
       when(
         () => mockHttpClient.get<Map<String, dynamic>>(any()),
@@ -118,8 +116,12 @@ iTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==
       );
 
       // 3. Execute
-      await verifier.verify(callback);
-      // If no exception is thrown, test passes.
+      final result = await verifier.verify(fullUri);
+
+      expect(result, isA<VerifiedRewardPayload>());
+      expect(result.transactionId, '1234567890');
+      expect(result.userId, 'user123');
+      expect(result.rewardType, RewardType.adFree);
     });
 
     test('verify throws InvalidInputException for invalid signature', () async {
@@ -135,8 +137,6 @@ iTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==
         'https://example.com/webhook?transaction_id=999&user_id=user1&custom_data=adFree&key_id=test-key-id&signature=$signature',
       );
 
-      final callback = AdMobRewardCallback.fromUri(tamperedUri);
-
       when(
         () => mockHttpClient.get<Map<String, dynamic>>(any()),
       ).thenAnswer(
@@ -148,7 +148,7 @@ iTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==
       );
 
       expect(
-        () => verifier.verify(callback),
+        () => verifier.verify(tamperedUri),
         throwsA(isA<InvalidInputException>()),
       );
     });
@@ -164,8 +164,6 @@ iTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==
         '$baseUri&key_id=unknown-key&signature=$signature',
       );
 
-      final callback = AdMobRewardCallback.fromUri(fullUri);
-
       when(
         () => mockHttpClient.get<Map<String, dynamic>>(any()),
       ).thenAnswer(
@@ -177,7 +175,7 @@ iTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==
       );
 
       expect(
-        () => verifier.verify(callback),
+        () => verifier.verify(fullUri),
         throwsA(isA<InvalidInputException>()),
       );
     });
@@ -192,7 +190,6 @@ iTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==
       final fullUri = Uri.parse(
         '$baseUri&key_id=test-key-id&signature=$signature',
       );
-      final callback = AdMobRewardCallback.fromUri(fullUri);
 
       when(
         () => mockHttpClient.get<Map<String, dynamic>>(any()),
@@ -205,11 +202,11 @@ iTo7Tu6KPAqv7D7gS2XpJFbZiItSs3m9+9Ue6GnvHw/GW2ZZaVtszggXIw==
       );
 
       // First call fetches keys
-      await verifier.verify(callback);
+      await verifier.verify(fullUri);
       verify(() => mockHttpClient.get<Map<String, dynamic>>(any())).called(1);
 
       // Second call should use cache
-      await verifier.verify(callback);
+      await verifier.verify(fullUri);
       verifyNever(() => mockHttpClient.get<Map<String, dynamic>>(any()));
     });
   });
