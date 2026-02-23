@@ -771,7 +771,7 @@ class DataOperationRegistry {
                 ),
               ),
             );
-          } else {
+          } else if (existingEngagement.comment != null) {
             // If content hasn't changed, ensure the status remains as it was
             // (preventing users from manually setting it to resolved)
             finalUpdate = finalUpdate.copyWith(
