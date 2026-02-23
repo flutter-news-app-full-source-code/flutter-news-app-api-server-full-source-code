@@ -27,7 +27,7 @@ class AppLovinSsvVerifier implements RewardVerifier {
   Future<VerifiedRewardPayload> verify(Uri uri) async {
     final callback = AppLovinRewardCallback.fromUri(uri);
 
-    // 1. Construct the string to sign: eventId + userId + rewardItem + ts + KEY
+    // 1. Construct the string to sign: eventId + userId + ts + KEY
     // Note: The exact concatenation order depends on AppLovin's specific macro setup.
     // Standard MAX S2S usually expects: MD5(event_id + user_id + ts + SECRET_KEY)
     // However, we must ensure this matches the macro configured in the dashboard.
