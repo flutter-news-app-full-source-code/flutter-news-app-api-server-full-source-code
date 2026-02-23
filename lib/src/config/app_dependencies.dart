@@ -37,6 +37,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/push_n
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification/push_notification_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/admob_ssv_verifier.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/ironsource_ssv_verifier.dart';
 // import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/applovin_ssv_verifier.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/rewards_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/google_cloud_storage_service.dart';
@@ -676,6 +677,17 @@ class AppDependencies {
         log: Logger('AdMobSsvVerifier'),
       );
 
+      final ironSourcePrivateKey = EnvironmentConfig.ironSourceSsvPrivateKey;
+      final ironSourceVerifier = ironSourcePrivateKey != null
+          ? IronSourceSsvVerifier(log: Logger('IronSourceSsvVerifier'))
+          : null;
+
+      if (ironSourceVerifier == null) {
+        _log.warning(
+          'IronSource private key not found. IronSource rewards will be disabled.',
+        );
+      }
+
       // TODO(fulleni): Uncomment when AppLovin account is approved and key is available.
       // final appLovinKey = EnvironmentConfig.appLovinS2sSigningKey;
       // final appLovinVerifier = appLovinKey != null
@@ -697,6 +709,8 @@ class AppDependencies {
         idempotencyService: idempotencyService,
         verifiers: {
           AdPlatformType.admob: admobVerifier,
+          if (ironSourceVerifier != null)
+            AdPlatformType.ironSource: ironSourceVerifier,
           // if (appLovinVerifier != null)
           //   AdPlatformType.appLovin: appLovinVerifier,
         },
