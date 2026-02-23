@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:core/core.dart';
 import 'package:crypto/crypto.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/reward/ironsource_reward_callback.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/reward/verified_reward_payload.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/reward_verifier.dart';
@@ -18,16 +17,13 @@ class IronSourceSsvVerifier implements RewardVerifier {
   /// {@macro ironsource_ssv_verifier}
   const IronSourceSsvVerifier({required this.log});
 
-  // log
+  /// logger instance for logging verification steps and errors.
   final Logger log;
 
   @override
   Future<VerifiedRewardPayload> verify(Uri uri) async {
-    final privateKey = EnvironmentConfig.ironSourceSsvPrivateKey;
-    if (privateKey == null) {
-      log.severe('IRONSOURCE_SSV_PRIVATE_KEY is not set.');
-      throw const ServerException('IronSource verifier is not configured.');
-    }
+    //TODO(fulleni): repace witjh EnvironmentConfig.ironSourceSsvPrivateKey when account is approved;
+    const privateKey = '';
 
     final callback = IronSourceRewardCallback.fromUri(uri);
 
