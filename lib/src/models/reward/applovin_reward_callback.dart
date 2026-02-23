@@ -53,9 +53,17 @@ class AppLovinRewardCallback extends Equatable {
 
   /// Unique event ID from AppLovin.
   final String eventId;
+
+  /// The user ID to whom the reward should be granted.
   final String userId;
+
+  /// The timestamp of the event.
   final String timestamp;
+
+  /// The cryptographic signature used to verify the request.
   final String signature;
+
+  /// The type of reward to grant (e.g., 'adFree').
   final String rewardItem;
 
   @override
