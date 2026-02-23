@@ -507,9 +507,8 @@ void main() {
                   AccessTier.standard: const SavedFilterLimits(
                     total: 2,
                     pinned: 1,
-                    notificationSubscriptions: {
-                      PushNotificationSubscriptionDeliveryType.breakingOnly: 1,
-                    },
+                    // Simulate a missing configuration by providing an empty map.
+                    notificationSubscriptions: {},
                   ),
                 },
               ),
