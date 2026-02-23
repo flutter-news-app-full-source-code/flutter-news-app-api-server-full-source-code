@@ -57,7 +57,6 @@ void main() {
           followedTopics: [],
           savedHeadlines: [],
           savedHeadlineFilters: [],
-          savedSourceFilters: [],
         ),
       );
     });
