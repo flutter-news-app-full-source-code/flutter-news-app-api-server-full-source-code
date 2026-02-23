@@ -14,13 +14,15 @@ class MockIdempotencyService extends Mock implements IdempotencyService {}
 
 class MockRewardVerifier extends Mock implements RewardVerifier {}
 
+class MockIronSourceRewardVerifier extends Mock implements RewardVerifier {}
+
 void main() {
   group('RewardsService', () {
     late RewardsService service;
     late MockDataRepository<UserRewards> mockUserRewardsRepo;
     late MockDataRepository<RemoteConfig> mockRemoteConfigRepo;
     late MockIdempotencyService mockIdempotencyService;
-    late MockRewardVerifier mockVerifier;
+    late MockRewardVerifier mockAdMobVerifier;
 
     final uri = Uri.parse(
       'https://e.com?transaction_id=tx1&user_id=user1&custom_data=adFree&reward_amount=10&signature=sig&key_id=k',
@@ -131,13 +133,13 @@ void main() {
       mockUserRewardsRepo = MockDataRepository<UserRewards>();
       mockRemoteConfigRepo = MockDataRepository<RemoteConfig>();
       mockIdempotencyService = MockIdempotencyService();
-      mockVerifier = MockRewardVerifier();
+      mockAdMobVerifier = MockRewardVerifier();
 
       service = RewardsService(
         userRewardsRepository: mockUserRewardsRepo,
         remoteConfigRepository: mockRemoteConfigRepo,
         idempotencyService: mockIdempotencyService,
-        verifiers: {AdPlatformType.admob: mockVerifier},
+        verifiers: {AdPlatformType.admob: mockAdMobVerifier},
         log: Logger('TestRewardsService'),
       );
 
@@ -145,10 +147,11 @@ void main() {
         const UserRewards(id: '', userId: '', activeRewards: {}),
       );
       registerFallbackValue(Uri());
+      registerFallbackValue(AdPlatformType.admob);
 
       // Default mocks
       when(
-        () => mockVerifier.verify(any()),
+        () => mockAdMobVerifier.verify(any()),
       ).thenAnswer(
         (_) async => const VerifiedRewardPayload(
           transactionId: 'tx1',
@@ -200,7 +203,7 @@ void main() {
 
     test('processCallback verifies signature first', () async {
       await service.processCallback(AdPlatformType.admob, uri);
-      verify(() => mockVerifier.verify(any())).called(1);
+      verify(() => mockAdMobVerifier.verify(any())).called(1);
     });
 
     test('processCallback skips if event already processed', () async {
@@ -311,6 +314,44 @@ void main() {
       await service.processCallback(AdPlatformType.admob, uri);
 
       verify(() => mockIdempotencyService.recordEvent('tx1')).called(1);
+    });
+
+    group('with IronSource verifier', () {
+      late MockIronSourceRewardVerifier mockIronSourceVerifier;
+
+      setUp(() {
+        mockIronSourceVerifier = MockIronSourceRewardVerifier();
+        service = RewardsService(
+          userRewardsRepository: mockUserRewardsRepo,
+          remoteConfigRepository: mockRemoteConfigRepo,
+          idempotencyService: mockIdempotencyService,
+          verifiers: {
+            AdPlatformType.admob: mockAdMobVerifier,
+            AdPlatformType.ironSource: mockIronSourceVerifier,
+          },
+          log: Logger('TestRewardsService'),
+        );
+
+        when(
+          () => mockIronSourceVerifier.verify(any()),
+        ).thenAnswer(
+          (_) async => const VerifiedRewardPayload(
+            transactionId: 'is-tx1',
+            userId: 'user1',
+            rewardType: RewardType.adFree,
+          ),
+        );
+      });
+
+      test('processCallback selects and uses IronSource verifier', () async {
+        final ironSourceUri = Uri.parse('http://ir.on/src');
+        await service.processCallback(AdPlatformType.ironSource, ironSourceUri);
+
+        verify(() => mockIronSourceVerifier.verify(ironSourceUri)).called(1);
+        verifyNever(() => mockAdMobVerifier.verify(any()));
+        verify(() => mockIdempotencyService.recordEvent('is-tx1')).called(1);
+        verify(() => mockUserRewardsRepo.create(item: any(named: 'item')));
+      });
     });
   });
 }
