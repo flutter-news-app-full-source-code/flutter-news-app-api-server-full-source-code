@@ -244,12 +244,6 @@ abstract final class EnvironmentConfig {
   /// The value is read from the `ONESIGNAL_REST_API_KEY` environment variable, if available.
   static String? get oneSignalRestApiKey => _getEnv('ONESIGNAL_REST_API_KEY');
 
-  /// Retrieves the IronSource SSV Private Key from the environment.
-  ///
-  /// The value is read from the `IRONSOURCE_SSV_PRIVATE_KEY` environment variable.
-  static String? get ironSourceSsvPrivateKey =>
-      _getEnv('IRONSOURCE_SSV_PRIVATE_KEY');
-
   /// Retrieves the Google Analytics Property ID from the environment.
   static String? get googleAnalyticsPropertyId =>
       _getEnv('GOOGLE_ANALYTICS_PROPERTY_ID');
