@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:asn1lib/asn1lib.dart' as asn1;
 import 'package:core/core.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/reward/admob_reward_callback.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/models/reward/verified_reward_payload.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/reward_verifier.dart';
 import 'package:http_client/http_client.dart';
 import 'package:jose/jose.dart';
 import 'package:logging/logging.dart';
@@ -16,7 +18,7 @@ import 'package:logging/logging.dart';
 /// It fetches Google's public keys, parses the query parameters, and verifies
 /// the ECDSA signature.
 /// {@endtemplate}
-class AdMobSsvVerifier {
+class AdMobSsvVerifier implements RewardVerifier {
   /// {@macro admob_ssv_verifier}
   AdMobSsvVerifier({
     required HttpClient httpClient,
@@ -42,7 +44,10 @@ class AdMobSsvVerifier {
   ///
   /// Throws [InvalidInputException] if the signature is invalid.
   /// Throws [OperationFailedException] if keys cannot be fetched or verification fails.
-  Future<void> verify(AdMobRewardCallback callback) async {
+  @override
+  Future<VerifiedRewardPayload> verify(Uri uri) async {
+    final callback = AdMobRewardCallback.fromUri(uri);
+
     // 1. Construct the content string to verify.
     // AdMob requires the query string excluding the signature and key_id parameters.
     // We use the raw query string from the URI to preserve order and encoding.
@@ -73,6 +78,17 @@ class AdMobSsvVerifier {
     }
 
     _log.info('AdMob SSV signature verified successfully.');
+
+    final rewardType = RewardType.values.firstWhere(
+      (e) => e.name.toLowerCase() == callback.rewardItem.toLowerCase(),
+      orElse: () => throw const BadRequestException('Unknown reward type.'),
+    );
+
+    return VerifiedRewardPayload(
+      transactionId: callback.transactionId,
+      userId: callback.userId,
+      rewardType: rewardType,
+    );
   }
 
   /// Reconstructs the query string excluding signature and key_id.
