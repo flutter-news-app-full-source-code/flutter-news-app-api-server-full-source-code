@@ -445,6 +445,134 @@ void main() {
       });
     });
 
+    group('Engagement Updater', () {
+      late helpers.MockEngagementRepository mockEngagementRepository;
+      late Engagement existingEngagement;
+
+      setUp(() {
+        mockEngagementRepository = helpers.MockEngagementRepository();
+        existingEngagement = Engagement(
+          id: 'engagement-id',
+          userId: standardUser.id,
+          entityId: 'entity-id',
+          entityType: EngageableType.headline,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          comment: Comment(
+            language: Language(
+              id: 'en',
+              code: 'en',
+              name: 'English',
+              nativeName: 'English',
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+              status: ContentStatus.active,
+            ),
+            content: 'Original Content',
+            status: ModerationStatus.resolved,
+          ),
+        );
+      });
+
+      test(
+        'reverts status to pendingReview when comment content changes',
+        () async {
+          final updater = registry.itemUpdaters['engagement']!;
+
+          final requestedUpdate = existingEngagement.copyWith(
+            comment: ValueWrapper(
+              existingEngagement.comment!.copyWith(
+                content: 'Updated Content',
+                status: ModerationStatus.resolved,
+              ),
+            ),
+          );
+
+          when(
+            () => mockEngagementRepository.update(
+              id: any(named: 'id'),
+              item: any(named: 'item'),
+              userId: any(named: 'userId'),
+            ),
+          ).thenAnswer(
+            (invocation) async =>
+                invocation.namedArguments[#item] as Engagement,
+          );
+
+          final context = helpers.createMockRequestContext(
+            authenticatedUser: standardUser,
+            engagementRepository: mockEngagementRepository,
+            fetchedItem: FetchedItem(existingEngagement),
+          );
+
+          final result =
+              await updater(
+                    context,
+                    existingEngagement.id,
+                    requestedUpdate,
+                    null,
+                  )
+                  as Engagement;
+
+          expect(result.comment!.content, equals('Updated Content'));
+          expect(
+            result.comment!.status,
+            equals(ModerationStatus.pendingReview),
+          );
+        },
+      );
+
+      test('prevents status change when content is unchanged', () async {
+        final updater = registry.itemUpdaters['engagement']!;
+
+        // Start with pendingReview
+        final pendingEngagement = existingEngagement.copyWith(
+          comment: ValueWrapper(
+            existingEngagement.comment!.copyWith(
+              status: ModerationStatus.pendingReview,
+            ),
+          ),
+        );
+
+        // Request tries to set to resolved without changing content
+        final requestedUpdate = pendingEngagement.copyWith(
+          comment: ValueWrapper(
+            pendingEngagement.comment!.copyWith(
+              status: ModerationStatus.resolved,
+            ),
+          ),
+        );
+
+        when(
+          () => mockEngagementRepository.update(
+            id: any(named: 'id'),
+            item: any(named: 'item'),
+            userId: any(named: 'userId'),
+          ),
+        ).thenAnswer(
+          (invocation) async => invocation.namedArguments[#item] as Engagement,
+        );
+
+        final context = helpers.createMockRequestContext(
+          authenticatedUser: standardUser,
+          engagementRepository: mockEngagementRepository,
+          fetchedItem: FetchedItem(pendingEngagement),
+        );
+
+        final result =
+            await updater(
+                  context,
+                  pendingEngagement.id,
+                  requestedUpdate,
+                  null,
+                )
+                as Engagement;
+
+        expect(result.comment!.content, equals('Original Content'));
+        expect(result.comment!.status, equals(ModerationStatus.pendingReview));
+      });
+    });
+
     group('User Updater', () {
       late helpers.MockUserRepository mockUserRepository;
       late User userToUpdate;
