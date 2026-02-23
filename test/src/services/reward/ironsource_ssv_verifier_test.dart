@@ -1,5 +1,6 @@
-import 'package:core/core.dart';
 import 'dart:convert';
+
+import 'package:core/core.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/ironsource_ssv_verifier.dart';
@@ -30,7 +31,7 @@ void main() {
       EnvironmentConfig.setOverride('IRONSOURCE_SSV_PRIVATE_KEY', privateKey);
 
       // Calculate signature at runtime to avoid brittleness.
-      final contentStringForSig = '$timestamp$eventId$appUserId$rewards';
+      const contentStringForSig = '$timestamp$eventId$appUserId$rewards';
       final hmacForSig = Hmac(sha256, utf8.encode(privateKey));
       final digestForSig = hmacForSig.convert(utf8.encode(contentStringForSig));
       final validSignature = digestForSig.toString();

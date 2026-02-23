@@ -18,6 +18,7 @@ class IronSourceSsvVerifier implements RewardVerifier {
   /// {@macro ironsource_ssv_verifier}
   const IronSourceSsvVerifier({required this.log});
 
+  // log
   final Logger log;
 
   @override
