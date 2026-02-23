@@ -184,7 +184,6 @@ void main() {
             followedItems: {},
             savedHeadlines: {},
             savedHeadlineFilters: {},
-            savedSourceFilters: {},
             commentsPerDay: {},
             reactionsPerDay: {},
             reportsPerDay: {},
