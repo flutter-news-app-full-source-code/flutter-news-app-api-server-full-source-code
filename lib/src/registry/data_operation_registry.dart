@@ -746,11 +746,49 @@ class DataOperationRegistry {
             id: id,
             item: item as InAppNotification,
           ),
-      'engagement': (c, id, item, uid) =>
-          c.read<DataRepository<Engagement>>().update(
-            id: id,
-            item: item as Engagement,
-          ),
+      'engagement': (context, id, item, uid) async {
+        _log.info('Executing custom updater for engagement ID: $id.');
+        final existingEngagement =
+            context.read<FetchedItem<dynamic>>().data as Engagement;
+        final requestedUpdate = item as Engagement;
+
+        var finalUpdate = requestedUpdate;
+
+        // Check if the comment section is being updated
+        if (requestedUpdate.comment != null) {
+          final newContent = requestedUpdate.comment!.content;
+          final oldContent = existingEngagement.comment?.content;
+
+          // If content has changed (or is new), revert status to pendingReview
+          if (newContent != oldContent) {
+            _log.info(
+              'Comment content changed for engagement $id. Reverting status to pendingReview.',
+            );
+            finalUpdate = finalUpdate.copyWith(
+              comment: ValueWrapper(
+                requestedUpdate.comment!.copyWith(
+                  status: ModerationStatus.pendingReview,
+                ),
+              ),
+            );
+          } else {
+            // If content hasn't changed, ensure the status remains as it was
+            // (preventing users from manually setting it to resolved)
+            finalUpdate = finalUpdate.copyWith(
+              comment: ValueWrapper(
+                requestedUpdate.comment!.copyWith(
+                  status: existingEngagement.comment!.status,
+                ),
+              ),
+            );
+          }
+        }
+
+        return context.read<DataRepository<Engagement>>().update(
+          id: id,
+          item: finalUpdate,
+        );
+      },
       'report': (c, id, item, uid) => c.read<DataRepository<Report>>().update(
         id: id,
         item: item as Report,
