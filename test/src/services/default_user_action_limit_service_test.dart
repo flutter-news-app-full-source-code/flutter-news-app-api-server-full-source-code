@@ -144,12 +144,8 @@ void main() {
                 pinned: 1,
                 notificationSubscriptions: {
                   PushNotificationSubscriptionDeliveryType.breakingOnly: 1,
-                  PushNotificationSubscriptionDeliveryType.dailyDigest: 1,
                 },
               ),
-            },
-            savedSourceFilters: {
-              AccessTier.standard: SavedFilterLimits(total: 2, pinned: 1),
             },
             commentsPerDay: {AccessTier.standard: 5}, // const implied
             reactionsPerDay: {AccessTier.standard: 10}, // const implied
@@ -172,7 +168,6 @@ void main() {
           followedTopics: const [],
           savedHeadlines: const [],
           savedHeadlineFilters: const [],
-          savedSourceFilters: const [],
         );
 
         await expectLater(
@@ -206,7 +201,6 @@ void main() {
             followedTopics: const [],
             savedHeadlines: const [],
             savedHeadlineFilters: const [],
-            savedSourceFilters: const [],
           );
 
           await expectLater(
@@ -261,7 +255,6 @@ void main() {
             followedTopics: const [],
             savedHeadlines: const [],
             savedHeadlineFilters: const [],
-            savedSourceFilters: const [],
           );
 
           await expectLater(
@@ -296,7 +289,6 @@ void main() {
             ),
             savedHeadlines: const [],
             savedHeadlineFilters: const [],
-            savedSourceFilters: const [],
           );
 
           await expectLater(
@@ -379,7 +371,6 @@ void main() {
               ),
             ),
             savedHeadlineFilters: const [],
-            savedSourceFilters: const [],
           );
 
           await expectLater(
@@ -417,7 +408,6 @@ void main() {
                 deliveryTypes: const {},
               ),
             ),
-            savedSourceFilters: const [],
           );
 
           await expectLater(
@@ -455,7 +445,6 @@ void main() {
                 deliveryTypes: const {},
               ),
             ),
-            savedSourceFilters: const [],
           );
 
           await expectLater(
@@ -495,81 +484,6 @@ void main() {
                 },
               ),
             ),
-            savedSourceFilters: const [],
-          );
-
-          await expectLater(
-            service.checkUserContentPreferencesLimits(
-              user: standardUser,
-              updatedPreferences: preferences,
-            ),
-            throwsA(isA<ForbiddenException>()),
-          );
-        },
-      );
-
-      test(
-        'throws ForbiddenException when saved source filters total exceed limit',
-        () async {
-          // Limit is 2
-          final preferences = UserContentPreferences(
-            id: standardUser.id,
-            followedCountries: const [],
-            followedSources: const [],
-            followedTopics: const [],
-            savedHeadlines: const [],
-            savedHeadlineFilters: const [],
-            savedSourceFilters: List.generate(
-              3,
-              (i) => SavedSourceFilter(
-                id: '$i',
-                userId: standardUser.id,
-                name: 'Source Filter $i',
-                criteria: const SourceFilterCriteria(
-                  sourceTypes: [],
-                  languages: [],
-                  countries: [],
-                ),
-                isPinned: false,
-              ),
-            ),
-          );
-
-          await expectLater(
-            service.checkUserContentPreferencesLimits(
-              user: standardUser,
-              updatedPreferences: preferences,
-            ),
-            throwsA(isA<ForbiddenException>()),
-          );
-        },
-      );
-
-      test(
-        'throws ForbiddenException when saved source filters pinned exceed limit',
-        () async {
-          // Pinned limit is 1
-          final preferences = UserContentPreferences(
-            id: standardUser.id,
-            followedCountries: const [],
-            followedSources: const [],
-            followedTopics: const [],
-            savedHeadlines: const [],
-            savedHeadlineFilters: const [],
-            savedSourceFilters: List.generate(
-              2,
-              (i) => SavedSourceFilter(
-                id: '$i',
-                userId: standardUser.id,
-                name: 'Source Filter $i',
-                criteria: const SourceFilterCriteria(
-                  sourceTypes: [],
-                  languages: [],
-                  countries: [],
-                ),
-                isPinned: true,
-              ),
-            ),
           );
 
           await expectLater(
@@ -595,7 +509,6 @@ void main() {
                     pinned: 1,
                     notificationSubscriptions: {
                       PushNotificationSubscriptionDeliveryType.breakingOnly: 1,
-                      // Missing dailyDigest and weeklyRoundup
                     },
                   ),
                 },
@@ -615,7 +528,6 @@ void main() {
             followedTopics: const [],
             savedHeadlines: const [],
             savedHeadlineFilters: const [],
-            savedSourceFilters: const [],
           );
 
           await expectLater(
