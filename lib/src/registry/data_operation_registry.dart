@@ -11,6 +11,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/push_n
 import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/util/media_asset_utils.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/utils/localization_utils.dart';
 import 'package:logging/logging.dart';
 
 // --- Typedefs for Data Operations ---
@@ -109,14 +110,38 @@ class DataOperationRegistry {
   void _registerOperations() {
     // --- Register Item Fetchers ---
     _itemFetchers.addAll({
-      'headline': (c, id) =>
-          c.read<DataRepository<Headline>>().read(id: id, userId: null),
-      'topic': (c, id) =>
-          c.read<DataRepository<Topic>>().read(id: id, userId: null),
-      'source': (c, id) =>
-          c.read<DataRepository<Source>>().read(id: id, userId: null),
-      'country': (c, id) =>
-          c.read<DataRepository<Country>>().read(id: id, userId: null),
+      'headline': (c, id) async {
+        final item = await c.read<DataRepository<Headline>>().read(
+          id: id,
+          userId: null,
+        );
+        final lang = c.read<SupportedLanguage>();
+        return LocalizationUtils.localizeHeadline(item, lang);
+      },
+      'topic': (c, id) async {
+        final item = await c.read<DataRepository<Topic>>().read(
+          id: id,
+          userId: null,
+        );
+        final lang = c.read<SupportedLanguage>();
+        return LocalizationUtils.localizeTopic(item, lang);
+      },
+      'source': (c, id) async {
+        final item = await c.read<DataRepository<Source>>().read(
+          id: id,
+          userId: null,
+        );
+        final lang = c.read<SupportedLanguage>();
+        return LocalizationUtils.localizeSource(item, lang);
+      },
+      'country': (c, id) async {
+        final item = await c.read<DataRepository<Country>>().read(
+          id: id,
+          userId: null,
+        );
+        final lang = c.read<SupportedLanguage>();
+        return LocalizationUtils.localizeCountry(item, lang);
+      },
       'language': (c, id) =>
           c.read<DataRepository<Language>>().read(id: id, userId: null),
       'user': (c, id) =>
@@ -125,18 +150,27 @@ class DataOperationRegistry {
           c.read<DataRepository<AppSettings>>().read(id: id, userId: null),
       'user_context': (c, id) =>
           c.read<DataRepository<UserContext>>().read(id: id, userId: null),
-      'user_content_preferences': (c, id) =>
-          c.read<DataRepository<UserContentPreferences>>().read(
-            id: id,
-            userId: null,
-          ),
+      'user_content_preferences': (c, id) async {
+        final item = await c
+            .read<DataRepository<UserContentPreferences>>()
+            .read(id: id, userId: null);
+        final lang = c.read<SupportedLanguage>();
+        // Localize nested SavedHeadlineFilters
+        final localizedFilters = item.savedHeadlineFilters
+            .map((f) => LocalizationUtils.localizeSavedHeadlineFilter(f, lang))
+            .toList();
+        return item.copyWith(savedHeadlineFilters: localizedFilters);
+      },
       'remote_config': (c, id) =>
           c.read<DataRepository<RemoteConfig>>().read(id: id, userId: null),
-      'in_app_notification': (c, id) =>
-          c.read<DataRepository<InAppNotification>>().read(
-            id: id,
-            userId: null,
-          ),
+      'in_app_notification': (c, id) async {
+        final item = await c.read<DataRepository<InAppNotification>>().read(
+          id: id,
+          userId: null,
+        );
+        final lang = c.read<SupportedLanguage>();
+        return LocalizationUtils.localizeInAppNotification(item, lang);
+      },
       'push_notification_device': (c, id) =>
           c.read<DataRepository<PushNotificationDevice>>().read(
             id: id,
@@ -148,15 +182,30 @@ class DataOperationRegistry {
           c.read<DataRepository<Report>>().read(id: id, userId: null),
       'app_review': (c, id) =>
           c.read<DataRepository<AppReview>>().read(id: id, userId: null),
-      'kpi_card_data': (c, id) =>
-          c.read<DataRepository<KpiCardData>>().read(id: id, userId: null),
-      'chart_card_data': (c, id) =>
-          c.read<DataRepository<ChartCardData>>().read(id: id, userId: null),
-      'ranked_list_card_data': (c, id) =>
-          c.read<DataRepository<RankedListCardData>>().read(
-            id: id,
-            userId: null,
-          ),
+      'kpi_card_data': (c, id) async {
+        final item = await c.read<DataRepository<KpiCardData>>().read(
+          id: id,
+          userId: null,
+        );
+        final lang = c.read<SupportedLanguage>();
+        return LocalizationUtils.localizeKpiCardData(item, lang);
+      },
+      'chart_card_data': (c, id) async {
+        final item = await c.read<DataRepository<ChartCardData>>().read(
+          id: id,
+          userId: null,
+        );
+        final lang = c.read<SupportedLanguage>();
+        return LocalizationUtils.localizeChartCardData(item, lang);
+      },
+      'ranked_list_card_data': (c, id) async {
+        final item = await c.read<DataRepository<RankedListCardData>>().read(
+          id: id,
+          userId: null,
+        );
+        final lang = c.read<SupportedLanguage>();
+        return LocalizationUtils.localizeRankedListCardData(item, lang);
+      },
       'user_rewards': (c, id) =>
           c.read<DataRepository<UserRewards>>().read(id: id, userId: null),
       'media_asset': (c, id) =>
@@ -165,45 +214,88 @@ class DataOperationRegistry {
 
     // --- Register "Read All" Readers ---
     _allItemsReaders.addAll({
-      'headline': (c, uid, f, s, p) =>
-          c.read<DataRepository<Headline>>().readAll(
-            userId: uid,
-            filter: f,
-            sort: s,
-            pagination: p,
-          ),
-      'topic': (c, uid, f, s, p) => c.read<DataRepository<Topic>>().readAll(
-        userId: uid,
-        filter: f,
-        sort: s,
-        pagination: p,
-      ),
-      'source': (c, uid, f, s, p) => c.read<DataRepository<Source>>().readAll(
-        userId: uid,
-        filter: f,
-        sort: s,
-        pagination: p,
-      ),
+      'headline': (c, uid, f, s, p) async {
+        final lang = c.read<SupportedLanguage>();
+        final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
+          'title',
+        ]);
+        final response = await c.read<DataRepository<Headline>>().readAll(
+          userId: uid,
+          filter: f,
+          sort: rewrittenSort,
+          pagination: p,
+        );
+        final localizedItems = response.items
+            .map((i) => LocalizationUtils.localizeHeadline(i, lang))
+            .toList();
+        return response.copyWith(items: localizedItems);
+      },
+      'topic': (c, uid, f, s, p) async {
+        final lang = c.read<SupportedLanguage>();
+        final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
+          'name',
+          'description',
+        ]);
+        final response = await c.read<DataRepository<Topic>>().readAll(
+          userId: uid,
+          filter: f,
+          sort: rewrittenSort,
+          pagination: p,
+        );
+        final localizedItems = response.items
+            .map((i) => LocalizationUtils.localizeTopic(i, lang))
+            .toList();
+        return response.copyWith(items: localizedItems);
+      },
+      'source': (c, uid, f, s, p) async {
+        final lang = c.read<SupportedLanguage>();
+        final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
+          'name',
+          'description',
+        ]);
+        final response = await c.read<DataRepository<Source>>().readAll(
+          userId: uid,
+          filter: f,
+          sort: rewrittenSort,
+          pagination: p,
+        );
+        final localizedItems = response.items
+            .map((i) => LocalizationUtils.localizeSource(i, lang))
+            .toList();
+        return response.copyWith(items: localizedItems);
+      },
       'country': (c, uid, f, s, p) async {
+        final lang = c.read<SupportedLanguage>();
+        final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
+          'name',
+        ]);
+        PaginatedResponse<Country> response;
+
         // Check for special filters that require aggregation.
         if (f != null &&
             (f.containsKey('hasActiveSources') ||
                 f.containsKey('hasActiveHeadlines'))) {
           // Use the injected CountryQueryService for complex queries.
           final countryQueryService = c.read<CountryQueryService>();
-          return countryQueryService.getFilteredCountries(
+          response = await countryQueryService.getFilteredCountries(
             filter: f,
             pagination: p,
-            sort: s,
+            sort: rewrittenSort,
+          );
+        } else {
+          // Fallback to standard readAll if no special filters are present.
+          response = await c.read<DataRepository<Country>>().readAll(
+            userId: uid,
+            filter: f,
+            sort: rewrittenSort,
+            pagination: p,
           );
         }
-        // Fallback to standard readAll if no special filters are present.
-        return c.read<DataRepository<Country>>().readAll(
-          userId: uid,
-          filter: f,
-          sort: s,
-          pagination: p,
-        );
+
+        final localizedItems = response.items
+            .map((i) => LocalizationUtils.localizeCountry(i, lang))
+            .toList();
+        return response.copyWith(items: localizedItems);
       },
       'language': (c, uid, f, s, p) =>
           c.read<DataRepository<Language>>().readAll(
@@ -218,17 +310,26 @@ class DataOperationRegistry {
         sort: s,
         pagination: p,
       ),
-      'in_app_notification': (c, uid, f, s, p) {
+      'in_app_notification': (c, uid, f, s, p) async {
         final finalFilter = {...?f};
         if (uid != null) {
           finalFilter['userId'] = uid;
         }
-        return c.read<DataRepository<InAppNotification>>().readAll(
-          userId: null,
-          filter: finalFilter,
-          sort: s,
-          pagination: p,
-        );
+        final lang = c.read<SupportedLanguage>();
+        // Note: InAppNotification payload title is translatable, but we don't
+        // typically sort by payload.title.
+        final response = await c
+            .read<DataRepository<InAppNotification>>()
+            .readAll(
+              userId: null,
+              filter: finalFilter,
+              sort: s,
+              pagination: p,
+            );
+        final localizedItems = response.items
+            .map((i) => LocalizationUtils.localizeInAppNotification(i, lang))
+            .toList();
+        return response.copyWith(items: localizedItems);
       },
       'push_notification_device': (c, uid, f, s, p) {
         final finalFilter = {...?f};
@@ -278,27 +379,47 @@ class DataOperationRegistry {
           pagination: p,
         );
       },
-      'kpi_card_data': (c, uid, f, s, p) =>
-          c.read<DataRepository<KpiCardData>>().readAll(
-            userId: uid,
-            filter: f,
-            sort: s,
-            pagination: p,
-          ),
-      'chart_card_data': (c, uid, f, s, p) =>
-          c.read<DataRepository<ChartCardData>>().readAll(
-            userId: uid,
-            filter: f,
-            sort: s,
-            pagination: p,
-          ),
-      'ranked_list_card_data': (c, uid, f, s, p) =>
-          c.read<DataRepository<RankedListCardData>>().readAll(
-            userId: uid,
-            filter: f,
-            sort: s,
-            pagination: p,
-          ),
+      'kpi_card_data': (c, uid, f, s, p) async {
+        final lang = c.read<SupportedLanguage>();
+        final response = await c.read<DataRepository<KpiCardData>>().readAll(
+          userId: uid,
+          filter: f,
+          sort: s,
+          pagination: p,
+        );
+        final localizedItems = response.items
+            .map((i) => LocalizationUtils.localizeKpiCardData(i, lang))
+            .toList();
+        return response.copyWith(items: localizedItems);
+      },
+      'chart_card_data': (c, uid, f, s, p) async {
+        final lang = c.read<SupportedLanguage>();
+        final response = await c.read<DataRepository<ChartCardData>>().readAll(
+          userId: uid,
+          filter: f,
+          sort: s,
+          pagination: p,
+        );
+        final localizedItems = response.items
+            .map((i) => LocalizationUtils.localizeChartCardData(i, lang))
+            .toList();
+        return response.copyWith(items: localizedItems);
+      },
+      'ranked_list_card_data': (c, uid, f, s, p) async {
+        final lang = c.read<SupportedLanguage>();
+        final response = await c
+            .read<DataRepository<RankedListCardData>>()
+            .readAll(
+              userId: uid,
+              filter: f,
+              sort: s,
+              pagination: p,
+            );
+        final localizedItems = response.items
+            .map((i) => LocalizationUtils.localizeRankedListCardData(i, lang))
+            .toList();
+        return response.copyWith(items: localizedItems);
+      },
       'user_rewards': (c, uid, f, s, p) {
         final finalFilter = {...?f};
         if (uid != null) {
@@ -526,20 +647,29 @@ class DataOperationRegistry {
     // --- Register Item Updaters ---
     _itemUpdaters.addAll({
       'headline': (c, id, item, uid) async {
-        final headlineToUpdate =
-            c.read<FetchedItem<dynamic>>().data as Headline;
+        // Fetch RAW item to ensure we have all translations before merging
+        final rawHeadline = await c.read<DataRepository<Headline>>().read(
+          id: id,
+        );
         final requestedUpdateHeadline = item as Headline;
 
+        // 1. Merge Translations
+        var finalHeadline = requestedUpdateHeadline.copyWith(
+          title: LocalizationUtils.mergeTranslations(
+            rawHeadline.title,
+            requestedUpdateHeadline.title,
+          ),
+        );
+
+        // 2. Handle Media Asset Logic
         // If the mediaAssetId is being changed to a new non-null value,
         // we should nullify the imageUrl to ensure the webhook-populated URL is used.
-        final finalHeadline =
-            requestedUpdateHeadline.mediaAssetId !=
-                    headlineToUpdate.mediaAssetId &&
-                requestedUpdateHeadline.mediaAssetId != null
-            ? requestedUpdateHeadline.copyWith(
-                imageUrl: const ValueWrapper(null),
-              )
-            : requestedUpdateHeadline;
+        if (requestedUpdateHeadline.mediaAssetId != rawHeadline.mediaAssetId &&
+            requestedUpdateHeadline.mediaAssetId != null) {
+          finalHeadline = finalHeadline.copyWith(
+            imageUrl: const ValueWrapper(null),
+          );
+        }
 
         return c.read<DataRepository<Headline>>().update(
           id: id,
@@ -548,14 +678,24 @@ class DataOperationRegistry {
         );
       },
       'topic': (c, id, item, uid) async {
-        final topicToUpdate = c.read<FetchedItem<dynamic>>().data as Topic;
+        final rawTopic = await c.read<DataRepository<Topic>>().read(id: id);
         final requestedUpdateTopic = item as Topic;
 
-        final finalTopic =
-            requestedUpdateTopic.mediaAssetId != topicToUpdate.mediaAssetId &&
-                requestedUpdateTopic.mediaAssetId != null
-            ? requestedUpdateTopic.copyWith(iconUrl: const ValueWrapper(null))
-            : requestedUpdateTopic;
+        var finalTopic = requestedUpdateTopic.copyWith(
+          name: LocalizationUtils.mergeTranslations(
+            rawTopic.name,
+            requestedUpdateTopic.name,
+          ),
+          description: LocalizationUtils.mergeTranslations(
+            rawTopic.description,
+            requestedUpdateTopic.description,
+          ),
+        );
+
+        if (requestedUpdateTopic.mediaAssetId != rawTopic.mediaAssetId &&
+            requestedUpdateTopic.mediaAssetId != null) {
+          finalTopic = finalTopic.copyWith(iconUrl: const ValueWrapper(null));
+        }
 
         return c.read<DataRepository<Topic>>().update(
           id: id,
@@ -564,16 +704,26 @@ class DataOperationRegistry {
         );
       },
       'source': (c, id, item, uid) async {
-        final sourceToUpdate = c.read<FetchedItem<dynamic>>().data as Source;
+        final rawSource = await c.read<DataRepository<Source>>().read(id: id);
         final requestedUpdateSource = item as Source;
 
-        final finalSource =
-            requestedUpdateSource.mediaAssetId != sourceToUpdate.mediaAssetId &&
-                requestedUpdateSource.mediaAssetId != null
-            ? requestedUpdateSource.copyWith(
-                logoUrl: const ValueWrapper(null),
-              )
-            : requestedUpdateSource;
+        var finalSource = requestedUpdateSource.copyWith(
+          name: LocalizationUtils.mergeTranslations(
+            rawSource.name,
+            requestedUpdateSource.name,
+          ),
+          description: LocalizationUtils.mergeTranslations(
+            rawSource.description,
+            requestedUpdateSource.description,
+          ),
+        );
+
+        if (requestedUpdateSource.mediaAssetId != rawSource.mediaAssetId &&
+            requestedUpdateSource.mediaAssetId != null) {
+          finalSource = finalSource.copyWith(
+            logoUrl: const ValueWrapper(null),
+          );
+        }
 
         return c.read<DataRepository<Source>>().update(
           id: id,
@@ -706,11 +856,40 @@ class DataOperationRegistry {
         final userContentPreferencesRepository = context
             .read<DataRepository<UserContentPreferences>>();
 
+        // Fetch RAW preferences to merge SavedHeadlineFilter names
+        final rawPreferences = await userContentPreferencesRepository.read(
+          id: id,
+        );
         final preferencesToUpdate = item as UserContentPreferences;
 
+        // Merge SavedHeadlineFilters names
+        // We iterate through the incoming filters and look for a match in the
+        // raw existing filters. If found, we merge the name map.
+        final mergedFilters = preferencesToUpdate.savedHeadlineFilters.map((
+          incomingFilter,
+        ) {
+          final existingFilter = rawPreferences.savedHeadlineFilters.firstWhere(
+            (f) => f.id == incomingFilter.id,
+            orElse: () => incomingFilter,
+          );
+
+          // If it's the same filter (by ID), merge the name
+          if (existingFilter.id == incomingFilter.id) {
+            return incomingFilter.copyWith(
+              name: LocalizationUtils.mergeTranslations(
+                existingFilter.name,
+                incomingFilter.name,
+              ),
+            );
+          }
+          return incomingFilter;
+        }).toList();
+
+        final finalPreferences = preferencesToUpdate.copyWith(
+          savedHeadlineFilters: mergedFilters,
+        );
+
         // 2. Validate all limits using the consolidated service method.
-        // The service validates the entire proposed state. We first check
-        // if the user has permission to bypass these limits.
         if (permissionService.hasPermission(
           authenticatedUser,
           Permissions.userPreferenceBypassLimits,
@@ -721,7 +900,7 @@ class DataOperationRegistry {
         } else {
           await userActionLimitService.checkUserContentPreferencesLimits(
             user: authenticatedUser,
-            updatedPreferences: preferencesToUpdate,
+            updatedPreferences: finalPreferences,
           );
         }
 
@@ -732,7 +911,7 @@ class DataOperationRegistry {
         );
         return userContentPreferencesRepository.update(
           id: id,
-          item: preferencesToUpdate,
+          item: finalPreferences,
         );
       },
       'remote_config': (c, id, item, uid) =>
@@ -741,11 +920,25 @@ class DataOperationRegistry {
             item: item as RemoteConfig,
             userId: uid,
           ),
-      'in_app_notification': (c, id, item, uid) =>
-          c.read<DataRepository<InAppNotification>>().update(
-            id: id,
-            item: item as InAppNotification,
+      'in_app_notification': (c, id, item, uid) async {
+        final rawNotification = await c
+            .read<DataRepository<InAppNotification>>()
+            .read(id: id);
+        final requestedUpdate = item as InAppNotification;
+
+        final finalNotification = requestedUpdate.copyWith(
+          payload: requestedUpdate.payload.copyWith(
+            title: LocalizationUtils.mergeTranslations(
+              rawNotification.payload.title,
+              requestedUpdate.payload.title,
+            ),
           ),
+        );
+        return c.read<DataRepository<InAppNotification>>().update(
+          id: id,
+          item: finalNotification,
+        );
+      },
       'engagement': (context, id, item, uid) async {
         _log.info('Executing custom updater for engagement ID: $id.');
         final existingEngagement =
