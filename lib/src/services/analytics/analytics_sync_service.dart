@@ -744,11 +744,16 @@ class AnalyticsSyncService {
         // It's a string (e.g. date, tier, reason)
         final strLabel = rawLabel?.toString() ?? 'Unknown';
         // Basic formatting for enums (camelCase to Title Case)
-        final formattedLabel = strLabel
+        var formattedLabel = strLabel
             .split('.')
             .last
             .split(RegExp('(?=[A-Z])'))
             .join(' ');
+
+        if (formattedLabel.isNotEmpty) {
+          formattedLabel =
+              formattedLabel[0].toUpperCase() + formattedLabel.substring(1);
+        }
         labelMap = {SupportedLanguage.en: formattedLabel};
       }
 
