@@ -3,6 +3,7 @@ import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/analytics/analytics_reporting_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/analytics/analytics.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/services/analytics/analytics_label_registry.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart' show ObjectId;
 
@@ -265,7 +266,7 @@ class AnalyticsSyncService {
 
         if (existingCard != null) {
           final updatedCard = existingCard.copyWith(
-            label: _formatLabel(kpiId.name),
+            label: AnalyticsLabelRegistry.getKpiLabel(kpiId),
             timeFrames: timeFrames,
           );
           await _kpiCardRepository.update(
@@ -276,7 +277,7 @@ class AnalyticsSyncService {
           final newCard = KpiCardData(
             id: ObjectId().oid,
             cardId: kpiId,
-            label: _formatLabel(kpiId.name),
+            label: AnalyticsLabelRegistry.getKpiLabel(kpiId),
             timeFrames: timeFrames,
           );
           await _kpiCardRepository.create(item: newCard);
@@ -364,7 +365,7 @@ class AnalyticsSyncService {
 
         if (existingCard != null) {
           final updatedCard = existingCard.copyWith(
-            label: _formatLabel(chartId.name),
+            label: AnalyticsLabelRegistry.getChartLabel(chartId),
             type: _mapper.getChartType(chartId),
             timeFrames: timeFrames,
           );
@@ -376,7 +377,7 @@ class AnalyticsSyncService {
           final newCard = ChartCardData(
             id: ObjectId().oid,
             cardId: chartId,
-            label: _formatLabel(chartId.name),
+            label: AnalyticsLabelRegistry.getChartLabel(chartId),
             type: _mapper.getChartType(chartId),
             timeFrames: timeFrames,
           );
@@ -446,7 +447,7 @@ class AnalyticsSyncService {
 
         if (existingCard != null) {
           final updatedCard = existingCard.copyWith(
-            label: _formatLabel(rankedListId.name),
+            label: AnalyticsLabelRegistry.getRankedListLabel(rankedListId),
             timeFrames: timeFrames,
           );
           await _rankedListCardRepository.update(
@@ -457,7 +458,7 @@ class AnalyticsSyncService {
           final newCard = RankedListCardData(
             id: ObjectId().oid,
             cardId: rankedListId,
-            label: _formatLabel(rankedListId.name),
+            label: AnalyticsLabelRegistry.getRankedListLabel(rankedListId),
             timeFrames: timeFrames,
           );
           await _rankedListCardRepository.create(item: newCard);
@@ -499,7 +500,14 @@ class AnalyticsSyncService {
         startDate,
         endDate,
       );
-      dataPoints.add(DataPoint(label: step.label, value: total));
+      // Wrap the string label in a Map for the new DataPoint model.
+      // Since these are internal funnel steps, we default to English.
+      dataPoints.add(
+        DataPoint(
+          label: {SupportedLanguage.en: step.label},
+          value: total,
+        ),
+      );
     }
 
     return dataPoints;
@@ -714,17 +722,37 @@ class AnalyticsSyncService {
 
     final results = await _aggregate(repo, pipeline: pipeline);
     return results.map((e) {
-      final label = e['label']?.toString() ?? 'Unknown';
+      final rawLabel = e['label'];
       final value = (e['value'] as num?) ?? 0;
 
-      final formattedLabel = label
-          .split(' ')
-          .map((word) {
-            if (word.isEmpty) return '';
-            return '${word[0].toUpperCase()}${word.substring(1)}';
-          })
-          .join(' ');
-      return DataPoint(label: formattedLabel, value: value);
+      Map<SupportedLanguage, String> labelMap;
+
+      if (rawLabel is Map) {
+        // It's already a localized map from the DB (e.g. topic name)
+        try {
+          labelMap = rawLabel.map(
+            (k, v) => MapEntry(
+              SupportedLanguage.values.byName(k.toString()),
+              v.toString(),
+            ),
+          );
+        } catch (e) {
+          // Fallback if keys aren't valid languages
+          labelMap = {SupportedLanguage.en: rawLabel.toString()};
+        }
+      } else {
+        // It's a string (e.g. date, tier, reason)
+        final strLabel = rawLabel?.toString() ?? 'Unknown';
+        // Basic formatting for enums (camelCase to Title Case)
+        final formattedLabel = strLabel
+            .split('.')
+            .last
+            .split(RegExp('(?=[A-Z])'))
+            .join(' ');
+        labelMap = {SupportedLanguage.en: formattedLabel};
+      }
+
+      return DataPoint(label: labelMap, value: value);
     }).toList();
   }
 
@@ -757,17 +785,34 @@ class AnalyticsSyncService {
     return results
         .map((e) {
           final entityId = (e['entityId'] as ObjectId?)?.oid;
-          final displayTitle = e['displayTitle'] as String?;
+          // displayTitle comes from the DB as a Map (e.g. topic.name)
+          // We need to cast it safely.
+          final displayTitleMap = e['displayTitle'];
           final metricValue = e['metricValue'] as num?;
 
-          if (entityId == null || displayTitle == null || metricValue == null) {
+          if (entityId == null ||
+              displayTitleMap == null ||
+              metricValue == null) {
             _log.warning('Skipping ranked list item with missing data: $e');
             return null;
           }
 
+          Map<SupportedLanguage, String> title;
+          if (displayTitleMap is Map) {
+            title = displayTitleMap.map((k, v) {
+              // Ensure keys are SupportedLanguage
+              return MapEntry(
+                SupportedLanguage.values.byName(k.toString()),
+                v.toString(),
+              );
+            });
+          } else {
+            title = {SupportedLanguage.en: displayTitleMap.toString()};
+          }
+
           return RankedListItem(
             entityId: entityId,
-            displayTitle: displayTitle,
+            displayTitle: title,
             metricValue: metricValue,
           );
         })
@@ -877,17 +922,6 @@ class AnalyticsSyncService {
         ((currentValue - previousValue) / previousValue) * 100;
     return '${percentageChange.isNegative ? '' : '+'}'
         '${percentageChange.toStringAsFixed(1)}%';
-  }
-
-  String _formatLabel(String idName) {
-    // Add a space before each capital letter.
-    var spaced = idName.replaceAllMapped(
-      RegExp('([A-Z])'),
-      (m) => ' ${m.group(1)}',
-    );
-    // Capitalize the first letter of the whole string and return.
-    spaced = spaced[0].toUpperCase() + spaced.substring(1);
-    return spaced.trim();
   }
 }
 
