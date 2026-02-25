@@ -246,7 +246,7 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
       rawItems.add(
         RankedListItem(
           entityId: entityId,
-          displayTitle: '',
+          displayTitle: const {},
           metricValue: metricValue,
         ),
       );
@@ -267,7 +267,9 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
     return rawItems
         .map(
           (item) => item.copyWith(
-            displayTitle: headlineMap[item.entityId] ?? 'Unknown Headline',
+            displayTitle:
+                headlineMap[item.entityId] ??
+                {SupportedLanguage.en: 'Unknown Headline'},
           ),
         )
         .toList();
