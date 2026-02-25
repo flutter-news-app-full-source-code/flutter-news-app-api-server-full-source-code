@@ -28,6 +28,7 @@ void main() {
       registerFallbackValue(StackTrace.empty);
       registerFallbackValue(FakePushNotificationPayload());
       registerFallbackValue(FakeInAppNotification());
+      registerFallbackValue(const PaginationOptions());
     });
 
     late DataRepository<PushNotificationDevice>
@@ -68,6 +69,13 @@ void main() {
       ),
     );
 
+    final testCountry = const Country(
+      id: 'us',
+      isoCode: 'US',
+      name: {SupportedLanguage.en: 'United States'},
+      flagUrl: 'https://flag.com/us.png',
+    );
+
     final testHeadline = Headline(
       id: ObjectId().oid,
       title: const {SupportedLanguage.en: 'Test Headline'},
@@ -80,12 +88,12 @@ void main() {
         url: '',
         sourceType: SourceType.aggregator,
         language: SupportedLanguage.en,
-        headquarters: countriesFixturesData.first,
+        headquarters: testCountry,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         status: ContentStatus.active,
       ),
-      eventCountry: countriesFixturesData.first,
+      eventCountry: testCountry,
       topic: Topic(
         id: ObjectId().oid,
         name: const {SupportedLanguage.en: 'Test Topic'},
@@ -148,14 +156,101 @@ void main() {
       updatedAt: DateTime.now(),
     );
 
-    final remoteConfig = remoteConfigsFixturesData.first.copyWith(
-      features: remoteConfigsFixturesData.first.features.copyWith(
-        pushNotifications: const PushNotificationConfig(
+    final remoteConfig = RemoteConfig(
+      id: 'remote_config_id',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      app: const AppConfig(
+        maintenance: MaintenanceConfig(isUnderMaintenance: false),
+        update: UpdateConfig(
+          latestAppVersion: '1.0.0',
+          isLatestVersionOnly: false,
+          iosUpdateUrl: '',
+          androidUpdateUrl: '',
+        ),
+        general: GeneralAppConfig(
+          termsOfServiceUrl: '',
+          privacyPolicyUrl: '',
+        ),
+        localization: LocalizationConfig(
+          enabledLanguages: [SupportedLanguage.en],
+          defaultLanguage: SupportedLanguage.en,
+        ),
+      ),
+      features: const FeaturesConfig(
+        onboarding: OnboardingConfig(
+          isEnabled: true,
+          appTour: AppTourConfig(isEnabled: true, isSkippable: true),
+          initialPersonalization: InitialPersonalizationConfig(
+            isEnabled: true,
+            isSkippable: true,
+            isCountrySelectionEnabled: true,
+            isTopicSelectionEnabled: true,
+            isSourceSelectionEnabled: true,
+          ),
+        ),
+        analytics: AnalyticsConfig(
+          enabled: true,
+          activeProvider: AnalyticsProviders.firebase,
+          disabledEvents: {},
+          eventSamplingRates: {},
+        ),
+        ads: AdConfig(
+          enabled: true,
+          primaryAdPlatform: AdPlatformType.admob,
+          platformAdIdentifiers: {},
+          feedAdConfiguration: FeedAdConfiguration(
+            enabled: true,
+            adType: AdType.native,
+            visibleTo: {},
+          ),
+          navigationAdConfiguration: NavigationAdConfiguration(
+            enabled: true,
+            visibleTo: {},
+          ),
+        ),
+        pushNotifications: PushNotificationConfig(
           enabled: true,
           primaryProvider: PushNotificationProviders.firebase,
           deliveryConfigs: {
             PushNotificationSubscriptionDeliveryType.breakingOnly: true,
           },
+        ),
+        feed: FeedConfig(
+          itemClickBehavior: FeedItemClickBehavior.defaultBehavior,
+          decorators: {},
+        ),
+        community: CommunityConfig(
+          enabled: true,
+          engagement: EngagementConfig(
+            enabled: true,
+            engagementMode: EngagementMode.reactionsAndComments,
+          ),
+          reporting: ReportingConfig(
+            enabled: true,
+            headlineReportingEnabled: true,
+            sourceReportingEnabled: true,
+            commentReportingEnabled: true,
+          ),
+          appReview: AppReviewConfig(
+            enabled: true,
+            interactionCycleThreshold: 5,
+            initialPromptCooldownDays: 7,
+            eligiblePositiveInteractions: [],
+            isNegativeFeedbackFollowUpEnabled: true,
+            isPositiveFeedbackFollowUpEnabled: true,
+          ),
+        ),
+        rewards: RewardsConfig(enabled: true, rewards: {}),
+      ),
+      user: const UserConfig(
+        limits: UserLimitsConfig(
+          followedItems: {},
+          savedHeadlines: {},
+          savedHeadlineFilters: {},
+          reactionsPerDay: {},
+          commentsPerDay: {},
+          reportsPerDay: {},
         ),
       ),
     );
@@ -355,6 +450,7 @@ void main() {
         verifyNever(
           () => pushNotificationDeviceRepository.readAll(
             filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
           ),
         );
       });
@@ -385,6 +481,7 @@ void main() {
         when(
           () => pushNotificationDeviceRepository.readAll(
             filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
           ),
         ).thenAnswer(
           (_) async => PaginatedResponse(
@@ -421,6 +518,7 @@ void main() {
                 return inValues is List && inValues.contains(invalidToken);
               }),
             ),
+            pagination: any(named: 'pagination'),
           ),
         ).thenAnswer(
           (_) async => PaginatedResponse(
@@ -476,6 +574,7 @@ void main() {
         when(
           () => pushNotificationDeviceRepository.readAll(
             filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
           ),
         ).thenAnswer(
           (_) async => PaginatedResponse(
@@ -561,6 +660,7 @@ void main() {
         when(
           () => pushNotificationDeviceRepository.readAll(
             filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
           ),
         ).thenAnswer(
           (_) async => const PaginatedResponse(
@@ -619,6 +719,7 @@ void main() {
           when(
             () => pushNotificationDeviceRepository.readAll(
               filter: any(named: 'filter'),
+              pagination: any(named: 'pagination'),
             ),
           ).thenAnswer(
             (_) async => PaginatedResponse(
@@ -686,6 +787,7 @@ void main() {
             when(
               () => pushNotificationDeviceRepository.readAll(
                 filter: any(named: 'filter'),
+                pagination: any(named: 'pagination'),
               ),
             ).thenAnswer(
               (_) async => PaginatedResponse(
@@ -789,6 +891,7 @@ void main() {
             when(
               () => pushNotificationDeviceRepository.readAll(
                 filter: any(named: 'filter'),
+                pagination: any(named: 'pagination'),
               ),
             ).thenAnswer(
               (_) async => PaginatedResponse(
@@ -845,6 +948,7 @@ void main() {
         when(
           () => pushNotificationDeviceRepository.readAll(
             filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
           ),
         ).thenAnswer(
           (_) async => PaginatedResponse(
