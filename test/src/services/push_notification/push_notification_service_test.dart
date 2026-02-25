@@ -69,7 +69,7 @@ void main() {
       ),
     );
 
-    final testCountry = const Country(
+    const testCountry = Country(
       id: 'us',
       isoCode: 'US',
       name: {SupportedLanguage.en: 'United States'},

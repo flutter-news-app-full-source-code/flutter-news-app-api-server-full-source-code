@@ -258,7 +258,7 @@ void main() {
           cardId: RankedListCardId.overviewHeadlinesMostViewed,
           label: {SupportedLanguage.en: 'Top', SupportedLanguage.es: 'Mejor'},
           timeFrames: {
-            RankedListTimeFrame.day: const [
+            RankedListTimeFrame.day: [
               RankedListItem(
                 entityId: 'e1',
                 displayTitle: {
