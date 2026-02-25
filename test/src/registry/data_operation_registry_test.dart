@@ -458,16 +458,8 @@ void main() {
           entityType: EngageableType.headline,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
-          comment: Comment(
-            language: Language(
-              id: 'en',
-              code: 'en',
-              name: 'English',
-              nativeName: 'English',
-              createdAt: DateTime.now(),
-              updatedAt: DateTime.now(),
-              status: ContentStatus.active,
-            ),
+          comment: const Comment(
+            language: SupportedLanguage.en,
             content: 'Original Content',
             status: ModerationStatus.resolved,
           ),

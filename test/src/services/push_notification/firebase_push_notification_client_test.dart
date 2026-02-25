@@ -29,7 +29,7 @@ void main() {
     const projectId = 'test-project';
     const payload = PushNotificationPayload(
       title: 'Test',
-      notificationId: 'id',
+      notificationId: 'notification-id',
       notificationType: PushNotificationSubscriptionDeliveryType.breakingOnly,
       contentType: ContentType.headline,
       contentId: 'content-id',

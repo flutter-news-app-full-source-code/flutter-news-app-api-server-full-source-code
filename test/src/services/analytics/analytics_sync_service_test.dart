@@ -64,7 +64,7 @@ void main() {
         const KpiCardData(
           id: 'fallback_id',
           cardId: KpiCardId.usersTotalRegistered,
-          label: '',
+          label: {SupportedLanguage.en: ''},
           timeFrames: {},
         ),
       );
@@ -110,6 +110,10 @@ void main() {
           general: GeneralAppConfig(
             termsOfServiceUrl: '',
             privacyPolicyUrl: '',
+          ),
+          localization: LocalizationConfig(
+            enabledLanguages: [SupportedLanguage.en],
+            defaultLanguage: SupportedLanguage.en,
           ),
         ),
         features: FeaturesConfig(
@@ -236,7 +240,7 @@ void main() {
             KpiCardData(
               id: 'test_id',
               cardId: kpiId,
-              label: '',
+              label: {SupportedLanguage.en: ''},
               timeFrames: {},
             ),
           ],
@@ -254,7 +258,7 @@ void main() {
         (_) async => const KpiCardData(
           id: 'test_id',
           cardId: kpiId,
-          label: '',
+          label: {SupportedLanguage.en: ''},
           timeFrames: {},
         ),
       );

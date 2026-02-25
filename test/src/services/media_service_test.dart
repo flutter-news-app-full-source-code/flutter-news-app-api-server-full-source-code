@@ -63,31 +63,19 @@ void main() {
       ),
     );
 
-    final fallbackCountry = Country(
+    const fallbackCountry = Country(
       id: 'fallback',
       isoCode: 'US',
-      name: 'fallback',
+      name: {SupportedLanguage.en: 'fallback'},
       flagUrl: 'fallback',
-      createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-      updatedAt: DateTime.fromMillisecondsSinceEpoch(0),
-      status: ContentStatus.active,
-    );
-    final fallbackLanguage = Language(
-      id: 'fallback',
-      code: 'en',
-      name: 'fallback',
-      nativeName: 'fallback',
-      createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-      updatedAt: DateTime.fromMillisecondsSinceEpoch(0),
-      status: ContentStatus.active,
     );
     final fallbackSource = Source(
       id: 'fallback',
-      name: 'fallback',
-      description: 'fallback',
+      name: const {SupportedLanguage.en: 'fallback'},
+      description: const {SupportedLanguage.en: 'fallback'},
       url: 'fallback',
       sourceType: SourceType.blog,
-      language: fallbackLanguage,
+      language: SupportedLanguage.en,
       headquarters: fallbackCountry,
       createdAt: DateTime.fromMillisecondsSinceEpoch(0),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(0),
@@ -95,8 +83,8 @@ void main() {
     );
     final fallbackTopic = Topic(
       id: 'fallback',
-      name: 'fallback',
-      description: 'fallback',
+      name: const {SupportedLanguage.en: 'fallback'},
+      description: const {SupportedLanguage.en: 'fallback'},
       createdAt: DateTime.fromMillisecondsSinceEpoch(0),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(0),
       status: ContentStatus.active,
@@ -105,7 +93,7 @@ void main() {
     registerFallbackValue(
       Headline(
         id: 'fallback',
-        title: 'fallback',
+        title: const {SupportedLanguage.en: 'fallback'},
         url: 'fallback',
         imageUrl: 'fallback',
         source: fallbackSource,
@@ -273,49 +261,35 @@ void main() {
 
         final headline = Headline(
           id: 'headline1',
-          title: 'Test',
+          title: const {SupportedLanguage.en: 'Test'},
           url: 'https://example.com/article',
           source: Source(
             id: 's1',
-            name: 'S',
-            description: 'D',
+            name: const {SupportedLanguage.en: 'S'},
+            description: const {SupportedLanguage.en: 'D'},
             url: 'u',
             sourceType: SourceType.blog,
-            language: Language(
-              id: 'l',
-              code: 'en',
-              name: 'En',
-              nativeName: 'En',
-              createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-              updatedAt: DateTime.fromMillisecondsSinceEpoch(0),
-              status: ContentStatus.active,
-            ),
-            headquarters: Country(
+            language: SupportedLanguage.en,
+            headquarters: const Country(
               id: 'c',
               isoCode: 'US',
-              name: 'US',
+              name: {SupportedLanguage.en: 'US'},
               flagUrl: 'f',
-              createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-              updatedAt: DateTime.fromMillisecondsSinceEpoch(0),
-              status: ContentStatus.active,
             ),
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
             status: ContentStatus.active,
           ),
-          eventCountry: Country(
+          eventCountry: const Country(
             id: 'c',
             isoCode: 'US',
-            name: 'US',
+            name: {SupportedLanguage.en: 'US'},
             flagUrl: 'f',
-            createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-            updatedAt: DateTime.fromMillisecondsSinceEpoch(0),
-            status: ContentStatus.active,
           ),
           topic: Topic(
             id: 't',
-            name: 'T',
-            description: 'D',
+            name: const {SupportedLanguage.en: 'T'},
+            description: const {SupportedLanguage.en: 'D'},
             createdAt: DateTime.fromMillisecondsSinceEpoch(0),
             updatedAt: DateTime.fromMillisecondsSinceEpoch(0),
             status: ContentStatus.active,

@@ -66,6 +66,10 @@ void main() {
             termsOfServiceUrl: '',
             privacyPolicyUrl: '',
           ),
+          localization: LocalizationConfig(
+            enabledLanguages: [SupportedLanguage.en],
+            defaultLanguage: SupportedLanguage.en,
+          ),
         ),
         features: const FeaturesConfig(
           onboarding: OnboardingConfig(
@@ -190,11 +194,8 @@ void main() {
               (i) => Country(
                 id: '$i',
                 isoCode: 'US',
-                name: 'US',
+                name: const {SupportedLanguage.en: 'US'},
                 flagUrl: '',
-                createdAt: DateTime.now(),
-                updatedAt: DateTime.now(),
-                status: ContentStatus.active,
               ),
             ),
             followedSources: const [],
@@ -224,28 +225,17 @@ void main() {
               6,
               (i) => Source(
                 id: '$i',
-                name: 'Source $i',
-                description: '',
+                name: {SupportedLanguage.en: 'Source $i'},
+                description: const {SupportedLanguage.en: ''},
                 url: '',
                 logoUrl: '',
                 sourceType: SourceType.blog,
-                language: Language(
-                  id: 'l',
-                  code: 'en',
-                  name: 'English',
-                  nativeName: 'English',
-                  createdAt: DateTime.now(),
-                  updatedAt: DateTime.now(),
-                  status: ContentStatus.active,
-                ),
-                headquarters: Country(
+                language: SupportedLanguage.en,
+                headquarters: const Country(
                   id: 'c',
                   isoCode: 'US',
-                  name: 'US',
+                  name: {SupportedLanguage.en: 'US'},
                   flagUrl: '',
-                  createdAt: DateTime.now(),
-                  updatedAt: DateTime.now(),
-                  status: ContentStatus.active,
                 ),
                 createdAt: DateTime.now(),
                 updatedAt: DateTime.now(),
@@ -279,8 +269,8 @@ void main() {
               6,
               (i) => Topic(
                 id: '$i',
-                name: 'Topic $i',
-                description: '',
+                name: {SupportedLanguage.en: 'Topic $i'},
+                description: const {SupportedLanguage.en: ''},
                 iconUrl: '',
                 createdAt: DateTime.now(),
                 updatedAt: DateTime.now(),
@@ -314,51 +304,37 @@ void main() {
               11,
               (i) => Headline(
                 id: '$i',
-                title: 'Title',
+                title: const {SupportedLanguage.en: 'Title'},
                 url: '',
                 imageUrl: '',
                 source: Source(
                   id: 's',
-                  name: 'S',
-                  description: '',
+                  name: const {SupportedLanguage.en: 'S'},
+                  description: const {SupportedLanguage.en: ''},
                   url: '',
                   logoUrl: '',
                   sourceType: SourceType.blog,
-                  language: Language(
-                    id: 'l',
-                    code: 'en',
-                    name: 'English',
-                    nativeName: 'English',
-                    createdAt: DateTime(2023),
-                    updatedAt: DateTime(2023),
-                    status: ContentStatus.active,
-                  ),
-                  headquarters: Country(
+                  language: SupportedLanguage.en,
+                  headquarters: const Country(
                     id: 'c',
                     isoCode: 'US',
-                    name: 'US',
+                    name: {SupportedLanguage.en: 'US'},
                     flagUrl: '',
-                    createdAt: DateTime(2023),
-                    updatedAt: DateTime(2023),
-                    status: ContentStatus.active,
                   ),
                   createdAt: DateTime.now(),
                   updatedAt: DateTime.now(),
                   status: ContentStatus.active,
                 ),
-                eventCountry: Country(
+                eventCountry: const Country(
                   id: 'c',
                   isoCode: 'US',
-                  name: 'US',
+                  name: {SupportedLanguage.en: 'US'},
                   flagUrl: '',
-                  createdAt: DateTime(2023),
-                  updatedAt: DateTime(2023),
-                  status: ContentStatus.active,
                 ),
                 topic: Topic(
                   id: 't',
-                  name: 'T',
-                  description: '',
+                  name: const {SupportedLanguage.en: 'T'},
+                  description: const {SupportedLanguage.en: ''},
                   iconUrl: '',
                   createdAt: DateTime.now(),
                   updatedAt: DateTime.now(),
@@ -398,7 +374,7 @@ void main() {
               (i) => SavedHeadlineFilter(
                 id: '$i',
                 userId: standardUser.id,
-                name: 'Filter $i',
+                name: {SupportedLanguage.en: 'Filter $i'},
                 criteria: const HeadlineFilterCriteria(
                   topics: [],
                   sources: [],
@@ -435,7 +411,7 @@ void main() {
               (i) => SavedHeadlineFilter(
                 id: '$i',
                 userId: standardUser.id,
-                name: 'Filter $i',
+                name: {SupportedLanguage.en: 'Filter $i'},
                 criteria: const HeadlineFilterCriteria(
                   topics: [],
                   sources: [],
@@ -472,7 +448,7 @@ void main() {
               (i) => SavedHeadlineFilter(
                 id: '$i',
                 userId: standardUser.id,
-                name: 'Filter $i',
+                name: {SupportedLanguage.en: 'Filter $i'},
                 criteria: const HeadlineFilterCriteria(
                   topics: [],
                   sources: [],
@@ -607,16 +583,8 @@ void main() {
           entityType: EngageableType.headline,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
-          comment: Comment(
-            language: Language(
-              id: 'l',
-              code: 'en',
-              name: 'English',
-              nativeName: 'English',
-              createdAt: DateTime(2023),
-              updatedAt: DateTime(2023),
-              status: ContentStatus.active,
-            ),
+          comment: const Comment(
+            language: SupportedLanguage.en,
             content: 'Test comment',
           ),
         );
@@ -645,16 +613,8 @@ void main() {
             entityType: EngageableType.headline,
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
-            comment: Comment(
-              language: Language(
-                id: 'l',
-                code: 'en',
-                name: 'English',
-                nativeName: 'English',
-                createdAt: DateTime(2023),
-                updatedAt: DateTime(2023),
-                status: ContentStatus.active,
-              ),
+            comment: const Comment(
+              language: SupportedLanguage.en,
               content: 'Test comment',
             ),
           );

@@ -114,18 +114,6 @@ abstract class LocalizationUtils {
     );
   }
 
-  /// Localizes [InAppNotification] payload.
-  static InAppNotification localizeInAppNotification(
-    InAppNotification item,
-    SupportedLanguage lang,
-  ) {
-    return item.copyWith(
-      payload: item.payload.copyWith(
-        title: pickTranslation(item.payload.title, lang),
-      ),
-    );
-  }
-
   /// Localizes [SavedHeadlineFilter] name.
   static SavedHeadlineFilter localizeSavedHeadlineFilter(
     SavedHeadlineFilter item,

@@ -34,25 +34,17 @@ void main() {
         role: UserRole.admin,
       );
 
-      userOwnedItem = AppSettings(
+      userOwnedItem = const AppSettings(
         id: 'owner-id', // The item's ID is the owner's ID
-        language: Language(
-          id: 'lang-id',
-          code: 'en',
-          name: 'English',
-          nativeName: 'English',
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-          status: ContentStatus.active,
-        ),
-        displaySettings: const DisplaySettings(
+        language: SupportedLanguage.en,
+        displaySettings: DisplaySettings(
           baseTheme: AppBaseTheme.system,
           accentTheme: AppAccentTheme.defaultBlue,
           fontFamily: 'SystemDefault',
           textScaleFactor: AppTextScaleFactor.medium,
           fontWeight: AppFontWeight.regular,
         ),
-        feedSettings: const FeedSettings(
+        feedSettings: FeedSettings(
           feedItemDensity: FeedItemDensity.standard,
           feedItemImageStyle: FeedItemImageStyle.largeThumbnail,
           feedItemClickBehavior: FeedItemClickBehavior.internalNavigation,

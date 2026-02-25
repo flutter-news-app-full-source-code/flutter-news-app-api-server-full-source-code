@@ -35,6 +35,7 @@ void main() {
     late DataRepository<UserContentPreferences>
     userContentPreferencesRepository;
     late DataRepository<RemoteConfig> remoteConfigRepository;
+    late DataRepository<AppSettings> appSettingsRepository;
     late DataRepository<InAppNotification> inAppNotificationRepository;
     late IPushNotificationClient firebaseClient;
     late IPushNotificationClient oneSignalClient;
@@ -50,19 +51,35 @@ void main() {
       createdAt: DateTime.now(),
     );
 
+    final testAppSettings = AppSettings(
+      id: testUser.id,
+      language: SupportedLanguage.en,
+      displaySettings: const DisplaySettings(
+        baseTheme: AppBaseTheme.system,
+        accentTheme: AppAccentTheme.defaultBlue,
+        fontFamily: 'SystemDefault',
+        textScaleFactor: AppTextScaleFactor.medium,
+        fontWeight: AppFontWeight.bold,
+      ),
+      feedSettings: const FeedSettings(
+        feedItemDensity: FeedItemDensity.standard,
+        feedItemImageStyle: FeedItemImageStyle.largeThumbnail,
+        feedItemClickBehavior: FeedItemClickBehavior.defaultBehavior,
+      ),
+    );
+
     final testHeadline = Headline(
       id: ObjectId().oid,
-      title: 'Test Headline',
+      title: const {SupportedLanguage.en: 'Test Headline'},
       url: 'http://example.com',
       imageUrl: 'http://example.com/image.png',
       source: Source(
         id: ObjectId().oid,
-        name: 'Test Source',
-        description: '',
+        name: const {SupportedLanguage.en: 'Test Source'},
+        description: const {SupportedLanguage.en: 'Description'},
         url: '',
-        logoUrl: '',
         sourceType: SourceType.aggregator,
-        language: languagesFixturesData.first,
+        language: SupportedLanguage.en,
         headquarters: countriesFixturesData.first,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -71,9 +88,8 @@ void main() {
       eventCountry: countriesFixturesData.first,
       topic: Topic(
         id: ObjectId().oid,
-        name: 'Test Topic',
-        description: '',
-        iconUrl: '',
+        name: const {SupportedLanguage.en: 'Test Topic'},
+        description: const {SupportedLanguage.en: 'Description'},
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         status: ContentStatus.active,
@@ -87,7 +103,7 @@ void main() {
     final matchingFilter = SavedHeadlineFilter(
       id: ObjectId().oid,
       userId: testUser.id,
-      name: 'Matching Filter',
+      name: const {SupportedLanguage.en: 'Matching Filter'},
       isPinned: false,
       deliveryTypes: const {
         PushNotificationSubscriptionDeliveryType.breakingOnly,
@@ -102,7 +118,7 @@ void main() {
     final nonMatchingFilter = SavedHeadlineFilter(
       id: ObjectId().oid,
       userId: testUser.id,
-      name: 'Non-Matching Filter',
+      name: const {SupportedLanguage.en: 'Non-Matching Filter'},
       isPinned: false,
       deliveryTypes: const {
         PushNotificationSubscriptionDeliveryType.breakingOnly,
@@ -111,9 +127,8 @@ void main() {
         topics: [
           Topic(
             id: ObjectId().oid,
-            name: 'Different Topic',
-            description: '',
-            iconUrl: '',
+            name: const {SupportedLanguage.en: 'Different Topic'},
+            description: const {SupportedLanguage.en: 'Description'},
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
             status: ContentStatus.active,
@@ -149,6 +164,7 @@ void main() {
       pushNotificationDeviceRepository = MockDataRepository();
       userContentPreferencesRepository = MockDataRepository();
       remoteConfigRepository = MockDataRepository();
+      appSettingsRepository = MockDataRepository();
       inAppNotificationRepository = MockDataRepository();
       firebaseClient = MockIPushNotificationClient();
       oneSignalClient = MockIPushNotificationClient();
@@ -158,6 +174,7 @@ void main() {
         pushNotificationDeviceRepository: pushNotificationDeviceRepository,
         userContentPreferencesRepository: userContentPreferencesRepository,
         remoteConfigRepository: remoteConfigRepository,
+        appSettingsRepository: appSettingsRepository,
         inAppNotificationRepository: inAppNotificationRepository,
         firebaseClient: firebaseClient,
         oneSignalClient: oneSignalClient,
@@ -190,6 +207,18 @@ void main() {
       when(
         () => pushNotificationDeviceRepository.delete(id: any(named: 'id')),
       ).thenAnswer((_) async {});
+      when(
+        () => appSettingsRepository.readAll(
+          filter: any(named: 'filter'),
+          pagination: any(named: 'pagination'),
+        ),
+      ).thenAnswer(
+        (_) async => PaginatedResponse(
+          items: [testAppSettings],
+          cursor: null,
+          hasMore: false,
+        ),
+      );
     });
 
     group('sendBreakingNewsNotification', () {
@@ -683,9 +712,8 @@ void main() {
               topics: [
                 Topic(
                   id: ObjectId().oid,
-                  name: 'Wrong Topic',
-                  description: '',
-                  iconUrl: '',
+                  name: const {SupportedLanguage.en: 'Wrong Topic'},
+                  description: const {SupportedLanguage.en: 'Description'},
                   createdAt: DateTime.now(),
                   updatedAt: DateTime.now(),
                   status: ContentStatus.active,
@@ -848,6 +876,7 @@ void main() {
           pushNotificationDeviceRepository: pushNotificationDeviceRepository,
           userContentPreferencesRepository: userContentPreferencesRepository,
           remoteConfigRepository: remoteConfigRepository,
+          appSettingsRepository: appSettingsRepository,
           inAppNotificationRepository: inAppNotificationRepository,
           firebaseClient: null, // Explicitly null
           oneSignalClient: oneSignalClient,

@@ -347,7 +347,9 @@ User createTestUser({
 
 Headline createTestHeadline({
   String id = 'headline-id',
-  String title = 'Test Headline',
+  Map<SupportedLanguage, String> title = const {
+    SupportedLanguage.en: 'Test Headline',
+  },
   String url = 'http://example.com/headline',
   String? imageUrl,
   String? mediaAssetId,
@@ -367,11 +369,11 @@ Headline createTestHeadline({
         source ??
         Source(
           id: 'source-id',
-          name: 'Test Source',
-          description: '',
+          name: const {SupportedLanguage.en: 'Test Source'},
+          description: const {SupportedLanguage.en: ''},
           url: '',
           sourceType: SourceType.other,
-          language: languagesFixturesData.first,
+          language: SupportedLanguage.en,
           headquarters: countriesFixturesData.first,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
@@ -382,8 +384,8 @@ Headline createTestHeadline({
         topic ??
         Topic(
           id: 'topic-id',
-          name: 'Test Topic',
-          description: '',
+          name: const {SupportedLanguage.en: 'Test Topic'},
+          description: const {SupportedLanguage.en: ''},
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
           status: ContentStatus.active,
