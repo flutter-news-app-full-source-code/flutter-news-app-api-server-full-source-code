@@ -29,6 +29,8 @@ class MockMediaAssetRepository extends Mock
 
 class MockStorageService extends Mock implements helpers.MockStorageService {}
 
+class MockHeadlineRepository extends Mock implements DataRepository<Headline> {}
+
 void main() {
   group('DataOperationRegistry', () {
     late DataOperationRegistry registry;
@@ -47,6 +49,49 @@ void main() {
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
           reaction: const Reaction(reactionType: ReactionType.like),
+        ),
+      );
+      registerFallbackValue(
+        Headline(
+          id: 'id',
+          title: const {},
+          source: Source(
+            id: 's',
+            name: const {},
+            description: const {},
+            url: 'u',
+            sourceType: SourceType.blog,
+            language: SupportedLanguage.en,
+            headquarters: const Country(
+              id: 'c',
+              isoCode: 'US',
+              name: {},
+              flagUrl: 'f',
+            ),
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: ContentStatus.active,
+          ),
+          eventCountry: const Country(
+            id: 'c',
+            isoCode: 'US',
+            name: {},
+            flagUrl: 'f',
+          ),
+          topic: Topic(
+            id: 't',
+            name: const {},
+            description: const {},
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: ContentStatus.active,
+          ),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          status: ContentStatus.active,
+          isBreaking: false,
+          url: 'u',
+          imageUrl: 'i',
         ),
       );
       registerFallbackValue(
@@ -315,6 +360,190 @@ void main() {
             .createMockRequestContext()
             .provide<DataRepository<UserRewards>>(() => mockUserRewardsRepo),
       );
+    });
+
+    group('Headline Reader (Localization)', () {
+      late MockHeadlineRepository mockHeadlineRepo;
+
+      setUp(() {
+        mockHeadlineRepo = MockHeadlineRepository();
+        when(
+          () => mockHeadlineRepo.readAll(
+            filter: any(named: 'filter'),
+            sort: any(named: 'sort'),
+            pagination: any(named: 'pagination'),
+            userId: any(named: 'userId'),
+          ),
+        ).thenAnswer(
+          (_) async => const PaginatedResponse<Headline>(
+            items: [],
+            cursor: null,
+            hasMore: false,
+          ),
+        );
+      });
+
+      test(
+        'rewrites sort parameter to localized field (title -> title.es)',
+        () async {
+          final reader = registry.allItemsReaders['headline']!;
+
+          // Setup context with Spanish language
+          final context = helpers
+              .createMockRequestContext(
+                headers: {'Accept-Language': 'es'},
+              )
+              .provide<DataRepository<Headline>>(() => mockHeadlineRepo)
+              .provide<SupportedLanguage>(() => SupportedLanguage.es);
+
+          final sortOptions = [const SortOption('title', SortOrder.asc)];
+
+          await reader(context, null, null, sortOptions, null);
+
+          final captured = verify(
+            () => mockHeadlineRepo.readAll(
+              filter: any(named: 'filter'),
+              userId: any(named: 'userId'),
+              sort: captureAny<List<SortOption>?>(named: 'sort'),
+              pagination: any(named: 'pagination'),
+            ),
+          ).captured;
+
+          final capturedSort = captured.single as List<SortOption>;
+          expect(capturedSort.first.field, equals('title.es'));
+        },
+      );
+
+      test('defaults sort rewrite to .en if language is missing', () async {
+        final reader = registry.allItemsReaders['headline']!;
+
+        // Setup context with English (default)
+        final context = helpers
+            .createMockRequestContext()
+            .provide<DataRepository<Headline>>(() => mockHeadlineRepo)
+            .provide<SupportedLanguage>(() => SupportedLanguage.en);
+
+        final sortOptions = [const SortOption('title', SortOrder.asc)];
+
+        await reader(context, null, null, sortOptions, null);
+
+        final captured = verify(
+          () => mockHeadlineRepo.readAll(
+            filter: any(named: 'filter'),
+            userId: any(named: 'userId'),
+            sort: captureAny<List<SortOption>?>(named: 'sort'),
+            pagination: any(named: 'pagination'),
+          ),
+        ).captured;
+
+        final capturedSort = captured.single as List<SortOption>;
+        expect(capturedSort.first.field, equals('title.en'));
+      });
+    });
+
+    group('Headline Updater (Localization Merging)', () {
+      late MockHeadlineRepository mockHeadlineRepo;
+      late Headline existingHeadline;
+
+      setUp(() {
+        mockHeadlineRepo = MockHeadlineRepository();
+        existingHeadline = Headline(
+          id: 'h1',
+          title: {SupportedLanguage.en: 'Hello'},
+          url: 'url',
+          imageUrl: 'img',
+          source: Source(
+            id: 's',
+            name: {},
+            description: {},
+            url: '',
+            sourceType: SourceType.other,
+            language: SupportedLanguage.en,
+            headquarters: const Country(
+              id: 'c',
+              isoCode: 'US',
+              name: {},
+              flagUrl: '',
+            ),
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: ContentStatus.active,
+          ),
+          eventCountry: const Country(
+            id: 'c',
+            isoCode: 'US',
+            name: {},
+            flagUrl: '',
+          ),
+          topic: Topic(
+            id: 't',
+            name: {},
+            description: {},
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: ContentStatus.active,
+          ),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          status: ContentStatus.active,
+          isBreaking: false,
+        );
+      });
+
+      test('merges new translation with existing ones', () async {
+        final updater = registry.itemUpdaters['headline']!;
+
+        // The update request must be a Headline object (simulating deserialized input).
+        // We create a headline with ONLY the Spanish title to verify that the
+        // English title from the database is preserved via merging.
+        final incomingHeadline = existingHeadline.copyWith(
+          title: {SupportedLanguage.es: 'Hola'},
+        );
+
+        when(
+          () => mockHeadlineRepo.read(
+            id: 'h1',
+            userId: any(named: 'userId'),
+          ),
+        ).thenAnswer((_) async => existingHeadline);
+
+        when(
+          () => mockHeadlineRepo.update(
+            id: any(named: 'id'),
+            item: any(named: 'item'),
+            userId: any(named: 'userId'),
+          ),
+        ).thenAnswer(
+          (invocation) async => invocation.namedArguments[#item] as Headline,
+        );
+
+        final context = helpers
+            .createMockRequestContext(
+              authenticatedUser: standardUser,
+              fetchedItem: FetchedItem(existingHeadline),
+            )
+            .provide<DataRepository<Headline>>(() => mockHeadlineRepo);
+
+        await updater(context, 'h1', incomingHeadline, null);
+
+        final captured = verify(
+          () => mockHeadlineRepo.update(
+            id: 'h1',
+            item: captureAny<Headline>(named: 'item'),
+            userId: any(named: 'userId'),
+          ),
+        ).captured;
+
+        final updatedItem = captured.single as Headline;
+        expect(
+          updatedItem.title[SupportedLanguage.en],
+          equals('Hello'),
+        ); // Preserved
+        expect(
+          updatedItem.title[SupportedLanguage.es],
+          equals('Hola'),
+        ); // Added
+      });
     });
 
     group('Engagement Creator', () {
