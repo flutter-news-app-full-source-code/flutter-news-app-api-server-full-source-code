@@ -659,6 +659,7 @@ class AppDependencies {
         inAppNotificationRepository: inAppNotificationRepository,
         firebaseClient: firebasePushNotificationClient,
         oneSignalClient: oneSignalPushNotificationClient,
+        appSettingsRepository: appSettingsRepository,
         log: Logger('DefaultPushNotificationService'),
       );
 
