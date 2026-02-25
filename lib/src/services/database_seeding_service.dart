@@ -713,12 +713,7 @@ class DatabaseSeedingService {
         textScaleFactor: AppTextScaleFactor.medium,
         fontWeight: AppFontWeight.regular,
       ),
-      language: languagesFixturesData.firstWhere(
-        (l) => l.code == 'en',
-        orElse: () => throw StateError(
-          'Default language "en" not found in language fixtures.',
-        ),
-      ),
+      language: SupportedLanguage.en,
       feedSettings: const FeedSettings(
         feedItemDensity: FeedItemDensity.standard,
         feedItemImageStyle: FeedItemImageStyle.smallThumbnail,
