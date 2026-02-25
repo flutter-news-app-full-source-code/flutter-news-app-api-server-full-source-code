@@ -182,19 +182,25 @@ class DefaultPushNotificationService implements IPushNotificationService {
 
       // 4. Fetch AppSettings for all eligible users to determine their
       // preferred language.
-      final allAppSettings = await _appSettingsRepository.readAll(
-        filter: {
-          'id': {r'$in': eligibleUserIds.toList()},
-        },
-        // Use a large limit to fetch all settings in one go, assuming the
-        // number of eligible users is manageable.
-        pagination: const PaginationOptions(limit: 10000),
-      );
+      final allAppSettings = <AppSettings>[];
+      String? settingsCursor;
+      var settingsHasMore = true;
+
+      while (settingsHasMore) {
+        final page = await _appSettingsRepository.readAll(
+          filter: {
+            'id': {r'$in': eligibleUserIds.toList()},
+          },
+          pagination: PaginationOptions(cursor: settingsCursor, limit: 1000),
+        );
+        allAppSettings.addAll(page.items);
+        settingsCursor = page.cursor;
+        settingsHasMore = page.hasMore;
+      }
 
       // Create a lookup map from userId to their preferred language.
       final userLanguageMap = {
-        for (final settings in allAppSettings.items)
-          settings.id: settings.language,
+        for (final settings in allAppSettings) settings.id: settings.language,
       };
       _log.finer(
         'Fetched ${userLanguageMap.length} AppSettings for language preferences.',
@@ -203,17 +209,23 @@ class DefaultPushNotificationService implements IPushNotificationService {
       // Fetch the default language from remote config as a fallback.
       final defaultLanguage = remoteConfig.app.localization.defaultLanguage;
 
-      // 5. Fetch all devices for all subscribed users in a single bulk query.
-      final allDevicesResponse = await _pushNotificationDeviceRepository
-          .readAll(
-            filter: {
-              'userId': {r'$in': eligibleUserIds.toList()},
-            },
-            // Use a large limit to fetch all devices in one go.
-            pagination: const PaginationOptions(limit: 10000),
-          );
+      // 5. Fetch all devices for all subscribed users using pagination.
+      final allDevices = <PushNotificationDevice>[];
+      String? devicesCursor;
+      var devicesHasMore = true;
 
-      final allDevices = allDevicesResponse.items;
+      while (devicesHasMore) {
+        final page = await _pushNotificationDeviceRepository.readAll(
+          filter: {
+            'userId': {r'$in': eligibleUserIds.toList()},
+          },
+          pagination: PaginationOptions(cursor: devicesCursor, limit: 1000),
+        );
+        allDevices.addAll(page.items);
+        devicesCursor = page.cursor;
+        devicesHasMore = page.hasMore;
+      }
+
       _log.finer(
         'Fetched ${allDevices.length} total devices for eligible users.',
       );
