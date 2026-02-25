@@ -187,6 +187,39 @@ void main() {
         expect(pipeline, equals(expectedPipeline));
       });
 
+      test('builds correct pipeline for viewsByTopic (time-bound)', () {
+        const query = StandardMetricQuery(
+          metric: 'database:headlines:viewsByTopic',
+        );
+        final pipeline = queryBuilder.buildPipelineForMetric(
+          query,
+          startDate,
+          endDate,
+        );
+
+        final expectedPipeline = [
+          {
+            r'$match': {
+              'createdAt': {
+                r'$gte': startDate.toUtc().toIso8601String(),
+                r'$lt': endDate.toUtc().toIso8601String(),
+              },
+            },
+          },
+          {
+            r'$group': {
+              '_id': r'$topic.name',
+              'count': {r'$sum': 1},
+            },
+          },
+          {
+            r'$project': {'label': r'$_id', 'value': r'$count', '_id': 0},
+          },
+        ];
+
+        expect(pipeline, equals(expectedPipeline));
+      });
+
       test('builds correct pipeline for active rewards count', () {
         const query = StandardMetricQuery(
           metric: 'database:user_rewards:active_count',
