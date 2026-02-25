@@ -562,7 +562,6 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     fromJson: InAppNotification.fromJson,
     getId: (n) => n.id,
     getOwnerId: (dynamic item) => (item as InAppNotification).userId,
-    localize: LocalizationUtils.localizeInAppNotification,
     // Collection GET is allowed for a user to fetch their own notification inbox.
     // The ownership check ensures they only see their own notifications.
     getCollectionPermission: const ModelActionPermission(

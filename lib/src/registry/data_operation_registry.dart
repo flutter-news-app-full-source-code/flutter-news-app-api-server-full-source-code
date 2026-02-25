@@ -164,12 +164,10 @@ class DataOperationRegistry {
       'remote_config': (c, id) =>
           c.read<DataRepository<RemoteConfig>>().read(id: id, userId: null),
       'in_app_notification': (c, id) async {
-        final item = await c.read<DataRepository<InAppNotification>>().read(
+        return c.read<DataRepository<InAppNotification>>().read(
           id: id,
           userId: null,
         );
-        final lang = c.read<SupportedLanguage>();
-        return LocalizationUtils.localizeInAppNotification(item, lang);
       },
       'push_notification_device': (c, id) =>
           c.read<DataRepository<PushNotificationDevice>>().read(
@@ -315,21 +313,12 @@ class DataOperationRegistry {
         if (uid != null) {
           finalFilter['userId'] = uid;
         }
-        final lang = c.read<SupportedLanguage>();
-        // Note: InAppNotification payload title is translatable, but we don't
-        // typically sort by payload.title.
-        final response = await c
-            .read<DataRepository<InAppNotification>>()
-            .readAll(
-              userId: null,
-              filter: finalFilter,
-              sort: s,
-              pagination: p,
-            );
-        final localizedItems = response.items
-            .map((i) => LocalizationUtils.localizeInAppNotification(i, lang))
-            .toList();
-        return response.copyWith(items: localizedItems);
+        return c.read<DataRepository<InAppNotification>>().readAll(
+          userId: null,
+          filter: finalFilter,
+          sort: s,
+          pagination: p,
+        );
       },
       'push_notification_device': (c, uid, f, s, p) {
         final finalFilter = {...?f};
@@ -921,22 +910,9 @@ class DataOperationRegistry {
             userId: uid,
           ),
       'in_app_notification': (c, id, item, uid) async {
-        final rawNotification = await c
-            .read<DataRepository<InAppNotification>>()
-            .read(id: id);
-        final requestedUpdate = item as InAppNotification;
-
-        final finalNotification = requestedUpdate.copyWith(
-          payload: requestedUpdate.payload.copyWith(
-            title: LocalizationUtils.mergeTranslations(
-              rawNotification.payload.title,
-              requestedUpdate.payload.title,
-            ),
-          ),
-        );
         return c.read<DataRepository<InAppNotification>>().update(
           id: id,
-          item: finalNotification,
+          item: item as InAppNotification,
         );
       },
       'engagement': (context, id, item, uid) async {
