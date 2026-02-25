@@ -1005,6 +1005,98 @@ void main() {
           ),
         );
       });
+
+      test('resolves notification title to user preferred language', () async {
+        final spanishUser = testUser.copyWith(id: ObjectId().oid);
+        final spanishDevice = testDevice.copyWith(
+          id: ObjectId().oid,
+          userId: spanishUser.id,
+        );
+
+        final multilingualHeadline = testHeadline.copyWith(
+          title: {
+            SupportedLanguage.en: 'English Title',
+            SupportedLanguage.es: 'Título en Español',
+          },
+        );
+
+        final spanishFilter = matchingFilter.copyWith(
+          id: ObjectId().oid,
+          userId: spanishUser.id,
+        );
+
+        // Mock User Preferences
+        when(
+          () => userContentPreferencesRepository.readAll(
+            filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
+          ),
+        ).thenAnswer(
+          (_) async => PaginatedResponse(
+            items: [
+              UserContentPreferences(
+                id: spanishUser.id,
+                followedCountries: const [],
+                followedSources: const [],
+                followedTopics: const [],
+                savedHeadlines: const [],
+                savedHeadlineFilters: [spanishFilter],
+              ),
+            ],
+            cursor: null,
+            hasMore: false,
+          ),
+        );
+
+        // Mock App Settings (Spanish)
+        when(
+          () => appSettingsRepository.readAll(
+            filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
+          ),
+        ).thenAnswer(
+          (_) async => PaginatedResponse(
+            items: [
+              testAppSettings.copyWith(
+                id: spanishUser.id,
+                language: SupportedLanguage.es,
+              ),
+            ],
+            cursor: null,
+            hasMore: false,
+          ),
+        );
+
+        // Mock Devices
+        when(
+          () => pushNotificationDeviceRepository.readAll(
+            filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
+          ),
+        ).thenAnswer(
+          (_) async => PaginatedResponse(
+            items: [spanishDevice],
+            cursor: null,
+            hasMore: false,
+          ),
+        );
+
+        await service.sendBreakingNewsNotification(
+          headline: multilingualHeadline,
+        );
+
+        // Verify the payload sent to the client has the Spanish title
+        final capturedPayload =
+            verify(
+                  () => firebaseClient.sendBulkNotifications(
+                    deviceTokens: any(named: 'deviceTokens'),
+                    payload: captureAny(named: 'payload'),
+                  ),
+                ).captured.first
+                as PushNotificationPayload;
+
+        expect(capturedPayload.title, equals('Título en Español'));
+      });
     });
   });
 }
