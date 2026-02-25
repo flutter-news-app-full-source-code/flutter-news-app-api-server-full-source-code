@@ -1097,6 +1097,265 @@ void main() {
 
         expect(capturedPayload.title, equals('Título en Español'));
       });
+
+      group('pagination', () {
+        test('fetches all app settings across multiple pages', () async {
+          final user1 = testUser.copyWith(id: 'user-1');
+          final user2 = testUser.copyWith(id: 'user-2');
+
+          final settings1 = testAppSettings.copyWith(
+            id: user1.id,
+            language: SupportedLanguage.en,
+          );
+          final settings2 = testAppSettings.copyWith(
+            id: user2.id,
+            language: SupportedLanguage.es,
+          );
+
+          final device1 = testDevice.copyWith(
+            id: 'dev-1',
+            userId: user1.id,
+            providerTokens: {PushNotificationProviders.firebase: 'token-1'},
+          );
+          final device2 = testDevice.copyWith(
+            id: 'dev-2',
+            userId: user2.id,
+            providerTokens: {PushNotificationProviders.firebase: 'token-2'},
+          );
+
+          // 1. Preferences: Both users subscribed
+          when(
+            () => userContentPreferencesRepository.readAll(
+              filter: any(named: 'filter'),
+              pagination: any(named: 'pagination'),
+            ),
+          ).thenAnswer(
+            (_) async => PaginatedResponse(
+              items: [
+                UserContentPreferences(
+                  id: user1.id,
+                  followedCountries: const [],
+                  followedSources: const [],
+                  followedTopics: const [],
+                  savedHeadlines: const [],
+                  savedHeadlineFilters: [matchingFilter],
+                ),
+                UserContentPreferences(
+                  id: user2.id,
+                  followedCountries: const [],
+                  followedSources: const [],
+                  followedTopics: const [],
+                  savedHeadlines: const [],
+                  savedHeadlineFilters: [matchingFilter],
+                ),
+              ],
+              cursor: null,
+              hasMore: false,
+            ),
+          );
+
+          // 2. AppSettings: Pagination (2 pages)
+          // Page 1
+          when(
+            () => appSettingsRepository.readAll(
+              filter: any(named: 'filter'),
+              pagination: const PaginationOptions(limit: 1000),
+            ),
+          ).thenAnswer(
+            (_) async => PaginatedResponse(
+              items: [settings1],
+              cursor: 'cursor-1',
+              hasMore: true,
+            ),
+          );
+
+          // Page 2
+          when(
+            () => appSettingsRepository.readAll(
+              filter: any(named: 'filter'),
+              pagination: const PaginationOptions(
+                cursor: 'cursor-1',
+                limit: 1000,
+              ),
+            ),
+          ).thenAnswer(
+            (_) async => PaginatedResponse(
+              items: [settings2],
+              cursor: null,
+              hasMore: false,
+            ),
+          );
+
+          // 3. Devices: Single page for simplicity here
+          when(
+            () => pushNotificationDeviceRepository.readAll(
+              filter: any(named: 'filter'),
+              pagination: any(named: 'pagination'),
+            ),
+          ).thenAnswer(
+            (_) async => PaginatedResponse(
+              items: [device1, device2],
+              cursor: null,
+              hasMore: false,
+            ),
+          );
+
+          // Headline with EN and ES titles
+          final multilingualHeadline = testHeadline.copyWith(
+            title: {
+              SupportedLanguage.en: 'English Title',
+              SupportedLanguage.es: 'Spanish Title',
+            },
+          );
+
+          await service.sendBreakingNewsNotification(
+            headline: multilingualHeadline,
+          );
+
+          // Verify calls
+          verify(
+            () => appSettingsRepository.readAll(
+              filter: any(named: 'filter'),
+              pagination: const PaginationOptions(limit: 1000),
+            ),
+          ).called(1);
+
+          verify(
+            () => appSettingsRepository.readAll(
+              filter: any(named: 'filter'),
+              pagination: const PaginationOptions(
+                cursor: 'cursor-1',
+                limit: 1000,
+              ),
+            ),
+          ).called(1);
+
+          // Verify payloads
+          // User 1 (EN)
+          verify(
+            () => firebaseClient.sendBulkNotifications(
+              deviceTokens: ['token-1'],
+              payload: any(
+                named: 'payload',
+                that: predicate<PushNotificationPayload>(
+                  (p) => p.title == 'English Title',
+                ),
+              ),
+            ),
+          ).called(1);
+
+          // User 2 (ES)
+          verify(
+            () => firebaseClient.sendBulkNotifications(
+              deviceTokens: ['token-2'],
+              payload: any(
+                named: 'payload',
+                that: predicate<PushNotificationPayload>(
+                  (p) => p.title == 'Spanish Title',
+                ),
+              ),
+            ),
+          ).called(1);
+        });
+
+        test('fetches all devices across multiple pages', () async {
+          final device1 = testDevice.copyWith(
+            id: 'dev-1',
+            providerTokens: {PushNotificationProviders.firebase: 'token-1'},
+          );
+          final device2 = testDevice.copyWith(
+            id: 'dev-2',
+            providerTokens: {PushNotificationProviders.firebase: 'token-2'},
+          );
+
+          // 1. Preferences
+          when(
+            () => userContentPreferencesRepository.readAll(
+              filter: any(named: 'filter'),
+              pagination: any(named: 'pagination'),
+            ),
+          ).thenAnswer(
+            (_) async => PaginatedResponse(
+              items: [
+                UserContentPreferences(
+                  id: testUser.id,
+                  followedCountries: const [],
+                  followedSources: const [],
+                  followedTopics: const [],
+                  savedHeadlines: const [],
+                  savedHeadlineFilters: [matchingFilter],
+                ),
+              ],
+              cursor: null,
+              hasMore: false,
+            ),
+          );
+
+          // 2. Devices: Pagination (2 pages)
+          // Page 1
+          when(
+            () => pushNotificationDeviceRepository.readAll(
+              filter: any(named: 'filter'),
+              pagination: const PaginationOptions(limit: 1000),
+            ),
+          ).thenAnswer(
+            (_) async => PaginatedResponse(
+              items: [device1],
+              cursor: 'cursor-dev-1',
+              hasMore: true,
+            ),
+          );
+
+          // Page 2
+          when(
+            () => pushNotificationDeviceRepository.readAll(
+              filter: any(named: 'filter'),
+              pagination: const PaginationOptions(
+                cursor: 'cursor-dev-1',
+                limit: 1000,
+              ),
+            ),
+          ).thenAnswer(
+            (_) async => PaginatedResponse(
+              items: [device2],
+              cursor: null,
+              hasMore: false,
+            ),
+          );
+
+          await service.sendBreakingNewsNotification(headline: testHeadline);
+
+          // Verify calls
+          verify(
+            () => pushNotificationDeviceRepository.readAll(
+              filter: any(named: 'filter'),
+              pagination: const PaginationOptions(limit: 1000),
+            ),
+          ).called(1);
+
+          verify(
+            () => pushNotificationDeviceRepository.readAll(
+              filter: any(named: 'filter'),
+              pagination: const PaginationOptions(
+                cursor: 'cursor-dev-1',
+                limit: 1000,
+              ),
+            ),
+          ).called(1);
+
+          // Verify tokens from both pages were used
+          final capturedTokens =
+              verify(
+                    () => firebaseClient.sendBulkNotifications(
+                      deviceTokens: captureAny(named: 'deviceTokens'),
+                      payload: any(named: 'payload'),
+                    ),
+                  ).captured.first
+                  as List<String>;
+
+          expect(capturedTokens, containsAll(['token-1', 'token-2']));
+        });
+      });
     });
   });
 }
