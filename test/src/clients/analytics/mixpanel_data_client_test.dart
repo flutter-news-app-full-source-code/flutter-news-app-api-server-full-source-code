@@ -321,11 +321,14 @@ void main() {
         expect(result, isA<List<RankedListItem>>());
         expect(result.length, 2);
         expect(result[0].entityId, 'headline1');
-        expect(result[0].displayTitle, 'Test Headline 1');
+        expect(result[0].displayTitle[SupportedLanguage.en], 'Test Headline 1');
         expect(result[0].metricValue, 50);
         expect(result[1].entityId, 'headline2');
         // This one wasn't in the mock repo response, so it gets a default title
-        expect(result[1].displayTitle, 'Unknown Headline');
+        expect(
+          result[1].displayTitle[SupportedLanguage.en],
+          'Unknown Headline',
+        );
         expect(result[1].metricValue, 40);
 
         const expectedRequest = MixpanelTopEventsRequest(
