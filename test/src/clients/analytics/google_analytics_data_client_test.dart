@@ -321,11 +321,17 @@ void main() {
           // ASSERT
           expect(result, hasLength(2));
           expect(result[0].entityId, 'headline-1');
-          expect(result[0].displayTitle, 'Test Headline 1');
+          expect(
+            result[0].displayTitle[SupportedLanguage.en],
+            'Test Headline 1',
+          );
           expect(result[0].metricValue, 99);
 
           expect(result[1].entityId, 'headline-2');
-          expect(result[1].displayTitle, 'Unknown Headline');
+          expect(
+            result[1].displayTitle[SupportedLanguage.en],
+            'Unknown Headline',
+          );
           expect(result[1].metricValue, 88);
 
           verify(
