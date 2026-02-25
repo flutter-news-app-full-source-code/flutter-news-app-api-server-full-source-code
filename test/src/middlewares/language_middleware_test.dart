@@ -1,15 +1,12 @@
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/language_middleware.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
 import '../helpers/test_helpers.dart';
 
 void main() {
-  setUpAll(() {
-    registerSharedFallbackValues();
-  });
+  setUpAll(registerSharedFallbackValues);
 
   group('languageProvider', () {
     late Handler handler;
