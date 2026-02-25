@@ -449,13 +449,13 @@ void main() {
         mockHeadlineRepo = MockHeadlineRepository();
         existingHeadline = Headline(
           id: 'h1',
-          title: {SupportedLanguage.en: 'Hello'},
+          title: const {SupportedLanguage.en: 'Hello'},
           url: 'url',
           imageUrl: 'img',
           source: Source(
             id: 's',
-            name: {},
-            description: {},
+            name: const {},
+            description: const {},
             url: '',
             sourceType: SourceType.other,
             language: SupportedLanguage.en,
@@ -477,8 +477,8 @@ void main() {
           ),
           topic: Topic(
             id: 't',
-            name: {},
-            description: {},
+            name: const {},
+            description: const {},
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
             status: ContentStatus.active,
