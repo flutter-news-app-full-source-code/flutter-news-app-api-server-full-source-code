@@ -1,5 +1,6 @@
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
+import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
 import 'package:logging/logging.dart';
 
@@ -44,12 +45,31 @@ Middleware authenticationProvider() {
         final token = authHeader.substring(7);
         _log.finer('Extracted Bearer token.');
         try {
-          _log.finer('Attempting to validate token...');
-          // Validate the token using the service
+          // --- Step 1: Full Token Validation ---
+          // The service handles signature, expiry, and blacklist checks.
+          _log.finer('Attempting to validate token via AuthTokenService...');
           user = await tokenService.validateToken(token);
           _log.finer('Token validation returned: ${user?.id ?? 'null'}');
+
+          // --- Step 2: Language Claim Extraction (if validation succeeded) ---
+          // If the user is valid, we decode the token again (a lightweight
+          // operation) to extract the 'lang' claim and provide it to the
+          // context. This avoids changing the AuthTokenService interface.
           if (user != null) {
             _log.info('Authentication successful for user: ${user.id}');
+            try {
+              final decodedJwt = JWT.decode(token);
+              final langClaim = decodedJwt.payload['lang'];
+              if (langClaim != null && langClaim is String) {
+                final language = SupportedLanguage.values.byName(langClaim);
+                context = context.provide<SupportedLanguage>(() => language);
+                _log.finer('Provided language "$langClaim" from JWT claim.');
+              }
+            } on FormatException {
+              _log.warning('Could not decode JWT to extract lang claim.');
+            } catch (_) {
+              _log.warning('Invalid "lang" claim in JWT.');
+            }
           } else {
             _log.warning(
               'Invalid token provided (validateToken returned null).',
