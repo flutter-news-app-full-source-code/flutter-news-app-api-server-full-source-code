@@ -24,6 +24,8 @@ class MockAppReviewRepository extends Mock
 class MockUserRewardsRepository extends Mock
     implements DataRepository<UserRewards> {}
 
+class MockLanguageRepository extends Mock implements DataRepository<Language> {}
+
 class MockMediaAssetRepository extends Mock
     implements DataRepository<MediaAsset> {}
 
@@ -118,6 +120,7 @@ void main() {
       late MockReportRepository mockReportRepo;
       late MockAppReviewRepository mockAppReviewRepo;
       late MockUserRewardsRepository mockUserRewardsRepo;
+      late MockLanguageRepository mockLanguageRepo;
 
       setUp(() {
         mockInAppNotificationRepo = MockInAppNotificationRepository();
@@ -126,6 +129,7 @@ void main() {
         mockReportRepo = MockReportRepository();
         mockAppReviewRepo = MockAppReviewRepository();
         mockUserRewardsRepo = MockUserRewardsRepository();
+        mockLanguageRepo = MockLanguageRepository();
 
         when(
           () => mockInAppNotificationRepo.readAll(
@@ -211,6 +215,21 @@ void main() {
           ),
         ).thenAnswer(
           (_) async => const PaginatedResponse<UserRewards>(
+            items: [],
+            cursor: null,
+            hasMore: false,
+          ),
+        );
+
+        when(
+          () => mockLanguageRepo.readAll(
+            filter: any(named: 'filter'),
+            sort: any(named: 'sort'),
+            pagination: any(named: 'pagination'),
+            userId: any(named: 'userId'),
+          ),
+        ).thenAnswer(
+          (_) async => const PaginatedResponse<Language>(
             items: [],
             cursor: null,
             hasMore: false,
@@ -362,6 +381,145 @@ void main() {
       );
     });
 
+    group('Language Fetcher', () {
+      late MockLanguageRepository mockLanguageRepo;
+      late Language testLanguage;
+
+      setUp(() {
+        mockLanguageRepo = MockLanguageRepository();
+        testLanguage = Language(
+          id: 'l1',
+          code: 'en',
+          name: const {
+            SupportedLanguage.en: 'English',
+            SupportedLanguage.es: 'Inglés',
+          },
+          nativeName: 'English',
+        );
+      });
+
+      test('returns raw data for privileged user', () async {
+        final fetcher = registry.itemFetchers['language']!;
+
+        when(
+          () => mockLanguageRepo.read(id: 'l1', userId: null),
+        ).thenAnswer((_) async => testLanguage);
+
+        final context = helpers
+            .createMockRequestContext(
+              authenticatedUser: helpers.createTestUser(role: UserRole.admin),
+            )
+            .provide<DataRepository<Language>>(() => mockLanguageRepo);
+
+        final result = await fetcher(context, 'l1');
+        expect(result, equals(testLanguage));
+        expect((result as Language).name.length, equals(2));
+      });
+
+      test('returns localized data for standard user', () async {
+        final fetcher = registry.itemFetchers['language']!;
+
+        when(
+          () => mockLanguageRepo.read(id: 'l1', userId: null),
+        ).thenAnswer((_) async => testLanguage);
+
+        final mockPerms = helpers.MockPermissionService();
+        when(() => mockPerms.hasAnyPermission(any(), any())).thenReturn(false);
+
+        final context = helpers
+            .createMockRequestContext(
+              authenticatedUser: standardUser,
+              permissionService: mockPerms,
+            )
+            .provide<DataRepository<Language>>(() => mockLanguageRepo)
+            .provide<SupportedLanguage>(() => SupportedLanguage.es);
+
+        final result = await fetcher(context, 'l1');
+        expect(
+          (result as Language).name,
+          equals({SupportedLanguage.es: 'Inglés'}),
+        );
+      });
+    });
+
+    group('Language Reader', () {
+      late MockLanguageRepository mockLanguageRepo;
+
+      setUp(() {
+        mockLanguageRepo = MockLanguageRepository();
+      });
+
+      test(
+        'applies sort rewrite, filter expansion, status removal, and localization',
+        () async {
+          final reader = registry.allItemsReaders['language']!;
+          final testLanguage = Language(
+            id: 'l1',
+            code: 'en',
+            name: const {
+              SupportedLanguage.en: 'English',
+              SupportedLanguage.es: 'Inglés',
+            },
+            nativeName: 'English',
+          );
+
+          when(
+            () => mockLanguageRepo.readAll(
+              userId: any(named: 'userId'),
+              filter: any(named: 'filter'),
+              sort: any(named: 'sort'),
+              pagination: any(named: 'pagination'),
+            ),
+          ).thenAnswer(
+            (_) async => PaginatedResponse(
+              items: [testLanguage],
+              cursor: null,
+              hasMore: false,
+            ),
+          );
+
+          final context = helpers
+              .createMockRequestContext()
+              .provide<DataRepository<Language>>(() => mockLanguageRepo)
+              .provide<SupportedLanguage>(() => SupportedLanguage.es);
+
+          final filter = {'name': 'English', 'status': 'active'};
+          final sort = [const SortOption('name', SortOrder.asc)];
+
+          final result = await reader(context, null, filter, sort, null);
+
+          final captured = verify(
+            () => mockLanguageRepo.readAll(
+              userId: null,
+              filter: captureAny(named: 'filter'),
+              sort: captureAny(named: 'sort'),
+              pagination: null,
+            ),
+          ).captured;
+
+          final capturedFilter = captured[0] as Map<String, dynamic>;
+          final capturedSort = captured[1] as List<SortOption>;
+
+          // Verify sort rewrite
+          expect(capturedSort.first.field, equals('name.es'));
+
+          // Verify filter expansion and status removal
+          expect(capturedFilter.containsKey('status'), isFalse);
+          expect(
+            capturedFilter.containsKey(r'$or') ||
+                capturedFilter.containsKey(r'$and'),
+            isTrue,
+          );
+
+          // Verify result localization
+          expect(
+            result.items.first.name,
+            equals({SupportedLanguage.es: 'Inglés'}),
+          );
+        },
+      );
+    });
+
     group('Headline Reader (Localization)', () {
       late MockHeadlineRepository mockHeadlineRepo;
 
@@ -438,6 +596,52 @@ void main() {
 
         final capturedSort = captured.single as List<SortOption>;
         expect(capturedSort.first.field, equals('title.en'));
+      });
+
+      test('applies filter expansion to translatable fields', () async {
+        final reader = registry.allItemsReaders['headline']!;
+
+        when(
+          () => mockHeadlineRepo.readAll(
+            userId: any(named: 'userId'),
+            filter: any(named: 'filter'),
+            sort: any(named: 'sort'),
+            pagination: any(named: 'pagination'),
+          ),
+        ).thenAnswer(
+          (_) async => const PaginatedResponse(
+            items: [],
+            cursor: null,
+            hasMore: false,
+          ),
+        );
+
+        final context = helpers
+            .createMockRequestContext()
+            .provide<DataRepository<Headline>>(() => mockHeadlineRepo)
+            .provide<SupportedLanguage>(() => SupportedLanguage.en);
+
+        final filter = {'title': 'News'};
+
+        await reader(context, null, filter, null, null);
+
+        final captured = verify(
+          () => mockHeadlineRepo.readAll(
+            userId: null,
+            filter: captureAny(named: 'filter'),
+            sort: any(named: 'sort'),
+            pagination: null,
+          ),
+        ).captured;
+
+        final capturedFilter = captured.single as Map<String, dynamic>;
+        expect(capturedFilter.containsKey(r'$or'), isTrue);
+        expect(
+          (capturedFilter[r'$or'] as List).any(
+            (c) => (c as Map).containsKey('title.en'),
+          ),
+          isTrue,
+        );
       });
     });
 
