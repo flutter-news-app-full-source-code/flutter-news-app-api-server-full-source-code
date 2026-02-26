@@ -151,6 +151,20 @@ class DatabaseSeedingService {
           .collection('countries')
           .createIndex(keys: {'name': 1}, name: 'countries_name_index');
 
+      // Wildcard index for countries 'name' map.
+      // This supports Language-Agnostic Query Expansion, allowing efficient
+      // queries across all language sub-fields (e.g., name.en, name.ar)
+      // without needing separate indexes for each language.
+      await _db.runCommand({
+        'createIndexes': 'countries',
+        'indexes': [
+          {
+            'key': {r'name.$**': 1},
+            'name': 'countries_name_wildcard_index',
+          },
+        ],
+      });
+
       // --- TTL and Unique Indexes via runCommand ---
       // The following indexes are created using the generic `runCommand` because
       // they require specific options not exposed by the simpler `createIndex`
@@ -393,6 +407,12 @@ class DatabaseSeedingService {
             'name': 'headlines_text_index',
           },
           {
+            // Wildcard index for the 'title' map.
+            // Essential for the language-agnostic "$or" query expansion.
+            'key': {r'title.$**': 1},
+            'name': 'headlines_title_wildcard_index',
+          },
+          {
             'key': {'createdAt': 1, 'topic.name': 1},
             'name': 'analytics_headline_topic_index',
           },
@@ -417,6 +437,16 @@ class DatabaseSeedingService {
             'name': 'sources_text_index',
           },
           {
+            // Wildcard index for 'name' map (multi-language search).
+            'key': {r'name.$**': 1},
+            'name': 'sources_name_wildcard_index',
+          },
+          {
+            // Wildcard index for 'description' map.
+            'key': {r'description.$**': 1},
+            'name': 'sources_description_wildcard_index',
+          },
+          {
             'key': {'followerIds': 1},
             'name': 'analytics_source_followers_index',
           },
@@ -430,6 +460,16 @@ class DatabaseSeedingService {
           {
             'key': {'name': 'text'},
             'name': 'topics_text_index',
+          },
+          {
+            // Wildcard index for 'name' map (multi-language search).
+            'key': {r'name.$**': 1},
+            'name': 'topics_name_wildcard_index',
+          },
+          {
+            // Wildcard index for 'description' map.
+            'key': {r'description.$**': 1},
+            'name': 'topics_description_wildcard_index',
           },
           {
             'key': {'followerIds': 1},
