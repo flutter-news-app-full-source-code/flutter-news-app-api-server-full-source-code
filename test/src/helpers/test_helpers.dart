@@ -231,6 +231,9 @@ RequestContext createMockRequestContext({
       () => effectivePermissionService.hasPermission(any(), any()),
     ).thenReturn(true);
     when(() => effectivePermissionService.isAdmin(any())).thenReturn(true);
+    when(
+      () => effectivePermissionService.hasAnyPermission(any(), any()),
+    ).thenReturn(true);
   }
   testContext.provide<PermissionService>(effectivePermissionService);
 
