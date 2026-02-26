@@ -154,7 +154,7 @@ class AuthService {
   ///   permanent account with the verified [email] already exists.
   ///   - If it exists, the user is signed into that account, the old guest
   ///     token is invalidated, and the temporary guest account is deleted.
-  ///   - If it does not exist, the guest account is converted into a new
+  ///   - If it does not exist, the guest account is converted into a new_
   ///     permanent `standardUser`, and the old guest token is invalidated.
   ///
   /// - **Dashboard Login:** If [isDashboardLogin] is true, it performs a
@@ -167,7 +167,7 @@ class AuthService {
   /// Returns the authenticated [User] and a new authentication token.
   ///
   /// Throws [InvalidInputException] if the code is invalid or expired.
-  Future<({User user, String token})> completeEmailSignIn(
+  Future<AuthSuccessResponse> completeEmailSignIn(
     String email,
     String code, {
     required bool isDashboardLogin,
@@ -238,9 +238,15 @@ class AuthService {
         );
 
         // Generate a new token for the existing permanent user.
-        final token = await _authTokenService.generateToken(existingUser);
+        final appSettings = await _appSettingsRepository.read(
+          id: existingUser.id,
+        );
+        final token = await _authTokenService.generateToken(
+          existingUser,
+          language: appSettings.language,
+        );
         _log.info('Generated new token for existing user ${existingUser.id}.');
-        return (user: existingUser, token: token);
+        return AuthSuccessResponse(user: existingUser, token: token);
       } else {
         // --- Scenario B: Convert guest to a new permanent account ---
         // No account exists with this email, so proceed with conversion.
@@ -325,9 +331,13 @@ class AuthService {
 
     // 4. Generate authentication token
     try {
-      final token = await _authTokenService.generateToken(user);
-      _log.info('Generated token for user ${user.id}');
-      return (user: user, token: token);
+      final appSettings = await _appSettingsRepository.read(id: user.id);
+      final token = await _authTokenService.generateToken(
+        user,
+        language: appSettings.language,
+      );
+      _log.info('Generated token for user ${user.id}.');
+      return AuthSuccessResponse(user: user, token: token);
     } catch (e) {
       _log.severe('Error generating token for user ${user.id}: $e');
       throw const OperationFailedException(
@@ -341,7 +351,7 @@ class AuthService {
   /// Creates a new anonymous user record and generates an auth token.
   /// Returns the anonymous User and the generated token.
   /// Throws [OperationFailedException] if user creation or token generation fails.
-  Future<({User user, String token})> performAnonymousSignIn() async {
+  Future<AuthSuccessResponse> performAnonymousSignIn() async {
     // 1. Create anonymous user
     User user;
     try {
@@ -373,9 +383,13 @@ class AuthService {
 
     // 2. Generate token
     try {
-      final token = await _authTokenService.generateToken(user);
-      _log.info('Generated token for anonymous user ${user.id}');
-      return (user: user, token: token);
+      final appSettings = await _appSettingsRepository.read(id: user.id);
+      final token = await _authTokenService.generateToken(
+        user,
+        language: appSettings.language,
+      );
+      _log.info('Generated token for anonymous user ${user.id}.');
+      return AuthSuccessResponse(user: user, token: token);
     } catch (e) {
       _log.severe('Error generating token for anonymous user ${user.id}: $e');
       throw const OperationFailedException(
@@ -640,7 +654,7 @@ class AuthService {
   /// This helper method encapsulates the logic for updating the user's
   /// record with a verified email and upgrading their role. It assumes that
   /// the target email is not already in use by another account.
-  Future<({User user, String token})> _convertGuestUserToPermanent({
+  Future<AuthSuccessResponse> _convertGuestUserToPermanent({
     required User guestUser,
     required String verifiedEmail,
   }) async {
@@ -664,15 +678,21 @@ class AuthService {
     );
 
     // 2. Generate a new token for the now-permanent user.
-    final newToken = await _authTokenService.generateToken(permanentUser);
-    _log.info('Generated new token for converted user ${permanentUser.id}');
+    final appSettings = await _appSettingsRepository.read(id: permanentUser.id);
+    final newToken = await _authTokenService.generateToken(
+      permanentUser,
+      language: appSettings.language,
+    );
+    _log.info(
+      'Generated new token for converted user ${permanentUser.id}.',
+    );
 
     // Note: Invalidation of the old anonymous token is handled implicitly.
     // The client will receive the new token and stop using the old one.
     // The old token will eventually expire. For immediate invalidation,
     // the old token would need to be passed into this flow and blacklisted.
 
-    return (user: permanentUser, token: newToken);
+    return AuthSuccessResponse(user: permanentUser, token: newToken);
   }
 
   /// Initiates the process of updating a user's email address.
@@ -880,5 +900,34 @@ class AuthService {
       );
       // We do not rethrow here as this is a background process.
     }
+  }
+
+  /// Refreshes an authentication token for a given user.
+  ///
+  /// This method fetches the user's latest language preference from their
+  /// AppSettings and issues a new token with the updated `lang` claim.
+  /// Returns an [AuthSuccessResponse] for consistency with other auth flows.
+  Future<AuthSuccessResponse> refreshAuthToken(User currentUser) async {
+    _log.info('Refreshing auth token for user: ${currentUser.id}');
+
+    // 1. Fetch the fresh user record to ensure claims (role, tier) are up-to-date.
+    final freshUser = await _userRepository.read(id: currentUser.id);
+
+    // 2. Fetch the user's latest AppSettings to get the preferred language.
+    final appSettings = await _appSettingsRepository.read(id: freshUser.id);
+
+    // 3. Create a new token with the updated claims.
+    final token = await _authTokenService.generateToken(
+      freshUser,
+      language: appSettings.language,
+    );
+
+    // 4. Return the response containing the fresh user and the new token.
+    // The AuthSuccessResponse model is used here to provide a consistent
+    // response structure for all token-issuing endpoints.
+    return AuthSuccessResponse(
+      user: freshUser,
+      token: token,
+    );
   }
 }
