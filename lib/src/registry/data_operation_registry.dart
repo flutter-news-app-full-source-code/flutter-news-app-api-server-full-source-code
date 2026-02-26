@@ -240,9 +240,12 @@ class DataOperationRegistry {
         final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
           'title',
         ]);
+        final expandedFilter = LocalizationUtils.rewriteFilterOptions(f, [
+          'title',
+        ]);
         final response = await c.read<DataRepository<Headline>>().readAll(
           userId: uid,
-          filter: f,
+          filter: expandedFilter,
           sort: rewrittenSort,
           pagination: p,
         );
@@ -257,9 +260,13 @@ class DataOperationRegistry {
           'name',
           'description',
         ]);
+        final expandedFilter = LocalizationUtils.rewriteFilterOptions(f, [
+          'name',
+          'description',
+        ]);
         final response = await c.read<DataRepository<Topic>>().readAll(
           userId: uid,
-          filter: f,
+          filter: expandedFilter,
           sort: rewrittenSort,
           pagination: p,
         );
@@ -274,9 +281,13 @@ class DataOperationRegistry {
           'name',
           'description',
         ]);
+        final expandedFilter = LocalizationUtils.rewriteFilterOptions(f, [
+          'name',
+          'description',
+        ]);
         final response = await c.read<DataRepository<Source>>().readAll(
           userId: uid,
-          filter: f,
+          filter: expandedFilter,
           sort: rewrittenSort,
           pagination: p,
         );
@@ -290,11 +301,16 @@ class DataOperationRegistry {
         final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
           'name',
         ]);
+        final expandedFilter = LocalizationUtils.rewriteFilterOptions(f, [
+          'name',
+        ]);
 
         // Sanitize filter: Countries are static metadata and no longer have
         // a 'status' field. We strip it to prevent empty results from
         // generic client-side filtering logic.
-        final sanitizedFilter = f != null ? Map<String, dynamic>.from(f) : null;
+        final sanitizedFilter = expandedFilter != null
+            ? Map<String, dynamic>.from(expandedFilter)
+            : null;
         sanitizedFilter?.remove('status');
 
         PaginatedResponse<Country> response;
@@ -407,9 +423,12 @@ class DataOperationRegistry {
       },
       'kpi_card_data': (c, uid, f, s, p) async {
         final lang = c.read<SupportedLanguage>();
+        final expandedFilter = LocalizationUtils.rewriteFilterOptions(f, [
+          'label',
+        ]);
         final response = await c.read<DataRepository<KpiCardData>>().readAll(
           userId: uid,
-          filter: f,
+          filter: expandedFilter,
           sort: s,
           pagination: p,
         );
@@ -420,9 +439,12 @@ class DataOperationRegistry {
       },
       'chart_card_data': (c, uid, f, s, p) async {
         final lang = c.read<SupportedLanguage>();
+        final expandedFilter = LocalizationUtils.rewriteFilterOptions(f, [
+          'label',
+        ]);
         final response = await c.read<DataRepository<ChartCardData>>().readAll(
           userId: uid,
-          filter: f,
+          filter: expandedFilter,
           sort: s,
           pagination: p,
         );
@@ -433,11 +455,14 @@ class DataOperationRegistry {
       },
       'ranked_list_card_data': (c, uid, f, s, p) async {
         final lang = c.read<SupportedLanguage>();
+        final expandedFilter = LocalizationUtils.rewriteFilterOptions(f, [
+          'label',
+        ]);
         final response = await c
             .read<DataRepository<RankedListCardData>>()
             .readAll(
               userId: uid,
-              filter: f,
+              filter: expandedFilter,
               sort: s,
               pagination: p,
             );
