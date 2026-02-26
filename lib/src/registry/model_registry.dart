@@ -259,6 +259,8 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
   'language': ModelConfig<Language>(
     fromJson: Language.fromJson,
     getId: (l) => l.id,
+    translatableFields: ['name'],
+    localize: LocalizationUtils.localizeLanguage,
     // Languages: Static data, read-only for all authenticated users.
     // Modification is not allowed via the API as this is real-world data
     // managed by database seeding.

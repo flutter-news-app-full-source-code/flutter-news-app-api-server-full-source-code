@@ -161,8 +161,15 @@ class DataOperationRegistry {
         final lang = c.read<SupportedLanguage>();
         return LocalizationUtils.localizeCountry(item, lang);
       },
-      'language': (c, id) =>
-          c.read<DataRepository<Language>>().read(id: id, userId: null),
+      'language': (c, id) async {
+        final item = await c.read<DataRepository<Language>>().read(
+          id: id,
+          userId: null,
+        );
+        if (_isPrivileged(c)) return item;
+        final lang = c.read<SupportedLanguage>();
+        return LocalizationUtils.localizeLanguage(item, lang);
+      },
       'user': (c, id) =>
           c.read<DataRepository<User>>().read(id: id, userId: null),
       'app_settings': (c, id) =>
@@ -342,18 +349,32 @@ class DataOperationRegistry {
         return response.copyWith(items: localizedItems);
       },
       'language': (c, uid, f, s, p) async {
+        final lang = c.read<SupportedLanguage>();
+        final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
+          'name',
+        ]);
+        final expandedFilter = LocalizationUtils.rewriteFilterOptions(f, [
+          'name',
+        ]);
+
         // Sanitize filter: Languages are static metadata and no longer have
         // a 'status' field. We strip it to prevent empty results from
         // generic client-side filtering logic.
-        final sanitizedFilter = f != null ? Map<String, dynamic>.from(f) : null;
+        final sanitizedFilter = expandedFilter != null
+            ? Map<String, dynamic>.from(expandedFilter)
+            : null;
         sanitizedFilter?.remove('status');
 
-        return c.read<DataRepository<Language>>().readAll(
+        final response = await c.read<DataRepository<Language>>().readAll(
           userId: uid,
           filter: sanitizedFilter,
-          sort: s,
+          sort: rewrittenSort,
           pagination: p,
         );
+        final localizedItems = response.items
+            .map((i) => LocalizationUtils.localizeLanguage(i, lang))
+            .toList();
+        return response.copyWith(items: localizedItems);
       },
       'user': (c, uid, f, s, p) => c.read<DataRepository<User>>().readAll(
         userId: uid,
