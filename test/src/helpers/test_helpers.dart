@@ -96,6 +96,7 @@ void registerSharedFallbackValues() {
   );
   registerFallbackValue(createTestHeadline());
   registerFallbackValue(createTestMediaAsset());
+  registerFallbackValue(SupportedLanguage.en);
 }
 
 /// A proxy implementation of [RequestContext] that delegates to another context.
