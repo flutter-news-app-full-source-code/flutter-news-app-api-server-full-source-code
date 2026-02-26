@@ -1,5 +1,6 @@
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
+import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/authentication_middleware.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
 import 'package:mocktail/mocktail.dart';
@@ -13,6 +14,7 @@ void main() {
     late Handler handler;
     late User user;
     User? capturedUser;
+    SupportedLanguage? capturedLanguage;
 
     setUpAll(registerSharedFallbackValues);
 
@@ -27,14 +29,23 @@ void main() {
       );
 
       // A simple handler that captures the provided User?
+      // and optionally the SupportedLanguage if provided.
       handler = (context) {
         capturedUser = context.read<User?>();
+        try {
+          capturedLanguage = context.read<SupportedLanguage>();
+        } catch (_) {
+          capturedLanguage = null;
+        }
         return Response(body: 'ok');
       };
     });
 
-    // Reset capturedUser before each test
-    setUp(() => capturedUser = null);
+    // Reset captured variables before each test
+    setUp(() {
+      capturedUser = null;
+      capturedLanguage = null;
+    });
 
     test('provides user when token is valid', () async {
       const token = 'valid-token';
@@ -51,6 +62,34 @@ void main() {
       await middleware(context);
 
       expect(capturedUser, equals(user));
+      expect(capturedLanguage, isNull); // No lang claim in dummy token
+    });
+
+    test('provides user AND language when token has lang claim', () async {
+      // Generate a real JWT string with a lang claim
+      final jwt = JWT({
+        'sub': user.id,
+        'lang': 'es',
+      });
+      final token = jwt.sign(SecretKey('secret'));
+
+      when(
+        () => mockAuthTokenService.validateToken(token),
+      ).thenAnswer((_) async => user);
+
+      final context = createMockRequestContext(
+        headers: {'Authorization': 'Bearer $token'},
+        authTokenService: mockAuthTokenService,
+      );
+
+      // We need to ensure the mock context supports the chained provide calls
+      // The helper usually returns a mock that returns itself on provide.
+
+      final middleware = authenticationProvider()(handler);
+      await middleware(context);
+
+      expect(capturedUser, equals(user));
+      expect(capturedLanguage, equals(SupportedLanguage.es));
     });
 
     test('provides null when token is invalid', () async {
