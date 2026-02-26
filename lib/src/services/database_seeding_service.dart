@@ -73,10 +73,12 @@ class DatabaseSeedingService {
           'updateOne': {
             // Filter by the specific, deterministic _id.
             'filter': {'_id': objectId},
-            // Set the fields of the document.
-            // Use $setOnInsert to set fields ONLY if the document is newly inserted.
-            // This ensures existing documents are not overwritten by fixture data.
-            'update': {r'$setOnInsert': document},
+            // Use `$set` to perform a destructive update. This is critical for
+            // system metadata collections like `languages` and `countries`.
+            // It ensures that on every server start, the documents are
+            // synchronized with the latest schema from the code fixtures,
+            // preventing schema drift.
+            'update': {r'$set': document},
             'upsert': true,
           },
         });
