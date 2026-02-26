@@ -13,6 +13,17 @@ final _log = Logger('LanguageMiddleware');
 Middleware languageProvider() {
   return (handler) {
     return (context) {
+      // --- JWT Claim Priority Check ---
+      // First, check if a SupportedLanguage was already provided by the
+      // authentication middleware (from a JWT 'lang' claim).
+      try {
+        final languageFromJwt = context.read<SupportedLanguage>();
+        _log.finer('Using language from JWT claim: ${languageFromJwt.name}');
+        return handler(context);
+      } catch (_) {
+        // SupportedLanguage not provided by upstream, proceed to resolve from header.
+      }
+
       final acceptLanguage = context.request.headers['Accept-Language'];
       var resolvedLanguage = SupportedLanguage.en; // Default fallback
 
