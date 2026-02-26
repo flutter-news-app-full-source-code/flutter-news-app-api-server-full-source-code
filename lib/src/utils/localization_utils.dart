@@ -74,6 +74,13 @@ abstract class LocalizationUtils {
     );
   }
 
+  /// Localizes a [Language].
+  static Language localizeLanguage(Language item, SupportedLanguage lang) {
+    return item.copyWith(
+      name: pickTranslation(item.name, lang),
+    );
+  }
+
   /// Localizes [KpiCardData].
   static KpiCardData localizeKpiCardData(
     KpiCardData item,
