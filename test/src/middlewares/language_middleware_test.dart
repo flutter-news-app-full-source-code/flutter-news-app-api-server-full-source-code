@@ -1,6 +1,7 @@
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/language_middleware.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
 import '../helpers/test_helpers.dart';
@@ -15,7 +16,11 @@ void main() {
     setUp(() {
       capturedLanguage = null;
       handler = (context) {
-        capturedLanguage = context.read<SupportedLanguage>();
+        try {
+          capturedLanguage = context.read<SupportedLanguage>();
+        } catch (_) {
+          capturedLanguage = null;
+        }
         return Response(body: 'ok');
       };
     });
@@ -82,6 +87,24 @@ void main() {
       final middleware = languageProvider()(handler);
       await middleware(context);
       expect(capturedLanguage, equals(SupportedLanguage.de));
+    });
+
+    test('uses language from upstream provider (JWT) if available', () async {
+      // Simulate upstream middleware providing a language (e.g. from JWT)
+      final context = createMockRequestContext(
+        headers: {'Accept-Language': 'es'}, // Header says Spanish
+      );
+
+      // Mock read<SupportedLanguage> to return French, simulating priority
+      when(
+        () => context.read<SupportedLanguage>(),
+      ).thenReturn(SupportedLanguage.fr);
+
+      final middleware = languageProvider()(handler);
+      await middleware(context);
+
+      // Should respect the context value (French) over the header (Spanish)
+      expect(capturedLanguage, equals(SupportedLanguage.fr));
     });
   });
 }
