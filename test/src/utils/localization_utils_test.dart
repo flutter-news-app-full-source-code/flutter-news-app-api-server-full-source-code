@@ -199,10 +199,10 @@ void main() {
         flagUrl: 'flag.png',
       );
 
-      final language = Language(
+      const language = Language(
         id: 'l1',
         code: 'en',
-        name: const {
+        name: {
           SupportedLanguage.en: 'English',
           SupportedLanguage.es: 'Inglés',
         },

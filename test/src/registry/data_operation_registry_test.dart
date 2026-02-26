@@ -387,10 +387,10 @@ void main() {
 
       setUp(() {
         mockLanguageRepo = MockLanguageRepository();
-        testLanguage = Language(
+        testLanguage = const Language(
           id: 'l1',
           code: 'en',
-          name: const {
+          name: {
             SupportedLanguage.en: 'English',
             SupportedLanguage.es: 'Inglés',
           },
@@ -453,10 +453,10 @@ void main() {
         'applies sort rewrite, filter expansion, status removal, and localization',
         () async {
           final reader = registry.allItemsReaders['language']!;
-          final testLanguage = Language(
+          const testLanguage = Language(
             id: 'l1',
             code: 'en',
-            name: const {
+            name: {
               SupportedLanguage.en: 'English',
               SupportedLanguage.es: 'Inglés',
             },
@@ -471,7 +471,7 @@ void main() {
               pagination: any(named: 'pagination'),
             ),
           ).thenAnswer(
-            (_) async => PaginatedResponse(
+            (_) async => const PaginatedResponse(
               items: [testLanguage],
               cursor: null,
               hasMore: false,
