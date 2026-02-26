@@ -71,6 +71,20 @@ final _log = Logger('DataOperationRegistry');
 /// By centralizing these mappings, we create a single source of truth for how
 /// data operations are performed for each model, improving consistency across
 /// the API.
+///
+/// ### Heuristic Branching Strategy (Localization)
+/// This registry implements a "Context-Aware Projection" heuristic to serve
+/// two distinct client types from a single API:
+///
+/// 1. **Mobile Clients (Standard Users):**
+///    - **Behavior:** Always receive localized data (projected to a single string).
+///    - **Reason:** Optimizes payload size and simplifies client-side rendering.
+///
+/// 2. **CMS/Dashboard (Privileged Users):**
+///    - **Behavior:** Receive RAW data (full translation maps) for single-item fetches.
+///    - **Reason:** Enables editing of all languages simultaneously.
+///    - **Exception:** Collection fetches (Read All) remain localized to keep
+///      dashboard tables readable and performant.
 /// {@endtemplate}
 class DataOperationRegistry {
   /// {@macro data_operation_registry}
@@ -115,6 +129,8 @@ class DataOperationRegistry {
           id: id,
           userId: null,
         );
+        // CMS users need raw data for editing; Mobile users get localized data.
+        if (_isPrivileged(c)) return item;
         final lang = c.read<SupportedLanguage>();
         return LocalizationUtils.localizeHeadline(item, lang);
       },
@@ -123,6 +139,7 @@ class DataOperationRegistry {
           id: id,
           userId: null,
         );
+        if (_isPrivileged(c)) return item;
         final lang = c.read<SupportedLanguage>();
         return LocalizationUtils.localizeTopic(item, lang);
       },
@@ -131,6 +148,7 @@ class DataOperationRegistry {
           id: id,
           userId: null,
         );
+        if (_isPrivileged(c)) return item;
         final lang = c.read<SupportedLanguage>();
         return LocalizationUtils.localizeSource(item, lang);
       },
@@ -139,6 +157,7 @@ class DataOperationRegistry {
           id: id,
           userId: null,
         );
+        if (_isPrivileged(c)) return item;
         final lang = c.read<SupportedLanguage>();
         return LocalizationUtils.localizeCountry(item, lang);
       },
@@ -154,6 +173,7 @@ class DataOperationRegistry {
         final item = await c
             .read<DataRepository<UserContentPreferences>>()
             .read(id: id, userId: null);
+        if (_isPrivileged(c)) return item;
         final lang = c.read<SupportedLanguage>();
         // Localize nested SavedHeadlineFilters
         final localizedFilters = item.savedHeadlineFilters
@@ -185,6 +205,7 @@ class DataOperationRegistry {
           id: id,
           userId: null,
         );
+        if (_isPrivileged(c)) return item;
         final lang = c.read<SupportedLanguage>();
         return LocalizationUtils.localizeKpiCardData(item, lang);
       },
@@ -193,6 +214,7 @@ class DataOperationRegistry {
           id: id,
           userId: null,
         );
+        if (_isPrivileged(c)) return item;
         final lang = c.read<SupportedLanguage>();
         return LocalizationUtils.localizeChartCardData(item, lang);
       },
@@ -201,6 +223,7 @@ class DataOperationRegistry {
           id: id,
           userId: null,
         );
+        if (_isPrivileged(c)) return item;
         final lang = c.read<SupportedLanguage>();
         return LocalizationUtils.localizeRankedListCardData(item, lang);
       },
@@ -1104,5 +1127,21 @@ class DataOperationRegistry {
         _log.info('Deleted MediaAsset record from database: $id');
       },
     });
+  }
+
+  /// Determines if the current user requires raw, unlocalized data.
+  ///
+  /// We use [PermissionService.hasAnyPermission] to check for the
+  /// [Permissions.dashboardLogin] capability. This covers both Administrators
+  /// (who have all permissions) and Publishers (who are explicitly granted
+  /// dashboard access), ensuring both can access the full translation maps
+  /// required for the CMS editor.
+  bool _isPrivileged(RequestContext context) {
+    final user = context.read<User?>();
+    if (user == null) return false;
+    return context.read<PermissionService>().hasAnyPermission(
+      user,
+      {Permissions.dashboardLogin},
+    );
   }
 }
