@@ -325,13 +325,20 @@ class DataOperationRegistry {
             .toList();
         return response.copyWith(items: localizedItems);
       },
-      'language': (c, uid, f, s, p) =>
-          c.read<DataRepository<Language>>().readAll(
-            userId: uid,
-            filter: f,
-            sort: s,
-            pagination: p,
-          ),
+      'language': (c, uid, f, s, p) async {
+        // Sanitize filter: Languages are static metadata and no longer have
+        // a 'status' field. We strip it to prevent empty results from
+        // generic client-side filtering logic.
+        final sanitizedFilter = f != null ? Map<String, dynamic>.from(f) : null;
+        sanitizedFilter?.remove('status');
+
+        return c.read<DataRepository<Language>>().readAll(
+          userId: uid,
+          filter: sanitizedFilter,
+          sort: s,
+          pagination: p,
+        );
+      },
       'user': (c, uid, f, s, p) => c.read<DataRepository<User>>().readAll(
         userId: uid,
         filter: f,
