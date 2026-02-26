@@ -123,10 +123,6 @@ class CountryQueryService {
     final pipeline = <Map<String, Object>>[];
     final compoundMatchStages = <Map<String, dynamic>>[];
 
-    // --- Stage 1: Initial Match for active status, text search, and other filters ---
-    // All countries should be active by default for these queries
-    compoundMatchStages.add({'status': ContentStatus.active.name});
-
     // Handle `q` (text search) filter
     final qValue = filter['q'];
     if (qValue is String && qValue.isNotEmpty) {
@@ -142,7 +138,8 @@ class CountryQueryService {
     filter.forEach((key, value) {
       if (key != 'q' &&
           key != 'hasActiveSources' &&
-          key != 'hasActiveHeadlines') {
+          key != 'hasActiveHeadlines' &&
+          key != 'status') {
         compoundMatchStages.add({key: value});
       }
     });
@@ -253,9 +250,6 @@ class CountryQueryService {
         'isoCode': r'$isoCode',
         'name': r'$name',
         'flagUrl': r'$flagUrl',
-        'createdAt': r'$createdAt',
-        'updatedAt': r'$updatedAt',
-        'status': r'$status',
       },
     });
 
