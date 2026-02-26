@@ -125,12 +125,88 @@ void main() {
       });
     });
 
+    group('rewriteFilterOpt tes s ions', () {
+      test(r'expands single translatable field to $or query', () {
+        final filter = {'title': 'Hello'};
+        final result = LocalizationUtils.rewriteFilterOptions(filter, [
+          'title',
+        ]);
+
+        expect(result, contains(r'$or'));
+        final orList = result![r'$or'] as List;
+        expect(orList.length, equals(SupportedLanguage.values.length));
+        expect(orList, contains(equals({'title.en': 'Hello'})));
+        expect(orList, contains(equals({'title.es': 'Hello'})));
+      });
+
+      test('preserves non-translatable fields', () {
+        final filter = {'status': 'active'};
+        final result = LocalizationUtils.rewriteFilterOptions(filter, [
+          'title',
+        ]);
+        expect(result, equals({'status': 'active'}));
+      });
+
+      test(r'combines expanded and non-translatable fields via $and', () {
+        final filter = {'title': 'Hello', 'status': 'active'};
+        final result = LocalizationUtils.rewriteFilterOptions(filter, [
+          'title',
+        ]);
+
+        expect(result!.containsKey('status'), isTrue);
+        expect(result['status'], equals('active'));
+        expect(result.containsKey(r'$and'), isTrue);
+
+        final andConditions = result[r'$and'] as List;
+        expect(andConditions.length, equals(1));
+        expect(andConditions.first.containsKey(r'$or'), isTrue);
+      });
+
+      test(r'combines multiple expanded fields via $and', () {
+        final filter = {'name': 'Tech', 'description': 'News'};
+        final result = LocalizationUtils.rewriteFilterOptions(
+          filter,
+          ['name', 'description'],
+        );
+
+        expect(result!.containsKey(r'$and'), isTrue);
+        final andConditions = result[r'$and'] as List;
+        expect(andConditions.length, equals(2));
+      });
+
+      test('returns null if filter is null', () {
+        expect(LocalizationUtils.rewriteFilterOptions(null, ['title']), isNull);
+      });
+
+      test('returns empty map if filter is empty', () {
+        expect(LocalizationUtils.rewriteFilterOptions({}, ['title']), isEmpty);
+      });
+
+      test('returns original filter if translatableFields is empty', () {
+        final filter = {'title': 'Hello'};
+        expect(
+          LocalizationUtils.rewriteFilterOptions(filter, []),
+          equals(filter),
+        );
+      });
+    });
+
     group('Model Localization', () {
       const country = Country(
         id: 'c1',
         isoCode: 'US',
         name: {SupportedLanguage.en: 'USA', SupportedLanguage.es: 'EEUU'},
         flagUrl: 'flag.png',
+      );
+
+      final language = Language(
+        id: 'l1',
+        code: 'en',
+        name: const {
+          SupportedLanguage.en: 'English',
+          SupportedLanguage.es: 'Inglés',
+        },
+        nativeName: 'English',
       );
 
       final source = Source(
@@ -181,6 +257,14 @@ void main() {
           SupportedLanguage.es,
         );
         expect(result.name, equals({SupportedLanguage.es: 'EEUU'}));
+      });
+
+      test('localizeLanguage projects name', () {
+        final result = LocalizationUtils.localizeLanguage(
+          language,
+          SupportedLanguage.es,
+        );
+        expect(result.name, equals({SupportedLanguage.es: 'Inglés'}));
       });
 
       test('localizeSource projects name and nested headquarters', () {
