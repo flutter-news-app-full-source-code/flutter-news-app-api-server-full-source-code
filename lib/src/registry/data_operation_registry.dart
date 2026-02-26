@@ -267,16 +267,23 @@ class DataOperationRegistry {
         final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
           'name',
         ]);
+
+        // Sanitize filter: Countries are static metadata and no longer have
+        // a 'status' field. We strip it to prevent empty results from
+        // generic client-side filtering logic.
+        final sanitizedFilter = f != null ? Map<String, dynamic>.from(f) : null;
+        sanitizedFilter?.remove('status');
+
         PaginatedResponse<Country> response;
 
         // Check for special filters that require aggregation.
-        if (f != null &&
-            (f.containsKey('hasActiveSources') ||
-                f.containsKey('hasActiveHeadlines'))) {
+        if (sanitizedFilter != null &&
+            (sanitizedFilter.containsKey('hasActiveSources') ||
+                sanitizedFilter.containsKey('hasActiveHeadlines'))) {
           // Use the injected CountryQueryService for complex queries.
           final countryQueryService = c.read<CountryQueryService>();
           response = await countryQueryService.getFilteredCountries(
-            filter: f,
+            filter: sanitizedFilter,
             pagination: p,
             sort: rewrittenSort,
           );
@@ -284,7 +291,7 @@ class DataOperationRegistry {
           // Fallback to standard readAll if no special filters are present.
           response = await c.read<DataRepository<Country>>().readAll(
             userId: uid,
-            filter: f,
+            filter: sanitizedFilter,
             sort: rewrittenSort,
             pagination: p,
           );
