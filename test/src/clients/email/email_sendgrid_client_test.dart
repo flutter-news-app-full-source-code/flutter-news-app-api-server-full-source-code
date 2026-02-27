@@ -1,7 +1,7 @@
 // ignore_for_file: inference_failure_on_function_invocation
 
 import 'package:core/core.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_sendgrid_client.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/clients/email/email_sendgrid_client.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';

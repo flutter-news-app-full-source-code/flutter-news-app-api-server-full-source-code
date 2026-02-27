@@ -2,9 +2,9 @@ import 'dart:convert';
 
 import 'package:core/core.dart';
 import 'package:crypto/crypto.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/reward/ironsource_reward_callback.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/reward/verified_reward_payload.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/reward_verifier.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/models/reward/ironsource_reward_callback.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/models/reward/verified_reward_payload.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/reward/reward_verifier.dart';
 import 'package:logging/logging.dart';
 
 /// {@template ironsource_ssv_verifier}

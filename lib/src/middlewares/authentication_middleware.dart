@@ -1,7 +1,7 @@
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/auth_token_service.dart';
 import 'package:logging/logging.dart';
 
 final _log = Logger('AuthMiddleware');

@@ -2,9 +2,9 @@
 
 import 'package:core/core.dart';
 
-import 'package:flutter_news_app_api_server_full_source_code/src/clients/analytics/google_analytics_data_client.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/clients/analytics/google_analytics_data_client.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/models/models.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/google_auth_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';

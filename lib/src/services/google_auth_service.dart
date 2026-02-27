@@ -1,6 +1,6 @@
 import 'package:core/core.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/config/environment_config.dart';
 import 'package:logging/logging.dart';
 
 /// An abstract interface for a service that provides Google API access tokens.

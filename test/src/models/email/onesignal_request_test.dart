@@ -1,4 +1,4 @@
-import 'package:flutter_news_app_api_server_full_source_code/src/models/email/onesignal_request.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/models/email/onesignal_request.dart';
 import 'package:test/test.dart';
 
 void main() {
