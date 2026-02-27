@@ -6,7 +6,7 @@
 
 <p align="center">
 <img src="https://img.shields.io/badge/coverage-64%25-green?style=for-the-badge" alt="coverage">
-<a href="https://github.com/flutter-news-app-full-source-code/flutter-news-app-api-server-full-source-code/wiki/Local-Setup"><img src="https://img.shields.io/badge/DOCUMENTATION-READ-slategray?style=for-the-badge" alt="Documentation: Read"></a>
+<a href="https://github.com/flutter-news-app-full-source-code/flutter-news-app-backend-api-full-source-code/wiki/Local-Setup"><img src="https://img.shields.io/badge/DOCUMENTATION-READ-slategray?style=for-the-badge" alt="Documentation: Read"></a>
 <a href="LICENSE"><img src="https://img.shields.io/badge/TRIAL_LICENSE-VIEW_TERMS-blue?style=for-the-badge" alt="Trial License: View Terms"></a>
 <a href="https://github.com/sponsors/flutter-news-app-full-source-code"><img src="https://img.shields.io/badge/LIFETIME_LICENSE-PURCHASE-purple?style=for-the-badge" alt="Lifetime License: Purchase"></a>
 </p>
@@ -170,7 +170,7 @@ Say goodbye to risky manual database updates. A professional, versioned migratio
 
 ## 🚀 Getting Started & Running Locally
 
-For a complete guide on setting up your local environment and running this project, please see the [Wiki](https://github.com/flutter-news-app-full-source-code/flutter-news-app-api-server-full-source-code/wiki) tab in this repository.
+For a complete guide on setting up your local environment and running this project, please see the [Wiki](https://github.com/flutter-news-app-full-source-code/flutter-news-app-backend-api-full-source-code/wiki) tab in this repository.
 
 ## 🔑 Licensing
 
