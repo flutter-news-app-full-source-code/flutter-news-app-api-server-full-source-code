@@ -13,40 +13,12 @@ dependencies:
   core:
     git:
       url: https://github.com/flutter-news-app-full-source-code/core.git
-      ref: v1.3.1
+      ref: 2752bda54013132c6f6a9b01aae6fc760fd5c4c7
   crypto: ^3.0.7
   dart_frog: ^1.1.0
   dart_jsonwebtoken: ^3.2.0
-  data_client:
-    git:
-      url: https://github.com/flutter-news-app-full-source-code/data-client.git
-      ref: v1.0.1
-  data_mongodb:
-    git:
-      url: https://github.com/flutter-news-app-full-source-code/data-mongodb.git
-      ref: v1.0.1
-  data_repository:
-    git:
-      url: https://github.com/flutter-news-app-full-source-code/data-repository.git
-      ref: v1.0.1
   dotenv: ^4.2.0
-  email_client:
-    git:
-      url: https://github.com/flutter-news-app-full-source-code/email-client.git
-      ref: v1.0.1
-  email_repository:
-    git:
-      url: https://github.com/flutter-news-app-full-source-code/email-repository.git
-      ref: v1.0.1
-  email_sendgrid:
-    git:
-      url: https://github.com/flutter-news-app-full-source-code/email-sendgrid.git
-      ref: v1.0.1
   equatable: ^2.0.7
-  http_client:
-    git:
-      url: https://github.com/flutter-news-app-full-source-code/http-client.git
-      ref: v1.0.1
   intl: ^0.20.2
   jose: ^0.3.3
   json_annotation: ^4.9.0
@@ -65,17 +37,3 @@ dev_dependencies:
   mocktail: ^1.0.3
   test: ^1.25.5
   very_good_analysis: ^9.0.0
-
-dependency_overrides:
-  core:
-    git:
-      url: https://github.com/flutter-news-app-full-source-code/core.git
-      ref: 2bb058f3e3413083bffa74611c8b7dd97c73a8fb     
-  data_mongodb:
-    git:
-      url: https://github.com/flutter-news-app-full-source-code/data-mongodb.git
-      ref: d994c59cd3c007acc62f47ee5add1af4f5e25e6b
-  http_client:
-    git:
-      url: https://github.com/flutter-news-app-full-source-code/http-client.git
-      ref: v1.1.0
