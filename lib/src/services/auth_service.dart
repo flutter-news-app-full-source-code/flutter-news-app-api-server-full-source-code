@@ -3,7 +3,7 @@
 import 'dart:async';
 
 import 'package:core/core.dart';
-import 'package:data_repository/data_repository.dart';
+
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';

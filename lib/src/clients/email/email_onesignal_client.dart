@@ -1,7 +1,6 @@
 import 'package:core/core.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/email/onesignal_request.dart';
-import 'package:http_client/http_client.dart';
 import 'package:logging/logging.dart';
 
 /// {@template email_onesignal_client}

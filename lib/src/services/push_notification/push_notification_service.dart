@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:core/core.dart';
-import 'package:data_repository/data_repository.dart';
+
 import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification/push_notification_client.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';

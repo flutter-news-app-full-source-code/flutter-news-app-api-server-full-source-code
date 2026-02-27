@@ -1,6 +1,6 @@
 import 'package:core/core.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
-import 'package:data_repository/data_repository.dart';
+
 import 'package:flutter_news_app_api_server_full_source_code/src/services/jwt_auth_token_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
 import 'package:logging/logging.dart';

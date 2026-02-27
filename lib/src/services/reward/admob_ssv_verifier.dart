@@ -6,7 +6,6 @@ import 'package:core/core.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/reward/admob_reward_callback.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/reward/verified_reward_payload.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/reward_verifier.dart';
-import 'package:http_client/http_client.dart';
 import 'package:jose/jose.dart';
 import 'package:logging/logging.dart';
 

@@ -3,7 +3,7 @@ import 'dart:collection';
 import 'dart:convert';
 
 import 'package:core/core.dart';
-import 'package:data_repository/data_repository.dart';
+
 import 'package:logging/logging.dart';
 
 /// {@template country_query_service}

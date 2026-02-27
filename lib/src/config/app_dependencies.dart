@@ -3,8 +3,6 @@
 import 'dart:async';
 
 import 'package:core/core.dart';
-import 'package:data_mongodb/data_mongodb.dart';
-import 'package:data_repository/data_repository.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/analytics/analytics.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_logging_client.dart';
@@ -12,6 +10,7 @@ import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/e
 import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_sendgrid_client.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/database/migrations/all_migrations.dart';
+import 'package:flutter_news_app_api_server_full_source_code/src/databases/mongo/data_mongodb.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/idempotency_record.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/storage/local_media_finalization_job.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/models/storage/local_upload_token.dart';
@@ -50,7 +49,6 @@ import 'package:flutter_news_app_api_server_full_source_code/src/services/user_a
 import 'package:flutter_news_app_api_server_full_source_code/src/services/verification_code_storage_service.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/util/gcs_jwt_verifier.dart';
 import 'package:flutter_news_app_api_server_full_source_code/src/util/sns_message_handler.dart';
-import 'package:http_client/http_client.dart';
 import 'package:logging/logging.dart';
 
 /// {@template app_dependencies}
