@@ -4,12 +4,12 @@ import 'dart:io';
 
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/storage/s3_notification.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/storage/sns_notification.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/media_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/util/sns_message_handler.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/config/environment_config.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/models/storage/s3_notification.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/models/storage/sns_notification.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/idempotency_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/media_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/util/sns_message_handler.dart';
 import 'package:logging/logging.dart';
 
 final _log = Logger('S3NotificationsWebhook');
