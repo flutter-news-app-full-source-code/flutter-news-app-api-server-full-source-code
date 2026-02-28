@@ -65,6 +65,14 @@ The data API is equipped with powerful querying capabilities, enabling rich, hig
 
 ---
 
+### 🌍 Natively Multilingual & Context-Aware
+The data engine is built for global scale from the ground up.
+- **Deep Content Localization:** All content models support full translation maps, allowing you to manage multiple languages from a single source of truth.
+- **Smart Response Projection:** The API intelligently adapts to the client. It sends optimized, single-language payloads to the mobile app for performance, while delivering raw, multi-language data to the CMS for easy editing.
+> **Your Advantage:** Scale your news platform globally without architectural friction. Serve a diverse user base with a system that treats localization as a core feature, not an afterthought.
+
+---
+
 ### 🛡️ Robust & Automated Validation
 The API automatically validates the structure of all incoming data, ensuring that every request is well-formed before it's processed. This built-in mechanism catches missing fields, incorrect data types, and invalid enum values at the gateway, providing clear, immediate feedback to the client.
 > **Your Advantage:** This eliminates an entire class of runtime errors and saves you from writing tedious, repetitive validation code. Your data models remain consistent and your API stays resilient against malformed requests.
@@ -92,6 +100,7 @@ A complete, multi-provider notification engine empowers you to engage users with
 - **User-Crafted Notification Streams:** Allow users to create and save persistent filters based on any combination of content attributes (such as topics or sources) and subscribe to receive notifications that match their exact interests.
 - **Centralized In-App Inbox:** Every push notification is automatically captured as a persistent in-app message, giving users a central place to catch up on alerts they may have missed.
 - **Provider Agnostic & Scalable:** The engine is built to be provider-agnostic, with out-of-the-box support for Firebase (FCM) and OneSignal. The active provider can be switched remotely without any code changes.
+- **Fully Localized Delivery:** Notifications are automatically composed and delivered in each user's preferred language, ensuring a native and engaging experience for a global audience.
 - **Intelligent, Self-Healing Delivery:** The system is designed for long-term efficiency. It automatically detects and prunes invalid device tokens—for example, when a user uninstalls the app—ensuring your delivery infrastructure remains clean and performant.
 > **Your Advantage:** Drive user re-engagement with a powerful and flexible notification system that delivers both broad-reaching alerts and deeply personalized content streams, all built on a scalable, self-healing, and provider-agnostic architecture.
 
