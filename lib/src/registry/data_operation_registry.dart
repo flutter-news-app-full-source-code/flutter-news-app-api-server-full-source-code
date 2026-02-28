@@ -247,9 +247,11 @@ class DataOperationRegistry {
         final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
           'title',
         ]);
-        final expandedFilter = LocalizationUtils.rewriteFilterOptions(f, [
-          'title',
-        ]);
+        final expandedFilter = _recursiveRewriteFilter(
+          f,
+          lang,
+          ['title'],
+        );
         final response = await c.read<DataRepository<Headline>>().readAll(
           userId: uid,
           filter: expandedFilter,
@@ -268,10 +270,11 @@ class DataOperationRegistry {
           'name',
           'description',
         ]);
-        final expandedFilter = LocalizationUtils.rewriteFilterOptions(f, [
-          'name',
-          'description',
-        ]);
+        final expandedFilter = _recursiveRewriteFilter(
+          f,
+          lang,
+          ['name', 'description'],
+        );
         final response = await c.read<DataRepository<Topic>>().readAll(
           userId: uid,
           filter: expandedFilter,
@@ -289,10 +292,11 @@ class DataOperationRegistry {
           'name',
           'description',
         ]);
-        final expandedFilter = LocalizationUtils.rewriteFilterOptions(f, [
-          'name',
-          'description',
-        ]);
+        final expandedFilter = _recursiveRewriteFilter(
+          f,
+          lang,
+          ['name', 'description'],
+        );
         final response = await c.read<DataRepository<Source>>().readAll(
           userId: uid,
           filter: expandedFilter,
@@ -309,9 +313,11 @@ class DataOperationRegistry {
         final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
           'name',
         ]);
-        final expandedFilter = LocalizationUtils.rewriteFilterOptions(f, [
-          'name',
-        ]);
+        final expandedFilter = _recursiveRewriteFilter(
+          f,
+          lang,
+          ['name'],
+        );
 
         // Sanitize filter: Countries are static metadata and no longer have
         // a 'status' field. We strip it to prevent empty results from
@@ -354,9 +360,11 @@ class DataOperationRegistry {
         final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
           'name',
         ]);
-        final expandedFilter = LocalizationUtils.rewriteFilterOptions(f, [
-          'name',
-        ]);
+        final expandedFilter = _recursiveRewriteFilter(
+          f,
+          lang,
+          ['name'],
+        );
 
         // Sanitize filter: Languages are static metadata and no longer have
         // a 'status' field. We strip it to prevent empty results from
@@ -445,9 +453,11 @@ class DataOperationRegistry {
       },
       'kpi_card_data': (c, uid, f, s, p) async {
         final lang = c.read<SupportedLanguage>();
-        final expandedFilter = LocalizationUtils.rewriteFilterOptions(f, [
-          'label',
-        ]);
+        final expandedFilter = _recursiveRewriteFilter(
+          f,
+          lang,
+          ['label'],
+        );
         final response = await c.read<DataRepository<KpiCardData>>().readAll(
           userId: uid,
           filter: expandedFilter,
@@ -461,9 +471,11 @@ class DataOperationRegistry {
       },
       'chart_card_data': (c, uid, f, s, p) async {
         final lang = c.read<SupportedLanguage>();
-        final expandedFilter = LocalizationUtils.rewriteFilterOptions(f, [
-          'label',
-        ]);
+        final expandedFilter = _recursiveRewriteFilter(
+          f,
+          lang,
+          ['label'],
+        );
         final response = await c.read<DataRepository<ChartCardData>>().readAll(
           userId: uid,
           filter: expandedFilter,
@@ -477,9 +489,11 @@ class DataOperationRegistry {
       },
       'ranked_list_card_data': (c, uid, f, s, p) async {
         final lang = c.read<SupportedLanguage>();
-        final expandedFilter = LocalizationUtils.rewriteFilterOptions(f, [
-          'label',
-        ]);
+        final expandedFilter = _recursiveRewriteFilter(
+          f,
+          lang,
+          ['label'],
+        );
         final response = await c
             .read<DataRepository<RankedListCardData>>()
             .readAll(
@@ -1219,5 +1233,44 @@ class DataOperationRegistry {
       user,
       {Permissions.dashboardLogin},
     );
+  }
+
+  /// Recursively rewrites a filter map to expand translatable fields into
+  /// language-specific paths (e.g., 'name' -> 'name.en').
+  ///
+  /// This is necessary because MongoDB queries against logical operators
+  /// like $or and $and nest the field names, hiding them from shallow
+  /// rewriters.
+  Map<String, dynamic>? _recursiveRewriteFilter(
+    Map<String, dynamic>? filter,
+    SupportedLanguage lang,
+    List<String> translatableFields,
+  ) {
+    if (filter == null) return null;
+    final result = <String, dynamic>{};
+
+    for (final entry in filter.entries) {
+      final key = entry.key;
+      final value = entry.value;
+
+      if (key == r'$or' || key == r'$and') {
+        if (value is List) {
+          result[key] = value
+              .map(
+                (e) => e is Map<String, dynamic>
+                    ? _recursiveRewriteFilter(e, lang, translatableFields)
+                    : e,
+              )
+              .toList();
+        } else {
+          result[key] = value;
+        }
+      } else if (translatableFields.contains(key)) {
+        result['$key.${lang.name}'] = value;
+      } else {
+        result[key] = value;
+      }
+    }
+    return result;
   }
 }
