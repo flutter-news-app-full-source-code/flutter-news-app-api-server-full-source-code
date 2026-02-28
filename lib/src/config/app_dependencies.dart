@@ -18,6 +18,7 @@ import 'package:flutter_news_app_backend_api_full_source_code/src/rbac/permissio
 import 'package:flutter_news_app_backend_api_full_source_code/src/services/analytics/analytics.dart';
 import 'package:flutter_news_app_backend_api_full_source_code/src/services/auth_service.dart';
 import 'package:flutter_news_app_backend_api_full_source_code/src/services/auth_token_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/content_enrichment_service.dart';
 import 'package:flutter_news_app_backend_api_full_source_code/src/services/country_query_service.dart';
 import 'package:flutter_news_app_backend_api_full_source_code/src/services/database_migration_service.dart';
 import 'package:flutter_news_app_backend_api_full_source_code/src/services/database_seeding_service.dart';
@@ -127,6 +128,7 @@ class AppDependencies {
   late final MediaService mediaService;
   late final UploadTokenService uploadTokenService;
   late final LocalMediaFinalizationJobService finalizationJobService;
+  late final ContentEnrichmentService contentEnrichmentService;
 
   late final IGcsJwtVerifier gcsJwtVerifier;
   late final SnsMessageHandler snsMessageHandler;
@@ -705,6 +707,14 @@ class AppDependencies {
       finalizationJobService = LocalMediaFinalizationJobService(
         connectionManager: _mongoDbConnectionManager,
         log: Logger('FinalizationJobService'),
+      );
+
+      contentEnrichmentService = ContentEnrichmentService(
+        sourceRepository: sourceRepository,
+        topicRepository: topicRepository,
+        countryRepository: countryRepository,
+        headlineRepository: headlineRepository,
+        log: Logger('ContentEnrichmentService'),
       );
 
       gcsJwtVerifier = GcsJwtVerifier(log: Logger('GcsJwtVerifier'));
