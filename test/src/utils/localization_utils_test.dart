@@ -231,6 +231,53 @@ void main() {
             expect(orList, contains(equals({'title.en': 'News'})));
           },
         );
+
+        test(
+          r'recursively expands fields inside logical operators ($or)',
+          () {
+            // This mimics the dashboard search: "Search by Title OR ID"
+            final filter = {
+              r'$or': [
+                {'title': 'News'},
+                {'_id': 'News'},
+              ],
+            };
+            final result = LocalizationUtils.expandFilterForLocalization(
+              filter,
+              SupportedLanguage.en,
+              translatableFields,
+              isPrivileged: true,
+            );
+
+            // The top-level structure is just the $or because there are no
+            // top-level translatable fields to trigger an $and wrapper.
+            expect(result, contains(r'$or'));
+            final orList = result![r'$or'] as List;
+            expect(orList, hasLength(2));
+
+            // 1. The Title check should be expanded into its own $and -> $or structure.
+            // The recursive call returns the full expanded structure for that sub-filter.
+            final expandedTitleWrapper =
+                orList.firstWhere(
+                      (e) => (e as Map).containsKey(r'$and'),
+                    )
+                    as Map<String, dynamic>;
+
+            final innerAnd = expandedTitleWrapper[r'$and'] as List;
+            final innerOrWrapper =
+                innerAnd.firstWhere(
+                      (e) => (e as Map).containsKey(r'$or'),
+                    )
+                    as Map<String, dynamic>;
+
+            final innerOrList = innerOrWrapper[r'$or'] as List;
+            expect(innerOrList, contains(equals({'title.en': 'News'})));
+            expect(innerOrList, contains(equals({'title.es': 'News'})));
+
+            // 2. The ID check should remain as-is
+            expect(orList, contains(equals({'_id': 'News'})));
+          },
+        );
       });
     });
 
