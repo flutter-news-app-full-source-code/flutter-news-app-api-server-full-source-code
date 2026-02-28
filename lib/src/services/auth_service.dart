@@ -907,22 +907,28 @@ class AuthService {
   /// This method fetches the user's latest language preference from their
   /// AppSettings and issues a new token with the updated `lang` claim.
   /// Returns an [AuthSuccessResponse] for consistency with other auth flows.
-  Future<AuthSuccessResponse> refreshAuthToken(User currentUser) async {
+  Future<AuthSuccessResponse> refreshAuthToken(
+    User currentUser,
+    String currentToken,
+  ) async {
     _log.info('Refreshing auth token for user: ${currentUser.id}');
 
-    // 1. Fetch the fresh user record to ensure claims (role, tier) are up-to-date.
+    // 1. Invalidate the token used for this request (Atomic Rotation).
+    await _authTokenService.invalidateToken(currentToken);
+
+    // 2. Fetch the fresh user record to ensure claims (role, tier) are up-to-date.
     final freshUser = await _userRepository.read(id: currentUser.id);
 
-    // 2. Fetch the user's latest AppSettings to get the preferred language.
+    // 3. Fetch the user's latest AppSettings to get the preferred language.
     final appSettings = await _appSettingsRepository.read(id: freshUser.id);
 
-    // 3. Create a new token with the updated claims.
+    // 4. Create a new token with the updated claims.
     final token = await _authTokenService.generateToken(
       freshUser,
       language: appSettings.language,
     );
 
-    // 4. Return the response containing the fresh user and the new token.
+    // 5. Return the response containing the fresh user and the new token.
     // The AuthSuccessResponse model is used here to provide a consistent
     // response structure for all token-issuing endpoints.
     return AuthSuccessResponse(

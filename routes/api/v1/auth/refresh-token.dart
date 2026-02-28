@@ -25,9 +25,22 @@ Future<Response> onRequest(RequestContext context) async {
 Future<Response> _handlePost(RequestContext context) async {
   _log.info('Handling token refresh request.');
   final authService = context.read<AuthService>();
-  final authenticatedUser = context.read<User>();
 
-  final response = await authService.refreshAuthToken(authenticatedUser);
+  // Read as nullable and throw standardized exception if missing.
+  // This bypasses the unreliable route-level middleware registration.
+  final authenticatedUser = context.read<User?>();
+  if (authenticatedUser == null) {
+    throw const UnauthorizedException('Authentication required.');
+  }
+
+  // Extract the current token to allow for server-side invalidation.
+  final authHeader = context.request.headers['Authorization']!;
+  final currentToken = authHeader.substring(7);
+
+  final response = await authService.refreshAuthToken(
+    authenticatedUser,
+    currentToken,
+  );
 
   _log.fine(
     'Successfully refreshed token for user: ${authenticatedUser.id}',
