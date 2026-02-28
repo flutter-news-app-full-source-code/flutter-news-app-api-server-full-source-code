@@ -41,9 +41,6 @@ Future<void> main() async {
     log.info('Connected to MongoDB.');
 
     // 4. Execute Seeding Routines
-    // We use the "now" timestamp to ensure relative dates (e.g. "2 hours ago")
-    // are accurate relative to when this script is run.
-    final now = DateTime.now();
 
     // --- Content Graph ---
     await _seedCollection<Topic>(
