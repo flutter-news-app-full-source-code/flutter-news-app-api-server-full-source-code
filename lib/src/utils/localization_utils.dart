@@ -169,6 +169,48 @@ abstract class LocalizationUtils {
     }).toList();
   }
 
+  /// Rewrites a generic 'q' search parameter into a structured MongoDB query
+  /// targeting specific [searchableFields].
+  ///
+  /// This transforms `{'q': 'term', 'status': 'active'}` into:
+  /// ```dart
+  /// {
+  ///   '$and': [
+  ///     {'status': 'active'},
+  ///     {'$or': [{'name': {'$regex': 'term', '$options': 'i'}}]}
+  ///   ]
+  /// }
+  /// ```
+  /// This allows the subsequent [expandFilterForLocalization] step to correctly
+  /// expand the field names (e.g., `name` -> `name.en`) within the search query.
+  static Map<String, dynamic>? rewriteSearchQuery(
+    Map<String, dynamic>? filter,
+    List<String> searchableFields,
+  ) {
+    if (filter == null || !filter.containsKey('q')) return filter;
+    if (searchableFields.isEmpty) return filter;
+
+    final newFilter = Map<String, dynamic>.from(filter);
+    final searchTerm = newFilter.remove('q');
+
+    if (searchTerm == null || (searchTerm is String && searchTerm.isEmpty)) {
+      return newFilter;
+    }
+
+    final regex = {r'$regex': searchTerm, r'$options': 'i'};
+    final searchConditions = searchableFields
+        .map((field) => {field: regex})
+        .toList();
+
+    final searchPart = {r'$or': searchConditions};
+
+    if (newFilter.isEmpty) return searchPart;
+
+    return {
+      r'$and': [newFilter, searchPart],
+    };
+  }
+
   /// Expands a filter to handle localization based on user privilege.
   ///
   /// - For **privileged users** (e.g., admins), it performs a language-agnostic
