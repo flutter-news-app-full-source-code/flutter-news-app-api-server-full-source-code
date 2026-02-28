@@ -198,7 +198,21 @@ abstract class LocalizationUtils {
         final key = entry.key;
         final value = entry.value;
 
-        if (translatableFields.contains(key)) {
+        if (key == r'$or' || key == r'$and') {
+          // Recurse into logical operators to ensure nested fields are expanded.
+          final list = value as List;
+          final expandedList = list
+              .map(
+                (e) => expandFilterForLocalization(
+                  e as Map<String, dynamic>,
+                  lang,
+                  translatableFields,
+                  isPrivileged: true,
+                ),
+              )
+              .toList();
+          nonTranslatablePart[key] = expandedList;
+        } else if (translatableFields.contains(key)) {
           // Expand this field into an $or condition across all languages.
           final orList = SupportedLanguage.values.map((supportedLang) {
             return {'$key.${supportedLang.name}': value};
