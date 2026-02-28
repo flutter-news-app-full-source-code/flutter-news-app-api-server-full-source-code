@@ -125,6 +125,55 @@ void main() {
       });
     });
 
+    group('rewriteSearchQuery', () {
+      test('returns original filter if q is missing', () {
+        final filter = {'status': 'active'};
+        final result = LocalizationUtils.rewriteSearchQuery(filter, ['name']);
+        expect(result, equals(filter));
+      });
+
+      test('returns original filter if searchableFields is empty', () {
+        final filter = {'q': 'term'};
+        final result = LocalizationUtils.rewriteSearchQuery(filter, []);
+        expect(result, equals(filter));
+      });
+
+      test('rewrites q to single field regex', () {
+        final filter = {'q': 'term'};
+        final result = LocalizationUtils.rewriteSearchQuery(filter, ['name']);
+        expect(
+          result,
+          equals({
+            r'$or': [
+              {
+                'name': {r'$regex': 'term', r'$options': 'i'},
+              },
+            ],
+          }),
+        );
+      });
+
+      test('combines q with existing filters using \$and', () {
+        final filter = {'q': 'term', 'status': 'active'};
+        final result = LocalizationUtils.rewriteSearchQuery(filter, ['name']);
+
+        expect(result, contains(r'$and'));
+        final andList = result![r'$and'] as List;
+        expect(andList, hasLength(2));
+        expect(andList, contains({'status': 'active'}));
+        expect(
+          andList,
+          contains({
+            r'$or': [
+              {
+                'name': {r'$regex': 'term', r'$options': 'i'},
+              },
+            ],
+          }),
+        );
+      });
+    });
+
     group('expandFilterForLocalization', () {
       const translatableFields = ['title', 'description'];
 
