@@ -255,6 +255,7 @@ class DataOperationRegistry {
           sort: rewrittenSort,
           pagination: p,
         );
+
         final localizedItems = response.items
             .map((i) => LocalizationUtils.localizeHeadline(i, lang))
             .toList();
@@ -516,6 +517,24 @@ class DataOperationRegistry {
     _itemCreators.addAll({
       'headline': (c, item, uid) async {
         var headlineToCreate = item as Headline;
+
+        // --- ENRICHMENT: Fetch full entities to store all translations ---
+        // The client might send a partial snapshot (e.g., only English names).
+        // We fetch the authoritative documents from the DB to ensure the
+        // embedded objects in the Headline contain ALL supported languages.
+        final results = await Future.wait([
+          c.read<DataRepository<Source>>().read(id: headlineToCreate.source.id),
+          c.read<DataRepository<Topic>>().read(id: headlineToCreate.topic.id),
+          c.read<DataRepository<Country>>().read(
+            id: headlineToCreate.eventCountry.id,
+          ),
+        ]);
+
+        headlineToCreate = headlineToCreate.copyWith(
+          source: results[0] as Source,
+          topic: results[1] as Topic,
+          eventCountry: results[2] as Country,
+        );
 
         // If a mediaAssetId is provided on creation, ensure imageUrl is null.
         if (headlineToCreate.mediaAssetId != null) {
