@@ -4,6 +4,7 @@ import 'package:flutter_news_app_backend_api_full_source_code/src/middlewares/ow
 import 'package:flutter_news_app_backend_api_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_backend_api_full_source_code/src/registry/data_operation_registry.dart';
 import 'package:flutter_news_app_backend_api_full_source_code/src/services/content_enrichment_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/country_query_service.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
@@ -534,6 +535,125 @@ void main() {
             result.items.first.name,
             equals({SupportedLanguage.es: 'Inglés'}),
           );
+        },
+      );
+    });
+
+    group('Country Reader', () {
+      late MockCountryRepository mockCountryRepo;
+
+      setUp(() {
+        mockCountryRepo = MockCountryRepository();
+      });
+
+      test(
+        'applies sort rewrite, filter expansion, status removal, and localization',
+        () async {
+          final reader = registry.allItemsReaders['country']!;
+          const testCountry = Country(
+            id: 'c1',
+            isoCode: 'US',
+            name: {
+              SupportedLanguage.en: 'USA',
+              SupportedLanguage.es: 'EEUU',
+            },
+            flagUrl: 'flag.png',
+          );
+
+          when(
+            () => mockCountryRepo.readAll(
+              userId: any(named: 'userId'),
+              filter: any(named: 'filter'),
+              sort: any(named: 'sort'),
+              pagination: any(named: 'pagination'),
+            ),
+          ).thenAnswer(
+            (_) async => const PaginatedResponse(
+              items: [testCountry],
+              cursor: null,
+              hasMore: false,
+            ),
+          );
+
+          final context = helpers
+              .createMockRequestContext()
+              .provide<DataRepository<Country>>(() => mockCountryRepo)
+              .provide<SupportedLanguage>(() => SupportedLanguage.es);
+
+          final filter = {'name': 'USA', 'status': 'active'};
+          final sort = [const SortOption('name', SortOrder.asc)];
+
+          final result = await reader(context, null, filter, sort, null);
+
+          final captured = verify(
+            () => mockCountryRepo.readAll(
+              userId: null,
+              filter: captureAny(named: 'filter'),
+              sort: captureAny(named: 'sort'),
+              pagination: null,
+            ),
+          ).captured;
+
+          final capturedFilter = captured[0] as Map<String, dynamic>;
+          final capturedSort = captured[1] as List<SortOption>;
+
+          // Verify sort rewrite
+          expect(capturedSort.first.field, equals('name.es'));
+
+          // Verify filter expansion and status removal
+          expect(capturedFilter.containsKey('status'), isFalse);
+          expect(capturedFilter.containsKey('name.es'), isTrue);
+
+          // Verify result localization
+          expect(
+            result.items.first.name,
+            equals({SupportedLanguage.es: 'EEUU'}),
+          );
+        },
+      );
+
+      test(
+        'delegates to CountryQueryService when special filters are present',
+        () async {
+          final reader = registry.allItemsReaders['country']!;
+          final mockQueryService = MockCountryQueryService();
+
+          when(
+            () => mockQueryService.getFilteredCountries(
+              filter: any(named: 'filter'),
+              pagination: any(named: 'pagination'),
+              sort: any(named: 'sort'),
+            ),
+          ).thenAnswer(
+            (_) async => const PaginatedResponse(
+              items: [],
+              cursor: null,
+              hasMore: false,
+            ),
+          );
+
+          final context = helpers
+              .createMockRequestContext()
+              .provide<DataRepository<Country>>(() => mockCountryRepo)
+              .provide<CountryQueryService>(() => mockQueryService)
+              .provide<SupportedLanguage>(() => SupportedLanguage.en);
+
+          final filter = {'hasActiveSources': true, 'status': 'active'};
+
+          await reader(context, null, filter, null, null);
+
+          final captured = verify(
+            () => mockQueryService.getFilteredCountries(
+              filter: captureAny(named: 'filter'),
+              pagination: any(named: 'pagination'),
+              sort: any(named: 'sort'),
+            ),
+          ).captured;
+
+          final capturedFilter = captured[0] as Map<String, dynamic>;
+          // Verify status is removed even for query service
+          expect(capturedFilter.containsKey('status'), isFalse);
+          expect(capturedFilter.containsKey('hasActiveSources'), isTrue);
         },
       );
     });
@@ -1250,3 +1370,7 @@ void main() {
 
 // Helper mock class needed for the Source Creator test
 class MockSourceRepository extends Mock implements DataRepository<Source> {}
+
+class MockCountryRepository extends Mock implements DataRepository<Country> {}
+
+class MockCountryQueryService extends Mock implements CountryQueryService {}
