@@ -2,6 +2,7 @@ import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 
 import 'package:flutter_news_app_backend_api_full_source_code/src/middlewares/ownership_check_middleware.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/content_enrichment_service.dart';
 import 'package:flutter_news_app_backend_api_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_backend_api_full_source_code/src/registry/data_operation_registry.dart';
 import 'package:mocktail/mocktail.dart';
@@ -32,6 +33,9 @@ class MockMediaAssetRepository extends Mock
 class MockStorageService extends Mock implements helpers.MockStorageService {}
 
 class MockHeadlineRepository extends Mock implements DataRepository<Headline> {}
+
+class MockContentEnrichmentService extends Mock
+    implements ContentEnrichmentService {}
 
 void main() {
   group('DataOperationRegistry', () {
@@ -104,6 +108,25 @@ void main() {
           followedTopics: [],
           savedHeadlines: [],
           savedHeadlineFilters: [],
+        ),
+      );
+      registerFallbackValue(
+        Source(
+          id: 'fallback-source',
+          name: const {},
+          description: const {},
+          url: 'fallback-url',
+          sourceType: SourceType.blog,
+          language: SupportedLanguage.en,
+          headquarters: const Country(
+            id: 'c',
+            isoCode: 'US',
+            name: {},
+            flagUrl: 'f',
+          ),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          status: ContentStatus.active,
         ),
       );
     });
@@ -648,6 +671,7 @@ void main() {
     group('Headline Updater (Localization Merging)', () {
       late MockHeadlineRepository mockHeadlineRepo;
       late Headline existingHeadline;
+      late MockContentEnrichmentService mockEnrichmentService;
 
       setUp(() {
         mockHeadlineRepo = MockHeadlineRepository();
@@ -692,6 +716,7 @@ void main() {
           status: ContentStatus.active,
           isBreaking: false,
         );
+        mockEnrichmentService = MockContentEnrichmentService();
       });
 
       test('merges new translation with existing ones', () async {
@@ -726,7 +751,8 @@ void main() {
               authenticatedUser: standardUser,
               fetchedItem: FetchedItem(existingHeadline),
             )
-            .provide<DataRepository<Headline>>(() => mockHeadlineRepo);
+            .provide<DataRepository<Headline>>(() => mockHeadlineRepo)
+            .provide<ContentEnrichmentService>(() => mockEnrichmentService);
 
         await updater(context, 'h1', incomingHeadline, null);
 
@@ -1205,5 +1231,152 @@ void main() {
         verifyNoMoreInteractions(mockMediaAssetRepository);
       });
     });
+
+    group('Headline Creator', () {
+      late MockHeadlineRepository mockHeadlineRepo;
+      late MockContentEnrichmentService mockEnrichmentService;
+      late Headline testHeadline;
+
+      setUp(() {
+        mockHeadlineRepo = MockHeadlineRepository();
+        mockEnrichmentService = MockContentEnrichmentService();
+        testHeadline = Headline(
+          id: 'h1',
+          title: {},
+          source: Source(
+            id: 's1',
+            name: {},
+            description: {},
+            url: '',
+            sourceType: SourceType.blog,
+            language: SupportedLanguage.en,
+            headquarters: const Country(
+              id: 'c1',
+              isoCode: 'US',
+              name: {},
+              flagUrl: '',
+            ),
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: ContentStatus.active,
+          ),
+          eventCountry: const Country(
+            id: 'c1',
+            isoCode: 'US',
+            name: {},
+            flagUrl: '',
+          ),
+          topic: Topic(
+            id: 't1',
+            name: {},
+            description: {},
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: ContentStatus.active,
+          ),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          status: ContentStatus.active,
+          isBreaking: false,
+          url: 'url',
+          imageUrl: 'img',
+        );
+
+        when(() => mockEnrichmentService.enrichHeadline(any())).thenAnswer(
+          (invocation) async =>
+              invocation.positionalArguments.first as Headline,
+        );
+
+        when(
+          () => mockHeadlineRepo.create(
+            item: any(named: 'item'),
+            userId: any(named: 'userId'),
+          ),
+        ).thenAnswer(
+          (invocation) async => invocation.namedArguments[#item] as Headline,
+        );
+      });
+
+      test('calls enrichment service before creation', () async {
+        final creator = registry.itemCreators['headline']!;
+        final context = helpers
+            .createMockRequestContext(authenticatedUser: standardUser)
+            .provide<DataRepository<Headline>>(() => mockHeadlineRepo)
+            .provide<ContentEnrichmentService>(() => mockEnrichmentService);
+
+        await creator(context, testHeadline, 'uid');
+
+        verify(() => mockEnrichmentService.enrichHeadline(any())).called(1);
+        verify(
+          () => mockHeadlineRepo.create(
+            item: any(named: 'item'),
+            userId: 'uid',
+          ),
+        ).called(1);
+      });
+    });
+
+    group('Source Creator', () {
+      late MockSourceRepository
+      mockSourceRepo; // You might need to define this mock class if not exists
+      late MockContentEnrichmentService mockEnrichmentService;
+      late Source testSource;
+
+      setUp(() {
+        mockSourceRepo = MockSourceRepository(); // Assuming you add this class
+        mockEnrichmentService = MockContentEnrichmentService();
+        testSource = Source(
+          id: 's1',
+          name: {},
+          description: {},
+          url: '',
+          sourceType: SourceType.blog,
+          language: SupportedLanguage.en,
+          headquarters: const Country(
+            id: 'c1',
+            isoCode: 'US',
+            name: {},
+            flagUrl: '',
+          ),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          status: ContentStatus.active,
+        );
+
+        when(() => mockEnrichmentService.enrichSource(any())).thenAnswer(
+          (invocation) async => invocation.positionalArguments.first as Source,
+        );
+
+        when(
+          () => mockSourceRepo.create(
+            item: any(named: 'item'),
+            userId: any(named: 'userId'),
+          ),
+        ).thenAnswer(
+          (invocation) async => invocation.namedArguments[#item] as Source,
+        );
+      });
+
+      test('calls enrichment service before creation', () async {
+        final creator = registry.itemCreators['source']!;
+        final context = helpers
+            .createMockRequestContext(authenticatedUser: standardUser)
+            .provide<DataRepository<Source>>(() => mockSourceRepo)
+            .provide<ContentEnrichmentService>(() => mockEnrichmentService);
+
+        await creator(context, testSource, 'uid');
+
+        verify(() => mockEnrichmentService.enrichSource(any())).called(1);
+        verify(
+          () => mockSourceRepo.create(
+            item: any(named: 'item'),
+            userId: 'uid',
+          ),
+        ).called(1);
+      });
+    });
   });
 }
+
+// Helper mock class needed for the Source Creator test
+class MockSourceRepository extends Mock implements DataRepository<Source> {}
