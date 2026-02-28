@@ -317,11 +317,20 @@ class DataOperationRegistry {
         return response.copyWith(items: localizedItems);
       },
       'country': (c, uid, f, s, p) async {
+        // Sanitize filter: Countries are static metadata and do not have a 'status' field.
+        // We must remove it before any processing to ensure it doesn't get wrapped
+        // into complex queries (like $and) where simple removal is difficult.
+        final sanitizedFilter = f != null ? Map<String, dynamic>.from(f) : null;
+        sanitizedFilter?.remove('status');
+
         final lang = c.read<SupportedLanguage>();
         final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
           'name',
         ]);
-        final searchFilter = LocalizationUtils.rewriteSearchQuery(f, ['name']);
+        final searchFilter = LocalizationUtils.rewriteSearchQuery(
+          sanitizedFilter,
+          ['name'],
+        );
         final expandedFilter = LocalizationUtils.expandFilterForLocalization(
           searchFilter,
           lang,
@@ -329,24 +338,17 @@ class DataOperationRegistry {
           isPrivileged: _isPrivileged(c),
         );
 
-        // Sanitize filter: Countries are static metadata and no longer have
-        // a 'status' field. We strip it to prevent empty results from
-        // generic client-side filtering logic.
-        final sanitizedFilter = expandedFilter != null
-            ? Map<String, dynamic>.from(expandedFilter)
-            : null;
-        sanitizedFilter?.remove('status');
-
         PaginatedResponse<Country> response;
 
         // Check for special filters that require aggregation.
+        // We check sanitizedFilter (raw input) because expandedFilter might wrap keys in $and.
         if (sanitizedFilter != null &&
             (sanitizedFilter.containsKey('hasActiveSources') ||
                 sanitizedFilter.containsKey('hasActiveHeadlines'))) {
           // Use the injected CountryQueryService for complex queries.
           final countryQueryService = c.read<CountryQueryService>();
           response = await countryQueryService.getFilteredCountries(
-            filter: sanitizedFilter,
+            filter: expandedFilter ?? {},
             pagination: p,
             sort: rewrittenSort,
           );
@@ -354,7 +356,7 @@ class DataOperationRegistry {
           // Fallback to standard readAll if no special filters are present.
           response = await c.read<DataRepository<Country>>().readAll(
             userId: uid,
-            filter: sanitizedFilter,
+            filter: expandedFilter,
             sort: rewrittenSort,
             pagination: p,
           );
@@ -366,11 +368,18 @@ class DataOperationRegistry {
         return response.copyWith(items: localizedItems);
       },
       'language': (c, uid, f, s, p) async {
+        // Sanitize filter: Languages are static metadata and do not have a 'status' field.
+        final sanitizedFilter = f != null ? Map<String, dynamic>.from(f) : null;
+        sanitizedFilter?.remove('status');
+
         final lang = c.read<SupportedLanguage>();
         final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
           'name',
         ]);
-        final searchFilter = LocalizationUtils.rewriteSearchQuery(f, ['name']);
+        final searchFilter = LocalizationUtils.rewriteSearchQuery(
+          sanitizedFilter,
+          ['name'],
+        );
         final expandedFilter = LocalizationUtils.expandFilterForLocalization(
           searchFilter,
           lang,
@@ -378,17 +387,9 @@ class DataOperationRegistry {
           isPrivileged: _isPrivileged(c),
         );
 
-        // Sanitize filter: Languages are static metadata and no longer have
-        // a 'status' field. We strip it to prevent empty results from
-        // generic client-side filtering logic.
-        final sanitizedFilter = expandedFilter != null
-            ? Map<String, dynamic>.from(expandedFilter)
-            : null;
-        sanitizedFilter?.remove('status');
-
         final response = await c.read<DataRepository<Language>>().readAll(
           userId: uid,
-          filter: sanitizedFilter,
+          filter: expandedFilter,
           sort: rewrittenSort,
           pagination: p,
         );
