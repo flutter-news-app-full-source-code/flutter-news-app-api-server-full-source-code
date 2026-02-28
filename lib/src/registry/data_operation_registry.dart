@@ -247,10 +247,11 @@ class DataOperationRegistry {
         final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
           'title',
         ]);
-        final expandedFilter = _recursiveRewriteFilter(
+        final expandedFilter = LocalizationUtils.expandFilterForLocalization(
           f,
           lang,
           ['title'],
+          isPrivileged: _isPrivileged(c),
         );
         final response = await c.read<DataRepository<Headline>>().readAll(
           userId: uid,
@@ -270,10 +271,11 @@ class DataOperationRegistry {
           'name',
           'description',
         ]);
-        final expandedFilter = _recursiveRewriteFilter(
+        final expandedFilter = LocalizationUtils.expandFilterForLocalization(
           f,
           lang,
           ['name', 'description'],
+          isPrivileged: _isPrivileged(c),
         );
         final response = await c.read<DataRepository<Topic>>().readAll(
           userId: uid,
@@ -292,10 +294,11 @@ class DataOperationRegistry {
           'name',
           'description',
         ]);
-        final expandedFilter = _recursiveRewriteFilter(
+        final expandedFilter = LocalizationUtils.expandFilterForLocalization(
           f,
           lang,
           ['name', 'description'],
+          isPrivileged: _isPrivileged(c),
         );
         final response = await c.read<DataRepository<Source>>().readAll(
           userId: uid,
@@ -313,10 +316,11 @@ class DataOperationRegistry {
         final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
           'name',
         ]);
-        final expandedFilter = _recursiveRewriteFilter(
+        final expandedFilter = LocalizationUtils.expandFilterForLocalization(
           f,
           lang,
           ['name'],
+          isPrivileged: _isPrivileged(c),
         );
 
         // Sanitize filter: Countries are static metadata and no longer have
@@ -360,10 +364,11 @@ class DataOperationRegistry {
         final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
           'name',
         ]);
-        final expandedFilter = _recursiveRewriteFilter(
+        final expandedFilter = LocalizationUtils.expandFilterForLocalization(
           f,
           lang,
           ['name'],
+          isPrivileged: _isPrivileged(c),
         );
 
         // Sanitize filter: Languages are static metadata and no longer have
@@ -453,10 +458,11 @@ class DataOperationRegistry {
       },
       'kpi_card_data': (c, uid, f, s, p) async {
         final lang = c.read<SupportedLanguage>();
-        final expandedFilter = _recursiveRewriteFilter(
+        final expandedFilter = LocalizationUtils.expandFilterForLocalization(
           f,
           lang,
           ['label'],
+          isPrivileged: _isPrivileged(c),
         );
         final response = await c.read<DataRepository<KpiCardData>>().readAll(
           userId: uid,
@@ -471,10 +477,11 @@ class DataOperationRegistry {
       },
       'chart_card_data': (c, uid, f, s, p) async {
         final lang = c.read<SupportedLanguage>();
-        final expandedFilter = _recursiveRewriteFilter(
+        final expandedFilter = LocalizationUtils.expandFilterForLocalization(
           f,
           lang,
           ['label'],
+          isPrivileged: _isPrivileged(c),
         );
         final response = await c.read<DataRepository<ChartCardData>>().readAll(
           userId: uid,
@@ -489,10 +496,11 @@ class DataOperationRegistry {
       },
       'ranked_list_card_data': (c, uid, f, s, p) async {
         final lang = c.read<SupportedLanguage>();
-        final expandedFilter = _recursiveRewriteFilter(
+        final expandedFilter = LocalizationUtils.expandFilterForLocalization(
           f,
           lang,
           ['label'],
+          isPrivileged: _isPrivileged(c),
         );
         final response = await c
             .read<DataRepository<RankedListCardData>>()
@@ -1233,44 +1241,5 @@ class DataOperationRegistry {
       user,
       {Permissions.dashboardLogin},
     );
-  }
-
-  /// Recursively rewrites a filter map to expand translatable fields into
-  /// language-specific paths (e.g., 'name' -> 'name.en').
-  ///
-  /// This is necessary because MongoDB queries against logical operators
-  /// like $or and $and nest the field names, hiding them from shallow
-  /// rewriters.
-  Map<String, dynamic>? _recursiveRewriteFilter(
-    Map<String, dynamic>? filter,
-    SupportedLanguage lang,
-    List<String> translatableFields,
-  ) {
-    if (filter == null) return null;
-    final result = <String, dynamic>{};
-
-    for (final entry in filter.entries) {
-      final key = entry.key;
-      final value = entry.value;
-
-      if (key == r'$or' || key == r'$and') {
-        if (value is List) {
-          result[key] = value
-              .map(
-                (e) => e is Map<String, dynamic>
-                    ? _recursiveRewriteFilter(e, lang, translatableFields)
-                    : e,
-              )
-              .toList();
-        } else {
-          result[key] = value;
-        }
-      } else if (translatableFields.contains(key)) {
-        result['$key.${lang.name}'] = value;
-      } else {
-        result[key] = value;
-      }
-    }
-    return result;
   }
 }
