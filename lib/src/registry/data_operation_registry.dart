@@ -247,8 +247,9 @@ class DataOperationRegistry {
         final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
           'title',
         ]);
+        final searchFilter = LocalizationUtils.rewriteSearchQuery(f, ['title']);
         final expandedFilter = LocalizationUtils.expandFilterForLocalization(
-          f,
+          searchFilter,
           lang,
           ['title'],
           isPrivileged: _isPrivileged(c),
@@ -271,8 +272,10 @@ class DataOperationRegistry {
           'name',
           'description',
         ]);
+        // Note: We only search 'name' for topics to match AppDependencies config
+        final searchFilter = LocalizationUtils.rewriteSearchQuery(f, ['name']);
         final expandedFilter = LocalizationUtils.expandFilterForLocalization(
-          f,
+          searchFilter,
           lang,
           ['name', 'description'],
           isPrivileged: _isPrivileged(c),
@@ -294,8 +297,10 @@ class DataOperationRegistry {
           'name',
           'description',
         ]);
+        // Note: We only search 'name' for sources to match AppDependencies config
+        final searchFilter = LocalizationUtils.rewriteSearchQuery(f, ['name']);
         final expandedFilter = LocalizationUtils.expandFilterForLocalization(
-          f,
+          searchFilter,
           lang,
           ['name', 'description'],
           isPrivileged: _isPrivileged(c),
@@ -316,8 +321,9 @@ class DataOperationRegistry {
         final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
           'name',
         ]);
+        final searchFilter = LocalizationUtils.rewriteSearchQuery(f, ['name']);
         final expandedFilter = LocalizationUtils.expandFilterForLocalization(
-          f,
+          searchFilter,
           lang,
           ['name'],
           isPrivileged: _isPrivileged(c),
@@ -364,8 +370,9 @@ class DataOperationRegistry {
         final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
           'name',
         ]);
+        final searchFilter = LocalizationUtils.rewriteSearchQuery(f, ['name']);
         final expandedFilter = LocalizationUtils.expandFilterForLocalization(
-          f,
+          searchFilter,
           lang,
           ['name'],
           isPrivileged: _isPrivileged(c),
