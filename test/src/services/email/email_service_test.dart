@@ -1,6 +1,6 @@
 import 'package:core/core.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_client.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/email/email_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/clients/email/email_client.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/email/email_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';

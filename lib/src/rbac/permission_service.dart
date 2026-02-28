@@ -1,5 +1,5 @@
 import 'package:core/core.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/rbac/role_permissions.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/rbac/role_permissions.dart';
 
 /// {@template permission_service}
 /// Service responsible for checking if a user has a specific permission.

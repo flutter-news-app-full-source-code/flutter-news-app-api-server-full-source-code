@@ -1,11 +1,10 @@
 // ignore_for_file: inference_failure_on_function_invocation
 
 import 'package:core/core.dart';
-import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/clients/analytics/google_analytics_data_client.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
-import 'package:http_client/http_client.dart';
+
+import 'package:flutter_news_app_backend_api_full_source_code/src/clients/analytics/google_analytics_data_client.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/models/models.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/google_auth_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
@@ -249,51 +248,37 @@ void main() {
               // Only return one headline to test enrichment and default case
               Headline(
                 id: 'headline-1',
-                title: 'Test Headline 1',
+                title: const {SupportedLanguage.en: 'Test Headline 1'},
                 url: '',
                 imageUrl: '',
                 source: Source(
                   id: 's1',
-                  name: 's',
-                  description: '',
+                  name: const {SupportedLanguage.en: 's'},
+                  description: const {SupportedLanguage.en: ''},
                   url: '',
                   logoUrl: '',
                   sourceType: SourceType.aggregator,
-                  language: Language(
-                    id: 'l1',
-                    code: 'en',
-                    name: 'English',
-                    nativeName: 'English',
-                    createdAt: DateTime.now(),
-                    updatedAt: DateTime.now(),
-                    status: ContentStatus.active,
-                  ),
-                  headquarters: Country(
+                  language: SupportedLanguage.en,
+                  headquarters: const Country(
                     isoCode: 'US',
-                    name: 'USA',
+                    name: {SupportedLanguage.en: 'USA'},
                     flagUrl: '',
                     id: 'c1',
-                    createdAt: DateTime.now(),
-                    updatedAt: DateTime.now(),
-                    status: ContentStatus.active,
                   ),
                   createdAt: DateTime.now(),
                   updatedAt: DateTime.now(),
                   status: ContentStatus.active,
                 ),
-                eventCountry: Country(
+                eventCountry: const Country(
                   isoCode: 'US',
-                  name: 'USA',
+                  name: {SupportedLanguage.en: 'USA'},
                   flagUrl: '',
                   id: 'c1',
-                  createdAt: DateTime.now(),
-                  updatedAt: DateTime.now(),
-                  status: ContentStatus.active,
                 ),
                 topic: Topic(
                   id: 't1',
-                  name: 't',
-                  description: '',
+                  name: const {SupportedLanguage.en: 't'},
+                  description: const {SupportedLanguage.en: ''},
                   iconUrl: '',
                   createdAt: DateTime.now(),
                   updatedAt: DateTime.now(),
@@ -335,11 +320,17 @@ void main() {
           // ASSERT
           expect(result, hasLength(2));
           expect(result[0].entityId, 'headline-1');
-          expect(result[0].displayTitle, 'Test Headline 1');
+          expect(
+            result[0].displayTitle[SupportedLanguage.en],
+            'Test Headline 1',
+          );
           expect(result[0].metricValue, 99);
 
           expect(result[1].entityId, 'headline-2');
-          expect(result[1].displayTitle, 'Unknown Headline');
+          expect(
+            result[1].displayTitle[SupportedLanguage.en],
+            'Unknown Headline',
+          );
           expect(result[1].metricValue, 88);
 
           verify(

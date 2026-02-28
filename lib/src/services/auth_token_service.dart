@@ -14,7 +14,10 @@ abstract class AuthTokenService {
   ///
   /// Returns the generated token string.
   /// Throws [OperationFailedException] if token generation fails.
-  Future<String> generateToken(User user);
+  Future<String> generateToken(
+    User user, {
+    SupportedLanguage? language,
+  });
 
   /// Validates the given token string.
   ///

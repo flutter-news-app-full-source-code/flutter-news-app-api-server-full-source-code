@@ -1,4 +1,4 @@
-import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_client.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/clients/email/email_client.dart';
 import 'package:logging/logging.dart';
 
 /// {@template email_logging_client}

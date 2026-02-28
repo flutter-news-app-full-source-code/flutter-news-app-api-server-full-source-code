@@ -1,9 +1,10 @@
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/registry/data_operation_registry.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/middlewares/ownership_check_middleware.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/rbac/permission_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/registry/data_operation_registry.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/content_enrichment_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/country_query_service.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
@@ -24,10 +25,17 @@ class MockAppReviewRepository extends Mock
 class MockUserRewardsRepository extends Mock
     implements DataRepository<UserRewards> {}
 
+class MockLanguageRepository extends Mock implements DataRepository<Language> {}
+
 class MockMediaAssetRepository extends Mock
     implements DataRepository<MediaAsset> {}
 
 class MockStorageService extends Mock implements helpers.MockStorageService {}
+
+class MockHeadlineRepository extends Mock implements DataRepository<Headline> {}
+
+class MockContentEnrichmentService extends Mock
+    implements ContentEnrichmentService {}
 
 void main() {
   group('DataOperationRegistry', () {
@@ -50,6 +58,49 @@ void main() {
         ),
       );
       registerFallbackValue(
+        Headline(
+          id: 'id',
+          title: const {},
+          source: Source(
+            id: 's',
+            name: const {},
+            description: const {},
+            url: 'u',
+            sourceType: SourceType.blog,
+            language: SupportedLanguage.en,
+            headquarters: const Country(
+              id: 'c',
+              isoCode: 'US',
+              name: {},
+              flagUrl: 'f',
+            ),
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: ContentStatus.active,
+          ),
+          eventCountry: const Country(
+            id: 'c',
+            isoCode: 'US',
+            name: {},
+            flagUrl: 'f',
+          ),
+          topic: Topic(
+            id: 't',
+            name: const {},
+            description: const {},
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: ContentStatus.active,
+          ),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          status: ContentStatus.active,
+          isBreaking: false,
+          url: 'u',
+          imageUrl: 'i',
+        ),
+      );
+      registerFallbackValue(
         const UserContentPreferences(
           id: 'id',
           followedCountries: [],
@@ -57,6 +108,25 @@ void main() {
           followedTopics: [],
           savedHeadlines: [],
           savedHeadlineFilters: [],
+        ),
+      );
+      registerFallbackValue(
+        Source(
+          id: 'fallback-source',
+          name: const {},
+          description: const {},
+          url: 'fallback-url',
+          sourceType: SourceType.blog,
+          language: SupportedLanguage.en,
+          headquarters: const Country(
+            id: 'c',
+            isoCode: 'US',
+            name: {},
+            flagUrl: 'f',
+          ),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          status: ContentStatus.active,
         ),
       );
     });
@@ -73,6 +143,7 @@ void main() {
       late MockReportRepository mockReportRepo;
       late MockAppReviewRepository mockAppReviewRepo;
       late MockUserRewardsRepository mockUserRewardsRepo;
+      late MockLanguageRepository mockLanguageRepo;
 
       setUp(() {
         mockInAppNotificationRepo = MockInAppNotificationRepository();
@@ -81,6 +152,7 @@ void main() {
         mockReportRepo = MockReportRepository();
         mockAppReviewRepo = MockAppReviewRepository();
         mockUserRewardsRepo = MockUserRewardsRepository();
+        mockLanguageRepo = MockLanguageRepository();
 
         when(
           () => mockInAppNotificationRepo.readAll(
@@ -166,6 +238,21 @@ void main() {
           ),
         ).thenAnswer(
           (_) async => const PaginatedResponse<UserRewards>(
+            items: [],
+            cursor: null,
+            hasMore: false,
+          ),
+        );
+
+        when(
+          () => mockLanguageRepo.readAll(
+            filter: any(named: 'filter'),
+            sort: any(named: 'sort'),
+            pagination: any(named: 'pagination'),
+            userId: any(named: 'userId'),
+          ),
+        ).thenAnswer(
+          (_) async => const PaginatedResponse<Language>(
             items: [],
             cursor: null,
             hasMore: false,
@@ -317,6 +404,368 @@ void main() {
       );
     });
 
+    group('Language Fetcher', () {
+      late MockLanguageRepository mockLanguageRepo;
+      late Language testLanguage;
+
+      setUp(() {
+        mockLanguageRepo = MockLanguageRepository();
+        testLanguage = const Language(
+          id: 'l1',
+          code: 'en',
+          name: {
+            SupportedLanguage.en: 'English',
+            SupportedLanguage.es: 'Inglés',
+          },
+          nativeName: 'English',
+        );
+      });
+
+      test('returns raw data for privileged user', () async {
+        final fetcher = registry.itemFetchers['language']!;
+
+        when(
+          () => mockLanguageRepo.read(id: 'l1', userId: null),
+        ).thenAnswer((_) async => testLanguage);
+
+        final context = helpers
+            .createMockRequestContext(
+              authenticatedUser: helpers.createTestUser(role: UserRole.admin),
+            )
+            .provide<DataRepository<Language>>(() => mockLanguageRepo);
+
+        final result = await fetcher(context, 'l1');
+        expect(result, equals(testLanguage));
+        expect((result as Language).name.length, equals(2));
+      });
+
+      test('returns localized data for standard user', () async {
+        final fetcher = registry.itemFetchers['language']!;
+
+        when(
+          () => mockLanguageRepo.read(id: 'l1', userId: null),
+        ).thenAnswer((_) async => testLanguage);
+
+        final mockPerms = helpers.MockPermissionService();
+        when(() => mockPerms.hasAnyPermission(any(), any())).thenReturn(false);
+
+        final context = helpers
+            .createMockRequestContext(
+              authenticatedUser: standardUser,
+              permissionService: mockPerms,
+            )
+            .provide<DataRepository<Language>>(() => mockLanguageRepo)
+            .provide<SupportedLanguage>(() => SupportedLanguage.es);
+
+        final result = await fetcher(context, 'l1');
+        expect(
+          (result as Language).name,
+          equals({SupportedLanguage.es: 'Inglés'}),
+        );
+      });
+    });
+
+    group('Language Reader', () {
+      late MockLanguageRepository mockLanguageRepo;
+
+      setUp(() {
+        mockLanguageRepo = MockLanguageRepository();
+      });
+
+      test(
+        'applies sort rewrite, filter expansion, status removal, and localization',
+        () async {
+          final reader = registry.allItemsReaders['language']!;
+          const testLanguage = Language(
+            id: 'l1',
+            code: 'en',
+            name: {
+              SupportedLanguage.en: 'English',
+              SupportedLanguage.es: 'Inglés',
+            },
+            nativeName: 'English',
+          );
+
+          when(
+            () => mockLanguageRepo.readAll(
+              userId: any(named: 'userId'),
+              filter: any(named: 'filter'),
+              sort: any(named: 'sort'),
+              pagination: any(named: 'pagination'),
+            ),
+          ).thenAnswer(
+            (_) async => const PaginatedResponse(
+              items: [testLanguage],
+              cursor: null,
+              hasMore: false,
+            ),
+          );
+
+          final context = helpers
+              .createMockRequestContext()
+              .provide<DataRepository<Language>>(() => mockLanguageRepo)
+              .provide<SupportedLanguage>(() => SupportedLanguage.es);
+
+          final filter = {'name': 'English', 'status': 'active'};
+          final sort = [const SortOption('name', SortOrder.asc)];
+
+          final result = await reader(context, null, filter, sort, null);
+
+          final captured = verify(
+            () => mockLanguageRepo.readAll(
+              userId: null,
+              filter: captureAny(named: 'filter'),
+              sort: captureAny(named: 'sort'),
+              pagination: null,
+            ),
+          ).captured;
+
+          final capturedFilter = captured[0] as Map<String, dynamic>;
+          final capturedSort = captured[1] as List<SortOption>;
+
+          // Verify sort rewrite
+          expect(capturedSort.first.field, equals('name.es'));
+
+          // Verify filter expansion and status removal
+          expect(capturedFilter.containsKey('status'), isFalse);
+          expect(capturedFilter.containsKey('name.es'), isTrue);
+
+          // Verify result localization
+          expect(
+            result.items.first.name,
+            equals({SupportedLanguage.es: 'Inglés'}),
+          );
+        },
+      );
+    });
+
+    group('Country Reader', () {
+      late MockCountryRepository mockCountryRepo;
+
+      setUp(() {
+        mockCountryRepo = MockCountryRepository();
+      });
+
+      test(
+        'applies sort rewrite, filter expansion, status removal, and localization',
+        () async {
+          final reader = registry.allItemsReaders['country']!;
+          const testCountry = Country(
+            id: 'c1',
+            isoCode: 'US',
+            name: {
+              SupportedLanguage.en: 'USA',
+              SupportedLanguage.es: 'EEUU',
+            },
+            flagUrl: 'flag.png',
+          );
+
+          when(
+            () => mockCountryRepo.readAll(
+              userId: any(named: 'userId'),
+              filter: any(named: 'filter'),
+              sort: any(named: 'sort'),
+              pagination: any(named: 'pagination'),
+            ),
+          ).thenAnswer(
+            (_) async => const PaginatedResponse(
+              items: [testCountry],
+              cursor: null,
+              hasMore: false,
+            ),
+          );
+
+          final context = helpers
+              .createMockRequestContext()
+              .provide<DataRepository<Country>>(() => mockCountryRepo)
+              .provide<SupportedLanguage>(() => SupportedLanguage.es);
+
+          final filter = {'name': 'USA', 'status': 'active'};
+          final sort = [const SortOption('name', SortOrder.asc)];
+
+          final result = await reader(context, null, filter, sort, null);
+
+          final captured = verify(
+            () => mockCountryRepo.readAll(
+              userId: null,
+              filter: captureAny(named: 'filter'),
+              sort: captureAny(named: 'sort'),
+              pagination: null,
+            ),
+          ).captured;
+
+          final capturedFilter = captured[0] as Map<String, dynamic>;
+          final capturedSort = captured[1] as List<SortOption>;
+
+          // Verify sort rewrite
+          expect(capturedSort.first.field, equals('name.es'));
+
+          // Verify filter expansion and status removal
+          expect(capturedFilter.containsKey('status'), isFalse);
+          expect(capturedFilter.containsKey('name.es'), isTrue);
+
+          // Verify result localization
+          expect(
+            result.items.first.name,
+            equals({SupportedLanguage.es: 'EEUU'}),
+          );
+        },
+      );
+
+      test(
+        'delegates to CountryQueryService when special filters are present',
+        () async {
+          final reader = registry.allItemsReaders['country']!;
+          final mockQueryService = MockCountryQueryService();
+
+          when(
+            () => mockQueryService.getFilteredCountries(
+              filter: any(named: 'filter'),
+              pagination: any(named: 'pagination'),
+              sort: any(named: 'sort'),
+            ),
+          ).thenAnswer(
+            (_) async => const PaginatedResponse(
+              items: [],
+              cursor: null,
+              hasMore: false,
+            ),
+          );
+
+          final context = helpers
+              .createMockRequestContext()
+              .provide<DataRepository<Country>>(() => mockCountryRepo)
+              .provide<CountryQueryService>(() => mockQueryService)
+              .provide<SupportedLanguage>(() => SupportedLanguage.en);
+
+          final filter = {'hasActiveSources': true, 'status': 'active'};
+
+          await reader(context, null, filter, null, null);
+
+          final captured = verify(
+            () => mockQueryService.getFilteredCountries(
+              filter: captureAny(named: 'filter'),
+              pagination: any(named: 'pagination'),
+              sort: any(named: 'sort'),
+            ),
+          ).captured;
+
+          final capturedFilter = captured[0] as Map<String, dynamic>;
+          // Verify status is removed even for query service
+          expect(capturedFilter.containsKey('status'), isFalse);
+          expect(capturedFilter.containsKey('hasActiveSources'), isTrue);
+        },
+      );
+    });
+
+    group('Headline Updater (Localization Merging)', () {
+      late MockHeadlineRepository mockHeadlineRepo;
+      late Headline existingHeadline;
+      late MockContentEnrichmentService mockEnrichmentService;
+
+      setUp(() {
+        mockHeadlineRepo = MockHeadlineRepository();
+        existingHeadline = Headline(
+          id: 'h1',
+          title: const {SupportedLanguage.en: 'Hello'},
+          url: 'url',
+          imageUrl: 'img',
+          source: Source(
+            id: 's',
+            name: const {},
+            description: const {},
+            url: '',
+            sourceType: SourceType.other,
+            language: SupportedLanguage.en,
+            headquarters: const Country(
+              id: 'c',
+              isoCode: 'US',
+              name: {},
+              flagUrl: '',
+            ),
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: ContentStatus.active,
+          ),
+          eventCountry: const Country(
+            id: 'c',
+            isoCode: 'US',
+            name: {},
+            flagUrl: '',
+          ),
+          topic: Topic(
+            id: 't',
+            name: const {},
+            description: const {},
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: ContentStatus.active,
+          ),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          status: ContentStatus.active,
+          isBreaking: false,
+        );
+        mockEnrichmentService = MockContentEnrichmentService();
+      });
+
+      test('merges new translation with existing ones', () async {
+        final updater = registry.itemUpdaters['headline']!;
+
+        // The update request must be a Headline object (simulating deserialized input).
+        // We create a headline with ONLY the Spanish title to verify that the
+        // English title from the database is preserved via merging.
+        final incomingHeadline = existingHeadline.copyWith(
+          title: {SupportedLanguage.es: 'Hola'},
+        );
+
+        when(
+          () => mockHeadlineRepo.read(
+            id: 'h1',
+            userId: any(named: 'userId'),
+          ),
+        ).thenAnswer((_) async => existingHeadline);
+
+        when(
+          () => mockHeadlineRepo.update(
+            id: any(named: 'id'),
+            item: any(named: 'item'),
+            userId: any(named: 'userId'),
+          ),
+        ).thenAnswer(
+          (invocation) async => invocation.namedArguments[#item] as Headline,
+        );
+
+        final context = helpers
+            .createMockRequestContext(
+              authenticatedUser: standardUser,
+              fetchedItem: FetchedItem(existingHeadline),
+            )
+            .provide<DataRepository<Headline>>(() => mockHeadlineRepo)
+            .provide<ContentEnrichmentService>(() => mockEnrichmentService);
+
+        await updater(context, 'h1', incomingHeadline, null);
+
+        final captured = verify(
+          () => mockHeadlineRepo.update(
+            id: 'h1',
+            item: captureAny<Headline>(named: 'item'),
+            userId: any(named: 'userId'),
+          ),
+        ).captured;
+
+        final updatedItem = captured.single as Headline;
+        expect(
+          updatedItem.title[SupportedLanguage.en],
+          equals('Hello'),
+        ); // Preserved
+        expect(
+          updatedItem.title[SupportedLanguage.es],
+          equals('Hola'),
+        ); // Added
+      });
+    });
+
     group('Engagement Creator', () {
       late helpers.MockEngagementRepository mockEngagementRepository;
       late helpers.MockUserActionLimitService mockUserActionLimitService;
@@ -458,16 +907,8 @@ void main() {
           entityType: EngageableType.headline,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
-          comment: Comment(
-            language: Language(
-              id: 'en',
-              code: 'en',
-              name: 'English',
-              nativeName: 'English',
-              createdAt: DateTime.now(),
-              updatedAt: DateTime.now(),
-              status: ContentStatus.active,
-            ),
+          comment: const Comment(
+            language: SupportedLanguage.en,
             content: 'Original Content',
             status: ModerationStatus.resolved,
           ),
@@ -780,5 +1221,156 @@ void main() {
         verifyNoMoreInteractions(mockMediaAssetRepository);
       });
     });
+
+    group('Headline Creator', () {
+      late MockHeadlineRepository mockHeadlineRepo;
+      late MockContentEnrichmentService mockEnrichmentService;
+      late Headline testHeadline;
+
+      setUp(() {
+        mockHeadlineRepo = MockHeadlineRepository();
+        mockEnrichmentService = MockContentEnrichmentService();
+        testHeadline = Headline(
+          id: 'h1',
+          title: const {},
+          source: Source(
+            id: 's1',
+            name: const {},
+            description: const {},
+            url: '',
+            sourceType: SourceType.blog,
+            language: SupportedLanguage.en,
+            headquarters: const Country(
+              id: 'c1',
+              isoCode: 'US',
+              name: {},
+              flagUrl: '',
+            ),
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: ContentStatus.active,
+          ),
+          eventCountry: const Country(
+            id: 'c1',
+            isoCode: 'US',
+            name: {},
+            flagUrl: '',
+          ),
+          topic: Topic(
+            id: 't1',
+            name: const {},
+            description: const {},
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: ContentStatus.active,
+          ),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          status: ContentStatus.active,
+          isBreaking: false,
+          url: 'url',
+          imageUrl: 'img',
+        );
+
+        when(() => mockEnrichmentService.enrichHeadline(any())).thenAnswer(
+          (invocation) async =>
+              invocation.positionalArguments.first as Headline,
+        );
+
+        when(
+          () => mockHeadlineRepo.create(
+            item: any(named: 'item'),
+            userId: any(named: 'userId'),
+          ),
+        ).thenAnswer(
+          (invocation) async => invocation.namedArguments[#item] as Headline,
+        );
+      });
+
+      test('calls enrichment service before creation', () async {
+        final creator = registry.itemCreators['headline']!;
+        final context = helpers
+            .createMockRequestContext(authenticatedUser: standardUser)
+            .provide<DataRepository<Headline>>(() => mockHeadlineRepo)
+            .provide<ContentEnrichmentService>(() => mockEnrichmentService);
+
+        await creator(context, testHeadline, 'uid');
+
+        verify(() => mockEnrichmentService.enrichHeadline(any())).called(1);
+        verify(
+          () => mockHeadlineRepo.create(
+            item: any(named: 'item'),
+            userId: 'uid',
+          ),
+        ).called(1);
+      });
+    });
+
+    group('Source Creator', () {
+      late MockSourceRepository
+      mockSourceRepo; // You might need to define this mock class if not exists
+      late MockContentEnrichmentService mockEnrichmentService;
+      late Source testSource;
+
+      setUp(() {
+        mockSourceRepo = MockSourceRepository(); // Assuming you add this class
+        mockEnrichmentService = MockContentEnrichmentService();
+        testSource = Source(
+          id: 's1',
+          name: const {},
+          description: const {},
+          url: '',
+          sourceType: SourceType.blog,
+          language: SupportedLanguage.en,
+          headquarters: const Country(
+            id: 'c1',
+            isoCode: 'US',
+            name: {},
+            flagUrl: '',
+          ),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          status: ContentStatus.active,
+        );
+
+        when(() => mockEnrichmentService.enrichSource(any())).thenAnswer(
+          (invocation) async => invocation.positionalArguments.first as Source,
+        );
+
+        when(
+          () => mockSourceRepo.create(
+            item: any(named: 'item'),
+            userId: any(named: 'userId'),
+          ),
+        ).thenAnswer(
+          (invocation) async => invocation.namedArguments[#item] as Source,
+        );
+      });
+
+      test('calls enrichment service before creation', () async {
+        final creator = registry.itemCreators['source']!;
+        final context = helpers
+            .createMockRequestContext(authenticatedUser: standardUser)
+            .provide<DataRepository<Source>>(() => mockSourceRepo)
+            .provide<ContentEnrichmentService>(() => mockEnrichmentService);
+
+        await creator(context, testSource, 'uid');
+
+        verify(() => mockEnrichmentService.enrichSource(any())).called(1);
+        verify(
+          () => mockSourceRepo.create(
+            item: any(named: 'item'),
+            userId: 'uid',
+          ),
+        ).called(1);
+      });
+    });
   });
 }
+
+// Helper mock class needed for the Source Creator test
+class MockSourceRepository extends Mock implements DataRepository<Source> {}
+
+class MockCountryRepository extends Mock implements DataRepository<Country> {}
+
+class MockCountryQueryService extends Mock implements CountryQueryService {}

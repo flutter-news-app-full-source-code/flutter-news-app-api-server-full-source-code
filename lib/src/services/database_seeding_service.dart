@@ -1,7 +1,7 @@
 import 'package:core/core.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_token_blacklist_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_verification_code_storage_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/config/environment_config.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/mongodb_token_blacklist_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/mongodb_verification_code_storage_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 
@@ -73,10 +73,12 @@ class DatabaseSeedingService {
           'updateOne': {
             // Filter by the specific, deterministic _id.
             'filter': {'_id': objectId},
-            // Set the fields of the document.
-            // Use $setOnInsert to set fields ONLY if the document is newly inserted.
-            // This ensures existing documents are not overwritten by fixture data.
-            'update': {r'$setOnInsert': document},
+            // Use `$set` to perform a destructive update. This is critical for
+            // system metadata collections like `languages` and `countries`.
+            // It ensures that on every server start, the documents are
+            // synchronized with the latest schema from the code fixtures,
+            // preventing schema drift.
+            'update': {r'$set': document},
             'upsert': true,
           },
         });
@@ -150,6 +152,20 @@ class DatabaseSeedingService {
       await _db
           .collection('countries')
           .createIndex(keys: {'name': 1}, name: 'countries_name_index');
+
+      // Wildcard index for countries 'name' map.
+      // This supports Language-Agnostic Query Expansion, allowing efficient
+      // queries across all language sub-fields (e.g., name.en, name.ar)
+      // without needing separate indexes for each language.
+      await _db.runCommand({
+        'createIndexes': 'countries',
+        'indexes': [
+          {
+            'key': {r'name.$**': 1},
+            'name': 'countries_name_wildcard_index',
+          },
+        ],
+      });
 
       // --- TTL and Unique Indexes via runCommand ---
       // The following indexes are created using the generic `runCommand` because
@@ -393,6 +409,12 @@ class DatabaseSeedingService {
             'name': 'headlines_text_index',
           },
           {
+            // Wildcard index for the 'title' map.
+            // Essential for the language-agnostic "$or" query expansion.
+            'key': {r'title.$**': 1},
+            'name': 'headlines_title_wildcard_index',
+          },
+          {
             'key': {'createdAt': 1, 'topic.name': 1},
             'name': 'analytics_headline_topic_index',
           },
@@ -417,6 +439,16 @@ class DatabaseSeedingService {
             'name': 'sources_text_index',
           },
           {
+            // Wildcard index for 'name' map (multi-language search).
+            'key': {r'name.$**': 1},
+            'name': 'sources_name_wildcard_index',
+          },
+          {
+            // Wildcard index for 'description' map.
+            'key': {r'description.$**': 1},
+            'name': 'sources_description_wildcard_index',
+          },
+          {
             'key': {'followerIds': 1},
             'name': 'analytics_source_followers_index',
           },
@@ -430,6 +462,16 @@ class DatabaseSeedingService {
           {
             'key': {'name': 'text'},
             'name': 'topics_text_index',
+          },
+          {
+            // Wildcard index for 'name' map (multi-language search).
+            'key': {r'name.$**': 1},
+            'name': 'topics_name_wildcard_index',
+          },
+          {
+            // Wildcard index for 'description' map.
+            'key': {r'description.$**': 1},
+            'name': 'topics_description_wildcard_index',
           },
           {
             'key': {'followerIds': 1},
@@ -713,12 +755,7 @@ class DatabaseSeedingService {
         textScaleFactor: AppTextScaleFactor.medium,
         fontWeight: AppFontWeight.regular,
       ),
-      language: languagesFixturesData.firstWhere(
-        (l) => l.code == 'en',
-        orElse: () => throw StateError(
-          'Default language "en" not found in language fixtures.',
-        ),
-      ),
+      language: SupportedLanguage.en,
       feedSettings: const FeedSettings(
         feedItemDensity: FeedItemDensity.standard,
         feedItemImageStyle: FeedItemImageStyle.smallThumbnail,

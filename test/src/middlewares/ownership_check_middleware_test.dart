@@ -1,8 +1,8 @@
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_registry.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/middlewares/ownership_check_middleware.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/rbac/permission_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/registry/model_registry.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
@@ -34,25 +34,17 @@ void main() {
         role: UserRole.admin,
       );
 
-      userOwnedItem = AppSettings(
+      userOwnedItem = const AppSettings(
         id: 'owner-id', // The item's ID is the owner's ID
-        language: Language(
-          id: 'lang-id',
-          code: 'en',
-          name: 'English',
-          nativeName: 'English',
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-          status: ContentStatus.active,
-        ),
-        displaySettings: const DisplaySettings(
+        language: SupportedLanguage.en,
+        displaySettings: DisplaySettings(
           baseTheme: AppBaseTheme.system,
           accentTheme: AppAccentTheme.defaultBlue,
           fontFamily: 'SystemDefault',
           textScaleFactor: AppTextScaleFactor.medium,
           fontWeight: AppFontWeight.regular,
         ),
-        feedSettings: const FeedSettings(
+        feedSettings: FeedSettings(
           feedItemDensity: FeedItemDensity.standard,
           feedItemImageStyle: FeedItemImageStyle.largeThumbnail,
           feedItemClickBehavior: FeedItemClickBehavior.internalNavigation,

@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:core/core.dart';
-import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification/push_notification_client.dart';
+
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/push_notification/push_notification_client.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 
@@ -36,6 +36,7 @@ class DefaultPushNotificationService implements IPushNotificationService {
     required DataRepository<UserContentPreferences>
     userContentPreferencesRepository,
     required DataRepository<RemoteConfig> remoteConfigRepository,
+    required DataRepository<AppSettings> appSettingsRepository,
     required DataRepository<InAppNotification> inAppNotificationRepository,
     required IPushNotificationClient? firebaseClient,
     required IPushNotificationClient? oneSignalClient,
@@ -43,6 +44,7 @@ class DefaultPushNotificationService implements IPushNotificationService {
   }) : _pushNotificationDeviceRepository = pushNotificationDeviceRepository,
        _userContentPreferencesRepository = userContentPreferencesRepository,
        _remoteConfigRepository = remoteConfigRepository,
+       _appSettingsRepository = appSettingsRepository,
        _inAppNotificationRepository = inAppNotificationRepository,
        _firebaseClient = firebaseClient,
        _oneSignalClient = oneSignalClient,
@@ -53,6 +55,7 @@ class DefaultPushNotificationService implements IPushNotificationService {
   final DataRepository<UserContentPreferences>
   _userContentPreferencesRepository;
   final DataRepository<RemoteConfig> _remoteConfigRepository;
+  final DataRepository<AppSettings> _appSettingsRepository;
   final DataRepository<InAppNotification> _inAppNotificationRepository;
   final IPushNotificationClient? _firebaseClient;
   final IPushNotificationClient? _oneSignalClient;
@@ -66,8 +69,7 @@ class DefaultPushNotificationService implements IPushNotificationService {
     required Headline headline,
   }) async {
     _log.info(
-      'Attempting to send breaking news notification for headline: '
-      '"${headline.title}" (ID: ${headline.id}).',
+      'Attempting to send breaking news notification for headline ID: ${headline.id}.',
     );
 
     try {
@@ -178,15 +180,52 @@ class DefaultPushNotificationService implements IPushNotificationService {
         'Found ${eligibleUserIds.length} eligible users for this breaking news headline.',
       );
 
-      // 4. Fetch all devices for all subscribed users in a single bulk query.
-      final allDevicesResponse = await _pushNotificationDeviceRepository
-          .readAll(
-            filter: {
-              'userId': {r'$in': eligibleUserIds.toList()},
-            },
-          );
+      // 4. Fetch AppSettings for all eligible users to determine their
+      // preferred language.
+      final allAppSettings = <AppSettings>[];
+      String? settingsCursor;
+      var settingsHasMore = true;
 
-      final allDevices = allDevicesResponse.items;
+      while (settingsHasMore) {
+        final page = await _appSettingsRepository.readAll(
+          filter: {
+            'id': {r'$in': eligibleUserIds.toList()},
+          },
+          pagination: PaginationOptions(cursor: settingsCursor, limit: 1000),
+        );
+        allAppSettings.addAll(page.items);
+        settingsCursor = page.cursor;
+        settingsHasMore = page.hasMore;
+      }
+
+      // Create a lookup map from userId to their preferred language.
+      final userLanguageMap = {
+        for (final settings in allAppSettings) settings.id: settings.language,
+      };
+      _log.finer(
+        'Fetched ${userLanguageMap.length} AppSettings for language preferences.',
+      );
+
+      // Fetch the default language from remote config as a fallback.
+      final defaultLanguage = remoteConfig.app.localization.defaultLanguage;
+
+      // 5. Fetch all devices for all subscribed users using pagination.
+      final allDevices = <PushNotificationDevice>[];
+      String? devicesCursor;
+      var devicesHasMore = true;
+
+      while (devicesHasMore) {
+        final page = await _pushNotificationDeviceRepository.readAll(
+          filter: {
+            'userId': {r'$in': eligibleUserIds.toList()},
+          },
+          pagination: PaginationOptions(cursor: devicesCursor, limit: 1000),
+        );
+        allDevices.addAll(page.items);
+        devicesCursor = page.cursor;
+        devicesHasMore = page.hasMore;
+      }
+
       _log.finer(
         'Fetched ${allDevices.length} total devices for eligible users.',
       );
@@ -199,7 +238,7 @@ class DefaultPushNotificationService implements IPushNotificationService {
         'Found ${allDevices.length} total devices for subscribed users.',
       );
 
-      // 5. Filter devices to include only those that have a token for the
+      // 6. Filter devices to include only those that have a token for the
       // system's primary provider.
       final targetedDevices = allDevices
           .where((d) => d.providerTokens.containsKey(primaryProvider))
@@ -220,7 +259,7 @@ class DefaultPushNotificationService implements IPushNotificationService {
         'Found ${targetedDevices.length} devices to target via $primaryProvider.',
       );
 
-      // 6. Group device tokens by user ID for efficient lookup.
+      // 7. Group device tokens by user ID for efficient lookup.
       // This avoids iterating through all devices for each user.
       final userDeviceTokensMap = <String, List<String>>{};
       for (final device in targetedDevices) {
@@ -235,7 +274,7 @@ class DefaultPushNotificationService implements IPushNotificationService {
         'Grouped ${targetedDevices.length} tokens by ${userDeviceTokensMap.keys.length} users.',
       );
 
-      // 7. Iterate through each subscribed user to create and send a
+      // 8. Iterate through each subscribed user to create and send a
       // personalized notification.
       final notificationsToCreate = <InAppNotification>[];
 
@@ -257,12 +296,20 @@ class DefaultPushNotificationService implements IPushNotificationService {
             'User $userId has ${userDeviceTokens.length} devices. Creating in-app notification.',
           );
 
+          // SERVER-SIDE RESOLUTION: Determine the correct title string.
+          final userLanguage = userLanguageMap[userId] ?? defaultLanguage;
+          final resolvedTitle =
+              headline.title[userLanguage] ??
+              headline.title[defaultLanguage] ??
+              // Absolute fallback to the first available title.
+              headline.title.values.first;
+
           final notification = InAppNotification(
             id: notificationId.oid,
             userId: userId,
             payload: PushNotificationPayload(
               // Corrected payload structure
-              title: headline.title,
+              title: resolvedTitle,
               imageUrl: imageUrlToSend,
               notificationId: notificationId.oid,
               notificationType:
@@ -276,7 +323,7 @@ class DefaultPushNotificationService implements IPushNotificationService {
         }
       }
 
-      // 8. Create all InAppNotification documents in parallel.
+      // 9. Create all InAppNotification documents in parallel.
       final createFutures = notificationsToCreate.map(
         (notification) =>
             _inAppNotificationRepository.create(item: notification),
@@ -286,7 +333,7 @@ class DefaultPushNotificationService implements IPushNotificationService {
         'Successfully created ${notificationsToCreate.length} in-app notifications.',
       );
 
-      // 9. Dispatch all push notifications in parallel.
+      // 10. Dispatch all push notifications in parallel.
       final sendFutures = notificationsToCreate.map((notification) {
         final userDeviceTokens = userDeviceTokensMap[notification.userId] ?? [];
         return client!

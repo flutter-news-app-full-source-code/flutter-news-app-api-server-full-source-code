@@ -2,15 +2,16 @@ import 'dart:async';
 
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification/push_notification_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/util/media_asset_utils.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/middlewares/ownership_check_middleware.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/rbac/permission_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/rbac/permissions.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/content_enrichment_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/country_query_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/push_notification/push_notification_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/storage/i_storage_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/user_action_limit_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/utils/localization_utils.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/utils/media_asset_utils.dart';
 import 'package:logging/logging.dart';
 
 // --- Typedefs for Data Operations ---
@@ -70,6 +71,20 @@ final _log = Logger('DataOperationRegistry');
 /// By centralizing these mappings, we create a single source of truth for how
 /// data operations are performed for each model, improving consistency across
 /// the API.
+///
+/// ### Heuristic Branching Strategy (Localization)
+/// This registry implements a "Context-Aware Projection" heuristic to serve
+/// two distinct client types from a single API:
+///
+/// 1. **Mobile Clients (Standard Users):**
+///    - **Behavior:** Always receive localized data (projected to a single string).
+///    - **Reason:** Optimizes payload size and simplifies client-side rendering.
+///
+/// 2. **CMS/Dashboard (Privileged Users):**
+///    - **Behavior:** Receive RAW data (full translation maps) for single-item fetches.
+///    - **Reason:** Enables editing of all languages simultaneously.
+///    - **Exception:** Collection fetches (Read All) remain localized to keep
+///      dashboard tables readable and performant.
 /// {@endtemplate}
 class DataOperationRegistry {
   /// {@macro data_operation_registry}
@@ -109,34 +124,78 @@ class DataOperationRegistry {
   void _registerOperations() {
     // --- Register Item Fetchers ---
     _itemFetchers.addAll({
-      'headline': (c, id) =>
-          c.read<DataRepository<Headline>>().read(id: id, userId: null),
-      'topic': (c, id) =>
-          c.read<DataRepository<Topic>>().read(id: id, userId: null),
-      'source': (c, id) =>
-          c.read<DataRepository<Source>>().read(id: id, userId: null),
-      'country': (c, id) =>
-          c.read<DataRepository<Country>>().read(id: id, userId: null),
-      'language': (c, id) =>
-          c.read<DataRepository<Language>>().read(id: id, userId: null),
+      'headline': (c, id) async {
+        final item = await c.read<DataRepository<Headline>>().read(
+          id: id,
+          userId: null,
+        );
+        // CMS users need raw data for editing; Mobile users get localized data.
+        if (_isPrivileged(c)) return item;
+        final lang = c.read<SupportedLanguage>();
+        return LocalizationUtils.localizeHeadline(item, lang);
+      },
+      'topic': (c, id) async {
+        final item = await c.read<DataRepository<Topic>>().read(
+          id: id,
+          userId: null,
+        );
+        if (_isPrivileged(c)) return item;
+        final lang = c.read<SupportedLanguage>();
+        return LocalizationUtils.localizeTopic(item, lang);
+      },
+      'source': (c, id) async {
+        final item = await c.read<DataRepository<Source>>().read(
+          id: id,
+          userId: null,
+        );
+        if (_isPrivileged(c)) return item;
+        final lang = c.read<SupportedLanguage>();
+        return LocalizationUtils.localizeSource(item, lang);
+      },
+      'country': (c, id) async {
+        final item = await c.read<DataRepository<Country>>().read(
+          id: id,
+          userId: null,
+        );
+        if (_isPrivileged(c)) return item;
+        final lang = c.read<SupportedLanguage>();
+        return LocalizationUtils.localizeCountry(item, lang);
+      },
+      'language': (c, id) async {
+        final item = await c.read<DataRepository<Language>>().read(
+          id: id,
+          userId: null,
+        );
+        if (_isPrivileged(c)) return item;
+        final lang = c.read<SupportedLanguage>();
+        return LocalizationUtils.localizeLanguage(item, lang);
+      },
       'user': (c, id) =>
           c.read<DataRepository<User>>().read(id: id, userId: null),
       'app_settings': (c, id) =>
           c.read<DataRepository<AppSettings>>().read(id: id, userId: null),
       'user_context': (c, id) =>
           c.read<DataRepository<UserContext>>().read(id: id, userId: null),
-      'user_content_preferences': (c, id) =>
-          c.read<DataRepository<UserContentPreferences>>().read(
-            id: id,
-            userId: null,
-          ),
+      'user_content_preferences': (c, id) async {
+        final item = await c
+            .read<DataRepository<UserContentPreferences>>()
+            .read(id: id, userId: null);
+        if (_isPrivileged(c)) return item;
+        final lang = c.read<SupportedLanguage>();
+        // Localize nested SavedHeadlineFilters
+        final localizedFilters = item.savedHeadlineFilters
+            .map((f) => LocalizationUtils.localizeSavedHeadlineFilter(f, lang))
+            .toList();
+        return item.copyWith(savedHeadlineFilters: localizedFilters);
+      },
       'remote_config': (c, id) =>
           c.read<DataRepository<RemoteConfig>>().read(id: id, userId: null),
-      'in_app_notification': (c, id) =>
-          c.read<DataRepository<InAppNotification>>().read(
-            id: id,
-            userId: null,
-          ),
+      'in_app_notification': (c, id) async {
+        return c.read<DataRepository<InAppNotification>>().read(
+          id: id,
+          userId: null,
+        );
+      },
       'push_notification_device': (c, id) =>
           c.read<DataRepository<PushNotificationDevice>>().read(
             id: id,
@@ -148,15 +207,33 @@ class DataOperationRegistry {
           c.read<DataRepository<Report>>().read(id: id, userId: null),
       'app_review': (c, id) =>
           c.read<DataRepository<AppReview>>().read(id: id, userId: null),
-      'kpi_card_data': (c, id) =>
-          c.read<DataRepository<KpiCardData>>().read(id: id, userId: null),
-      'chart_card_data': (c, id) =>
-          c.read<DataRepository<ChartCardData>>().read(id: id, userId: null),
-      'ranked_list_card_data': (c, id) =>
-          c.read<DataRepository<RankedListCardData>>().read(
-            id: id,
-            userId: null,
-          ),
+      'kpi_card_data': (c, id) async {
+        final item = await c.read<DataRepository<KpiCardData>>().read(
+          id: id,
+          userId: null,
+        );
+        if (_isPrivileged(c)) return item;
+        final lang = c.read<SupportedLanguage>();
+        return LocalizationUtils.localizeKpiCardData(item, lang);
+      },
+      'chart_card_data': (c, id) async {
+        final item = await c.read<DataRepository<ChartCardData>>().read(
+          id: id,
+          userId: null,
+        );
+        if (_isPrivileged(c)) return item;
+        final lang = c.read<SupportedLanguage>();
+        return LocalizationUtils.localizeChartCardData(item, lang);
+      },
+      'ranked_list_card_data': (c, id) async {
+        final item = await c.read<DataRepository<RankedListCardData>>().read(
+          id: id,
+          userId: null,
+        );
+        if (_isPrivileged(c)) return item;
+        final lang = c.read<SupportedLanguage>();
+        return LocalizationUtils.localizeRankedListCardData(item, lang);
+      },
       'user_rewards': (c, id) =>
           c.read<DataRepository<UserRewards>>().read(id: id, userId: null),
       'media_asset': (c, id) =>
@@ -165,60 +242,169 @@ class DataOperationRegistry {
 
     // --- Register "Read All" Readers ---
     _allItemsReaders.addAll({
-      'headline': (c, uid, f, s, p) =>
-          c.read<DataRepository<Headline>>().readAll(
-            userId: uid,
-            filter: f,
-            sort: s,
-            pagination: p,
-          ),
-      'topic': (c, uid, f, s, p) => c.read<DataRepository<Topic>>().readAll(
-        userId: uid,
-        filter: f,
-        sort: s,
-        pagination: p,
-      ),
-      'source': (c, uid, f, s, p) => c.read<DataRepository<Source>>().readAll(
-        userId: uid,
-        filter: f,
-        sort: s,
-        pagination: p,
-      ),
-      'country': (c, uid, f, s, p) async {
-        // Check for special filters that require aggregation.
-        if (f != null &&
-            (f.containsKey('hasActiveSources') ||
-                f.containsKey('hasActiveHeadlines'))) {
-          // Use the injected CountryQueryService for complex queries.
-          final countryQueryService = c.read<CountryQueryService>();
-          return countryQueryService.getFilteredCountries(
-            filter: f,
-            pagination: p,
-            sort: s,
-          );
-        }
-        // Fallback to standard readAll if no special filters are present.
-        return c.read<DataRepository<Country>>().readAll(
+      'headline': (c, uid, f, s, p) async {
+        final lang = c.read<SupportedLanguage>();
+        final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
+          'title',
+        ]);
+        final searchFilter = LocalizationUtils.rewriteSearchQuery(f, ['title']);
+        final expandedFilter = LocalizationUtils.expandFilterForLocalization(
+          searchFilter,
+          lang,
+          ['title'],
+          isPrivileged: _isPrivileged(c),
+        );
+        final response = await c.read<DataRepository<Headline>>().readAll(
           userId: uid,
-          filter: f,
-          sort: s,
+          filter: expandedFilter,
+          sort: rewrittenSort,
           pagination: p,
         );
+
+        final localizedItems = response.items
+            .map((i) => LocalizationUtils.localizeHeadline(i, lang))
+            .toList();
+        return response.copyWith(items: localizedItems);
       },
-      'language': (c, uid, f, s, p) =>
-          c.read<DataRepository<Language>>().readAll(
-            userId: uid,
-            filter: f,
-            sort: s,
+      'topic': (c, uid, f, s, p) async {
+        final lang = c.read<SupportedLanguage>();
+        final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
+          'name',
+          'description',
+        ]);
+        // Note: We only search 'name' for topics to match AppDependencies config
+        final searchFilter = LocalizationUtils.rewriteSearchQuery(f, ['name']);
+        final expandedFilter = LocalizationUtils.expandFilterForLocalization(
+          searchFilter,
+          lang,
+          ['name', 'description'],
+          isPrivileged: _isPrivileged(c),
+        );
+        final response = await c.read<DataRepository<Topic>>().readAll(
+          userId: uid,
+          filter: expandedFilter,
+          sort: rewrittenSort,
+          pagination: p,
+        );
+        final localizedItems = response.items
+            .map((i) => LocalizationUtils.localizeTopic(i, lang))
+            .toList();
+        return response.copyWith(items: localizedItems);
+      },
+      'source': (c, uid, f, s, p) async {
+        final lang = c.read<SupportedLanguage>();
+        final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
+          'name',
+          'description',
+        ]);
+        // Note: We only search 'name' for sources to match AppDependencies config
+        final searchFilter = LocalizationUtils.rewriteSearchQuery(f, ['name']);
+        final expandedFilter = LocalizationUtils.expandFilterForLocalization(
+          searchFilter,
+          lang,
+          ['name', 'description'],
+          isPrivileged: _isPrivileged(c),
+        );
+        final response = await c.read<DataRepository<Source>>().readAll(
+          userId: uid,
+          filter: expandedFilter,
+          sort: rewrittenSort,
+          pagination: p,
+        );
+        final localizedItems = response.items
+            .map((i) => LocalizationUtils.localizeSource(i, lang))
+            .toList();
+        return response.copyWith(items: localizedItems);
+      },
+      'country': (c, uid, f, s, p) async {
+        // Sanitize filter: Countries are static metadata and do not have a 'status' field.
+        // We must remove it before any processing to ensure it doesn't get wrapped
+        // into complex queries (like $and) where simple removal is difficult.
+        final sanitizedFilter = f != null ? Map<String, dynamic>.from(f) : null;
+        sanitizedFilter?.remove('status');
+
+        final lang = c.read<SupportedLanguage>();
+        final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
+          'name',
+        ]);
+        final searchFilter = LocalizationUtils.rewriteSearchQuery(
+          sanitizedFilter,
+          ['name'],
+        );
+        final expandedFilter = LocalizationUtils.expandFilterForLocalization(
+          searchFilter,
+          lang,
+          ['name'],
+          isPrivileged: _isPrivileged(c),
+        );
+
+        PaginatedResponse<Country> response;
+
+        // Check for special filters that require aggregation.
+        // We check sanitizedFilter (raw input) because expandedFilter might wrap keys in $and.
+        if (sanitizedFilter != null &&
+            (sanitizedFilter.containsKey('hasActiveSources') ||
+                sanitizedFilter.containsKey('hasActiveHeadlines'))) {
+          // Use the injected CountryQueryService for complex queries.
+          final countryQueryService = c.read<CountryQueryService>();
+          response = await countryQueryService.getFilteredCountries(
+            filter: expandedFilter ?? {},
             pagination: p,
-          ),
+            sort: rewrittenSort,
+          );
+        } else {
+          // Fallback to standard readAll if no special filters are present.
+          response = await c.read<DataRepository<Country>>().readAll(
+            userId: uid,
+            filter: expandedFilter,
+            sort: rewrittenSort,
+            pagination: p,
+          );
+        }
+
+        final localizedItems = response.items
+            .map((i) => LocalizationUtils.localizeCountry(i, lang))
+            .toList();
+        return response.copyWith(items: localizedItems);
+      },
+      'language': (c, uid, f, s, p) async {
+        // Sanitize filter: Languages are static metadata and do not have a 'status' field.
+        final sanitizedFilter = f != null ? Map<String, dynamic>.from(f) : null;
+        sanitizedFilter?.remove('status');
+
+        final lang = c.read<SupportedLanguage>();
+        final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
+          'name',
+        ]);
+        final searchFilter = LocalizationUtils.rewriteSearchQuery(
+          sanitizedFilter,
+          ['name'],
+        );
+        final expandedFilter = LocalizationUtils.expandFilterForLocalization(
+          searchFilter,
+          lang,
+          ['name'],
+          isPrivileged: _isPrivileged(c),
+        );
+
+        final response = await c.read<DataRepository<Language>>().readAll(
+          userId: uid,
+          filter: expandedFilter,
+          sort: rewrittenSort,
+          pagination: p,
+        );
+        final localizedItems = response.items
+            .map((i) => LocalizationUtils.localizeLanguage(i, lang))
+            .toList();
+        return response.copyWith(items: localizedItems);
+      },
       'user': (c, uid, f, s, p) => c.read<DataRepository<User>>().readAll(
         userId: uid,
         filter: f,
         sort: s,
         pagination: p,
       ),
-      'in_app_notification': (c, uid, f, s, p) {
+      'in_app_notification': (c, uid, f, s, p) async {
         final finalFilter = {...?f};
         if (uid != null) {
           finalFilter['userId'] = uid;
@@ -278,27 +464,65 @@ class DataOperationRegistry {
           pagination: p,
         );
       },
-      'kpi_card_data': (c, uid, f, s, p) =>
-          c.read<DataRepository<KpiCardData>>().readAll(
-            userId: uid,
-            filter: f,
-            sort: s,
-            pagination: p,
-          ),
-      'chart_card_data': (c, uid, f, s, p) =>
-          c.read<DataRepository<ChartCardData>>().readAll(
-            userId: uid,
-            filter: f,
-            sort: s,
-            pagination: p,
-          ),
-      'ranked_list_card_data': (c, uid, f, s, p) =>
-          c.read<DataRepository<RankedListCardData>>().readAll(
-            userId: uid,
-            filter: f,
-            sort: s,
-            pagination: p,
-          ),
+      'kpi_card_data': (c, uid, f, s, p) async {
+        final lang = c.read<SupportedLanguage>();
+        final expandedFilter = LocalizationUtils.expandFilterForLocalization(
+          f,
+          lang,
+          ['label'],
+          isPrivileged: _isPrivileged(c),
+        );
+        final response = await c.read<DataRepository<KpiCardData>>().readAll(
+          userId: uid,
+          filter: expandedFilter,
+          sort: s,
+          pagination: p,
+        );
+        final localizedItems = response.items
+            .map((i) => LocalizationUtils.localizeKpiCardData(i, lang))
+            .toList();
+        return response.copyWith(items: localizedItems);
+      },
+      'chart_card_data': (c, uid, f, s, p) async {
+        final lang = c.read<SupportedLanguage>();
+        final expandedFilter = LocalizationUtils.expandFilterForLocalization(
+          f,
+          lang,
+          ['label'],
+          isPrivileged: _isPrivileged(c),
+        );
+        final response = await c.read<DataRepository<ChartCardData>>().readAll(
+          userId: uid,
+          filter: expandedFilter,
+          sort: s,
+          pagination: p,
+        );
+        final localizedItems = response.items
+            .map((i) => LocalizationUtils.localizeChartCardData(i, lang))
+            .toList();
+        return response.copyWith(items: localizedItems);
+      },
+      'ranked_list_card_data': (c, uid, f, s, p) async {
+        final lang = c.read<SupportedLanguage>();
+        final expandedFilter = LocalizationUtils.expandFilterForLocalization(
+          f,
+          lang,
+          ['label'],
+          isPrivileged: _isPrivileged(c),
+        );
+        final response = await c
+            .read<DataRepository<RankedListCardData>>()
+            .readAll(
+              userId: uid,
+              filter: expandedFilter,
+              sort: s,
+              pagination: p,
+            );
+        final localizedItems = response.items
+            .map((i) => LocalizationUtils.localizeRankedListCardData(i, lang))
+            .toList();
+        return response.copyWith(items: localizedItems);
+      },
       'user_rewards': (c, uid, f, s, p) {
         final finalFilter = {...?f};
         if (uid != null) {
@@ -324,6 +548,16 @@ class DataOperationRegistry {
     _itemCreators.addAll({
       'headline': (c, item, uid) async {
         var headlineToCreate = item as Headline;
+
+        // --- ENRICHMENT: Fetch full entities to store all translations ---
+        // The client might send a partial snapshot (e.g., only English names).
+        // We fetch the authoritative documents from the DB to ensure the
+        // embedded objects in the Headline contain ALL supported languages.
+        headlineToCreate = await c
+            .read<ContentEnrichmentService>()
+            .enrichHeadline(
+              headlineToCreate,
+            );
 
         // If a mediaAssetId is provided on creation, ensure imageUrl is null.
         if (headlineToCreate.mediaAssetId != null) {
@@ -368,6 +602,13 @@ class DataOperationRegistry {
       },
       'source': (c, item, uid) async {
         var sourceToCreate = item as Source;
+
+        // --- ENRICHMENT: Fetch full Country for headquarters ---
+        // Ensure the embedded Country object contains all translations, not just
+        // the partial snapshot sent by the client.
+        sourceToCreate = await c.read<ContentEnrichmentService>().enrichSource(
+          sourceToCreate,
+        );
 
         // If a mediaAssetId is provided on creation, ensure logoUrl is null.
         if (sourceToCreate.mediaAssetId != null) {
@@ -526,20 +767,29 @@ class DataOperationRegistry {
     // --- Register Item Updaters ---
     _itemUpdaters.addAll({
       'headline': (c, id, item, uid) async {
-        final headlineToUpdate =
-            c.read<FetchedItem<dynamic>>().data as Headline;
+        // Fetch RAW item to ensure we have all translations before merging
+        final rawHeadline = await c.read<DataRepository<Headline>>().read(
+          id: id,
+        );
         final requestedUpdateHeadline = item as Headline;
 
+        // 1. Merge Translations
+        var finalHeadline = requestedUpdateHeadline.copyWith(
+          title: LocalizationUtils.mergeTranslations(
+            rawHeadline.title,
+            requestedUpdateHeadline.title,
+          ),
+        );
+
+        // 2. Handle Media Asset Logic
         // If the mediaAssetId is being changed to a new non-null value,
         // we should nullify the imageUrl to ensure the webhook-populated URL is used.
-        final finalHeadline =
-            requestedUpdateHeadline.mediaAssetId !=
-                    headlineToUpdate.mediaAssetId &&
-                requestedUpdateHeadline.mediaAssetId != null
-            ? requestedUpdateHeadline.copyWith(
-                imageUrl: const ValueWrapper(null),
-              )
-            : requestedUpdateHeadline;
+        if (requestedUpdateHeadline.mediaAssetId != rawHeadline.mediaAssetId &&
+            requestedUpdateHeadline.mediaAssetId != null) {
+          finalHeadline = finalHeadline.copyWith(
+            imageUrl: const ValueWrapper(null),
+          );
+        }
 
         return c.read<DataRepository<Headline>>().update(
           id: id,
@@ -548,14 +798,24 @@ class DataOperationRegistry {
         );
       },
       'topic': (c, id, item, uid) async {
-        final topicToUpdate = c.read<FetchedItem<dynamic>>().data as Topic;
+        final rawTopic = await c.read<DataRepository<Topic>>().read(id: id);
         final requestedUpdateTopic = item as Topic;
 
-        final finalTopic =
-            requestedUpdateTopic.mediaAssetId != topicToUpdate.mediaAssetId &&
-                requestedUpdateTopic.mediaAssetId != null
-            ? requestedUpdateTopic.copyWith(iconUrl: const ValueWrapper(null))
-            : requestedUpdateTopic;
+        var finalTopic = requestedUpdateTopic.copyWith(
+          name: LocalizationUtils.mergeTranslations(
+            rawTopic.name,
+            requestedUpdateTopic.name,
+          ),
+          description: LocalizationUtils.mergeTranslations(
+            rawTopic.description,
+            requestedUpdateTopic.description,
+          ),
+        );
+
+        if (requestedUpdateTopic.mediaAssetId != rawTopic.mediaAssetId &&
+            requestedUpdateTopic.mediaAssetId != null) {
+          finalTopic = finalTopic.copyWith(iconUrl: const ValueWrapper(null));
+        }
 
         return c.read<DataRepository<Topic>>().update(
           id: id,
@@ -564,16 +824,26 @@ class DataOperationRegistry {
         );
       },
       'source': (c, id, item, uid) async {
-        final sourceToUpdate = c.read<FetchedItem<dynamic>>().data as Source;
+        final rawSource = await c.read<DataRepository<Source>>().read(id: id);
         final requestedUpdateSource = item as Source;
 
-        final finalSource =
-            requestedUpdateSource.mediaAssetId != sourceToUpdate.mediaAssetId &&
-                requestedUpdateSource.mediaAssetId != null
-            ? requestedUpdateSource.copyWith(
-                logoUrl: const ValueWrapper(null),
-              )
-            : requestedUpdateSource;
+        var finalSource = requestedUpdateSource.copyWith(
+          name: LocalizationUtils.mergeTranslations(
+            rawSource.name,
+            requestedUpdateSource.name,
+          ),
+          description: LocalizationUtils.mergeTranslations(
+            rawSource.description,
+            requestedUpdateSource.description,
+          ),
+        );
+
+        if (requestedUpdateSource.mediaAssetId != rawSource.mediaAssetId &&
+            requestedUpdateSource.mediaAssetId != null) {
+          finalSource = finalSource.copyWith(
+            logoUrl: const ValueWrapper(null),
+          );
+        }
 
         return c.read<DataRepository<Source>>().update(
           id: id,
@@ -706,11 +976,40 @@ class DataOperationRegistry {
         final userContentPreferencesRepository = context
             .read<DataRepository<UserContentPreferences>>();
 
+        // Fetch RAW preferences to merge SavedHeadlineFilter names
+        final rawPreferences = await userContentPreferencesRepository.read(
+          id: id,
+        );
         final preferencesToUpdate = item as UserContentPreferences;
 
+        // Merge SavedHeadlineFilters names
+        // We iterate through the incoming filters and look for a match in the
+        // raw existing filters. If found, we merge the name map.
+        final mergedFilters = preferencesToUpdate.savedHeadlineFilters.map((
+          incomingFilter,
+        ) {
+          final existingFilter = rawPreferences.savedHeadlineFilters.firstWhere(
+            (f) => f.id == incomingFilter.id,
+            orElse: () => incomingFilter,
+          );
+
+          // If it's the same filter (by ID), merge the name
+          if (existingFilter.id == incomingFilter.id) {
+            return incomingFilter.copyWith(
+              name: LocalizationUtils.mergeTranslations(
+                existingFilter.name,
+                incomingFilter.name,
+              ),
+            );
+          }
+          return incomingFilter;
+        }).toList();
+
+        final finalPreferences = preferencesToUpdate.copyWith(
+          savedHeadlineFilters: mergedFilters,
+        );
+
         // 2. Validate all limits using the consolidated service method.
-        // The service validates the entire proposed state. We first check
-        // if the user has permission to bypass these limits.
         if (permissionService.hasPermission(
           authenticatedUser,
           Permissions.userPreferenceBypassLimits,
@@ -721,18 +1020,23 @@ class DataOperationRegistry {
         } else {
           await userActionLimitService.checkUserContentPreferencesLimits(
             user: authenticatedUser,
-            updatedPreferences: preferencesToUpdate,
+            updatedPreferences: finalPreferences,
           );
         }
 
-        // 3. If all checks pass, proceed with the update.
+        // 3. Enrich the preferences with full entity data (translations).
+        // This ensures that followed items and saved filters contain all
+        // supported languages, not just the one active on the client.
+        final enrichedPreferences = await context
+            .read<ContentEnrichmentService>()
+            .enrichUserContentPreferences(finalPreferences);
+
         _log.info(
-          'All preference validations passed for user ${authenticatedUser.id}. '
-          'Proceeding with update.',
+          'Enrichment complete for user ${authenticatedUser.id}. Proceeding with update.',
         );
         return userContentPreferencesRepository.update(
           id: id,
-          item: preferencesToUpdate,
+          item: enrichedPreferences,
         );
       },
       'remote_config': (c, id, item, uid) =>
@@ -741,11 +1045,12 @@ class DataOperationRegistry {
             item: item as RemoteConfig,
             userId: uid,
           ),
-      'in_app_notification': (c, id, item, uid) =>
-          c.read<DataRepository<InAppNotification>>().update(
-            id: id,
-            item: item as InAppNotification,
-          ),
+      'in_app_notification': (c, id, item, uid) async {
+        return c.read<DataRepository<InAppNotification>>().update(
+          id: id,
+          item: item as InAppNotification,
+        );
+      },
       'engagement': (context, id, item, uid) async {
         _log.info('Executing custom updater for engagement ID: $id.');
         final existingEngagement =
@@ -928,5 +1233,21 @@ class DataOperationRegistry {
         _log.info('Deleted MediaAsset record from database: $id');
       },
     });
+  }
+
+  /// Determines if the current user requires raw, unlocalized data.
+  ///
+  /// We use [PermissionService.hasAnyPermission] to check for the
+  /// [Permissions.dashboardLogin] capability. This covers both Administrators
+  /// (who have all permissions) and Publishers (who are explicitly granted
+  /// dashboard access), ensuring both can access the full translation maps
+  /// required for the CMS editor.
+  bool _isPrivileged(RequestContext context) {
+    final user = context.read<User?>();
+    if (user == null) return false;
+    return context.read<PermissionService>().hasAnyPermission(
+      user,
+      {Permissions.dashboardLogin},
+    );
   }
 }

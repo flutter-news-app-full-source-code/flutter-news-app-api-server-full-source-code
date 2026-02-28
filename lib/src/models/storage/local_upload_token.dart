@@ -1,6 +1,6 @@
 import 'package:core/core.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/util/converters/date_time_converter.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/utils/converters/date_time_converter.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 

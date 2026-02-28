@@ -1,9 +1,9 @@
 import 'package:core/core.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
-import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
+
+import 'package:flutter_news_app_backend_api_full_source_code/src/config/environment_config.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/auth_token_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/token_blacklist_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 
@@ -20,26 +20,38 @@ class JwtAuthTokenService implements AuthTokenService {
   /// - [userRepository]: To fetch user details after validating the token's
   ///   subject claim.
   /// - [blacklistService]: To manage the blacklist of invalidated tokens.
-  const JwtAuthTokenService({
+  JwtAuthTokenService({
     required DataRepository<User> userRepository,
     required TokenBlacklistService blacklistService,
     required Logger log,
+    String? jwtSecret,
+    String? jwtIssuer,
+    Duration? jwtExpiry,
   }) : _userRepository = userRepository,
        _blacklistService = blacklistService,
-       _log = log;
+       _log = log,
+       _jwtSecret = jwtSecret ?? EnvironmentConfig.jwtSecretKey,
+       _jwtIssuer = jwtIssuer ?? EnvironmentConfig.jwtIssuer,
+       _jwtExpiry = jwtExpiry ?? EnvironmentConfig.jwtExpiryDuration;
 
   final DataRepository<User> _userRepository;
   final TokenBlacklistService _blacklistService;
   final Logger _log;
+  final String _jwtSecret;
+  final String _jwtIssuer;
+  final Duration _jwtExpiry;
 
   // --- Interface Implementation ---
 
   @override
-  Future<String> generateToken(User user) async {
+  Future<String> generateToken(
+    User user, {
+    SupportedLanguage? language,
+  }) async {
     try {
       final now = DateTime.now();
-      final expiry = now.add(EnvironmentConfig.jwtExpiryDuration);
-      final issuer = EnvironmentConfig.jwtIssuer;
+      final expiry = now.add(_jwtExpiry);
+      final issuer = _jwtIssuer;
 
       final jwt = JWT(
         {
@@ -54,6 +66,7 @@ class JwtAuthTokenService implements AuthTokenService {
           'role': user.role.name, // role for permissions
           'tier': user.tier.name, // AccessTier for entitlements
           'isAnonymous': user.isAnonymous,
+          if (language != null) 'lang': language.name,
         },
         issuer: issuer,
         subject: user.id,
@@ -62,12 +75,15 @@ class JwtAuthTokenService implements AuthTokenService {
 
       // Sign the token using HMAC-SHA256
       final token = jwt.sign(
-        SecretKey(EnvironmentConfig.jwtSecretKey),
+        SecretKey(_jwtSecret),
         algorithm: JWTAlgorithm.HS256,
-        expiresIn: EnvironmentConfig.jwtExpiryDuration, // Redundant but safe
+        expiresIn: _jwtExpiry, // Redundant but safe
       );
 
-      _log.info('Generated JWT for user ${user.id}');
+      _log.info(
+        'Generated JWT for user ${user.id} '
+        'with language: ${language?.name}',
+      );
       return token;
     } catch (e) {
       _log.severe('Error generating JWT for user ${user.id}: $e');
@@ -84,7 +100,7 @@ class JwtAuthTokenService implements AuthTokenService {
     try {
       // Verify the token's signature and expiry
       _log.finer('[validateToken] Verifying token signature and expiry...');
-      final jwt = JWT.verify(token, SecretKey(EnvironmentConfig.jwtSecretKey));
+      final jwt = JWT.verify(token, SecretKey(_jwtSecret));
       _log.finer('[validateToken] Token verified. Payload: ${jwt.payload}');
 
       // --- Blacklist Check ---
@@ -207,7 +223,7 @@ class JwtAuthTokenService implements AuthTokenService {
       _log.finer('[invalidateToken] Verifying signature (ignoring expiry)...');
       final jwt = JWT.verify(
         token,
-        SecretKey(EnvironmentConfig.jwtSecretKey),
+        SecretKey(_jwtSecret),
         checkExpiresIn: false, // IMPORTANT: Don't fail if expired here
         checkHeaderType: true, // Keep other standard checks
       );

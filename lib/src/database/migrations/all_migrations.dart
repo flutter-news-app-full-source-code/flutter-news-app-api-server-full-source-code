@@ -1,5 +1,5 @@
-import 'package:flutter_news_app_api_server_full_source_code/src/database/migration.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/database_migration_service.dart'
+import 'package:flutter_news_app_backend_api_full_source_code/src/database/migration.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/database_migration_service.dart'
     show DatabaseMigrationService;
 
 /// A central list of all database migrations to be applied.

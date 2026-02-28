@@ -1,10 +1,8 @@
 import 'package:core/core.dart';
-import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/clients/analytics/analytics_reporting_client.dart'
+import 'package:flutter_news_app_backend_api_full_source_code/src/clients/analytics/analytics_reporting_client.dart'
     show AnalyticsReportingClient;
-import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
-import 'package:http_client/http_client.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/models/models.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/google_auth_service.dart';
 import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
 
@@ -246,7 +244,7 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
       rawItems.add(
         RankedListItem(
           entityId: entityId,
-          displayTitle: '',
+          displayTitle: const {},
           metricValue: metricValue,
         ),
       );
@@ -267,7 +265,9 @@ class GoogleAnalyticsDataClient implements AnalyticsReportingClient {
     return rawItems
         .map(
           (item) => item.copyWith(
-            displayTitle: headlineMap[item.entityId] ?? 'Unknown Headline',
+            displayTitle:
+                headlineMap[item.entityId] ??
+                {SupportedLanguage.en: 'Unknown Headline'},
           ),
         )
         .toList();

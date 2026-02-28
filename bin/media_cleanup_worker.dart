@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:core/core.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/config/app_dependencies.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/config/app_dependencies.dart';
 import 'package:logging/logging.dart';
 
 final _log = Logger('MediaCleanupWorker');

@@ -1,8 +1,7 @@
 import 'package:core/core.dart';
-import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification/firebase_push_notification_client.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification/push_notification_client.dart';
-import 'package:http_client/http_client.dart';
+
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/push_notification/firebase_push_notification_client.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/push_notification/push_notification_client.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
@@ -29,7 +28,7 @@ void main() {
     const projectId = 'test-project';
     const payload = PushNotificationPayload(
       title: 'Test',
-      notificationId: 'id',
+      notificationId: 'notification-id',
       notificationType: PushNotificationSubscriptionDeliveryType.breakingOnly,
       contentType: ContentType.headline,
       contentId: 'content-id',

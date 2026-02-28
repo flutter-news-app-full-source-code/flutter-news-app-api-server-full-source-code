@@ -2,8 +2,8 @@
 
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:data_client/data_client.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permissions.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/rbac/permissions.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/utils/localization_utils.dart';
 
 /// Defines the type of permission check required for a specific action.
 enum RequiredPermissionType {
@@ -80,6 +80,8 @@ class ModelConfig<T> {
     required this.postPermission,
     required this.putPermission,
     required this.deletePermission,
+    this.translatableFields = const [],
+    this.localize,
     this.getOwnerId, // Optional: Function to get owner ID for user-owned models
   });
 
@@ -88,6 +90,14 @@ class ModelConfig<T> {
 
   /// Function to extract the unique string ID from an item of type [T].
   final String Function(T item) getId;
+
+  /// List of field names that are stored as multilingual maps in the database.
+  /// Used to rewrite sort queries (e.g., `title` -> `title.en`).
+  final List<String> translatableFields;
+
+  /// Function to project a multi-language model into a single-language view.
+  /// If null, the model is considered language-agnostic.
+  final T Function(T item, SupportedLanguage language)? localize;
 
   /// Optional function to extract the unique string ID of the owner from an
   /// item of type [T]. Required for models where `requiresOwnershipCheck`
@@ -130,6 +140,8 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
   'headline': ModelConfig<Headline>(
     fromJson: Headline.fromJson,
     getId: (h) => h.id,
+    translatableFields: ['title'],
+    localize: LocalizationUtils.localizeHeadline,
     // Headlines: Admin-owned, read allowed by standard/guest users
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
@@ -157,6 +169,8 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
   'topic': ModelConfig<Topic>(
     fromJson: Topic.fromJson,
     getId: (t) => t.id,
+    translatableFields: ['name', 'description'],
+    localize: LocalizationUtils.localizeTopic,
     // Topics: Admin-owned, read allowed by standard/guest users
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
@@ -184,6 +198,8 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
   'source': ModelConfig<Source>(
     fromJson: Source.fromJson,
     getId: (s) => s.id,
+    translatableFields: ['name', 'description'],
+    localize: LocalizationUtils.localizeSource,
     // Sources: Admin-owned, read allowed by standard/guest users
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
@@ -211,6 +227,8 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
   'country': ModelConfig<Country>(
     fromJson: Country.fromJson,
     getId: (c) => c.id,
+    translatableFields: ['name'],
+    localize: LocalizationUtils.localizeCountry,
     // Countries: Static data, read-only for all authenticated users.
     // Modification is not allowed via the API as this is real-world data
     // managed by database seeding.
@@ -240,6 +258,8 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
   'language': ModelConfig<Language>(
     fromJson: Language.fromJson,
     getId: (l) => l.id,
+    translatableFields: ['name'],
+    localize: LocalizationUtils.localizeLanguage,
     // Languages: Static data, read-only for all authenticated users.
     // Modification is not allowed via the API as this is real-world data
     // managed by database seeding.
@@ -367,6 +387,7 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
   'user_content_preferences': ModelConfig<UserContentPreferences>(
     fromJson: UserContentPreferences.fromJson,
     getId: (p) => p.id,
+    translatableFields: ['savedHeadlineFilters.name'],
     getOwnerId: (dynamic item) =>
         (item as UserContentPreferences).id
             as String?, // User ID is the owner ID
@@ -428,6 +449,8 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     fromJson: KpiCardData.fromJson,
     getId: (d) => d.id,
     getOwnerId: null, // System-owned resource
+    translatableFields: ['label'],
+    localize: LocalizationUtils.localizeKpiCardData,
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.analyticsRead,
@@ -450,6 +473,8 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     fromJson: ChartCardData.fromJson,
     getId: (d) => d.id,
     getOwnerId: null, // System-owned resource
+    translatableFields: ['label'],
+    localize: LocalizationUtils.localizeChartCardData,
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.analyticsRead,
@@ -472,6 +497,8 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     fromJson: RankedListCardData.fromJson,
     getId: (d) => d.id,
     getOwnerId: null, // System-owned resource
+    translatableFields: ['label'],
+    localize: LocalizationUtils.localizeRankedListCardData,
     getCollectionPermission: const ModelActionPermission(
       type: RequiredPermissionType.specificPermission,
       permission: Permissions.analyticsRead,

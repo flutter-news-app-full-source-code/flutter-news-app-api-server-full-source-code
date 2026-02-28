@@ -1,5 +1,5 @@
-import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/analytics/analytics.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/models/models.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/analytics/analytics.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -157,6 +157,39 @@ void main() {
       test('builds correct pipeline for topicEngagement (time-bound)', () {
         const query = StandardMetricQuery(
           metric: 'database:headlines:topicEngagement',
+        );
+        final pipeline = queryBuilder.buildPipelineForMetric(
+          query,
+          startDate,
+          endDate,
+        );
+
+        final expectedPipeline = [
+          {
+            r'$match': {
+              'createdAt': {
+                r'$gte': startDate.toUtc().toIso8601String(),
+                r'$lt': endDate.toUtc().toIso8601String(),
+              },
+            },
+          },
+          {
+            r'$group': {
+              '_id': r'$topic.name',
+              'count': {r'$sum': 1},
+            },
+          },
+          {
+            r'$project': {'label': r'$_id', 'value': r'$count', '_id': 0},
+          },
+        ];
+
+        expect(pipeline, equals(expectedPipeline));
+      });
+
+      test('builds correct pipeline for viewsByTopic (time-bound)', () {
+        const query = StandardMetricQuery(
+          metric: 'database:headlines:viewsByTopic',
         );
         final pipeline = queryBuilder.buildPipelineForMetric(
           query,

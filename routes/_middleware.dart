@@ -1,33 +1,34 @@
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/config/app_dependencies.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/error_handler.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/request_id.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/storage/local_media_finalization_job.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/storage/local_upload_token.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/registry/data_operation_registry.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_registry.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/email/email_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/media_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification/push_notification_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/rewards_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/local_media_finalization_job_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/upload_token_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/verification_code_storage_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/util/gcs_jwt_verifier.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/util/sns_message_handler.dart';
+
+import 'package:flutter_news_app_backend_api_full_source_code/src/config/app_dependencies.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/config/environment_config.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/middlewares/error_handler.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/models/request_id.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/models/storage/local_media_finalization_job.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/models/storage/local_upload_token.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/rbac/permission_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/registry/data_operation_registry.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/registry/model_registry.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/auth_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/auth_token_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/content_enrichment_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/country_query_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/email/email_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/google_auth_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/idempotency_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/media_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/push_notification/push_notification_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/rate_limit_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/reward/rewards_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/storage/i_storage_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/storage/local_media_finalization_job_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/storage/upload_token_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/token_blacklist_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/user_action_limit_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/verification_code_storage_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/utils/gcs_jwt_verifier.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/utils/sns_message_handler.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 import 'package:shelf_cors_headers/shelf_cors_headers.dart' as shelf_cors;
@@ -299,6 +300,11 @@ Handler middleware(Handler handler) {
               .use(
                 provider<LocalMediaFinalizationJobService>(
                   (_) => deps.finalizationJobService,
+                ),
+              )
+              .use(
+                provider<ContentEnrichmentService>(
+                  (_) => deps.contentEnrichmentService,
                 ),
               )
               .call(context);

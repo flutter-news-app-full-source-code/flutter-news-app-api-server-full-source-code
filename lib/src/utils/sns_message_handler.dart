@@ -1,4 +1,4 @@
-import 'package:http_client/http_client.dart';
+import 'package:core/core.dart';
 import 'package:logging/logging.dart';
 
 /// {@template sns_message_handler}

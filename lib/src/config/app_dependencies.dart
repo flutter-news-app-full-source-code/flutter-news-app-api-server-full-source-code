@@ -3,54 +3,53 @@
 import 'dart:async';
 
 import 'package:core/core.dart';
-import 'package:data_mongodb/data_mongodb.dart';
-import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/clients/analytics/analytics.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_client.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_logging_client.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_onesignal_client.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_sendgrid_client.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/database/migrations/all_migrations.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/idempotency_record.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/storage/local_media_finalization_job.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/storage/local_upload_token.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/analytics/analytics.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/database_migration_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/database_seeding_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/default_user_action_limit_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/email/email_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/google_auth_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/jwt_auth_token_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/media_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_rate_limit_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_token_blacklist_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/mongodb_verification_code_storage_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification/firebase_push_notification_client.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification/onesignal_push_notification_client.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification/push_notification_client.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification/push_notification_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/admob_ssv_verifier.dart';
-// import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/applovin_ssv_verifier.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/reward/rewards_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/google_cloud_storage_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/local_media_finalization_job_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/local_storage_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/s3_storage_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/upload_token_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/token_blacklist_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/verification_code_storage_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/util/gcs_jwt_verifier.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/util/sns_message_handler.dart';
-import 'package:http_client/http_client.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/clients/analytics/analytics.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/clients/email/email_client.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/clients/email/email_logging_client.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/clients/email/email_onesignal_client.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/clients/email/email_sendgrid_client.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/config/environment_config.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/database/migrations/all_migrations.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/databases/mongo/data_mongodb.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/models/idempotency_record.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/models/storage/local_media_finalization_job.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/models/storage/local_upload_token.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/rbac/permission_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/analytics/analytics.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/auth_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/auth_token_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/content_enrichment_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/country_query_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/database_migration_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/database_seeding_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/default_user_action_limit_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/email/email_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/google_auth_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/idempotency_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/jwt_auth_token_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/media_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/mongodb_rate_limit_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/mongodb_token_blacklist_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/mongodb_verification_code_storage_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/push_notification/firebase_push_notification_client.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/push_notification/onesignal_push_notification_client.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/push_notification/push_notification_client.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/push_notification/push_notification_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/rate_limit_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/reward/admob_ssv_verifier.dart';
+// import 'package:flutter_news_app_backend_api_full_source_code/src/services/reward/applovin_ssv_verifier.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/reward/rewards_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/storage/google_cloud_storage_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/storage/i_storage_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/storage/local_media_finalization_job_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/storage/local_storage_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/storage/s3_storage_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/storage/upload_token_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/token_blacklist_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/user_action_limit_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/verification_code_storage_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/utils/gcs_jwt_verifier.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/utils/sns_message_handler.dart';
 import 'package:logging/logging.dart';
 
 /// {@template app_dependencies}
@@ -129,6 +128,7 @@ class AppDependencies {
   late final MediaService mediaService;
   late final UploadTokenService uploadTokenService;
   late final LocalMediaFinalizationJobService finalizationJobService;
+  late final ContentEnrichmentService contentEnrichmentService;
 
   late final IGcsJwtVerifier gcsJwtVerifier;
   late final SnsMessageHandler snsMessageHandler;
@@ -659,6 +659,7 @@ class AppDependencies {
         inAppNotificationRepository: inAppNotificationRepository,
         firebaseClient: firebasePushNotificationClient,
         oneSignalClient: oneSignalPushNotificationClient,
+        appSettingsRepository: appSettingsRepository,
         log: Logger('DefaultPushNotificationService'),
       );
 
@@ -706,6 +707,14 @@ class AppDependencies {
       finalizationJobService = LocalMediaFinalizationJobService(
         connectionManager: _mongoDbConnectionManager,
         log: Logger('FinalizationJobService'),
+      );
+
+      contentEnrichmentService = ContentEnrichmentService(
+        sourceRepository: sourceRepository,
+        topicRepository: topicRepository,
+        countryRepository: countryRepository,
+        headlineRepository: headlineRepository,
+        log: Logger('ContentEnrichmentService'),
       );
 
       gcsJwtVerifier = GcsJwtVerifier(log: Logger('GcsJwtVerifier'));

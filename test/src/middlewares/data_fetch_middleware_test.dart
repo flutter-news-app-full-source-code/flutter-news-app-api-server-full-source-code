@@ -1,8 +1,8 @@
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/data_fetch_middleware.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/registry/data_operation_registry.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/middlewares/data_fetch_middleware.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/middlewares/ownership_check_middleware.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/registry/data_operation_registry.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
@@ -21,51 +21,37 @@ void main() {
       mockRegistry = MockDataOperationRegistry();
       headline = Headline(
         id: 'headline-id',
-        title: 'Test Headline',
+        title: const {SupportedLanguage.en: 'Test Headline'},
         url: 'http://example.com',
         imageUrl: 'http://example.com/image.png',
         source: Source(
           id: 'source-id',
-          name: 'Test Source',
-          description: '',
+          name: const {SupportedLanguage.en: 'Test Source'},
+          description: const {SupportedLanguage.en: ''},
           url: '',
           logoUrl: '',
           sourceType: SourceType.other,
-          language: Language(
-            id: 'lang-id',
-            code: 'en',
-            name: 'English',
-            nativeName: 'English',
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-            status: ContentStatus.active,
-          ),
-          headquarters: Country(
+          language: SupportedLanguage.en,
+          headquarters: const Country(
             id: 'country-id',
             isoCode: 'US',
-            name: 'United States',
+            name: {SupportedLanguage.en: 'United States'},
             flagUrl: '',
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-            status: ContentStatus.active,
           ),
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
           status: ContentStatus.active,
         ),
-        eventCountry: Country(
+        eventCountry: const Country(
           id: 'country-id',
           isoCode: 'US',
-          name: 'United States',
+          name: {SupportedLanguage.en: 'United States'},
           flagUrl: '',
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-          status: ContentStatus.active,
         ),
         topic: Topic(
           id: 'topic-id',
-          name: 'Test Topic',
-          description: '',
+          name: const {SupportedLanguage.en: 'Test Topic'},
+          description: const {SupportedLanguage.en: ''},
           iconUrl: '',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),

@@ -3,19 +3,19 @@ import 'dart:convert';
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:dart_frog_test/dart_frog_test.dart';
-import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/ownership_check_middleware.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/request_id.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/rbac/permission_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/registry/data_operation_registry.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/registry/model_registry.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/auth_token_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/country_query_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/idempotency_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/user_action_limit_service.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/util/gcs_jwt_verifier.dart';
+
+import 'package:flutter_news_app_backend_api_full_source_code/src/middlewares/ownership_check_middleware.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/models/request_id.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/rbac/permission_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/registry/data_operation_registry.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/registry/model_registry.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/auth_token_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/country_query_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/idempotency_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/rate_limit_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/storage/i_storage_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/user_action_limit_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/utils/gcs_jwt_verifier.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockRequestContext extends Mock implements RequestContext {}
@@ -96,6 +96,7 @@ void registerSharedFallbackValues() {
   );
   registerFallbackValue(createTestHeadline());
   registerFallbackValue(createTestMediaAsset());
+  registerFallbackValue(SupportedLanguage.en);
 }
 
 /// A proxy implementation of [RequestContext] that delegates to another context.
@@ -230,6 +231,9 @@ RequestContext createMockRequestContext({
       () => effectivePermissionService.hasPermission(any(), any()),
     ).thenReturn(true);
     when(() => effectivePermissionService.isAdmin(any())).thenReturn(true);
+    when(
+      () => effectivePermissionService.hasAnyPermission(any(), any()),
+    ).thenReturn(true);
   }
   testContext.provide<PermissionService>(effectivePermissionService);
 
@@ -347,7 +351,9 @@ User createTestUser({
 
 Headline createTestHeadline({
   String id = 'headline-id',
-  String title = 'Test Headline',
+  Map<SupportedLanguage, String> title = const {
+    SupportedLanguage.en: 'Test Headline',
+  },
   String url = 'http://example.com/headline',
   String? imageUrl,
   String? mediaAssetId,
@@ -367,11 +373,11 @@ Headline createTestHeadline({
         source ??
         Source(
           id: 'source-id',
-          name: 'Test Source',
-          description: '',
+          name: const {SupportedLanguage.en: 'Test Source'},
+          description: const {SupportedLanguage.en: ''},
           url: '',
           sourceType: SourceType.other,
-          language: languagesFixturesData.first,
+          language: SupportedLanguage.en,
           headquarters: countriesFixturesData.first,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
@@ -382,8 +388,8 @@ Headline createTestHeadline({
         topic ??
         Topic(
           id: 'topic-id',
-          name: 'Test Topic',
-          description: '',
+          name: const {SupportedLanguage.en: 'Test Topic'},
+          description: const {SupportedLanguage.en: ''},
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
           status: ContentStatus.active,

@@ -1,10 +1,11 @@
 import 'package:core/core.dart';
-import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/clients/analytics/analytics_reporting_client.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/models.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/analytics/analytics.dart';
+
+import 'package:flutter_news_app_backend_api_full_source_code/src/clients/analytics/analytics_reporting_client.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/models/models.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/analytics/analytics.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:mongo_dart/mongo_dart.dart' show ObjectId;
 import 'package:test/test.dart';
 
 // Mocks for all dependencies of AnalyticsSyncService
@@ -64,7 +65,24 @@ void main() {
         const KpiCardData(
           id: 'fallback_id',
           cardId: KpiCardId.usersTotalRegistered,
-          label: '',
+          label: {SupportedLanguage.en: ''},
+          timeFrames: {},
+        ),
+      );
+      registerFallbackValue(
+        const ChartCardData(
+          id: 'fallback_id',
+          cardId: ChartCardId.contentHeadlinesViewsByTopic,
+          label: {SupportedLanguage.en: ''},
+          type: ChartType.bar,
+          timeFrames: {},
+        ),
+      );
+      registerFallbackValue(
+        const RankedListCardData(
+          id: 'fallback_id',
+          cardId: RankedListCardId.overviewTopicsMostFollowed,
+          label: {SupportedLanguage.en: ''},
           timeFrames: {},
         ),
       );
@@ -110,6 +128,10 @@ void main() {
           general: GeneralAppConfig(
             termsOfServiceUrl: '',
             privacyPolicyUrl: '',
+          ),
+          localization: LocalizationConfig(
+            enabledLanguages: [SupportedLanguage.en],
+            defaultLanguage: SupportedLanguage.en,
           ),
         ),
         features: FeaturesConfig(
@@ -236,7 +258,7 @@ void main() {
             KpiCardData(
               id: 'test_id',
               cardId: kpiId,
-              label: '',
+              label: {SupportedLanguage.en: ''},
               timeFrames: {},
             ),
           ],
@@ -254,7 +276,7 @@ void main() {
         (_) async => const KpiCardData(
           id: 'test_id',
           cardId: kpiId,
-          label: '',
+          label: {SupportedLanguage.en: ''},
           timeFrames: {},
         ),
       );
@@ -280,5 +302,220 @@ void main() {
       // 100 vs 100 -> 0% trend
       expect(capturedCard.timeFrames[KpiTimeFrame.day]!.trend, '+0.0%');
     });
+
+    test(
+      'run syncs Database Chart card with localized labels correctly',
+      () async {
+        final config = createRemoteConfig();
+        const chartId = ChartCardId.contentHeadlinesViewsByTopic;
+        const query = StandardMetricQuery(
+          metric: 'database:headlines:viewsByTopic',
+        );
+
+        when(
+          () => mockRemoteConfigRepo.read(id: any(named: 'id')),
+        ).thenAnswer((_) async => config);
+
+        // Mock Mapper to return our query for this chart
+        when(() => mockMapper.getChartQuery(chartId)).thenReturn(query);
+        when(() => mockMapper.getChartType(chartId)).thenReturn(ChartType.bar);
+
+        // Mock existing card to trigger update path
+        when(
+          () => mockChartCardRepo.readAll(
+            filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
+          ),
+        ).thenAnswer(
+          (_) async => const PaginatedResponse(
+            items: [
+              ChartCardData(
+                id: 'chart_id',
+                cardId: chartId,
+                label: {SupportedLanguage.en: 'Views by Topic'},
+                type: ChartType.bar,
+                timeFrames: {},
+              ),
+            ],
+            cursor: null,
+            hasMore: false,
+          ),
+        );
+
+        // Mock Aggregation Result from Headline Repo
+        // This simulates MongoDB returning a Map for the grouped field (topic.name)
+        final aggregationResult = [
+          {
+            'label': {'en': 'Technology', 'es': 'Tecnología'},
+            'value': 42,
+          },
+        ];
+
+        when(
+          () => mockHeadlineRepo.aggregate(pipeline: any(named: 'pipeline')),
+        ).thenAnswer((_) async => aggregationResult);
+
+        // Mock Update
+        when(
+          () => mockChartCardRepo.update(
+            id: any(named: 'id'),
+            item: any(named: 'item'),
+          ),
+        ).thenAnswer(
+          (invocation) async =>
+              invocation.namedArguments[#item] as ChartCardData,
+        );
+
+        await service.run();
+
+        // Verify
+        final captured = verify(
+          () => mockChartCardRepo.update(
+            id: 'chart_id',
+            item: captureAny(named: 'item'),
+          ),
+        ).captured;
+
+        final updatedCard = captured.first as ChartCardData;
+        final dataPoints =
+            updatedCard.timeFrames[ChartTimeFrame.week]!; // Default check
+
+        expect(dataPoints.first.value, 42);
+        expect(dataPoints.first.label![SupportedLanguage.en], 'Technology');
+        expect(dataPoints.first.label![SupportedLanguage.es], 'Tecnología');
+      },
+    );
+
+    test(
+      'run syncs Database Chart card with String labels (fallback) correctly',
+      () async {
+        final config = createRemoteConfig();
+        const chartId = ChartCardId.contentHeadlinesViewsByTopic;
+        const query = StandardMetricQuery(
+          metric: 'database:headlines:viewsByTopic',
+        );
+
+        when(
+          () => mockRemoteConfigRepo.read(id: any(named: 'id')),
+        ).thenAnswer((_) async => config);
+
+        when(() => mockMapper.getChartQuery(chartId)).thenReturn(query);
+        when(() => mockMapper.getChartType(chartId)).thenReturn(ChartType.bar);
+
+        when(
+          () => mockChartCardRepo.readAll(
+            filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
+          ),
+        ).thenAnswer(
+          (_) async => const PaginatedResponse(
+            items: [],
+            cursor: null,
+            hasMore: false,
+          ),
+        );
+
+        when(
+          () => mockChartCardRepo.create(item: any(named: 'item')),
+        ).thenAnswer(
+          (invocation) async =>
+              invocation.namedArguments[#item] as ChartCardData,
+        );
+
+        // Mock Aggregation Result with String label (e.g. a date or enum)
+        final aggregationResult = [
+          {
+            'label': 'someCategory',
+            'value': 10,
+          },
+        ];
+
+        when(
+          () => mockHeadlineRepo.aggregate(pipeline: any(named: 'pipeline')),
+        ).thenAnswer((_) async => aggregationResult);
+
+        await service.run();
+
+        final captured = verify(
+          () => mockChartCardRepo.create(
+            item: captureAny(named: 'item'),
+          ),
+        ).captured;
+
+        final createdCard = captured.first as ChartCardData;
+        final dataPoints = createdCard.timeFrames[ChartTimeFrame.week]!;
+
+        expect(dataPoints.first.value, 10);
+        // Verify fallback formatting logic (camelCase -> Title Case)
+        expect(dataPoints.first.label![SupportedLanguage.en], 'Some Category');
+      },
+    );
+
+    test(
+      'run syncs Database Ranked List with localized titles correctly',
+      () async {
+        final config = createRemoteConfig();
+        const rankedListId = RankedListCardId.overviewTopicsMostFollowed;
+        const query = StandardMetricQuery(
+          metric: 'database:topics:byFollowers',
+        );
+
+        when(
+          () => mockRemoteConfigRepo.read(id: any(named: 'id')),
+        ).thenAnswer((_) async => config);
+
+        when(
+          () => mockMapper.getRankedListQuery(rankedListId),
+        ).thenReturn(query);
+
+        when(
+          () => mockRankedListCardRepo.readAll(
+            filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
+          ),
+        ).thenAnswer(
+          (_) async => const PaginatedResponse(
+            items: [],
+            cursor: null,
+            hasMore: false,
+          ),
+        );
+
+        when(
+          () => mockRankedListCardRepo.create(item: any(named: 'item')),
+        ).thenAnswer(
+          (invocation) async =>
+              invocation.namedArguments[#item] as RankedListCardData,
+        );
+
+        // Mock Aggregation Result with Map displayTitle
+        final aggregationResult = [
+          {
+            'entityId': ObjectId(),
+            'displayTitle': {'en': 'Tech', 'es': 'Tecnología'},
+            'metricValue': 100,
+          },
+        ];
+
+        when(
+          () => mockTopicRepo.aggregate(pipeline: any(named: 'pipeline')),
+        ).thenAnswer((_) async => aggregationResult);
+
+        await service.run();
+
+        final captured = verify(
+          () => mockRankedListCardRepo.create(
+            item: captureAny(named: 'item'),
+          ),
+        ).captured;
+
+        final createdCard = captured.first as RankedListCardData;
+        final items = createdCard.timeFrames[RankedListTimeFrame.week]!;
+
+        expect(items.first.metricValue, 100);
+        expect(items.first.displayTitle[SupportedLanguage.en], 'Tech');
+        expect(items.first.displayTitle[SupportedLanguage.es], 'Tecnología');
+      },
+    );
   });
 }

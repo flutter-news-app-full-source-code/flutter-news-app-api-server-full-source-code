@@ -1,8 +1,8 @@
 // routes/api/v1/webhooks/storage/_middleware.dart
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/config/environment_config.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/middlewares/gcs_jwt_verification_middleware.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/config/environment_config.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/middlewares/gcs_jwt_verification_middleware.dart';
 import 'package:logging/logging.dart';
 
 final _log = Logger('StorageWebhookMiddleware');

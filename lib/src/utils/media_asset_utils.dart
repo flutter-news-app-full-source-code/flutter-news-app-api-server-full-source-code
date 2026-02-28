@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:core/core.dart';
-import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/storage/i_storage_service.dart';
+
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/storage/i_storage_service.dart';
 import 'package:logging/logging.dart';
 
 final _log = Logger('MediaAssetUtils');

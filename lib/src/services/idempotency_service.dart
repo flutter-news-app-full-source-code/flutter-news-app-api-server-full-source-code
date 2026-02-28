@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:core/core.dart';
 import 'package:crypto/crypto.dart';
-import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/idempotency_record.dart';
+
+import 'package:flutter_news_app_backend_api_full_source_code/src/models/idempotency_record.dart';
 import 'package:logging/logging.dart';
 
 /// {@template idempotency_service}

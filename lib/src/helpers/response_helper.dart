@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/request_id.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/models/request_id.dart';
 
 /// A utility class to simplify the creation of standardized API responses.
 abstract final class ResponseHelper {

@@ -1,5 +1,5 @@
 import 'package:dart_frog/dart_frog.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/rate_limit_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/rate_limit_service.dart';
 
 /// Extracts the client's IP address from the request.
 ///

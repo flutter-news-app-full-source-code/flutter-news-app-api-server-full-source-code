@@ -1,8 +1,7 @@
 import 'package:core/core.dart';
-import 'package:data_repository/data_repository.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification/push_notification_client.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/services/push_notification/push_notification_service.dart';
-import 'package:http_client/http_client.dart';
+
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/push_notification/push_notification_client.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/push_notification/push_notification_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:mongo_dart/mongo_dart.dart';
@@ -28,6 +27,7 @@ void main() {
       registerFallbackValue(StackTrace.empty);
       registerFallbackValue(FakePushNotificationPayload());
       registerFallbackValue(FakeInAppNotification());
+      registerFallbackValue(const PaginationOptions());
     });
 
     late DataRepository<PushNotificationDevice>
@@ -35,6 +35,7 @@ void main() {
     late DataRepository<UserContentPreferences>
     userContentPreferencesRepository;
     late DataRepository<RemoteConfig> remoteConfigRepository;
+    late DataRepository<AppSettings> appSettingsRepository;
     late DataRepository<InAppNotification> inAppNotificationRepository;
     late IPushNotificationClient firebaseClient;
     late IPushNotificationClient oneSignalClient;
@@ -50,30 +51,52 @@ void main() {
       createdAt: DateTime.now(),
     );
 
+    final testAppSettings = AppSettings(
+      id: testUser.id,
+      language: SupportedLanguage.en,
+      displaySettings: const DisplaySettings(
+        baseTheme: AppBaseTheme.system,
+        accentTheme: AppAccentTheme.defaultBlue,
+        fontFamily: 'SystemDefault',
+        textScaleFactor: AppTextScaleFactor.medium,
+        fontWeight: AppFontWeight.bold,
+      ),
+      feedSettings: const FeedSettings(
+        feedItemDensity: FeedItemDensity.standard,
+        feedItemImageStyle: FeedItemImageStyle.largeThumbnail,
+        feedItemClickBehavior: FeedItemClickBehavior.defaultBehavior,
+      ),
+    );
+
+    const testCountry = Country(
+      id: 'us',
+      isoCode: 'US',
+      name: {SupportedLanguage.en: 'United States'},
+      flagUrl: 'https://flag.com/us.png',
+    );
+
     final testHeadline = Headline(
       id: ObjectId().oid,
-      title: 'Test Headline',
+      title: const {SupportedLanguage.en: 'Test Headline'},
       url: 'http://example.com',
       imageUrl: 'http://example.com/image.png',
       source: Source(
         id: ObjectId().oid,
-        name: 'Test Source',
-        description: '',
+        name: const {SupportedLanguage.en: 'Test Source'},
+        description: const {SupportedLanguage.en: 'Description'},
         url: '',
-        logoUrl: '',
         sourceType: SourceType.aggregator,
-        language: languagesFixturesData.first,
-        headquarters: countriesFixturesData.first,
+        language: SupportedLanguage.en,
+        headquarters: testCountry,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         status: ContentStatus.active,
       ),
-      eventCountry: countriesFixturesData.first,
+      eventCountry: testCountry,
       topic: Topic(
         id: ObjectId().oid,
-        name: 'Test Topic',
-        description: '',
-        iconUrl: '',
+        name: const {SupportedLanguage.en: 'Test Topic'},
+        description: const {SupportedLanguage.en: 'Description'},
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         status: ContentStatus.active,
@@ -87,7 +110,7 @@ void main() {
     final matchingFilter = SavedHeadlineFilter(
       id: ObjectId().oid,
       userId: testUser.id,
-      name: 'Matching Filter',
+      name: const {SupportedLanguage.en: 'Matching Filter'},
       isPinned: false,
       deliveryTypes: const {
         PushNotificationSubscriptionDeliveryType.breakingOnly,
@@ -102,7 +125,7 @@ void main() {
     final nonMatchingFilter = SavedHeadlineFilter(
       id: ObjectId().oid,
       userId: testUser.id,
-      name: 'Non-Matching Filter',
+      name: const {SupportedLanguage.en: 'Non-Matching Filter'},
       isPinned: false,
       deliveryTypes: const {
         PushNotificationSubscriptionDeliveryType.breakingOnly,
@@ -111,9 +134,8 @@ void main() {
         topics: [
           Topic(
             id: ObjectId().oid,
-            name: 'Different Topic',
-            description: '',
-            iconUrl: '',
+            name: const {SupportedLanguage.en: 'Different Topic'},
+            description: const {SupportedLanguage.en: 'Description'},
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
             status: ContentStatus.active,
@@ -133,14 +155,101 @@ void main() {
       updatedAt: DateTime.now(),
     );
 
-    final remoteConfig = remoteConfigsFixturesData.first.copyWith(
-      features: remoteConfigsFixturesData.first.features.copyWith(
-        pushNotifications: const PushNotificationConfig(
+    final remoteConfig = RemoteConfig(
+      id: 'remote_config_id',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      app: const AppConfig(
+        maintenance: MaintenanceConfig(isUnderMaintenance: false),
+        update: UpdateConfig(
+          latestAppVersion: '1.0.0',
+          isLatestVersionOnly: false,
+          iosUpdateUrl: '',
+          androidUpdateUrl: '',
+        ),
+        general: GeneralAppConfig(
+          termsOfServiceUrl: '',
+          privacyPolicyUrl: '',
+        ),
+        localization: LocalizationConfig(
+          enabledLanguages: [SupportedLanguage.en],
+          defaultLanguage: SupportedLanguage.en,
+        ),
+      ),
+      features: const FeaturesConfig(
+        onboarding: OnboardingConfig(
+          isEnabled: true,
+          appTour: AppTourConfig(isEnabled: true, isSkippable: true),
+          initialPersonalization: InitialPersonalizationConfig(
+            isEnabled: true,
+            isSkippable: true,
+            isCountrySelectionEnabled: true,
+            isTopicSelectionEnabled: true,
+            isSourceSelectionEnabled: true,
+          ),
+        ),
+        analytics: AnalyticsConfig(
+          enabled: true,
+          activeProvider: AnalyticsProviders.firebase,
+          disabledEvents: {},
+          eventSamplingRates: {},
+        ),
+        ads: AdConfig(
+          enabled: true,
+          primaryAdPlatform: AdPlatformType.admob,
+          platformAdIdentifiers: {},
+          feedAdConfiguration: FeedAdConfiguration(
+            enabled: true,
+            adType: AdType.native,
+            visibleTo: {},
+          ),
+          navigationAdConfiguration: NavigationAdConfiguration(
+            enabled: true,
+            visibleTo: {},
+          ),
+        ),
+        pushNotifications: PushNotificationConfig(
           enabled: true,
           primaryProvider: PushNotificationProviders.firebase,
           deliveryConfigs: {
             PushNotificationSubscriptionDeliveryType.breakingOnly: true,
           },
+        ),
+        feed: FeedConfig(
+          itemClickBehavior: FeedItemClickBehavior.defaultBehavior,
+          decorators: {},
+        ),
+        community: CommunityConfig(
+          enabled: true,
+          engagement: EngagementConfig(
+            enabled: true,
+            engagementMode: EngagementMode.reactionsAndComments,
+          ),
+          reporting: ReportingConfig(
+            enabled: true,
+            headlineReportingEnabled: true,
+            sourceReportingEnabled: true,
+            commentReportingEnabled: true,
+          ),
+          appReview: AppReviewConfig(
+            enabled: true,
+            interactionCycleThreshold: 5,
+            initialPromptCooldownDays: 7,
+            eligiblePositiveInteractions: [],
+            isNegativeFeedbackFollowUpEnabled: true,
+            isPositiveFeedbackFollowUpEnabled: true,
+          ),
+        ),
+        rewards: RewardsConfig(enabled: true, rewards: {}),
+      ),
+      user: const UserConfig(
+        limits: UserLimitsConfig(
+          followedItems: {},
+          savedHeadlines: {},
+          savedHeadlineFilters: {},
+          reactionsPerDay: {},
+          commentsPerDay: {},
+          reportsPerDay: {},
         ),
       ),
     );
@@ -149,6 +258,7 @@ void main() {
       pushNotificationDeviceRepository = MockDataRepository();
       userContentPreferencesRepository = MockDataRepository();
       remoteConfigRepository = MockDataRepository();
+      appSettingsRepository = MockDataRepository();
       inAppNotificationRepository = MockDataRepository();
       firebaseClient = MockIPushNotificationClient();
       oneSignalClient = MockIPushNotificationClient();
@@ -158,6 +268,7 @@ void main() {
         pushNotificationDeviceRepository: pushNotificationDeviceRepository,
         userContentPreferencesRepository: userContentPreferencesRepository,
         remoteConfigRepository: remoteConfigRepository,
+        appSettingsRepository: appSettingsRepository,
         inAppNotificationRepository: inAppNotificationRepository,
         firebaseClient: firebaseClient,
         oneSignalClient: oneSignalClient,
@@ -190,6 +301,18 @@ void main() {
       when(
         () => pushNotificationDeviceRepository.delete(id: any(named: 'id')),
       ).thenAnswer((_) async {});
+      when(
+        () => appSettingsRepository.readAll(
+          filter: any(named: 'filter'),
+          pagination: any(named: 'pagination'),
+        ),
+      ).thenAnswer(
+        (_) async => PaginatedResponse(
+          items: [testAppSettings],
+          cursor: null,
+          hasMore: false,
+        ),
+      );
     });
 
     group('sendBreakingNewsNotification', () {
@@ -326,6 +449,7 @@ void main() {
         verifyNever(
           () => pushNotificationDeviceRepository.readAll(
             filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
           ),
         );
       });
@@ -356,6 +480,7 @@ void main() {
         when(
           () => pushNotificationDeviceRepository.readAll(
             filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
           ),
         ).thenAnswer(
           (_) async => PaginatedResponse(
@@ -392,6 +517,7 @@ void main() {
                 return inValues is List && inValues.contains(invalidToken);
               }),
             ),
+            pagination: any(named: 'pagination'),
           ),
         ).thenAnswer(
           (_) async => PaginatedResponse(
@@ -447,6 +573,7 @@ void main() {
         when(
           () => pushNotificationDeviceRepository.readAll(
             filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
           ),
         ).thenAnswer(
           (_) async => PaginatedResponse(
@@ -532,6 +659,7 @@ void main() {
         when(
           () => pushNotificationDeviceRepository.readAll(
             filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
           ),
         ).thenAnswer(
           (_) async => const PaginatedResponse(
@@ -590,6 +718,7 @@ void main() {
           when(
             () => pushNotificationDeviceRepository.readAll(
               filter: any(named: 'filter'),
+              pagination: any(named: 'pagination'),
             ),
           ).thenAnswer(
             (_) async => PaginatedResponse(
@@ -657,6 +786,7 @@ void main() {
             when(
               () => pushNotificationDeviceRepository.readAll(
                 filter: any(named: 'filter'),
+                pagination: any(named: 'pagination'),
               ),
             ).thenAnswer(
               (_) async => PaginatedResponse(
@@ -683,9 +813,8 @@ void main() {
               topics: [
                 Topic(
                   id: ObjectId().oid,
-                  name: 'Wrong Topic',
-                  description: '',
-                  iconUrl: '',
+                  name: const {SupportedLanguage.en: 'Wrong Topic'},
+                  description: const {SupportedLanguage.en: 'Description'},
                   createdAt: DateTime.now(),
                   updatedAt: DateTime.now(),
                   status: ContentStatus.active,
@@ -761,6 +890,7 @@ void main() {
             when(
               () => pushNotificationDeviceRepository.readAll(
                 filter: any(named: 'filter'),
+                pagination: any(named: 'pagination'),
               ),
             ).thenAnswer(
               (_) async => PaginatedResponse(
@@ -817,6 +947,7 @@ void main() {
         when(
           () => pushNotificationDeviceRepository.readAll(
             filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
           ),
         ).thenAnswer(
           (_) async => PaginatedResponse(
@@ -848,6 +979,7 @@ void main() {
           pushNotificationDeviceRepository: pushNotificationDeviceRepository,
           userContentPreferencesRepository: userContentPreferencesRepository,
           remoteConfigRepository: remoteConfigRepository,
+          appSettingsRepository: appSettingsRepository,
           inAppNotificationRepository: inAppNotificationRepository,
           firebaseClient: null, // Explicitly null
           oneSignalClient: oneSignalClient,
@@ -871,6 +1003,357 @@ void main() {
             pagination: any(named: 'pagination'),
           ),
         );
+      });
+
+      test('resolves notification title to user preferred language', () async {
+        final spanishUser = testUser.copyWith(id: ObjectId().oid);
+        final spanishDevice = testDevice.copyWith(
+          id: ObjectId().oid,
+          userId: spanishUser.id,
+        );
+
+        final multilingualHeadline = testHeadline.copyWith(
+          title: {
+            SupportedLanguage.en: 'English Title',
+            SupportedLanguage.es: 'Título en Español',
+          },
+        );
+
+        final spanishFilter = matchingFilter.copyWith(
+          id: ObjectId().oid,
+          userId: spanishUser.id,
+        );
+
+        // Mock User Preferences
+        when(
+          () => userContentPreferencesRepository.readAll(
+            filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
+          ),
+        ).thenAnswer(
+          (_) async => PaginatedResponse(
+            items: [
+              UserContentPreferences(
+                id: spanishUser.id,
+                followedCountries: const [],
+                followedSources: const [],
+                followedTopics: const [],
+                savedHeadlines: const [],
+                savedHeadlineFilters: [spanishFilter],
+              ),
+            ],
+            cursor: null,
+            hasMore: false,
+          ),
+        );
+
+        // Mock App Settings (Spanish)
+        when(
+          () => appSettingsRepository.readAll(
+            filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
+          ),
+        ).thenAnswer(
+          (_) async => PaginatedResponse(
+            items: [
+              testAppSettings.copyWith(
+                id: spanishUser.id,
+                language: SupportedLanguage.es,
+              ),
+            ],
+            cursor: null,
+            hasMore: false,
+          ),
+        );
+
+        // Mock Devices
+        when(
+          () => pushNotificationDeviceRepository.readAll(
+            filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
+          ),
+        ).thenAnswer(
+          (_) async => PaginatedResponse(
+            items: [spanishDevice],
+            cursor: null,
+            hasMore: false,
+          ),
+        );
+
+        await service.sendBreakingNewsNotification(
+          headline: multilingualHeadline,
+        );
+
+        // Verify the payload sent to the client has the Spanish title
+        final capturedPayload =
+            verify(
+                  () => firebaseClient.sendBulkNotifications(
+                    deviceTokens: any(named: 'deviceTokens'),
+                    payload: captureAny(named: 'payload'),
+                  ),
+                ).captured.first
+                as PushNotificationPayload;
+
+        expect(capturedPayload.title, equals('Título en Español'));
+      });
+
+      group('pagination', () {
+        test('fetches all app settings across multiple pages', () async {
+          final user1 = testUser.copyWith(id: 'user-1');
+          final user2 = testUser.copyWith(id: 'user-2');
+
+          final settings1 = testAppSettings.copyWith(
+            id: user1.id,
+            language: SupportedLanguage.en,
+          );
+          final settings2 = testAppSettings.copyWith(
+            id: user2.id,
+            language: SupportedLanguage.es,
+          );
+
+          final device1 = testDevice.copyWith(
+            id: 'dev-1',
+            userId: user1.id,
+            providerTokens: {PushNotificationProviders.firebase: 'token-1'},
+          );
+          final device2 = testDevice.copyWith(
+            id: 'dev-2',
+            userId: user2.id,
+            providerTokens: {PushNotificationProviders.firebase: 'token-2'},
+          );
+
+          // 1. Preferences: Both users subscribed
+          when(
+            () => userContentPreferencesRepository.readAll(
+              filter: any(named: 'filter'),
+              pagination: any(named: 'pagination'),
+            ),
+          ).thenAnswer(
+            (_) async => PaginatedResponse(
+              items: [
+                UserContentPreferences(
+                  id: user1.id,
+                  followedCountries: const [],
+                  followedSources: const [],
+                  followedTopics: const [],
+                  savedHeadlines: const [],
+                  savedHeadlineFilters: [matchingFilter],
+                ),
+                UserContentPreferences(
+                  id: user2.id,
+                  followedCountries: const [],
+                  followedSources: const [],
+                  followedTopics: const [],
+                  savedHeadlines: const [],
+                  savedHeadlineFilters: [matchingFilter],
+                ),
+              ],
+              cursor: null,
+              hasMore: false,
+            ),
+          );
+
+          // 2. AppSettings: Pagination (2 pages)
+          // Page 1
+          when(
+            () => appSettingsRepository.readAll(
+              filter: any(named: 'filter'),
+              pagination: const PaginationOptions(limit: 1000),
+            ),
+          ).thenAnswer(
+            (_) async => PaginatedResponse(
+              items: [settings1],
+              cursor: 'cursor-1',
+              hasMore: true,
+            ),
+          );
+
+          // Page 2
+          when(
+            () => appSettingsRepository.readAll(
+              filter: any(named: 'filter'),
+              pagination: const PaginationOptions(
+                cursor: 'cursor-1',
+                limit: 1000,
+              ),
+            ),
+          ).thenAnswer(
+            (_) async => PaginatedResponse(
+              items: [settings2],
+              cursor: null,
+              hasMore: false,
+            ),
+          );
+
+          // 3. Devices: Single page for simplicity here
+          when(
+            () => pushNotificationDeviceRepository.readAll(
+              filter: any(named: 'filter'),
+              pagination: any(named: 'pagination'),
+            ),
+          ).thenAnswer(
+            (_) async => PaginatedResponse(
+              items: [device1, device2],
+              cursor: null,
+              hasMore: false,
+            ),
+          );
+
+          // Headline with EN and ES titles
+          final multilingualHeadline = testHeadline.copyWith(
+            title: {
+              SupportedLanguage.en: 'English Title',
+              SupportedLanguage.es: 'Spanish Title',
+            },
+          );
+
+          await service.sendBreakingNewsNotification(
+            headline: multilingualHeadline,
+          );
+
+          // Verify calls
+          verify(
+            () => appSettingsRepository.readAll(
+              filter: any(named: 'filter'),
+              pagination: const PaginationOptions(limit: 1000),
+            ),
+          ).called(1);
+
+          verify(
+            () => appSettingsRepository.readAll(
+              filter: any(named: 'filter'),
+              pagination: const PaginationOptions(
+                cursor: 'cursor-1',
+                limit: 1000,
+              ),
+            ),
+          ).called(1);
+
+          // Verify payloads
+          // User 1 (EN)
+          verify(
+            () => firebaseClient.sendBulkNotifications(
+              deviceTokens: ['token-1'],
+              payload: any(
+                named: 'payload',
+                that: predicate<PushNotificationPayload>(
+                  (p) => p.title == 'English Title',
+                ),
+              ),
+            ),
+          ).called(1);
+
+          // User 2 (ES)
+          verify(
+            () => firebaseClient.sendBulkNotifications(
+              deviceTokens: ['token-2'],
+              payload: any(
+                named: 'payload',
+                that: predicate<PushNotificationPayload>(
+                  (p) => p.title == 'Spanish Title',
+                ),
+              ),
+            ),
+          ).called(1);
+        });
+
+        test('fetches all devices across multiple pages', () async {
+          final device1 = testDevice.copyWith(
+            id: 'dev-1',
+            providerTokens: {PushNotificationProviders.firebase: 'token-1'},
+          );
+          final device2 = testDevice.copyWith(
+            id: 'dev-2',
+            providerTokens: {PushNotificationProviders.firebase: 'token-2'},
+          );
+
+          // 1. Preferences
+          when(
+            () => userContentPreferencesRepository.readAll(
+              filter: any(named: 'filter'),
+              pagination: any(named: 'pagination'),
+            ),
+          ).thenAnswer(
+            (_) async => PaginatedResponse(
+              items: [
+                UserContentPreferences(
+                  id: testUser.id,
+                  followedCountries: const [],
+                  followedSources: const [],
+                  followedTopics: const [],
+                  savedHeadlines: const [],
+                  savedHeadlineFilters: [matchingFilter],
+                ),
+              ],
+              cursor: null,
+              hasMore: false,
+            ),
+          );
+
+          // 2. Devices: Pagination (2 pages)
+          // Page 1
+          when(
+            () => pushNotificationDeviceRepository.readAll(
+              filter: any(named: 'filter'),
+              pagination: const PaginationOptions(limit: 1000),
+            ),
+          ).thenAnswer(
+            (_) async => PaginatedResponse(
+              items: [device1],
+              cursor: 'cursor-dev-1',
+              hasMore: true,
+            ),
+          );
+
+          // Page 2
+          when(
+            () => pushNotificationDeviceRepository.readAll(
+              filter: any(named: 'filter'),
+              pagination: const PaginationOptions(
+                cursor: 'cursor-dev-1',
+                limit: 1000,
+              ),
+            ),
+          ).thenAnswer(
+            (_) async => PaginatedResponse(
+              items: [device2],
+              cursor: null,
+              hasMore: false,
+            ),
+          );
+
+          await service.sendBreakingNewsNotification(headline: testHeadline);
+
+          // Verify calls
+          verify(
+            () => pushNotificationDeviceRepository.readAll(
+              filter: any(named: 'filter'),
+              pagination: const PaginationOptions(limit: 1000),
+            ),
+          ).called(1);
+
+          verify(
+            () => pushNotificationDeviceRepository.readAll(
+              filter: any(named: 'filter'),
+              pagination: const PaginationOptions(
+                cursor: 'cursor-dev-1',
+                limit: 1000,
+              ),
+            ),
+          ).called(1);
+
+          // Verify tokens from both pages were used
+          final capturedTokens =
+              verify(
+                    () => firebaseClient.sendBulkNotifications(
+                      deviceTokens: captureAny(named: 'deviceTokens'),
+                      payload: any(named: 'payload'),
+                    ),
+                  ).captured.first
+                  as List<String>;
+
+          expect(capturedTokens, containsAll(['token-1', 'token-2']));
+        });
       });
     });
   });

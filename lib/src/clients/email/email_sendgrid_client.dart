@@ -1,9 +1,8 @@
 // ignore_for_file: lines_longer_than_80_chars
 
 import 'package:core/core.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/clients/email/email_client.dart';
-import 'package:flutter_news_app_api_server_full_source_code/src/models/email/sendgrid_request.dart';
-import 'package:http_client/http_client.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/clients/email/email_client.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/models/email/sendgrid_request.dart';
 import 'package:logging/logging.dart';
 
 /// {@template email_sendgrid_client}
