@@ -15,7 +15,7 @@ import 'package:flutter_news_app_backend_api_full_source_code/src/services/idemp
 import 'package:flutter_news_app_backend_api_full_source_code/src/services/rate_limit_service.dart';
 import 'package:flutter_news_app_backend_api_full_source_code/src/services/storage/i_storage_service.dart';
 import 'package:flutter_news_app_backend_api_full_source_code/src/services/user_action_limit_service.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/util/gcs_jwt_verifier.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/utils/gcs_jwt_verifier.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockRequestContext extends Mock implements RequestContext {}

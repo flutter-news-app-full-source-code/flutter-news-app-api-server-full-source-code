@@ -34,7 +34,7 @@ void main() {
       );
     });
 
-    final testCountry = Country(
+    const testCountry = Country(
       id: 'c1',
       isoCode: 'US',
       name: {SupportedLanguage.en: 'USA', SupportedLanguage.es: 'EEUU'},
@@ -43,8 +43,8 @@ void main() {
 
     final testSource = Source(
       id: 's1',
-      name: {SupportedLanguage.en: 'CNN'},
-      description: {},
+      name: const {SupportedLanguage.en: 'CNN'},
+      description: const {},
       url: 'url',
       sourceType: SourceType.newsAgency,
       language: SupportedLanguage.en,
@@ -56,8 +56,8 @@ void main() {
 
     final testTopic = Topic(
       id: 't1',
-      name: {SupportedLanguage.en: 'Tech'},
-      description: {},
+      name: const {SupportedLanguage.en: 'Tech'},
+      description: const {},
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
       status: ContentStatus.active,
@@ -65,7 +65,7 @@ void main() {
 
     final testHeadline = Headline(
       id: 'h1',
-      title: {},
+      title: const {},
       source: testSource,
       eventCountry: testCountry,
       topic: testTopic,
@@ -125,7 +125,7 @@ void main() {
     test('enrichUserContentPreferences enriches lists and filters', () async {
       final prefs = UserContentPreferences(
         id: 'u1',
-        followedCountries: [testCountry],
+        followedCountries: const [testCountry],
         followedSources: [testSource],
         followedTopics: [testTopic],
         savedHeadlines: [testHeadline],
@@ -133,14 +133,14 @@ void main() {
           SavedHeadlineFilter(
             id: 'f1',
             userId: 'u1',
-            name: {},
+            name: const {},
             criteria: HeadlineFilterCriteria(
               topics: [testTopic],
-              sources: [],
-              countries: [],
+              sources: const [],
+              countries: const [],
             ),
             isPinned: false,
-            deliveryTypes: {},
+            deliveryTypes: const {},
           ),
         ],
       );
@@ -178,7 +178,7 @@ void main() {
           pagination: any(named: 'pagination'),
         ),
       ).thenAnswer(
-        (_) async => PaginatedResponse(
+        (_) async => const PaginatedResponse(
           items: [testCountry],
           cursor: null,
           hasMore: false,
@@ -221,11 +221,11 @@ void main() {
       () async {
         final prefs = UserContentPreferences(
           id: 'u1',
-          followedCountries: [],
-          followedSources: [],
+          followedCountries: const [],
+          followedSources: const [],
           followedTopics: [testTopic], // Topic exists in prefs
-          savedHeadlines: [],
-          savedHeadlineFilters: [],
+          savedHeadlines: const [],
+          savedHeadlineFilters: const [],
         );
 
         // Mock repo returning empty list (simulating deletion)

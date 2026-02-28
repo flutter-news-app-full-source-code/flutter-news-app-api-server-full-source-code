@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:core/core.dart';
 
 import 'package:flutter_news_app_backend_api_full_source_code/src/services/storage/i_storage_service.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/util/media_asset_utils.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/utils/media_asset_utils.dart';
 import 'package:logging/logging.dart';
 
 /// {@template media_service}

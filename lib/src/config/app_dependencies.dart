@@ -48,8 +48,8 @@ import 'package:flutter_news_app_backend_api_full_source_code/src/services/stora
 import 'package:flutter_news_app_backend_api_full_source_code/src/services/token_blacklist_service.dart';
 import 'package:flutter_news_app_backend_api_full_source_code/src/services/user_action_limit_service.dart';
 import 'package:flutter_news_app_backend_api_full_source_code/src/services/verification_code_storage_service.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/util/gcs_jwt_verifier.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/util/sns_message_handler.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/utils/gcs_jwt_verifier.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/utils/sns_message_handler.dart';
 import 'package:logging/logging.dart';
 
 /// {@template app_dependencies}
