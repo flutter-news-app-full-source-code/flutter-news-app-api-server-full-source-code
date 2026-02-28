@@ -153,7 +153,7 @@ void main() {
         );
       });
 
-      test('combines q with existing filters using \$and', () {
+      test(r'combines q with existing filters using $and', () {
         final filter = {'q': 'term', 'status': 'active'};
         final result = LocalizationUtils.rewriteSearchQuery(filter, ['name']);
 
