@@ -125,68 +125,111 @@ void main() {
       });
     });
 
-    group('rewriteFilterOpt tes s ions', () {
-      test(r'expands single translatable field to $or query', () {
-        final filter = {'title': 'Hello'};
-        final result = LocalizationUtils.rewriteFilterOptions(filter, [
-          'title',
-        ]);
+    group('expandFilterForLocalization', () {
+      const translatableFields = ['title', 'description'];
 
-        expect(result, contains(r'$or'));
-        final orList = result![r'$or'] as List;
-        expect(orList.length, equals(SupportedLanguage.values.length));
-        expect(orList, contains(equals({'title.en': 'Hello'})));
-        expect(orList, contains(equals({'title.es': 'Hello'})));
+      group('Standard User (isPrivileged: false)', () {
+        test('rewrites a simple filter to be language-specific', () {
+          final filter = {'title': 'News'};
+          final result = LocalizationUtils.expandFilterForLocalization(
+            filter,
+            SupportedLanguage.es,
+            translatableFields,
+            isPrivileged: false,
+          );
+          expect(result, equals({'title.es': 'News'}));
+        });
+
+        test('preserves non-translatable fields', () {
+          final filter = {'status': 'active'};
+          final result = LocalizationUtils.expandFilterForLocalization(
+            filter,
+            SupportedLanguage.en,
+            translatableFields,
+            isPrivileged: false,
+          );
+          expect(result, equals({'status': 'active'}));
+        });
+
+        test(r'recursively rewrites fields inside a $or operator', () {
+          final filter = {
+            r'$or': [
+              {'title': 'News'},
+              {'description': 'Updates'},
+            ],
+          };
+          final result = LocalizationUtils.expandFilterForLocalization(
+            filter,
+            SupportedLanguage.fr,
+            translatableFields,
+            isPrivileged: false,
+          );
+          expect(
+            result,
+            equals({
+              r'$or': [
+                {'title.fr': 'News'},
+                {'description.fr': 'Updates'},
+              ],
+            }),
+          );
+        });
       });
 
-      test('preserves non-translatable fields', () {
-        final filter = {'status': 'active'};
-        final result = LocalizationUtils.rewriteFilterOptions(filter, [
-          'title',
-        ]);
-        expect(result, equals({'status': 'active'}));
-      });
+      group('Privileged User (isPrivileged: true)', () {
+        test(
+          r'expands a single translatable field to a language-agnostic $or',
+          () {
+            final filter = {'title': 'News'};
+            final result = LocalizationUtils.expandFilterForLocalization(
+              filter,
+              SupportedLanguage.en, // User's UI language is irrelevant here
+              translatableFields,
+              isPrivileged: true,
+            );
 
-      test(r'combines expanded and non-translatable fields via $and', () {
-        final filter = {'title': 'Hello', 'status': 'active'};
-        final result = LocalizationUtils.rewriteFilterOptions(filter, [
-          'title',
-        ]);
-
-        expect(result!.containsKey('status'), isTrue);
-        expect(result['status'], equals('active'));
-        expect(result.containsKey(r'$and'), isTrue);
-
-        final andConditions = result[r'$and'] as List;
-        expect(andConditions.length, equals(1));
-        expect(andConditions.first.containsKey(r'$or'), isTrue);
-      });
-
-      test(r'combines multiple expanded fields via $and', () {
-        final filter = {'name': 'Tech', 'description': 'News'};
-        final result = LocalizationUtils.rewriteFilterOptions(
-          filter,
-          ['name', 'description'],
+            expect(result, contains(r'$and'));
+            final andConditions = result![r'$and'] as List;
+            expect(andConditions, hasLength(1));
+            final orCondition = andConditions.first as Map<String, dynamic>;
+            expect(orCondition, contains(r'$or'));
+            final orList = orCondition[r'$or'] as List;
+            expect(orList, hasLength(SupportedLanguage.values.length));
+            expect(orList, contains(equals({'title.en': 'News'})));
+            expect(orList, contains(equals({'title.es': 'News'})));
+          },
         );
 
-        expect(result!.containsKey(r'$and'), isTrue);
-        final andConditions = result[r'$and'] as List;
-        expect(andConditions.length, equals(2));
-      });
+        test(
+          r'combines translatable and non-translatable fields with $and',
+          () {
+            final filter = {'title': 'News', 'status': 'published'};
+            final result = LocalizationUtils.expandFilterForLocalization(
+              filter,
+              SupportedLanguage.en,
+              translatableFields,
+              isPrivileged: true,
+            );
 
-      test('returns null if filter is null', () {
-        expect(LocalizationUtils.rewriteFilterOptions(null, ['title']), isNull);
-      });
+            expect(result, contains(r'$and'));
+            final andConditions = result![r'$and'] as List;
+            expect(andConditions, hasLength(2));
 
-      test('returns empty map if filter is empty', () {
-        expect(LocalizationUtils.rewriteFilterOptions({}, ['title']), isEmpty);
-      });
+            // Check for the non-translatable part
+            expect(andConditions, contains(equals({'status': 'published'})));
 
-      test('returns original filter if translatableFields is empty', () {
-        final filter = {'title': 'Hello'};
-        expect(
-          LocalizationUtils.rewriteFilterOptions(filter, []),
-          equals(filter),
+            // Check for the translatable part
+            final orCondition =
+                andConditions.firstWhere(
+                      (c) => (c as Map).containsKey(r'$or'),
+                      orElse: () => <String, dynamic>{},
+                    )
+                    as Map<String, dynamic>;
+            expect(orCondition, isNotEmpty);
+            final orList = orCondition[r'$or'] as List;
+            expect(orList, hasLength(SupportedLanguage.values.length));
+            expect(orList, contains(equals({'title.en': 'News'})));
+          },
         );
       });
     });
