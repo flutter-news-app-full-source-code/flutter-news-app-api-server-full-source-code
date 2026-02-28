@@ -160,16 +160,18 @@ void main() {
         expect(result, contains(r'$and'));
         final andList = result![r'$and'] as List;
         expect(andList, hasLength(2));
-        expect(andList, contains({'status': 'active'}));
+        expect(andList, contains(equals({'status': 'active'})));
         expect(
           andList,
-          contains({
-            r'$or': [
-              {
-                'name': {r'$regex': 'term', r'$options': 'i'},
-              },
-            ],
-          }),
+          contains(
+            equals({
+              r'$or': [
+                {
+                  'name': {r'$regex': 'term', r'$options': 'i'},
+                },
+              ],
+            }),
+          ),
         );
       });
     });
