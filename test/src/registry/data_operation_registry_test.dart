@@ -527,11 +527,7 @@ void main() {
 
           // Verify filter expansion and status removal
           expect(capturedFilter.containsKey('status'), isFalse);
-          expect(
-            capturedFilter.containsKey(r'$or') ||
-                capturedFilter.containsKey(r'$and'),
-            isTrue,
-          );
+          expect(capturedFilter.containsKey('name.es'), isTrue);
 
           // Verify result localization
           expect(
@@ -657,13 +653,7 @@ void main() {
         ).captured;
 
         final capturedFilter = captured.single as Map<String, dynamic>;
-        expect(capturedFilter.containsKey(r'$or'), isTrue);
-        expect(
-          (capturedFilter[r'$or'] as List).any(
-            (c) => (c as Map).containsKey('title.en'),
-          ),
-          isTrue,
-        );
+        expect(capturedFilter.containsKey('title.en'), isTrue);
       });
     });
 
