@@ -6,6 +6,7 @@ import 'package:flutter_news_app_backend_api_full_source_code/src/middlewares/ow
 import 'package:flutter_news_app_backend_api_full_source_code/src/rbac/permission_service.dart';
 import 'package:flutter_news_app_backend_api_full_source_code/src/rbac/permissions.dart';
 import 'package:flutter_news_app_backend_api_full_source_code/src/services/country_query_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/content_enrichment_service.dart';
 import 'package:flutter_news_app_backend_api_full_source_code/src/services/push_notification/push_notification_service.dart';
 import 'package:flutter_news_app_backend_api_full_source_code/src/services/storage/i_storage_service.dart';
 import 'package:flutter_news_app_backend_api_full_source_code/src/services/user_action_limit_service.dart';
@@ -522,19 +523,11 @@ class DataOperationRegistry {
         // The client might send a partial snapshot (e.g., only English names).
         // We fetch the authoritative documents from the DB to ensure the
         // embedded objects in the Headline contain ALL supported languages.
-        final results = await Future.wait([
-          c.read<DataRepository<Source>>().read(id: headlineToCreate.source.id),
-          c.read<DataRepository<Topic>>().read(id: headlineToCreate.topic.id),
-          c.read<DataRepository<Country>>().read(
-            id: headlineToCreate.eventCountry.id,
-          ),
-        ]);
-
-        headlineToCreate = headlineToCreate.copyWith(
-          source: results[0] as Source,
-          topic: results[1] as Topic,
-          eventCountry: results[2] as Country,
-        );
+        headlineToCreate = await c
+            .read<ContentEnrichmentService>()
+            .enrichHeadline(
+              headlineToCreate,
+            );
 
         // If a mediaAssetId is provided on creation, ensure imageUrl is null.
         if (headlineToCreate.mediaAssetId != null) {
@@ -583,11 +576,8 @@ class DataOperationRegistry {
         // --- ENRICHMENT: Fetch full Country for headquarters ---
         // Ensure the embedded Country object contains all translations, not just
         // the partial snapshot sent by the client.
-        final fullHeadquarters = await c.read<DataRepository<Country>>().read(
-          id: sourceToCreate.headquarters.id,
-        );
-        sourceToCreate = sourceToCreate.copyWith(
-          headquarters: fullHeadquarters,
+        sourceToCreate = await c.read<ContentEnrichmentService>().enrichSource(
+          sourceToCreate,
         );
 
         // If a mediaAssetId is provided on creation, ensure logoUrl is null.
@@ -1007,10 +997,9 @@ class DataOperationRegistry {
         // 3. Enrich the preferences with full entity data (translations).
         // This ensures that followed items and saved filters contain all
         // supported languages, not just the one active on the client.
-        final enrichedPreferences = await _enrichPreferences(
-          context,
-          finalPreferences,
-        );
+        final enrichedPreferences = await context
+            .read<ContentEnrichmentService>()
+            .enrichUserContentPreferences(finalPreferences);
 
         _log.info(
           'Enrichment complete for user ${authenticatedUser.id}. Proceeding with update.',
@@ -1229,83 +1218,6 @@ class DataOperationRegistry {
     return context.read<PermissionService>().hasAnyPermission(
       user,
       {Permissions.dashboardLogin},
-    );
-  }
-
-  /// Enriches a [UserContentPreferences] object by replacing partial embedded
-  /// entities with their full, multi-language versions fetched from the DB.
-  ///
-  /// This is critical for the "Ingestion-Time Enrichment" pattern. It ensures
-  /// that even if the client sends a partial snapshot (e.g., a Topic with only
-  /// the English name), the stored preference record will contain the full
-  /// Topic document with all translations.
-  Future<UserContentPreferences> _enrichPreferences(
-    RequestContext context,
-    UserContentPreferences prefs,
-  ) async {
-    // 1. Collect all unique IDs to fetch
-    final topicIds = <String>{...prefs.followedTopics.map((e) => e.id)};
-    final sourceIds = <String>{...prefs.followedSources.map((e) => e.id)};
-    final countryIds = <String>{...prefs.followedCountries.map((e) => e.id)};
-    final headlineIds = <String>{...prefs.savedHeadlines.map((e) => e.id)};
-
-    for (final filter in prefs.savedHeadlineFilters) {
-      topicIds.addAll(filter.criteria.topics.map((e) => e.id));
-      sourceIds.addAll(filter.criteria.sources.map((e) => e.id));
-      countryIds.addAll(filter.criteria.countries.map((e) => e.id));
-    }
-
-    // 2. Batch Fetch Helper
-    Future<Map<String, T>> fetchMap<T>(
-      DataRepository<T> repo,
-      Set<String> ids,
-    ) async {
-      if (ids.isEmpty) return {};
-      // Use readAll with $in for efficient batch retrieval.
-      // We assume reasonable limits on user preferences (enforced by limits config).
-      final result = await repo.readAll(
-        filter: {
-          '_id': {r'$in': ids.toList()},
-        },
-        pagination: PaginationOptions(limit: ids.length),
-      );
-      return {for (final item in result.items) (item as dynamic).id: item};
-    }
-
-    // 3. Execute Fetches in Parallel
-    final results = await Future.wait([
-      fetchMap(context.read<DataRepository<Topic>>(), topicIds),
-      fetchMap(context.read<DataRepository<Source>>(), sourceIds),
-      fetchMap(context.read<DataRepository<Country>>(), countryIds),
-      fetchMap(context.read<DataRepository<Headline>>(), headlineIds),
-    ]);
-
-    final topicMap = results[0] as Map<String, Topic>;
-    final sourceMap = results[1] as Map<String, Source>;
-    final countryMap = results[2] as Map<String, Country>;
-    final headlineMap = results[3] as Map<String, Headline>;
-
-    // 4. Re-assemble Preferences with Enriched Data
-    List<T> enrichList<T>(List<T> partials, Map<String, T> fullMap) {
-      return partials.map((p) => fullMap[(p as dynamic).id] ?? p).toList();
-    }
-
-    final enrichedFilters = prefs.savedHeadlineFilters.map((filter) {
-      return filter.copyWith(
-        criteria: filter.criteria.copyWith(
-          topics: enrichList(filter.criteria.topics, topicMap),
-          sources: enrichList(filter.criteria.sources, sourceMap),
-          countries: enrichList(filter.criteria.countries, countryMap),
-        ),
-      );
-    }).toList();
-
-    return prefs.copyWith(
-      followedTopics: enrichList(prefs.followedTopics, topicMap),
-      followedSources: enrichList(prefs.followedSources, sourceMap),
-      followedCountries: enrichList(prefs.followedCountries, countryMap),
-      savedHeadlines: enrichList(prefs.savedHeadlines, headlineMap),
-      savedHeadlineFilters: enrichedFilters,
     );
   }
 }
