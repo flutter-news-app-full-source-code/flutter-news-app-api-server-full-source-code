@@ -12,6 +12,7 @@ import 'package:flutter_news_app_backend_api_full_source_code/src/registry/data_
 import 'package:flutter_news_app_backend_api_full_source_code/src/registry/model_registry.dart';
 import 'package:flutter_news_app_backend_api_full_source_code/src/services/auth_service.dart';
 import 'package:flutter_news_app_backend_api_full_source_code/src/services/auth_token_service.dart';
+import 'package:flutter_news_app_backend_api_full_source_code/src/services/content_enrichment_service.dart';
 import 'package:flutter_news_app_backend_api_full_source_code/src/services/country_query_service.dart';
 import 'package:flutter_news_app_backend_api_full_source_code/src/services/email/email_service.dart';
 import 'package:flutter_news_app_backend_api_full_source_code/src/services/google_auth_service.dart';
@@ -299,6 +300,11 @@ Handler middleware(Handler handler) {
               .use(
                 provider<LocalMediaFinalizationJobService>(
                   (_) => deps.finalizationJobService,
+                ),
+              )
+              .use(
+                provider<ContentEnrichmentService>(
+                  (_) => deps.contentEnrichmentService,
                 ),
               )
               .call(context);
