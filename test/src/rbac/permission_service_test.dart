@@ -1,6 +1,6 @@
 import 'package:core/core.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/rbac/permission_service.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/rbac/permissions.dart';
+import 'package:flutter_news_app_backend_api/src/rbac/permission_service.dart';
+import 'package:flutter_news_app_backend_api/src/rbac/permissions.dart';
 import 'package:test/test.dart';
 
 void main() {

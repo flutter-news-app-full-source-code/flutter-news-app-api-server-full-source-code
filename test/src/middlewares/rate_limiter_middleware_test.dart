@@ -1,7 +1,7 @@
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/middlewares/rate_limiter_middleware.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/services/rate_limit_service.dart';
+import 'package:flutter_news_app_backend_api/src/middlewares/rate_limiter_middleware.dart';
+import 'package:flutter_news_app_backend_api/src/services/rate_limit_service.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 

@@ -3,10 +3,10 @@ import 'dart:io';
 
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/helpers/response_helper.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/rbac/permission_service.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/registry/data_operation_registry.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/registry/model_registry.dart';
+import 'package:flutter_news_app_backend_api/src/helpers/response_helper.dart';
+import 'package:flutter_news_app_backend_api/src/rbac/permission_service.dart';
+import 'package:flutter_news_app_backend_api/src/registry/data_operation_registry.dart';
+import 'package:flutter_news_app_backend_api/src/registry/model_registry.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 

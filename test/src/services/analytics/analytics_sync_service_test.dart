@@ -1,8 +1,8 @@
 import 'package:core/core.dart';
 
-import 'package:flutter_news_app_backend_api_full_source_code/src/clients/analytics/analytics_reporting_client.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/models/models.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/services/analytics/analytics.dart';
+import 'package:flutter_news_app_backend_api/src/clients/analytics/analytics_reporting_client.dart';
+import 'package:flutter_news_app_backend_api/src/models/models.dart';
+import 'package:flutter_news_app_backend_api/src/services/analytics/analytics.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:mongo_dart/mongo_dart.dart' show ObjectId;

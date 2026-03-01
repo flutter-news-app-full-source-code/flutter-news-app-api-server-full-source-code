@@ -1,10 +1,10 @@
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/middlewares/ownership_check_middleware.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/rbac/permission_service.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/registry/data_operation_registry.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/services/content_enrichment_service.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/services/country_query_service.dart';
+import 'package:flutter_news_app_backend_api/src/middlewares/ownership_check_middleware.dart';
+import 'package:flutter_news_app_backend_api/src/rbac/permission_service.dart';
+import 'package:flutter_news_app_backend_api/src/registry/data_operation_registry.dart';
+import 'package:flutter_news_app_backend_api/src/services/content_enrichment_service.dart';
+import 'package:flutter_news_app_backend_api/src/services/country_query_service.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 

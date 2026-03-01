@@ -1,5 +1,5 @@
 import 'package:core/core.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/models/models.dart';
+import 'package:flutter_news_app_backend_api/src/models/models.dart';
 
 /// {@template analytics_reporting_client}
 /// An abstract interface for a client that fetches aggregated analytics data

@@ -191,7 +191,7 @@ packages:
       path: "."
       ref: "v2.0.0"
       resolved-ref: "30aa2aab3b7c95bc0efac783b9bef447b85b364b"
-      url: "https://github.com/flutter-news-app-full-source-code/core.git"
+      url: "https://github.com/flutter-news-app/core.git"
     source: git
     version: "2.0.0"
   coverage:

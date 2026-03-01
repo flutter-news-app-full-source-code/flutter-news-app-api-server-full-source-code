@@ -1,8 +1,8 @@
-// c:\Users\workstation\Work\projects\Flutter-News-App-Full-Source-Code-Toolkit\flutter-news-app-api-server-full-source-code\test\src\services\default_user_action_limit_service_test.dart
+// c:\Users\workstation\Work\projects\flutter-news-app-Toolkit\flutter-news-app-api-server\test\src\services\default_user_action_limit_service_test.dart
 
 import 'package:core/core.dart';
 
-import 'package:flutter_news_app_backend_api_full_source_code/src/services/default_user_action_limit_service.dart';
+import 'package:flutter_news_app_backend_api/src/services/default_user_action_limit_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';

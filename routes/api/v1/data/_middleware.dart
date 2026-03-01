@@ -1,13 +1,13 @@
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/config/environment_config.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/middlewares/authentication_middleware.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/middlewares/authorization_middleware.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/middlewares/language_middleware.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/middlewares/rate_limiter_middleware.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/rbac/permission_service.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/rbac/permissions.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/registry/model_registry.dart';
+import 'package:flutter_news_app_backend_api/src/config/environment_config.dart';
+import 'package:flutter_news_app_backend_api/src/middlewares/authentication_middleware.dart';
+import 'package:flutter_news_app_backend_api/src/middlewares/authorization_middleware.dart';
+import 'package:flutter_news_app_backend_api/src/middlewares/language_middleware.dart';
+import 'package:flutter_news_app_backend_api/src/middlewares/rate_limiter_middleware.dart';
+import 'package:flutter_news_app_backend_api/src/rbac/permission_service.dart';
+import 'package:flutter_news_app_backend_api/src/rbac/permissions.dart';
+import 'package:flutter_news_app_backend_api/src/registry/model_registry.dart';
 
 // Helper middleware for applying rate limiting to the data routes.
 Middleware _dataRateLimiterMiddleware() {

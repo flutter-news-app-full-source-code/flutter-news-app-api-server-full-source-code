@@ -1,9 +1,9 @@
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/middlewares/authorization_middleware.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/rbac/permission_service.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/rbac/permissions.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/registry/model_registry.dart';
+import 'package:flutter_news_app_backend_api/src/middlewares/authorization_middleware.dart';
+import 'package:flutter_news_app_backend_api/src/rbac/permission_service.dart';
+import 'package:flutter_news_app_backend_api/src/rbac/permissions.dart';
+import 'package:flutter_news_app_backend_api/src/registry/model_registry.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
