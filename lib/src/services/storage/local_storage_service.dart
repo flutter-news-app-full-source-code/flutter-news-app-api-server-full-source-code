@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:core/core.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/config/environment_config.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/models/storage/local_upload_token.dart';
-import 'package:flutter_news_app_backend_api_full_source_code/src/services/storage/i_storage_service.dart';
+import 'package:flutter_news_app_backend_api/src/config/environment_config.dart';
+import 'package:flutter_news_app_backend_api/src/models/storage/local_upload_token.dart';
+import 'package:flutter_news_app_backend_api/src/services/storage/i_storage_service.dart'
+    show IStorageService;
+import 'package:flutter_news_app_backend_api/src/services/storage/i_storage_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 import 'package:path/path.dart' as p;
