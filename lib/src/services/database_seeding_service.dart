@@ -341,6 +341,20 @@ class DatabaseSeedingService {
       });
       _log.info('Ensured indexes for "user_rewards".');
 
+      // Indexes for news_automation_tasks
+      await _db.runCommand({
+        'createIndexes': 'news_automation_tasks',
+        'indexes': [
+          {
+            // Compound index for the ingestion worker's polling query.
+            // status: active AND nextRunAt <= now
+            'key': {'status': 1, 'nextRunAt': 1},
+            'name': 'worker_polling_index',
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "news_automation_tasks".');
+
       // Indexes for the users collection
       await _db.runCommand({
         'createIndexes': 'users',
