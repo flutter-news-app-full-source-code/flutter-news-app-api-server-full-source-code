@@ -160,10 +160,16 @@ abstract final class EnvironmentConfig {
   static String get defaultSenderEmail =>
       _getRequiredEnv('DEFAULT_SENDER_EMAIL');
 
-  /// Retrieves the SendGrid OTP template ID from the environment.
-  ///
-  /// Throws a [StateError] if the `OTP_TEMPLATE_ID` is not set.
   static String get otpTemplateId => _getRequiredEnv('OTP_TEMPLATE_ID');
+
+  static String? get mediaStackApiKey => _getEnv('MEDIASTACK_API_KEY');
+
+  static String? get bingNewsApiKey => _getEnv('BING_NEWS_API_KEY');
+
+  static String? get newsApiOrgKey => _getEnv('NEWSAPI_ORG_KEY');
+
+  static String get aggregatorProvider =>
+      _getEnv('AGGREGATOR_PROVIDER') ?? 'newsapi';
 
   /// Retrieves the SendGrid API URL from the environment, if provided.
   ///
