@@ -7,7 +7,7 @@
 
 ---
 
-Part of the **[Verity News System](https://github.com/verity-hq)**.
+Part of the **[Verity News Stack](https://github.com/verity-hq)**.
 
 The Verity API is a high-performance backend gateway built with **Dart Frog**. It serves as the secure data engine for both the Mobile Client and the Web Dashboard.
 
@@ -183,4 +183,4 @@ For a complete guide on setting up your local environment and running this proje
 
 This source code is licensed for commercial use and is provided for local evaluation. A **Lifetime Commercial License** is required for any production or public-facing application.
 
-Please visit the main [Verity](https://github.com/verity-hq) organization page to review the full license terms and to purchase.
+Please visit the main [Verity News Stack](https://github.com/verity-hq) organization page to review the full license terms and to purchase.
