@@ -1,17 +1,17 @@
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/2e47cb52-778f-4b6e-9e82-c39fcd31db47" alt="Flutter News App" width="440">
-  <h1>Flutter News App Backend API</h1>
-  <p><strong>Complete, production-ready source code for a Flutter news app api server.</strong></p>
-</div>
-
 <p align="center">
 <img src="https://img.shields.io/badge/coverage-64%25-green?style=for-the-badge" alt="coverage">
-<a href="https://github.com/flutter-news-app/flutter-news-app-backend-api-full-source-code/wiki/Local-Setup"><img src="https://img.shields.io/badge/DOCUMENTATION-READ-slategray?style=for-the-badge" alt="Documentation: Read"></a>
+<a href="https://github.com/verity-hq/verity-api/wiki/Local-Setup"><img src="https://img.shields.io/badge/DOCUMENTATION-READ-slategray?style=for-the-badge" alt="Documentation: Read"></a>
 <a href="LICENSE"><img src="https://img.shields.io/badge/TRIAL_LICENSE-VIEW_TERMS-blue?style=for-the-badge" alt="Trial License: View Terms"></a>
-<a href="https://github.com/sponsors/flutter-news-app"><img src="https://img.shields.io/badge/LIFETIME_LICENSE-PURCHASE-purple?style=for-the-badge" alt="Lifetime License: Purchase"></a>
+<a href="https://github.com/sponsors/verity-hq"><img src="https://img.shields.io/badge/LIFETIME_LICENSE-PURCHASE-purple?style=for-the-badge" alt="Lifetime License: Purchase"></a>
 </p>
 
-This repository contains the complete, production-ready source code for a high-performance API, Built with the high-performance **Dart Frog** framework, it gives you all the server-side features you need, right out of the box. It is the core component of the [**Flutter News App Full Source Code**](https://github.com/flutter-news-app), serving the Flutter [mobile app](https://github.com/flutter-news-app/flutter-news-app-mobile-client-full-source-code) and the web-based [content dashboard](https://github.com/flutter-news-app/flutter-news-app-web-dashboard-full-source-code).
+---
+
+Part of the **[Verity News System](https://github.com/verity-hq)**.
+
+The Verity API is a high-performance backend gateway built with **Dart Frog**. It serves as the secure data engine for both the Mobile Client and the Web Dashboard.
+
+---
 
 ## ⭐ Feature Showcase: Everything You Get, Ready to Go
 
@@ -177,10 +177,10 @@ Say goodbye to risky manual database updates. A professional, versioned migratio
 
 ## 🚀 Getting Started & Running Locally
 
-For a complete guide on setting up your local environment and running this project, please see the [Wiki](https://github.com/flutter-news-app/flutter-news-app-backend-api-full-source-code/wiki) tab in this repository.
+For a complete guide on setting up your local environment and running this project, please see the [Wiki](https://github.com/verity-hq/verity-api/wiki) tab in this repository.
 
 ## 🔑 Licensing
 
 This source code is licensed for commercial use and is provided for local evaluation. A **Lifetime Commercial License** is required for any production or public-facing application.
 
-Please visit the main [Flutter News App Full Source Code](https://github.com/flutter-news-app) organization page to review the full license terms and to purchase.
+Please visit the main [Verity](https://github.com/verity-hq) organization page to review the full license terms and to purchase.
