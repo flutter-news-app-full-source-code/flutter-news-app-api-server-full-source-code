@@ -1,10 +1,9 @@
 import 'dart:async';
 
 import 'package:core/core.dart';
-
-import 'package:flutter_news_app_backend_api/src/services/push_notification/push_notification_client.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
+import 'package:verity_api/src/services/push_notification/push_notification_client.dart';
 
 /// An abstract interface for the push notification service.
 ///

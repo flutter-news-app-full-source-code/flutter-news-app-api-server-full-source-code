@@ -1,5 +1,5 @@
-import 'package:flutter_news_app_backend_api/src/database/migration.dart';
-import 'package:flutter_news_app_backend_api/src/services/database_migration_service.dart'
+import 'package:verity_api/src/database/migration.dart';
+import 'package:verity_api/src/services/database_migration_service.dart'
     show DatabaseMigrationService;
 
 /// A central list of all database migrations to be applied.

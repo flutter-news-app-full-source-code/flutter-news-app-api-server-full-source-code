@@ -1,7 +1,7 @@
 import 'package:core/core.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
-import 'package:flutter_news_app_backend_api/src/config/environment_config.dart';
 import 'package:logging/logging.dart';
+import 'package:verity_api/src/config/environment_config.dart';
 
 /// An abstract interface for a service that provides Google API access tokens.
 abstract class IGoogleAuthService {

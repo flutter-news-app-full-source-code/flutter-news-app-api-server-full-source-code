@@ -1,11 +1,10 @@
 import 'dart:async';
 
 import 'package:core/core.dart';
-import 'package:flutter_news_app_backend_api/src/databases/mongo/data_mongodb.dart';
-
-import 'package:flutter_news_app_backend_api/src/services/token_blacklist_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
+import 'package:verity_api/src/databases/mongo/data_mongodb.dart';
+import 'package:verity_api/src/services/token_blacklist_service.dart';
 
 /// The name of the MongoDB collection used for storing blacklisted tokens.
 const String kBlacklistedTokensCollection = 'blacklisted_tokens';

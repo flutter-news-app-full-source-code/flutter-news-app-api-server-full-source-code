@@ -1,8 +1,8 @@
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:flutter_news_app_backend_api/src/middlewares/ownership_check_middleware.dart';
-import 'package:flutter_news_app_backend_api/src/registry/data_operation_registry.dart';
 import 'package:logging/logging.dart';
+import 'package:verity_api/src/middlewares/ownership_check_middleware.dart';
+import 'package:verity_api/src/registry/data_operation_registry.dart';
 
 final _log = Logger('DataFetchMiddleware');
 

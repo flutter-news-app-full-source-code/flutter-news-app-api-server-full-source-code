@@ -1,5 +1,5 @@
-import 'package:flutter_news_app_backend_api/src/models/email/sendgrid_request.dart';
 import 'package:test/test.dart';
+import 'package:verity_api/src/models/email/sendgrid_request.dart';
 
 void main() {
   group('SendGridRequest', () {

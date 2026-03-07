@@ -2,11 +2,10 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:core/core.dart';
-import 'package:flutter_news_app_backend_api/src/databases/mongo/data_mongodb.dart';
-
-import 'package:flutter_news_app_backend_api/src/services/verification_code_storage_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
+import 'package:verity_api/src/databases/mongo/data_mongodb.dart';
+import 'package:verity_api/src/services/verification_code_storage_service.dart';
 
 /// The name of the MongoDB collection for storing verification codes.
 const String kVerificationCodesCollection = 'verification_codes';

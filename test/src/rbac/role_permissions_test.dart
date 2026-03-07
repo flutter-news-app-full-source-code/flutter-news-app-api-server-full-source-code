@@ -1,7 +1,7 @@
 import 'package:core/core.dart';
-import 'package:flutter_news_app_backend_api/src/rbac/permissions.dart';
-import 'package:flutter_news_app_backend_api/src/rbac/role_permissions.dart';
 import 'package:test/test.dart';
+import 'package:verity_api/src/rbac/permissions.dart';
+import 'package:verity_api/src/rbac/role_permissions.dart';
 
 void main() {
   group('Role Permissions Configuration', () {

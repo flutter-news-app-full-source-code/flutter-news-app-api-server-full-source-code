@@ -1,10 +1,10 @@
 import 'package:core/core.dart';
-import 'package:flutter_news_app_backend_api/src/clients/analytics/analytics_reporting_client.dart'
-    show AnalyticsReportingClient;
-import 'package:flutter_news_app_backend_api/src/models/models.dart';
-import 'package:flutter_news_app_backend_api/src/services/google_auth_service.dart';
 import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
+import 'package:verity_api/src/clients/analytics/analytics_reporting_client.dart'
+    show AnalyticsReportingClient;
+import 'package:verity_api/src/models/models.dart';
+import 'package:verity_api/src/services/google_auth_service.dart';
 
 /// {@template google_analytics_data_client}
 /// A concrete implementation of [AnalyticsReportingClient] for fetching data

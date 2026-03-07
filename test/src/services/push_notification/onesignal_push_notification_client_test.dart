@@ -1,10 +1,9 @@
 import 'package:core/core.dart';
-
-import 'package:flutter_news_app_backend_api/src/services/push_notification/onesignal_push_notification_client.dart';
-import 'package:flutter_news_app_backend_api/src/services/push_notification/push_notification_client.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
+import 'package:verity_api/src/services/push_notification/onesignal_push_notification_client.dart';
+import 'package:verity_api/src/services/push_notification/push_notification_client.dart';
 
 class MockDataRepository<T> extends Mock implements DataRepository<T> {}
 

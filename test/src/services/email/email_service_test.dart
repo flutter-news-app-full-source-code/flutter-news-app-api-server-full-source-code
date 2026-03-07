@@ -1,9 +1,9 @@
 import 'package:core/core.dart';
-import 'package:flutter_news_app_backend_api/src/clients/email/email_client.dart';
-import 'package:flutter_news_app_backend_api/src/services/email/email_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
+import 'package:verity_api/src/clients/email/email_client.dart';
+import 'package:verity_api/src/services/email/email_service.dart';
 
 class MockEmailClient extends Mock implements EmailClient {}
 

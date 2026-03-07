@@ -1,8 +1,8 @@
 import 'package:equatable/equatable.dart';
-import 'package:flutter_news_app_backend_api/src/models/storage/s3_notification.dart'
-    show S3Notification;
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
+import 'package:verity_api/src/models/storage/s3_notification.dart'
+    show S3Notification;
 
 part 'sns_notification.g.dart';
 

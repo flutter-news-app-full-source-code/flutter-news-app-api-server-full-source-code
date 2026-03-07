@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
-import 'package:flutter_news_app_backend_api/src/config/environment_config.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
+import 'package:verity_api/src/config/environment_config.dart';
 
 /// A public, unauthenticated endpoint for serving locally stored media files.
 Future<Response> onRequest(RequestContext context, String path) async {

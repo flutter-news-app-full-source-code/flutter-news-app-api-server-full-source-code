@@ -3,11 +3,11 @@ import 'dart:io';
 
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:flutter_news_app_backend_api/src/config/environment_config.dart';
-import 'package:flutter_news_app_backend_api/src/models/models.dart';
-import 'package:flutter_news_app_backend_api/src/services/idempotency_service.dart';
-import 'package:flutter_news_app_backend_api/src/services/media_service.dart';
 import 'package:logging/logging.dart';
+import 'package:verity_api/src/config/environment_config.dart';
+import 'package:verity_api/src/models/models.dart';
+import 'package:verity_api/src/services/idempotency_service.dart';
+import 'package:verity_api/src/services/media_service.dart';
 
 final _log = Logger('StorageNotificationsWebhook');
 

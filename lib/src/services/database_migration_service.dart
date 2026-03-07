@@ -1,6 +1,6 @@
-import 'package:flutter_news_app_backend_api/src/database/migration.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
+import 'package:verity_api/src/database/migration.dart';
 
 /// {@template database_migration_service}
 /// A service responsible for managing and executing database migrations.

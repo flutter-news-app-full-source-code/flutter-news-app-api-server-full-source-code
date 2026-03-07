@@ -1,13 +1,12 @@
 // ignore_for_file: inference_failure_on_function_invocation
 
 import 'package:core/core.dart';
-
-import 'package:flutter_news_app_backend_api/src/clients/analytics/google_analytics_data_client.dart';
-import 'package:flutter_news_app_backend_api/src/models/models.dart';
-import 'package:flutter_news_app_backend_api/src/services/google_auth_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
+import 'package:verity_api/src/clients/analytics/google_analytics_data_client.dart';
+import 'package:verity_api/src/models/models.dart';
+import 'package:verity_api/src/services/google_auth_service.dart';
 
 class MockHttpClient extends Mock implements HttpClient {}
 

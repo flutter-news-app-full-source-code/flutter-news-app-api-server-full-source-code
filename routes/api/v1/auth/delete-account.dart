@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:flutter_news_app_backend_api/src/services/auth_service.dart';
 import 'package:logging/logging.dart';
+import 'package:verity_api/src/services/auth_service.dart';
 
 // Create a logger for this file.
 final _logger = Logger('delete_account_handler');

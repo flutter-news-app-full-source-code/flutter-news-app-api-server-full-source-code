@@ -2,10 +2,10 @@ import 'dart:convert';
 
 import 'package:core/core.dart';
 import 'package:crypto/crypto.dart';
-import 'package:flutter_news_app_backend_api/src/models/reward/applovin_reward_callback.dart';
-import 'package:flutter_news_app_backend_api/src/models/reward/verified_reward_payload.dart';
-import 'package:flutter_news_app_backend_api/src/services/reward/reward_verifier.dart';
 import 'package:logging/logging.dart';
+import 'package:verity_api/src/models/reward/applovin_reward_callback.dart';
+import 'package:verity_api/src/models/reward/verified_reward_payload.dart';
+import 'package:verity_api/src/services/reward/reward_verifier.dart';
 
 /// {@template applovin_ssv_verifier}
 /// Verifies Server-Side Verification (SSV) callbacks from AppLovin MAX.

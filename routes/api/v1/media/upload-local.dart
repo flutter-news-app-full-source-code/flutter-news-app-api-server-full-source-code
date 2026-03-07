@@ -3,14 +3,13 @@ import 'dart:io';
 
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-
-import 'package:flutter_news_app_backend_api/src/config/environment_config.dart';
-import 'package:flutter_news_app_backend_api/src/models/storage/local_media_finalization_job.dart';
-import 'package:flutter_news_app_backend_api/src/services/idempotency_service.dart';
-import 'package:flutter_news_app_backend_api/src/services/storage/upload_token_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart' show ObjectId;
 import 'package:path/path.dart' as p;
+import 'package:verity_api/src/config/environment_config.dart';
+import 'package:verity_api/src/models/storage/local_media_finalization_job.dart';
+import 'package:verity_api/src/services/idempotency_service.dart';
+import 'package:verity_api/src/services/storage/upload_token_service.dart';
 
 final _log = Logger('UploadLocalRoute');
 

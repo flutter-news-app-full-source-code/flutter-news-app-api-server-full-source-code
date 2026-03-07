@@ -1,5 +1,5 @@
-import 'package:flutter_news_app_backend_api/src/models/idempotency_record.dart';
 import 'package:test/test.dart';
+import 'package:verity_api/src/models/idempotency_record.dart';
 
 void main() {
   group('IdempotencyRecord', () {

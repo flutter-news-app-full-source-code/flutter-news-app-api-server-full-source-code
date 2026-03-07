@@ -1,7 +1,7 @@
 import 'package:core/core.dart';
-import 'package:flutter_news_app_backend_api/src/models/models.dart';
-import 'package:flutter_news_app_backend_api/src/services/push_notification/push_notification_client.dart';
 import 'package:logging/logging.dart';
+import 'package:verity_api/src/models/models.dart';
+import 'package:verity_api/src/services/push_notification/push_notification_client.dart';
 
 /// A concrete implementation of [IPushNotificationClient] for sending
 /// notifications via Firebase Cloud Messaging (FCM).

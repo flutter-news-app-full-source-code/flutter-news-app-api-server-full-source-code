@@ -2,10 +2,10 @@ import 'dart:io';
 
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:flutter_news_app_backend_api/src/helpers/response_helper.dart';
-import 'package:flutter_news_app_backend_api/src/middlewares/authentication_middleware.dart';
-import 'package:flutter_news_app_backend_api/src/services/auth_service.dart';
 import 'package:logging/logging.dart';
+import 'package:verity_api/src/helpers/response_helper.dart';
+import 'package:verity_api/src/middlewares/authentication_middleware.dart';
+import 'package:verity_api/src/services/auth_service.dart';
 
 final _log = Logger('refresh_token_handler');
 

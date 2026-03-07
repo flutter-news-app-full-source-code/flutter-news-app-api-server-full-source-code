@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:flutter_news_app_backend_api/src/config/app_dependencies.dart';
-import 'package:flutter_news_app_backend_api/src/services/analytics/analytics.dart';
 import 'package:logging/logging.dart';
+import 'package:verity_api/src/config/app_dependencies.dart';
+import 'package:verity_api/src/services/analytics/analytics.dart';
 
 /// The main entry point for the standalone Analytics Sync Worker process.
 ///

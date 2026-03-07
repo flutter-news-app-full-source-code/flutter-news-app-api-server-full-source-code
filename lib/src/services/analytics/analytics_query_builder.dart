@@ -1,5 +1,5 @@
-import 'package:flutter_news_app_backend_api/src/models/analytics/analytics.dart';
 import 'package:logging/logging.dart';
+import 'package:verity_api/src/models/analytics/analytics.dart';
 
 /// {@template analytics_query_builder}
 /// A builder class responsible for creating complex MongoDB aggregation

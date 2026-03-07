@@ -1,5 +1,5 @@
 import 'package:core/core.dart';
-import 'package:flutter_news_app_backend_api/src/rbac/permissions.dart';
+import 'package:verity_api/src/rbac/permissions.dart';
 
 // --- Access Tier Permissions (for App Users) ---
 

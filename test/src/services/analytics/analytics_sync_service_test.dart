@@ -1,12 +1,11 @@
 import 'package:core/core.dart';
-
-import 'package:flutter_news_app_backend_api/src/clients/analytics/analytics_reporting_client.dart';
-import 'package:flutter_news_app_backend_api/src/models/models.dart';
-import 'package:flutter_news_app_backend_api/src/services/analytics/analytics.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:mongo_dart/mongo_dart.dart' show ObjectId;
 import 'package:test/test.dart';
+import 'package:verity_api/src/clients/analytics/analytics_reporting_client.dart';
+import 'package:verity_api/src/models/models.dart';
+import 'package:verity_api/src/services/analytics/analytics.dart';
 
 // Mocks for all dependencies of AnalyticsSyncService
 class MockDataRepository<T> extends Mock implements DataRepository<T> {}

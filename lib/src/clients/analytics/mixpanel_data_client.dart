@@ -1,11 +1,11 @@
 import 'dart:convert';
 
 import 'package:core/core.dart';
-import 'package:flutter_news_app_backend_api/src/clients/analytics/analytics_reporting_client.dart'
-    show AnalyticsReportingClient;
-import 'package:flutter_news_app_backend_api/src/models/models.dart';
 import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
+import 'package:verity_api/src/clients/analytics/analytics_reporting_client.dart'
+    show AnalyticsReportingClient;
+import 'package:verity_api/src/models/models.dart';
 
 /// {@template mixpanel_data_client}
 /// A concrete implementation of [AnalyticsReportingClient] for fetching data

@@ -1,10 +1,10 @@
 // ignore_for_file: inference_failure_on_function_invocation
 
 import 'package:core/core.dart';
-import 'package:flutter_news_app_backend_api/src/clients/email/email_sendgrid_client.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
+import 'package:verity_api/src/clients/email/email_sendgrid_client.dart';
 
 class MockHttpClient extends Mock implements HttpClient {}
 

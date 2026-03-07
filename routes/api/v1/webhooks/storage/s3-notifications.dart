@@ -4,13 +4,13 @@ import 'dart:io';
 
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:flutter_news_app_backend_api/src/config/environment_config.dart';
-import 'package:flutter_news_app_backend_api/src/models/storage/s3_notification.dart';
-import 'package:flutter_news_app_backend_api/src/models/storage/sns_notification.dart';
-import 'package:flutter_news_app_backend_api/src/services/idempotency_service.dart';
-import 'package:flutter_news_app_backend_api/src/services/media_service.dart';
-import 'package:flutter_news_app_backend_api/src/utils/sns_message_handler.dart';
 import 'package:logging/logging.dart';
+import 'package:verity_api/src/config/environment_config.dart';
+import 'package:verity_api/src/models/storage/s3_notification.dart';
+import 'package:verity_api/src/models/storage/sns_notification.dart';
+import 'package:verity_api/src/services/idempotency_service.dart';
+import 'package:verity_api/src/services/media_service.dart';
+import 'package:verity_api/src/utils/sns_message_handler.dart';
 
 final _log = Logger('S3NotificationsWebhook');
 

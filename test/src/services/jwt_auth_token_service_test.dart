@@ -1,11 +1,10 @@
 import 'package:core/core.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
-
-import 'package:flutter_news_app_backend_api/src/services/jwt_auth_token_service.dart';
-import 'package:flutter_news_app_backend_api/src/services/token_blacklist_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
+import 'package:verity_api/src/services/jwt_auth_token_service.dart';
+import 'package:verity_api/src/services/token_blacklist_service.dart';
 
 class MockUserRepository extends Mock implements DataRepository<User> {}
 

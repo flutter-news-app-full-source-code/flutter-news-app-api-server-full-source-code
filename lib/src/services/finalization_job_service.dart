@@ -1,9 +1,8 @@
 import 'package:core/core.dart';
-import 'package:flutter_news_app_backend_api/src/databases/mongo/data_mongodb.dart';
-
-import 'package:flutter_news_app_backend_api/src/models/storage/local_media_finalization_job.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
+import 'package:verity_api/src/databases/mongo/data_mongodb.dart';
+import 'package:verity_api/src/models/storage/local_media_finalization_job.dart';
 
 /// {@template finalization_job_service}
 /// A service for handling atomic operations on [LocalMediaFinalizationJob]s.

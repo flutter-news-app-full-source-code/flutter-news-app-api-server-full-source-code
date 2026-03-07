@@ -2,12 +2,11 @@ import 'dart:convert';
 
 import 'package:core/core.dart';
 import 'package:crypto/crypto.dart';
-
-import 'package:flutter_news_app_backend_api/src/models/idempotency_record.dart';
-import 'package:flutter_news_app_backend_api/src/services/idempotency_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
+import 'package:verity_api/src/models/idempotency_record.dart';
+import 'package:verity_api/src/services/idempotency_service.dart';
 
 class MockDataRepository<T> extends Mock implements DataRepository<T> {}
 

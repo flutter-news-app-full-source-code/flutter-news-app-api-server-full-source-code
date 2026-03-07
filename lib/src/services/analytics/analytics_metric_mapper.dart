@@ -1,5 +1,5 @@
 import 'package:core/core.dart';
-import 'package:flutter_news_app_backend_api/src/models/models.dart';
+import 'package:verity_api/src/models/models.dart';
 
 /// {@template analytics_metric_mapper}
 /// Maps internal analytics card IDs to structured [AnalyticsQuery] objects.

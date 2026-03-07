@@ -1,8 +1,8 @@
 import 'package:core/core.dart';
-import 'package:flutter_news_app_backend_api/src/services/content_enrichment_service.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
+import 'package:verity_api/src/services/content_enrichment_service.dart';
 
 class MockSourceRepository extends Mock implements DataRepository<Source> {}
 

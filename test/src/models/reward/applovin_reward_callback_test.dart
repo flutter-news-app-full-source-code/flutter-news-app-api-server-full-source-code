@@ -1,6 +1,6 @@
 import 'package:core/core.dart';
-import 'package:flutter_news_app_backend_api/src/models/reward/applovin_reward_callback.dart';
 import 'package:test/test.dart';
+import 'package:verity_api/src/models/reward/applovin_reward_callback.dart';
 
 void main() {
   group('AppLovinRewardCallback', () {

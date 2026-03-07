@@ -1,6 +1,6 @@
 import 'package:core/core.dart';
-import 'package:flutter_news_app_backend_api/src/clients/email/email_client.dart';
 import 'package:logging/logging.dart';
+import 'package:verity_api/src/clients/email/email_client.dart';
 
 /// {@template email_service}
 /// A service that handles email sending operations.

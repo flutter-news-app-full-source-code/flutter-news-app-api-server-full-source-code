@@ -1,18 +1,18 @@
-name: flutter_news_app_backend_api
-description: The complete backend API for the Flutter News App Toolkit, built with Dart Frog. Powers authentication, data management, user settings, and more.
+name: verity_api
+description: " 📡 The Verity API is a high-performance backend gateway built with Dart Frog. It serves as the secure data engine for both the Mobile Client and the Web Dashboard. "
 version: 1.11.0
 publish_to: none
-homepage: https://github.com/flutter-news-app/
-repository: https://github.com/flutter-news-app/flutter-news-app-backend-api
-documentation: https://github.com/flutter-news-app/flutter-news-app-backend-api/wiki
-issue_tracker: https://github.com/flutter-news-app/flutter-news-app-backend-api/issues
+homepage: https://github.com/verity-hq
+repository: https://github.com/verity-hq/verity-api
+documentation: https://github.com/verity-hq/verity-api/wiki
+issue_tracker: https://github.com/verity-hq/verity-api/issues
 funding:
-  - https://github.com/sponsors/flutter-news-app
+  - https://github.com/sponsors/verity-hq
 topics:
   - flutter
   - flutter-full-app
   - flutter-news-app
-  - flutter-news-app-backend-api
+  - verity-api
   - flutter-news-app-source-code
 
 environment:
@@ -23,7 +23,7 @@ dependencies:
   collection: ^1.19.1
   core:
     git:
-      url: https://github.com/flutter-news-app/core.git
+      url: https://github.com/verity-hq/core.git
       ref: v2.0.0
   crypto: ^3.0.7
   dart_frog: ^1.1.0

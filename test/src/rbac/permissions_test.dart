@@ -1,7 +1,7 @@
 import 'dart:mirrors';
 
-import 'package:flutter_news_app_backend_api/src/rbac/permissions.dart';
 import 'package:test/test.dart';
+import 'package:verity_api/src/rbac/permissions.dart';
 
 void main() {
   group('Permissions Constants', () {

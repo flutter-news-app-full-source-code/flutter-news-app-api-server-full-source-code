@@ -1,7 +1,6 @@
 import 'package:core/core.dart';
-
-import 'package:flutter_news_app_backend_api/src/services/user_action_limit_service.dart';
 import 'package:logging/logging.dart';
+import 'package:verity_api/src/services/user_action_limit_service.dart';
 
 /// {@template default_user_action_limit_service}
 /// Default implementation of [UserActionLimitService] that enforces limits

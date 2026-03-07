@@ -1,9 +1,9 @@
 // import 'package:core/core.dart';
 //
-// import 'package:flutter_news_app_backend_api/src/models/reward/verified_reward_payload.dart';
-// import 'package:flutter_news_app_backend_api/src/services/idempotency_service.dart';
-// import 'package:flutter_news_app_backend_api/src/services/reward/reward_verifier.dart';
-// import 'package:flutter_news_app_backend_api/src/services/reward/rewards_service.dart';
+// import 'package:verity_api/src/models/reward/verified_reward_payload.dart';
+// import 'package:verity_api/src/services/idempotency_service.dart';
+// import 'package:verity_api/src/services/reward/reward_verifier.dart';
+// import 'package:verity_api/src/services/reward/rewards_service.dart';
 // import 'package:logging/logging.dart';
 // import 'package:mocktail/mocktail.dart';
 // import 'package:test/test.dart';
