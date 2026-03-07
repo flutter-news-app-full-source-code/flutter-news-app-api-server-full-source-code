@@ -189,11 +189,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "v2.0.0"
-      resolved-ref: "30aa2aab3b7c95bc0efac783b9bef447b85b364b"
+      ref: "01ddd253e94303d86d9fbcc977acb2019f239fb4"
+      resolved-ref: "01ddd253e94303d86d9fbcc977acb2019f239fb4"
       url: "https://github.com/verity-hq/core.git"
     source: git
-    version: "2.0.0"
+    version: "2.1.0"
   coverage:
     dependency: transitive
     description:
