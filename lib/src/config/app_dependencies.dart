@@ -13,6 +13,7 @@ import 'package:verity_api/src/config/environment_config.dart';
 import 'package:verity_api/src/database/migrations/all_migrations.dart';
 import 'package:verity_api/src/databases/mongo/data_mongodb.dart';
 import 'package:verity_api/src/models/idempotency_record.dart';
+import 'package:verity_api/src/models/ingestion/aggregator_type.dart';
 import 'package:verity_api/src/models/storage/local_media_finalization_job.dart';
 import 'package:verity_api/src/models/storage/local_upload_token.dart';
 import 'package:verity_api/src/rbac/permission_service.dart';
@@ -27,6 +28,13 @@ import 'package:verity_api/src/services/default_user_action_limit_service.dart';
 import 'package:verity_api/src/services/email/email_service.dart';
 import 'package:verity_api/src/services/google_auth_service.dart';
 import 'package:verity_api/src/services/idempotency_service.dart';
+import 'package:verity_api/src/services/ingestion/aggregator_provider.dart';
+import 'package:verity_api/src/services/ingestion/aggregator_registry.dart';
+import 'package:verity_api/src/services/ingestion/bing_news_mapper.dart';
+import 'package:verity_api/src/services/ingestion/mediastack_mapper.dart';
+import 'package:verity_api/src/services/ingestion/news_api_mapper.dart';
+import 'package:verity_api/src/services/ingestion/news_ingestion_service.dart';
+import 'package:verity_api/src/services/ingestion/topic_resolver.dart';
 import 'package:verity_api/src/services/jwt_auth_token_service.dart';
 import 'package:verity_api/src/services/media_service.dart';
 import 'package:verity_api/src/services/mongodb_rate_limit_service.dart';
@@ -97,6 +105,7 @@ class AppDependencies {
   late final DataRepository<ChartCardData> chartCardDataRepository;
   late final DataRepository<RankedListCardData> rankedListCardDataRepository;
   late final DataRepository<IdempotencyRecord> idempotencyRepository;
+  late final DataRepository<NewsAutomationTask> newsAutomationTaskRepository;
   late final DataRepository<LocalMediaFinalizationJob>
   localMediaFinalizationJobRepository;
 
@@ -129,6 +138,8 @@ class AppDependencies {
   late final UploadTokenService uploadTokenService;
   late final LocalMediaFinalizationJobService finalizationJobService;
   late final ContentEnrichmentService contentEnrichmentService;
+  late final AggregatorRegistry aggregatorRegistry;
+  late final NewsIngestionService newsIngestionService;
 
   late final IGcsJwtVerifier gcsJwtVerifier;
   late final SnsMessageHandler snsMessageHandler;
@@ -274,6 +285,14 @@ class AppDependencies {
         fromJson: IdempotencyRecord.fromJson,
         toJson: (item) => item.toJson(),
         logger: Logger('DataMongodb<IdempotencyRecord>'),
+      );
+
+      final newsAutomationTaskClient = DataMongodb<NewsAutomationTask>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'news_automation_tasks',
+        fromJson: NewsAutomationTask.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<NewsAutomationTask>'),
       );
 
       final localMediaFinalizationJobClient =
@@ -437,6 +456,9 @@ class AppDependencies {
       );
       rankedListCardDataRepository = DataRepository(
         dataClient: rankedListCardDataClient,
+      );
+      newsAutomationTaskRepository = DataRepository(
+        dataClient: newsAutomationTaskClient,
       );
       idempotencyRepository = DataRepository(dataClient: idempotencyClient);
       localMediaFinalizationJobRepository = DataRepository(
@@ -715,6 +737,82 @@ class AppDependencies {
         countryRepository: countryRepository,
         headlineRepository: headlineRepository,
         log: Logger('ContentEnrichmentService'),
+      );
+
+      // --- News Ingestion Stack ---
+      const topicResolver = TopicResolver(
+        mediaStackMapping: {
+          'business': 'topic-business-uuid',
+          'technology': 'topic-technology-uuid',
+        },
+        bingMapping: {
+          'Business': 'topic-business-uuid',
+          'ScienceAndTechnology': 'topic-technology-uuid',
+        },
+        newsApiMapping: {
+          'business': 'topic-business-uuid',
+          'technology': 'topic-technology-uuid',
+        },
+      );
+
+      aggregatorRegistry = AggregatorRegistry();
+
+      // 1. MediaStack
+      aggregatorRegistry.register(
+        AggregatorType.mediastack,
+        MediaStackAggregatorProvider(
+          mapper: MediaStackMapper(topicResolver: topicResolver),
+          httpClient: HttpClient(
+            baseUrl: 'http://api.mediastack.com/v1/',
+            tokenProvider: () async => null,
+            interceptors: [
+              InterceptorsWrapper(
+                onRequest: (options, handler) {
+                  options.queryParameters['access_key'] =
+                      EnvironmentConfig.mediaStackApiKey;
+                  return handler.next(options);
+                },
+              ),
+            ],
+            logger: Logger('MediaStackHttpClient'),
+          ),
+        ),
+      );
+
+      // 2. Bing News
+      aggregatorRegistry.register(
+        AggregatorType.bing,
+        BingNewsAggregatorProvider(
+          mapper: BingNewsMapper(topicResolver: topicResolver),
+          httpClient: HttpClient(
+            baseUrl: 'https://api.bing.microsoft.com/v7.0/news/',
+            tokenProvider: () async => EnvironmentConfig.bingNewsApiKey,
+            logger: Logger('BingNewsHttpClient'),
+          ),
+        ),
+      );
+
+      // 3. NewsAPI.org
+      aggregatorRegistry.register(
+        AggregatorType.newsApi,
+        NewsApiAggregatorProvider(
+          mapper: NewsApiMapper(topicResolver: topicResolver),
+          httpClient: HttpClient(
+            baseUrl: 'https://newsapi.org/v2/',
+            tokenProvider: () async => EnvironmentConfig.newsApiOrgKey,
+            logger: Logger('NewsApiHttpClient'),
+          ),
+        ),
+      );
+
+      newsIngestionService = NewsIngestionService(
+        taskRepository: newsAutomationTaskRepository,
+        headlineRepository: headlineRepository,
+        sourceRepository: sourceRepository,
+        aggregatorRegistry: aggregatorRegistry,
+        enrichmentService: contentEnrichmentService,
+        idempotencyService: idempotencyService,
+        log: Logger('NewsIngestionService'),
       );
 
       gcsJwtVerifier = GcsJwtVerifier(log: Logger('GcsJwtVerifier'));
