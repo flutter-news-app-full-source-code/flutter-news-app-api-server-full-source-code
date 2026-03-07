@@ -4,7 +4,6 @@ import 'package:mongo_dart/mongo_dart.dart' show ObjectId;
 import 'package:verity_api/src/clients/analytics/analytics_reporting_client.dart';
 import 'package:verity_api/src/models/models.dart';
 import 'package:verity_api/src/services/analytics/analytics.dart';
-import 'package:verity_api/src/services/analytics/analytics_label_registry.dart';
 
 /// {@template analytics_sync_service}
 /// The core orchestrator for the background worker.

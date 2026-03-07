@@ -21,6 +21,13 @@ class IdempotencyService {
   final DataRepository<IdempotencyRecord> _repository;
   final Logger _log;
 
+  /// A convenience wrapper for [isEventProcessed] that uses a more
+  /// descriptive name for ingestion deduplication.
+  Future<bool> isDuplicate(String scope, String value) async {
+    _log.finer('Checking deduplication for $value in scope $scope');
+    return isEventProcessed(value, scope: scope);
+  }
+
   /// Checks if an event with the given [eventId] has already been processed.
   ///
   /// Optionally accepts a [scope] to namespace the event ID (e.g., 'gcs', 's3').
