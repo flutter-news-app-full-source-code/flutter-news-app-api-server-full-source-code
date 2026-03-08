@@ -37,6 +37,9 @@ class MockHeadlineRepository extends Mock implements DataRepository<Headline> {}
 class MockContentEnrichmentService extends Mock
     implements ContentEnrichmentService {}
 
+class MockNewsAutomationTaskRepository extends Mock
+    implements DataRepository<NewsAutomationTask> {}
+
 void main() {
   group('DataOperationRegistry', () {
     late DataOperationRegistry registry;
@@ -127,6 +130,16 @@ void main() {
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
           status: ContentStatus.active,
+        ),
+      );
+      registerFallbackValue(
+        NewsAutomationTask(
+          id: 'task-id',
+          sourceId: 'source-id',
+          fetchInterval: FetchInterval.hourly,
+          status: IngestionStatus.active,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
         ),
       );
     });
@@ -1362,6 +1375,204 @@ void main() {
             item: any(named: 'item'),
             userId: 'uid',
           ),
+        ).called(1);
+      });
+    });
+
+    group('NewsAutomationTask Creator', () {
+      late MockNewsAutomationTaskRepository mockTaskRepo;
+      late MockSourceRepository mockSourceRepo;
+      late NewsAutomationTask testTask;
+
+      setUp(() {
+        mockTaskRepo = MockNewsAutomationTaskRepository();
+        mockSourceRepo = MockSourceRepository();
+        testTask = NewsAutomationTask(
+          id: 'task-1',
+          sourceId: 'source-1',
+          fetchInterval: FetchInterval.hourly,
+          status: IngestionStatus.active,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      });
+
+      test('throws BadRequestException if source does not exist', () async {
+        final creator = registry.itemCreators['news_automation_task']!;
+
+        when(
+          () => mockSourceRepo.read(id: 'source-1'),
+        ).thenThrow(Exception('Source not found'));
+
+        final context = helpers
+            .createMockRequestContext(authenticatedUser: standardUser)
+            .provide<DataRepository<Source>>(() => mockSourceRepo)
+            .provide<DataRepository<NewsAutomationTask>>(() => mockTaskRepo);
+
+        expect(
+          () => creator(context, testTask, null),
+          throwsA(isA<BadRequestException>()),
+        );
+      });
+
+      test(
+        'throws ConflictException if task for source already exists',
+        () async {
+          final creator = registry.itemCreators['news_automation_task']!;
+
+          when(() => mockSourceRepo.read(id: 'source-1')).thenAnswer(
+            (_) async => Source(
+              id: 'source-1',
+              name: const {},
+              description: const {},
+              url: '',
+              sourceType: SourceType.blog,
+              language: SupportedLanguage.en,
+              headquarters: const Country(
+                id: 'c',
+                isoCode: 'US',
+                name: {},
+                flagUrl: '',
+              ),
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+              status: ContentStatus.active,
+            ),
+          );
+
+          when(
+            () => mockTaskRepo.readAll(
+              filter: any(named: 'filter'),
+            ),
+          ).thenAnswer(
+            (_) async => PaginatedResponse(
+              items: [testTask],
+              cursor: null,
+              hasMore: false,
+            ),
+          );
+
+          final context = helpers
+              .createMockRequestContext(authenticatedUser: standardUser)
+              .provide<DataRepository<Source>>(() => mockSourceRepo)
+              .provide<DataRepository<NewsAutomationTask>>(() => mockTaskRepo);
+
+          expect(
+            () => creator(context, testTask, null),
+            throwsA(isA<ConflictException>()),
+          );
+        },
+      );
+
+      test('creates task when validation passes', () async {
+        final creator = registry.itemCreators['news_automation_task']!;
+
+        when(() => mockSourceRepo.read(id: 'source-1')).thenAnswer(
+          (_) async => Source(
+            id: 'source-1',
+            name: const {},
+            description: const {},
+            url: '',
+            sourceType: SourceType.blog,
+            language: SupportedLanguage.en,
+            headquarters: const Country(
+              id: 'c',
+              isoCode: 'US',
+              name: {},
+              flagUrl: '',
+            ),
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: ContentStatus.active,
+          ),
+        );
+
+        when(
+          () => mockTaskRepo.readAll(
+            filter: any(named: 'filter'),
+          ),
+        ).thenAnswer(
+          (_) async => const PaginatedResponse(
+            items: [],
+            cursor: null,
+            hasMore: false,
+          ),
+        );
+
+        when(
+          () => mockTaskRepo.create(item: testTask),
+        ).thenAnswer((_) async => testTask);
+
+        final context = helpers
+            .createMockRequestContext(authenticatedUser: standardUser)
+            .provide<DataRepository<Source>>(() => mockSourceRepo)
+            .provide<DataRepository<NewsAutomationTask>>(() => mockTaskRepo);
+
+        final result = await creator(context, testTask, null);
+        expect(result, equals(testTask));
+        verify(() => mockTaskRepo.create(item: testTask)).called(1);
+      });
+    });
+
+    group('NewsAutomationTask Updater', () {
+      late MockNewsAutomationTaskRepository mockTaskRepo;
+      late NewsAutomationTask existingTask;
+
+      setUp(() {
+        mockTaskRepo = MockNewsAutomationTaskRepository();
+        existingTask = NewsAutomationTask(
+          id: 'task-1',
+          sourceId: 'source-1',
+          fetchInterval: FetchInterval.hourly,
+          status: IngestionStatus.active,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      });
+
+      test('throws BadRequestException if sourceId is changed', () async {
+        final updater = registry.itemUpdaters['news_automation_task']!;
+        final updateRequest = existingTask.copyWith(sourceId: 'source-2');
+
+        when(
+          () => mockTaskRepo.read(id: 'task-1'),
+        ).thenAnswer((_) async => existingTask);
+
+        final context = helpers
+            .createMockRequestContext(authenticatedUser: standardUser)
+            .provide<DataRepository<NewsAutomationTask>>(() => mockTaskRepo);
+
+        expect(
+          () => updater(context, 'task-1', updateRequest, null),
+          throwsA(isA<BadRequestException>()),
+        );
+      });
+
+      test('updates task when sourceId is unchanged', () async {
+        final updater = registry.itemUpdaters['news_automation_task']!;
+        final updateRequest = existingTask.copyWith(
+          status: IngestionStatus.paused,
+        );
+
+        when(
+          () => mockTaskRepo.read(id: 'task-1'),
+        ).thenAnswer((_) async => existingTask);
+
+        when(
+          () => mockTaskRepo.update(
+            id: 'task-1',
+            item: updateRequest,
+          ),
+        ).thenAnswer((_) async => updateRequest);
+
+        final context = helpers
+            .createMockRequestContext(authenticatedUser: standardUser)
+            .provide<DataRepository<NewsAutomationTask>>(() => mockTaskRepo);
+
+        final result = await updater(context, 'task-1', updateRequest, null);
+        expect(result, equals(updateRequest));
+        verify(
+          () => mockTaskRepo.update(id: 'task-1', item: updateRequest),
         ).called(1);
       });
     });
