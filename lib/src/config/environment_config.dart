@@ -176,6 +176,16 @@ abstract final class EnvironmentConfig {
   static String get aggregatorProvider =>
       _getEnv('AGGREGATOR_PROVIDER') ?? 'newsapi';
 
+  /// Retrieves the delay in seconds between ingestion requests.
+  static int get ingestionRequestDelaySeconds {
+    return int.tryParse(_getEnv('INGESTION_REQUEST_DELAY_SECONDS') ?? '2') ?? 2;
+  }
+
+  /// Retrieves the daily ingestion quota.
+  static int get ingestionDailyQuota {
+    return int.tryParse(_getEnv('INGESTION_DAILY_QUOTA') ?? '100') ?? 100;
+  }
+
   /// Retrieves the SendGrid API URL from the environment, if provided.
   ///
   /// Returns `null` if the `SENDGRID_API_URL` is not set.
