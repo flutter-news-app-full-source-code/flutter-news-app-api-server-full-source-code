@@ -732,6 +732,25 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       type: RequiredPermissionType.adminOnly,
     ),
   ),
+  'news_automation_task': ModelConfig<NewsAutomationTask>(
+    fromJson: NewsAutomationTask.fromJson,
+    getId: (t) => t.id,
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+    ),
+    getItemPermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+    ),
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+    ),
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+    ),
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+    ),
+  ),
 };
 
 /// Type alias for the ModelRegistry map for easier provider usage.

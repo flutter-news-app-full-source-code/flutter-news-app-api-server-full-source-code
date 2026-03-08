@@ -241,6 +241,11 @@ class DataOperationRegistry {
           c.read<DataRepository<MediaAsset>>().read(id: id, userId: null),
       'ingestion_usage': (c, id) =>
           c.read<DataRepository<IngestionUsage>>().read(id: id, userId: null),
+      'news_automation_task': (c, id) =>
+          c.read<DataRepository<NewsAutomationTask>>().read(
+            id: id,
+            userId: null,
+          ),
     });
 
     // --- Register "Read All" Readers ---
@@ -550,6 +555,12 @@ class DataOperationRegistry {
             filter: f,
             pagination: p,
           ),
+      'news_automation_task': (c, uid, f, s, p) =>
+          c.read<DataRepository<NewsAutomationTask>>().readAll(
+            filter: f,
+            sort: s,
+            pagination: p,
+          ),
     });
 
     // --- Register Item Creators ---
@@ -774,6 +785,32 @@ class DataOperationRegistry {
           c.read<DataRepository<IngestionUsage>>().create(
             item: item as IngestionUsage,
           ),
+      'news_automation_task': (c, item, uid) async {
+        final task = item as NewsAutomationTask;
+        final sourceRepo = c.read<DataRepository<Source>>();
+        final taskRepo = c.read<DataRepository<NewsAutomationTask>>();
+
+        // 1. Referential Integrity: Ensure the Source exists
+        try {
+          await sourceRepo.read(id: task.sourceId);
+        } catch (_) {
+          throw const BadRequestException(
+            'Invalid sourceId. The referenced Source does not exist.',
+          );
+        }
+
+        // 2. Uniqueness: Ensure only one task exists per Source
+        final existing = await taskRepo.readAll(
+          filter: {'sourceId': task.sourceId},
+        );
+        if (existing.items.isNotEmpty) {
+          throw const ConflictException(
+            'An automation task for this Source already exists.',
+          );
+        }
+
+        return taskRepo.create(item: task);
+      },
     });
 
     // --- Register Item Updaters ---
@@ -1120,6 +1157,21 @@ class DataOperationRegistry {
             id: id,
             item: item as IngestionUsage,
           ),
+      'news_automation_task': (c, id, item, uid) async {
+        final updateRequest = item as NewsAutomationTask;
+        final taskRepo = c.read<DataRepository<NewsAutomationTask>>();
+
+        // Fetch existing to ensure sourceId immutability
+        final existingTask = await taskRepo.read(id: id);
+
+        if (existingTask.sourceId != updateRequest.sourceId) {
+          throw const BadRequestException(
+            'The "sourceId" of an automation task cannot be changed.',
+          );
+        }
+
+        return taskRepo.update(id: id, item: updateRequest);
+      },
     });
 
     // --- Register Item Deleters ---
@@ -1249,6 +1301,8 @@ class DataOperationRegistry {
         await mediaAssetRepository.delete(id: id);
         _log.info('Deleted MediaAsset record from database: $id');
       },
+      'news_automation_task': (c, id, uid) =>
+          c.read<DataRepository<NewsAutomationTask>>().delete(id: id),
     });
   }
 
