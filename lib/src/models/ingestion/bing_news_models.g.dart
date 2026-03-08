@@ -46,7 +46,7 @@ BingNewsResponse _$BingNewsResponseFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$BingNewsRequestToJson(BingNewsRequest instance) =>
     <String, dynamic>{
-      'query': instance.query,
+      'q': instance.query,
       'count': instance.count,
       'mkt': instance.market,
       'safeSearch': instance.safeSearch,

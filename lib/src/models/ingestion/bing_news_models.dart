@@ -90,6 +90,7 @@ class BingNewsRequest {
 
   /// The user's search query string.
   /// Corresponds to the 'q' parameter.
+  @JsonKey(name: 'q')
   final String query;
 
   /// The number of results to return (1-100).
