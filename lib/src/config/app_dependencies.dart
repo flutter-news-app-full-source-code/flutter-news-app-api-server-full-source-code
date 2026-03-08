@@ -14,6 +14,7 @@ import 'package:verity_api/src/database/migrations/all_migrations.dart';
 import 'package:verity_api/src/database/mongo/data_mongodb.dart';
 import 'package:verity_api/src/models/idempotency_record.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_type.dart';
+import 'package:verity_api/src/models/ingestion/ingestion_topic_mapping.dart';
 import 'package:verity_api/src/models/storage/local_media_finalization_job.dart';
 import 'package:verity_api/src/models/storage/local_upload_token.dart';
 import 'package:verity_api/src/rbac/permission_service.dart';
@@ -28,13 +29,11 @@ import 'package:verity_api/src/services/default_user_action_limit_service.dart';
 import 'package:verity_api/src/services/email/email_service.dart';
 import 'package:verity_api/src/services/google_auth_service.dart';
 import 'package:verity_api/src/services/idempotency_service.dart';
-import 'package:verity_api/src/services/ingestion/aggregator_provider.dart';
-import 'package:verity_api/src/services/ingestion/aggregator_registry.dart';
-import 'package:verity_api/src/services/ingestion/bing_news_mapper.dart';
-import 'package:verity_api/src/services/ingestion/mediastack_mapper.dart';
-import 'package:verity_api/src/services/ingestion/news_api_mapper.dart';
-import 'package:verity_api/src/services/ingestion/news_ingestion_service.dart';
-import 'package:verity_api/src/services/ingestion/topic_resolver.dart';
+import 'package:verity_api/src/services/ingestion/registries/aggregator_registry.dart';
+import 'package:verity_api/src/services/ingestion/mappers/bing_news_mapper.dart';
+import 'package:verity_api/src/services/ingestion/mappers/mediastack_mapper.dart';
+import 'package:verity_api/src/services/ingestion/mappers/news_api_mapper.dart';
+import 'package:verity_api/src/services/ingestion/services/news_ingestion_service.dart';
 import 'package:verity_api/src/services/jwt_auth_token_service.dart';
 import 'package:verity_api/src/services/media_service.dart';
 import 'package:verity_api/src/services/mongodb_rate_limit_service.dart';
@@ -106,6 +105,7 @@ class AppDependencies {
   late final DataRepository<RankedListCardData> rankedListCardDataRepository;
   late final DataRepository<IdempotencyRecord> idempotencyRepository;
   late final DataRepository<NewsAutomationTask> newsAutomationTaskRepository;
+  late final DataRepository<IngestionTopicMapping> mappingRepository;
   late final DataRepository<LocalMediaFinalizationJob>
   localMediaFinalizationJobRepository;
 
@@ -295,6 +295,14 @@ class AppDependencies {
         logger: Logger('DataMongodb<NewsAutomationTask>'),
       );
 
+      final mappingClient = DataMongodb<IngestionTopicMapping>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'ingestion_mappings',
+        fromJson: IngestionTopicMapping.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<IngestionTopicMapping>'),
+      );
+
       final localMediaFinalizationJobClient =
           DataMongodb<LocalMediaFinalizationJob>(
             connectionManager: _mongoDbConnectionManager,
@@ -460,6 +468,7 @@ class AppDependencies {
       newsAutomationTaskRepository = DataRepository(
         dataClient: newsAutomationTaskClient,
       );
+      mappingRepository = DataRepository(dataClient: mappingClient);
       idempotencyRepository = DataRepository(dataClient: idempotencyClient);
       localMediaFinalizationJobRepository = DataRepository(
         dataClient: localMediaFinalizationJobClient,
@@ -740,28 +749,13 @@ class AppDependencies {
       );
 
       // --- News Ingestion Stack ---
-      const topicResolver = TopicResolver(
-        mediaStackMapping: {
-          'business': 'topic-business-uuid',
-          'technology': 'topic-technology-uuid',
-        },
-        bingMapping: {
-          'Business': 'topic-business-uuid',
-          'ScienceAndTechnology': 'topic-technology-uuid',
-        },
-        newsApiMapping: {
-          'business': 'topic-business-uuid',
-          'technology': 'topic-technology-uuid',
-        },
-      );
-
       aggregatorRegistry = AggregatorRegistry();
 
       // 1. MediaStack
       aggregatorRegistry.register(
         AggregatorType.mediastack,
         MediaStackAggregatorProvider(
-          mapper: MediaStackMapper(topicResolver: topicResolver),
+          mapper: MediaStackMapper(),
           httpClient: HttpClient(
             baseUrl: 'http://api.mediastack.com/v1/',
             tokenProvider: () async => null,
@@ -783,7 +777,7 @@ class AppDependencies {
       aggregatorRegistry.register(
         AggregatorType.bing,
         BingNewsAggregatorProvider(
-          mapper: BingNewsMapper(topicResolver: topicResolver),
+          mapper: BingNewsMapper(),
           httpClient: HttpClient(
             baseUrl: 'https://api.bing.microsoft.com/v7.0/news/',
             tokenProvider: () async => EnvironmentConfig.bingNewsApiKey,
@@ -796,7 +790,7 @@ class AppDependencies {
       aggregatorRegistry.register(
         AggregatorType.newsApi,
         NewsApiAggregatorProvider(
-          mapper: NewsApiMapper(topicResolver: topicResolver),
+          mapper: NewsApiMapper(),
           httpClient: HttpClient(
             baseUrl: 'https://newsapi.org/v2/',
             tokenProvider: () async => EnvironmentConfig.newsApiOrgKey,
@@ -809,8 +803,10 @@ class AppDependencies {
         taskRepository: newsAutomationTaskRepository,
         headlineRepository: headlineRepository,
         sourceRepository: sourceRepository,
+        topicRepository: topicRepository,
+        countryRepository: countryRepository,
+        mappingRepository: mappingRepository,
         aggregatorRegistry: aggregatorRegistry,
-        enrichmentService: contentEnrichmentService,
         idempotencyService: idempotencyService,
         log: Logger('NewsIngestionService'),
       );
