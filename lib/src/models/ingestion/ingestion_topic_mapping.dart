@@ -3,7 +3,7 @@ import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_type.dart';
 
-part 'ingestion_mapping.g.dart';
+part 'ingestion_topic_mapping.g.dart';
 
 /// {@template ingestion_topic_mapping}
 /// A data model representing the mapping between an external provider's
