@@ -34,4 +34,36 @@ void main() {
       expect(article.urlToImage, isNull);
     });
   });
+
+  group('NewsApiResponse', () {
+    test('fromJson creates correct instance', () {
+      final json = {
+        'status': 'ok',
+        'totalResults': 1,
+        'articles': [
+          {
+            'title': 'Test Article',
+            'url': 'https://example.com',
+            'publishedAt': '2023-01-01T00:00:00.000Z',
+          },
+        ],
+      };
+
+      final response = NewsApiResponse.fromJson(json);
+      expect(response.status, 'ok');
+      expect(response.totalResults, 1);
+      expect(response.articles.length, 1);
+    });
+  });
+
+  group('NewsApiRequest', () {
+    test('toJson returns correct map', () {
+      const request = NewsApiRequest(sources: 'bbc-news');
+      expect(request.toJson(), {
+        'sources': 'bbc-news',
+        'pageSize': 20,
+        'sortBy': 'publishedAt',
+      });
+    });
+  });
 }
