@@ -18,12 +18,18 @@ BingNewsArticle _$BingNewsArticleFromJson(Map<String, dynamic> json) =>
         ),
         category: $checkedConvert('category', (v) => v as String?),
         imageThumbnailUrl: $checkedConvert(
-          'imageThumbnailUrl',
+          'image',
           (v) => v as String?,
+          readValue: _readImageThumbnail,
+        ),
+        provider: $checkedConvert(
+          'provider',
+          (v) => v as String?,
+          readValue: _readProviderName,
         ),
       );
       return val;
-    });
+    }, fieldKeyMap: const {'imageThumbnailUrl': 'image'});
 
 BingNewsResponse _$BingNewsResponseFromJson(Map<String, dynamic> json) =>
     $checkedCreate('BingNewsResponse', json, ($checkedConvert) {
@@ -37,3 +43,11 @@ BingNewsResponse _$BingNewsResponseFromJson(Map<String, dynamic> json) =>
       );
       return val;
     });
+
+Map<String, dynamic> _$BingNewsRequestToJson(BingNewsRequest instance) =>
+    <String, dynamic>{
+      'query': instance.query,
+      'count': instance.count,
+      'mkt': instance.market,
+      'safeSearch': instance.safeSearch,
+    };

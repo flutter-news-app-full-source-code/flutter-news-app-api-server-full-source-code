@@ -38,3 +38,10 @@ NewsApiResponse _$NewsApiResponseFromJson(Map<String, dynamic> json) =>
       );
       return val;
     });
+
+Map<String, dynamic> _$NewsApiRequestToJson(NewsApiRequest instance) =>
+    <String, dynamic>{
+      'sources': instance.sources,
+      'pageSize': instance.pageSize,
+      'sortBy': instance.sortBy,
+    };

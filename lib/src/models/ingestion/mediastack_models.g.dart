@@ -36,3 +36,10 @@ MediaStackResponse _$MediaStackResponseFromJson(Map<String, dynamic> json) =>
       );
       return val;
     });
+
+Map<String, dynamic> _$MediaStackRequestToJson(MediaStackRequest instance) =>
+    <String, dynamic>{
+      'sources': instance.sources,
+      'languages': instance.languages,
+      'limit': instance.limit,
+    };
