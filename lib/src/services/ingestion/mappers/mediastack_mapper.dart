@@ -1,8 +1,8 @@
 // ignore_for_file: public_member_api_docs
 
 import 'package:core/core.dart';
-import 'package:verity_api/src/models/ingestion/mediastack_models.dart';
 import 'package:mongo_dart/mongo_dart.dart';
+import 'package:verity_api/src/models/ingestion/mediastack_models.dart';
 import 'package:verity_api/src/services/ingestion/mappers/aggregator_mapper.dart';
 
 /// {@template mediastack_mapper}

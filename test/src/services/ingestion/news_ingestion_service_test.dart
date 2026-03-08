@@ -1,16 +1,16 @@
 import 'package:core/core.dart';
 import 'package:logging/logging.dart';
-import 'package:mongo_dart/mongo_dart.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:mongo_dart/mongo_dart.dart';
 import 'package:test/test.dart';
 import 'package:verity_api/src/config/environment_config.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_type.dart';
 import 'package:verity_api/src/models/ingestion/ingestion_topic_mapping.dart';
 import 'package:verity_api/src/models/ingestion/ingestion_usage.dart';
 import 'package:verity_api/src/services/idempotency_service.dart';
+import 'package:verity_api/src/services/ingestion/news_ingestion_service.dart';
 import 'package:verity_api/src/services/ingestion/providers/aggregator_provider.dart';
 import 'package:verity_api/src/services/ingestion/registries/aggregator_registry.dart';
-import 'package:verity_api/src/services/ingestion/news_ingestion_service.dart';
 
 class MockDataRepository<T> extends Mock implements DataRepository<T> {}
 

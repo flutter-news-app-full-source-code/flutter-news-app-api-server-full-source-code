@@ -606,7 +606,7 @@ abstract class AnalyticsLabelRegistry {
       ChartCardId.ingestionHeadlinesOverTime:
           'Titres récupérés au fil du temps',
       ChartCardId.ingestionTaskStatusDistribution:
-          'Répartition du statut des tâches d\'automatisation',
+          "Répartition du statut des tâches d'automatisation",
     },
     SupportedLanguage.pt: {
       ChartCardId.usersRegistrationsOverTime: 'Registros ao longo do tempo',
