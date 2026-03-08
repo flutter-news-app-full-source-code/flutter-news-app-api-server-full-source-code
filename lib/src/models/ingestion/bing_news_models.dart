@@ -15,6 +15,7 @@ class BingNewsArticle {
     required this.datePublished,
     this.category,
     this.imageThumbnailUrl,
+    this.provider,
   });
 
   /// Creates a [BingNewsArticle] from JSON.
@@ -37,7 +38,23 @@ class BingNewsArticle {
   final String? category;
 
   /// The URL to the thumbnail image.
+  @JsonKey(name: 'image', readValue: _readImageThumbnail)
   final String? imageThumbnailUrl;
+
+  /// The provider organization (source) of the article.
+  @JsonKey(name: 'provider', readValue: _readProviderName)
+  final String? provider;
+}
+
+Object? _readImageThumbnail(Map<dynamic, dynamic> json, String key) {
+  return json['image']?['thumbnail']?['contentUrl'];
+}
+
+Object? _readProviderName(Map<dynamic, dynamic> json, String key) {
+  final providers = json['provider'] as List?;
+  return (providers != null && providers.isNotEmpty)
+      ? providers.first['name']
+      : null;
 }
 
 /// {@template bing_news_response}
@@ -56,4 +73,36 @@ class BingNewsResponse {
 
   /// The list of news articles returned by Bing.
   final List<BingNewsArticle> value;
+}
+
+/// {@template bing_news_request}
+/// Strongly-typed request parameters for the Bing News Search API.
+/// {@endtemplate}
+@JsonSerializable(createFactory: false)
+class BingNewsRequest {
+  /// {@macro bing_news_request}
+  const BingNewsRequest({
+    required this.query,
+    this.count = 20,
+    this.market = 'en-US',
+    this.safeSearch = 'Off',
+  });
+
+  /// The user's search query string.
+  /// Corresponds to the 'q' parameter.
+  final String query;
+
+  /// The number of results to return (1-100).
+  @JsonKey(name: 'count')
+  final int count;
+
+  /// The market code to use for the request (e.g., 'en-US').
+  @JsonKey(name: 'mkt')
+  final String market;
+
+  /// Filter for adult content ('Off', 'Moderate', 'Strict').
+  final String safeSearch;
+
+  /// Converts the request to a map of query parameters.
+  Map<String, dynamic> toJson() => _$BingNewsRequestToJson(this);
 }
