@@ -22,6 +22,7 @@ class NewsApiMapper extends AggregatorMapper<NewsApiArticle> {
     NewsApiArticle article,
     Source source, {
     required Map<String, Topic> topicCache,
+    required Topic fallbackTopic,
     required Map<String, Country> countryCache,
     required Map<String, String> mappingCache,
   }) {
@@ -34,7 +35,7 @@ class NewsApiMapper extends AggregatorMapper<NewsApiArticle> {
       imageUrl: article.urlToImage ?? '',
       source: source,
       eventCountry: source.headquarters,
-      topic: resolveTopic(null, topicCache, mappingCache),
+      topic: resolveTopic(null, topicCache, fallbackTopic, mappingCache),
       createdAt: now,
       updatedAt: now,
       status: ContentStatus.active,

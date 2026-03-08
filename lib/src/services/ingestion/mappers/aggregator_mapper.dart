@@ -9,6 +9,7 @@ abstract class AggregatorMapper<T> {
     T article,
     Source source, {
     required Map<String, Topic> topicCache,
+    required Topic fallbackTopic,
     required Map<String, Country> countryCache,
     required Map<String, String> mappingCache,
   });
@@ -17,6 +18,7 @@ abstract class AggregatorMapper<T> {
   Topic resolveTopic(
     String? externalCategory,
     Map<String, Topic> topicCache,
+    Topic fallbackTopic,
     Map<String, String> mappingCache,
   ) {
     final topicId = mappingCache[externalCategory?.toLowerCase()];
@@ -25,11 +27,7 @@ abstract class AggregatorMapper<T> {
       return topicCache[topicId]!;
     }
 
-    // Fallback to 'General' topic by searching name
-    return topicCache.values.firstWhere(
-      (t) => t.name[SupportedLanguage.en] == 'General',
-      orElse: () => topicCache.values.first,
-    );
+    return fallbackTopic;
   }
 
   /// Resolves a Country from the cache using ISO code.

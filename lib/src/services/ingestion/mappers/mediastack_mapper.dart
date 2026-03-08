@@ -22,6 +22,7 @@ class MediaStackMapper extends AggregatorMapper<MediaStackArticle> {
     MediaStackArticle article,
     Source source, {
     required Map<String, Topic> topicCache,
+    required Topic fallbackTopic,
     required Map<String, Country> countryCache,
     required Map<String, String> mappingCache,
   }) {
@@ -38,7 +39,12 @@ class MediaStackMapper extends AggregatorMapper<MediaStackArticle> {
         countryCache,
         source.headquarters,
       ),
-      topic: resolveTopic(article.category, topicCache, mappingCache),
+      topic: resolveTopic(
+        article.category,
+        topicCache,
+        fallbackTopic,
+        mappingCache,
+      ),
       createdAt: now,
       updatedAt: now,
       status: ContentStatus.active,
