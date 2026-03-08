@@ -135,9 +135,97 @@ void main() {
       verify(
         () => mockHttpClient.get<Map<String, dynamic>>(
           'news',
-          queryParameters: {'sources': 'bbc', 'limit': '20', 'languages': 'en'},
+          queryParameters: const MediaStackRequest(
+            sources: 'bbc',
+            languages: 'en',
+          ).toJson(),
         ),
       ).called(1);
     },
   );
+
+  test('fetchLatestHeadlines handles partial mapping failures', () async {
+    final apiResponse = {
+      'data': [
+        {
+          'title': 'Valid Article',
+          'url': 'https://bbc.com/1',
+          'description': 'Description 1',
+          'image': null,
+          'published_at': '2023-01-01T00:00:00.000Z',
+          'category': 'general',
+          'language': 'en',
+          'country': 'gb',
+        },
+        {
+          'title': 'Invalid Article',
+          'url': 'https://bbc.com/2',
+          'description': 'Description 2',
+          'image': null,
+          'published_at': '2023-01-01T00:00:00.000Z',
+          'category': 'general',
+          'language': 'en',
+          'country': 'gb',
+        },
+      ],
+    };
+
+    when(
+      () => mockHttpClient.get<Map<String, dynamic>>(
+        any(),
+        queryParameters: any(named: 'queryParameters'),
+      ),
+    ).thenAnswer((_) async => apiResponse);
+
+    final validHeadline = Headline(
+      id: '1',
+      title: const {},
+      url: 'https://bbc.com/1',
+      imageUrl: '',
+      source: source,
+      eventCountry: source.headquarters,
+      topic: fallbackTopic,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      status: ContentStatus.active,
+      isBreaking: false,
+    );
+
+    // Mock mapper to succeed for the first and fail for the second
+    when(
+      () => mockMapper.mapToHeadline(
+        any(),
+        source,
+        topicCache: topicCache,
+        fallbackTopic: fallbackTopic,
+        countryCache: countryCache,
+        mappingCache: mappingCache,
+      ),
+    ).thenAnswer((invocation) {
+      final article = invocation.positionalArguments[0] as MediaStackArticle;
+      if (article.title == 'Valid Article') return validHeadline;
+      throw Exception('Mapping failed');
+    });
+
+    final result = await provider.fetchLatestHeadlines(
+      source,
+      topicCache: topicCache,
+      fallbackTopic: fallbackTopic,
+      countryCache: countryCache,
+      mappingCache: mappingCache,
+    );
+
+    // Should return only the valid headline
+    expect(result, hasLength(1));
+    expect(result.first, validHeadline);
+
+    // Verify warning was logged for the failure
+    verify(
+      () => mockLogger.warning(
+        any(that: contains('Failed to map MediaStack article')),
+        any(),
+        any(),
+      ),
+    ).called(1);
+  });
 }
