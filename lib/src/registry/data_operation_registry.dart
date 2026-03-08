@@ -4,6 +4,7 @@ import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:logging/logging.dart';
 import 'package:verity_api/src/middlewares/ownership_check_middleware.dart';
+import 'package:verity_api/src/models/ingestion/ingestion_usage.dart';
 import 'package:verity_api/src/rbac/permission_service.dart';
 import 'package:verity_api/src/rbac/permissions.dart';
 import 'package:verity_api/src/services/content_enrichment_service.dart';
@@ -238,6 +239,8 @@ class DataOperationRegistry {
           c.read<DataRepository<UserRewards>>().read(id: id, userId: null),
       'media_asset': (c, id) =>
           c.read<DataRepository<MediaAsset>>().read(id: id, userId: null),
+      'ingestion_usage': (c, id) =>
+          c.read<DataRepository<IngestionUsage>>().read(id: id, userId: null),
     });
 
     // --- Register "Read All" Readers ---
@@ -542,6 +545,11 @@ class DataOperationRegistry {
             sort: s,
             pagination: p,
           ),
+      'ingestion_usage': (c, uid, f, s, p) =>
+          c.read<DataRepository<IngestionUsage>>().readAll(
+            filter: f,
+            pagination: p,
+          ),
     });
 
     // --- Register Item Creators ---
@@ -762,6 +770,10 @@ class DataOperationRegistry {
 
         return context.read<DataRepository<AppReview>>().create(item: item);
       },
+      'ingestion_usage': (c, item, uid) =>
+          c.read<DataRepository<IngestionUsage>>().create(
+            item: item as IngestionUsage,
+          ),
     });
 
     // --- Register Item Updaters ---
@@ -1102,6 +1114,11 @@ class DataOperationRegistry {
           c.read<DataRepository<AppReview>>().update(
             id: id,
             item: item as AppReview,
+          ),
+      'ingestion_usage': (c, id, item, uid) =>
+          c.read<DataRepository<IngestionUsage>>().update(
+            id: id,
+            item: item as IngestionUsage,
           ),
     });
 
