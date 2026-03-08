@@ -25,6 +25,8 @@ class MediaStackAggregatorProvider implements AggregatorProvider {
   final AggregatorMapper<MediaStackArticle> _mapper;
   final Logger _log;
 
+  static const String _kEndpoint = 'news';
+
   @override
   Future<List<Headline>> fetchLatestHeadlines(
     Source source, {
@@ -43,13 +45,12 @@ class MediaStackAggregatorProvider implements AggregatorProvider {
         languages: source.language.name,
       );
 
-      final response = await _httpClient.get<Map<String, dynamic>>(
-        'news',
-        queryParameters: request.toJson(),
+      _log.fine('MediaStack request prepared. Fetching DTO...');
+      final dto = await _fetch(
+        _kEndpoint,
+        request.toJson(),
+        MediaStackResponse.fromJson,
       );
-
-      _log.fine('MediaStack response received. Parsing DTO...');
-      final dto = MediaStackResponse.fromJson(response);
       _log.info('MediaStack DTO parsed. Found ${dto.data.length} articles.');
 
       final headlines = <Headline>[];
@@ -88,5 +89,17 @@ class MediaStackAggregatorProvider implements AggregatorProvider {
       );
       rethrow;
     }
+  }
+
+  Future<T> _fetch<T>(
+    String endpoint,
+    Map<String, dynamic> queryParameters,
+    T Function(Map<String, dynamic>) fromJson,
+  ) async {
+    final response = await _httpClient.get<Map<String, dynamic>>(
+      endpoint,
+      queryParameters: queryParameters,
+    );
+    return fromJson(response);
   }
 }
