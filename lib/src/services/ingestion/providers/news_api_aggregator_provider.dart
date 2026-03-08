@@ -1,7 +1,8 @@
 import 'package:core/core.dart';
 import 'package:verity_api/src/models/ingestion/news_api_models.dart';
 import 'package:verity_api/src/services/ingestion/mappers/aggregator_mapper.dart';
-import 'package:verity_api/src/services/ingestion/providers/aggregator_provider.dart' show AggregatorProvider;
+import 'package:verity_api/src/services/ingestion/providers/aggregator_provider.dart'
+    show AggregatorProvider;
 import 'package:verity_api/src/services/services.dart' show AggregatorProvider;
 
 /// {@template news_api_aggregator_provider}
@@ -50,4 +51,3 @@ class NewsApiAggregatorProvider implements AggregatorProvider {
     }
   }
 }
-

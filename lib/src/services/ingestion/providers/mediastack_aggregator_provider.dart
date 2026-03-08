@@ -1,8 +1,10 @@
 import 'package:core/core.dart';
 import 'package:verity_api/src/models/ingestion/ingestion.dart';
+import 'package:verity_api/src/services/ingestion/ingestion.dart'
+    show AggregatorProvider;
 import 'package:verity_api/src/services/ingestion/mappers/aggregator_mapper.dart';
-import 'package:verity_api/src/services/ingestion/providers/aggregator_provider.dart' show AggregatorProvider;
-import 'package:verity_api/src/services/ingestion/ingestion.dart' show AggregatorProvider;
+import 'package:verity_api/src/services/ingestion/providers/aggregator_provider.dart'
+    show AggregatorProvider;
 import 'package:verity_api/src/services/services.dart' show AggregatorProvider;
 
 /// {@template mediastack_aggregator_provider}
@@ -54,4 +56,3 @@ class MediaStackAggregatorProvider implements AggregatorProvider {
     }
   }
 }
-

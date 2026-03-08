@@ -160,14 +160,19 @@ abstract final class EnvironmentConfig {
   static String get defaultSenderEmail =>
       _getRequiredEnv('DEFAULT_SENDER_EMAIL');
 
+  /// Retrieves the OTP template ID from the environment.
   static String get otpTemplateId => _getRequiredEnv('OTP_TEMPLATE_ID');
 
+  /// Retrieves the MediaStack API key from the environment.
   static String? get mediaStackApiKey => _getEnv('MEDIASTACK_API_KEY');
 
+  /// Retrieves the Bing News API key from the environment.
   static String? get bingNewsApiKey => _getEnv('BING_NEWS_API_KEY');
 
+  /// Retrieves the NewsAPI.org API key from the environment.
   static String? get newsApiOrgKey => _getEnv('NEWSAPI_ORG_KEY');
 
+  /// Retrieves the aggregator provider from the environment.
   static String get aggregatorProvider =>
       _getEnv('AGGREGATOR_PROVIDER') ?? 'newsapi';
 

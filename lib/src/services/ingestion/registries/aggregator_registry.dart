@@ -1,6 +1,8 @@
 import 'package:verity_api/src/models/ingestion/aggregator_type.dart';
-import 'package:verity_api/src/registry/data_operation_registry.dart' show DataOperationRegistry;
-import 'package:verity_api/src/registry/registry.dart' show DataOperationRegistry;
+import 'package:verity_api/src/registry/data_operation_registry.dart'
+    show DataOperationRegistry;
+import 'package:verity_api/src/registry/registry.dart'
+    show DataOperationRegistry;
 import 'package:verity_api/src/services/ingestion/providers/aggregator_provider.dart';
 
 /// {@template aggregator_registry}
