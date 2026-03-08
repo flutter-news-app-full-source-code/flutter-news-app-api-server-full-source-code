@@ -23,6 +23,8 @@ class NewsApiAggregatorProvider implements AggregatorProvider {
   final AggregatorMapper<NewsApiArticle> _mapper;
   final Logger _log;
 
+  static const String _kEndpoint = 'everything';
+
   @override
   Future<List<Headline>> fetchLatestHeadlines(
     Source source, {
@@ -39,13 +41,12 @@ class NewsApiAggregatorProvider implements AggregatorProvider {
         sources: sourceId,
       );
 
-      final response = await _httpClient.get<Map<String, dynamic>>(
-        'everything',
-        queryParameters: request.toJson(),
+      _log.fine('NewsAPI request prepared. Fetching DTO...');
+      final dto = await _fetch(
+        _kEndpoint,
+        request.toJson(),
+        NewsApiResponse.fromJson,
       );
-
-      _log.fine('NewsAPI response received. Parsing DTO...');
-      final dto = NewsApiResponse.fromJson(response);
       _log.info('NewsAPI DTO parsed. Found ${dto.articles.length} articles.');
 
       final headlines = <Headline>[];
@@ -76,5 +77,17 @@ class NewsApiAggregatorProvider implements AggregatorProvider {
       _log.severe('Critical failure fetching from NewsAPI for $sourceId', e, s);
       rethrow;
     }
+  }
+
+  Future<T> _fetch<T>(
+    String endpoint,
+    Map<String, dynamic> queryParameters,
+    T Function(Map<String, dynamic>) fromJson,
+  ) async {
+    final response = await _httpClient.get<Map<String, dynamic>>(
+      endpoint,
+      queryParameters: queryParameters,
+    );
+    return fromJson(response);
   }
 }
