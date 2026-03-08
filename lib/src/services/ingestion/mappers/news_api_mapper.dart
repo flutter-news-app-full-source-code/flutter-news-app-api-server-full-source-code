@@ -2,6 +2,7 @@
 
 import 'package:core/core.dart';
 import 'package:verity_api/src/models/ingestion/news_api_models.dart';
+import 'package:mongo_dart/mongo_dart.dart';
 import 'package:verity_api/src/services/ingestion/mappers/aggregator_mapper.dart';
 
 /// {@template news_api_mapper}
@@ -29,7 +30,7 @@ class NewsApiMapper extends AggregatorMapper<NewsApiArticle> {
     final now = DateTime.now();
 
     return Headline(
-      id: '', // Assigned by repository
+      id: ObjectId().oid,
       title: {source.language: article.title},
       url: normalizeUrl(article.url),
       imageUrl: article.urlToImage ?? '',

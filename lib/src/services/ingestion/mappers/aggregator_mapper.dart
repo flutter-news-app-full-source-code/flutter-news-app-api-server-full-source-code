@@ -42,18 +42,23 @@ abstract class AggregatorMapper<T> {
 
   /// Normalizes a URL by removing tracking parameters.
   String normalizeUrl(String url) {
-    try {
-      final uri = Uri.parse(url);
-      if (!uri.hasQuery) return url;
+    final uri = Uri.parse(url);
+    if (!uri.hasQuery) return url;
 
-      final cleanQuery = Map<String, String>.from(uri.queryParameters)
-        ..removeWhere(
-          (key, _) => key.startsWith('utm_') || key == 'ref' || key == 'source',
-        );
+    final cleanParams = <String, String>{};
+    uri.queryParameters.forEach((key, value) {
+      if (!key.startsWith('utm_') &&
+          key != 'ref' &&
+          key != 'source' &&
+          key != 'fbclid') {
+        cleanParams[key] = value;
+      }
+    });
 
-      return uri.replace(queryParameters: cleanQuery).toString();
-    } catch (_) {
-      return url;
+    if (cleanParams.isEmpty) {
+      return uri.replace(query: null).toString();
     }
+
+    return uri.replace(queryParameters: cleanParams).toString();
   }
 }

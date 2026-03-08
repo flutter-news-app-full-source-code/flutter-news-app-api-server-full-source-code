@@ -2,6 +2,7 @@
 
 import 'package:core/core.dart';
 import 'package:verity_api/src/models/ingestion/bing_news_models.dart';
+import 'package:mongo_dart/mongo_dart.dart';
 import 'package:verity_api/src/services/ingestion/mappers/aggregator_mapper.dart';
 
 /// {@template bing_news_mapper}
@@ -30,7 +31,7 @@ class BingNewsMapper extends AggregatorMapper<BingNewsArticle> {
     final now = DateTime.now();
 
     return Headline(
-      id: '', // Assigned by repository
+      id: ObjectId().oid,
       title: {source.language: article.name},
       url: normalizeUrl(article.url),
       imageUrl: article.imageThumbnailUrl ?? '',
