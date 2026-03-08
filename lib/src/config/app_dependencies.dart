@@ -15,6 +15,7 @@ import 'package:verity_api/src/database/mongo/data_mongodb.dart';
 import 'package:verity_api/src/models/idempotency_record.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_type.dart';
 import 'package:verity_api/src/models/ingestion/ingestion_topic_mapping.dart';
+import 'package:verity_api/src/models/ingestion/ingestion_usage.dart';
 import 'package:verity_api/src/models/storage/local_media_finalization_job.dart';
 import 'package:verity_api/src/models/storage/local_upload_token.dart';
 import 'package:verity_api/src/rbac/permission_service.dart';
@@ -70,6 +71,7 @@ class AppDependencies {
   late final DataRepository<IdempotencyRecord> idempotencyRepository;
   late final DataRepository<NewsAutomationTask> newsAutomationTaskRepository;
   late final DataRepository<IngestionTopicMapping> mappingRepository;
+  late final DataRepository<IngestionUsage> ingestionUsageRepository;
   late final DataRepository<LocalMediaFinalizationJob>
   localMediaFinalizationJobRepository;
 
@@ -267,6 +269,14 @@ class AppDependencies {
         logger: Logger('DataMongodb<IngestionTopicMapping>'),
       );
 
+      final ingestionUsageClient = DataMongodb<IngestionUsage>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'ingestion_usage',
+        fromJson: IngestionUsage.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<IngestionUsage>'),
+      );
+
       final localMediaFinalizationJobClient =
           DataMongodb<LocalMediaFinalizationJob>(
             connectionManager: _mongoDbConnectionManager,
@@ -433,6 +443,9 @@ class AppDependencies {
         dataClient: newsAutomationTaskClient,
       );
       mappingRepository = DataRepository(dataClient: mappingClient);
+      ingestionUsageRepository = DataRepository(
+        dataClient: ingestionUsageClient,
+      );
       idempotencyRepository = DataRepository(dataClient: idempotencyClient);
       localMediaFinalizationJobRepository = DataRepository(
         dataClient: localMediaFinalizationJobClient,
@@ -720,6 +733,7 @@ class AppDependencies {
         AggregatorType.mediastack,
         MediaStackAggregatorProvider(
           mapper: MediaStackMapper(),
+          log: Logger('MediaStackAggregatorProvider'),
           httpClient: HttpClient(
             baseUrl: 'http://api.mediastack.com/v1/',
             tokenProvider: () async => null,
@@ -742,6 +756,7 @@ class AppDependencies {
         AggregatorType.bing,
         BingNewsAggregatorProvider(
           mapper: BingNewsMapper(),
+          log: Logger('BingNewsAggregatorProvider'),
           httpClient: HttpClient(
             baseUrl: 'https://api.bing.microsoft.com/v7.0/news/',
             tokenProvider: () async => EnvironmentConfig.bingNewsApiKey,
@@ -755,6 +770,7 @@ class AppDependencies {
         AggregatorType.newsApi,
         NewsApiAggregatorProvider(
           mapper: NewsApiMapper(),
+          log: Logger('NewsApiAggregatorProvider'),
           httpClient: HttpClient(
             baseUrl: 'https://newsapi.org/v2/',
             tokenProvider: () async => EnvironmentConfig.newsApiOrgKey,
@@ -770,6 +786,7 @@ class AppDependencies {
         topicRepository: topicRepository,
         countryRepository: countryRepository,
         mappingRepository: mappingRepository,
+        usageRepository: ingestionUsageRepository,
         aggregatorRegistry: aggregatorRegistry,
         idempotencyService: idempotencyService,
         log: Logger('NewsIngestionService'),
