@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:core/core.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
-import 'package:verity_api/src/databases/mongo/data_mongodb.dart';
+import 'package:verity_api/src/database/mongo/data_mongodb.dart';
 import 'package:verity_api/src/services/token_blacklist_service.dart';
 
 /// The name of the MongoDB collection used for storing blacklisted tokens.

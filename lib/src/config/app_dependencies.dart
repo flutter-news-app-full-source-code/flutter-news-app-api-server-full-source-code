@@ -11,7 +11,7 @@ import 'package:verity_api/src/clients/email/email_onesignal_client.dart';
 import 'package:verity_api/src/clients/email/email_sendgrid_client.dart';
 import 'package:verity_api/src/config/environment_config.dart';
 import 'package:verity_api/src/database/migrations/all_migrations.dart';
-import 'package:verity_api/src/databases/mongo/data_mongodb.dart';
+import 'package:verity_api/src/database/mongo/data_mongodb.dart';
 import 'package:verity_api/src/models/idempotency_record.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_type.dart';
 import 'package:verity_api/src/models/storage/local_media_finalization_job.dart';
