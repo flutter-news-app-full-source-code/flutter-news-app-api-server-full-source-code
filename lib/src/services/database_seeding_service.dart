@@ -631,10 +631,10 @@ class DatabaseSeedingService {
         'createIndexes': 'ingestion_usage',
         'indexes': [
           {
-            // TTL index to auto-delete usage records after 1 year (365 days).
+            // TTL index to auto-delete usage records after 90 days.
             'key': {'updatedAt': 1},
             'name': 'updatedAt_ttl_index',
-            'expireAfterSeconds': 31536000,
+            'expireAfterSeconds': 7776000,
           },
         ],
       });
