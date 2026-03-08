@@ -23,6 +23,7 @@ class AggregatorRegistry {
     return provider;
   }
 
+  /// Registers a provider implementation for a specific [type].
   void register(AggregatorType type, AggregatorProvider provider) {
     _providers[type] = provider;
   }
