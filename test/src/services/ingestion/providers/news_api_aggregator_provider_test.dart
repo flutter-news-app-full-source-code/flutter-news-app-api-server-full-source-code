@@ -135,13 +135,83 @@ void main() {
       verify(
         () => mockHttpClient.get<Map<String, dynamic>>(
           'everything',
-          queryParameters: {
-            'sources': 'techcrunch',
-            'pageSize': '20',
-            'sortBy': 'publishedAt',
-          },
+          queryParameters: const NewsApiRequest(sources: 'techcrunch').toJson(),
         ),
       ).called(1);
     },
   );
+
+  test('fetchLatestHeadlines handles partial mapping failures', () async {
+    final apiResponse = {
+      'status': 'ok',
+      'totalResults': 2,
+      'articles': [
+        {
+          'title': 'Valid Article',
+          'url': 'https://techcrunch.com/1',
+          'publishedAt': '2023-01-01T00:00:00.000Z',
+        },
+        {
+          'title': 'Invalid Article',
+          'url': 'https://techcrunch.com/2',
+          'publishedAt': '2023-01-01T00:00:00.000Z',
+        },
+      ],
+    };
+
+    when(
+      () => mockHttpClient.get<Map<String, dynamic>>(
+        any(),
+        queryParameters: any(named: 'queryParameters'),
+      ),
+    ).thenAnswer((_) async => apiResponse);
+
+    final validHeadline = Headline(
+      id: '1',
+      title: const {},
+      url: 'https://techcrunch.com/1',
+      imageUrl: '',
+      source: source,
+      eventCountry: source.headquarters,
+      topic: fallbackTopic,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      status: ContentStatus.active,
+      isBreaking: false,
+    );
+
+    when(
+      () => mockMapper.mapToHeadline(
+        any(),
+        source,
+        topicCache: topicCache,
+        fallbackTopic: fallbackTopic,
+        countryCache: countryCache,
+        mappingCache: mappingCache,
+      ),
+    ).thenAnswer((invocation) {
+      final article = invocation.positionalArguments[0] as NewsApiArticle;
+      if (article.title == 'Valid Article') return validHeadline;
+      throw Exception('Mapping failed');
+    });
+
+    final result = await provider.fetchLatestHeadlines(
+      source,
+      topicCache: topicCache,
+      fallbackTopic: fallbackTopic,
+      countryCache: countryCache,
+      mappingCache: mappingCache,
+    );
+
+    expect(result, hasLength(1));
+    expect(result.first, validHeadline);
+
+    verify(
+      () => mockLogger.warning(
+        any(that: contains('Failed to map NewsAPI article')),
+        any(),
+        any(),
+      ),
+    ).called(1);
+  });
 }
