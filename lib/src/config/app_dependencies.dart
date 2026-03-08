@@ -872,6 +872,8 @@ class AppDependencies {
         appReviewRepository: appReviewRepository,
         userRewardsRepository: userRewardsRepository,
         mediaAssetRepository: mediaAssetRepository,
+        newsAutomationTaskRepository: newsAutomationTaskRepository,
+        ingestionUsageRepository: ingestionUsageRepository,
         log: Logger('AnalyticsSyncService'),
       );
 
