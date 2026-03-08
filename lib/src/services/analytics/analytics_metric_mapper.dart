@@ -132,6 +132,16 @@ class AnalyticsMetricMapper {
     KpiCardId.mediaAverageUploadTime: const StandardMetricQuery(
       metric: 'database:media_asset:avg_upload_time',
     ),
+    // Ingestion KPIs
+    KpiCardId.ingestionActiveTasks: const StandardMetricQuery(
+      metric: 'database:ingestion_tasks:active_count',
+    ),
+    KpiCardId.ingestionFailedTasks: const StandardMetricQuery(
+      metric: 'database:ingestion_tasks:failed_count',
+    ),
+    KpiCardId.ingestionHeadlinesFetched: const StandardMetricQuery(
+      metric: 'database:ingestion_usage:total_headlines',
+    ),
   };
 
   static final Map<ChartCardId, MetricQuery> _chartQueryMappings = {
@@ -235,6 +245,13 @@ class AnalyticsMetricMapper {
     ),
     ChartCardId.mediaUploadsSuccessVsFailure: const StandardMetricQuery(
       metric: 'database:media_asset:status_distribution',
+    ),
+    // Ingestion Charts
+    ChartCardId.ingestionHeadlinesOverTime: const StandardMetricQuery(
+      metric: 'database:ingestion_usage:headlines_over_time',
+    ),
+    ChartCardId.ingestionTaskStatusDistribution: const StandardMetricQuery(
+      metric: 'database:ingestion_tasks:status_distribution',
     ),
   };
 
