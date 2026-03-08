@@ -36,28 +36,57 @@ class MediaStackAggregatorProvider implements AggregatorProvider {
     final sourceId = source.url.split('/').last;
     _log.info('Fetching headlines from MediaStack for source: $sourceId');
 
-    // MediaStack uses 'sources' parameter for filtering.
-    final response = await _httpClient.get<Map<String, dynamic>>(
-      'news',
-      queryParameters: {
-        'sources': sourceId,
-        'limit': '20',
-        'languages': source.language.name,
-      },
-    );
+    try {
+      // MediaStack uses 'sources' parameter for filtering.
+      final request = MediaStackRequest(
+        sources: sourceId,
+        languages: source.language.name,
+      );
 
-    final dto = MediaStackResponse.fromJson(response);
-    return dto.data
-        .map(
-          (a) => _mapper.mapToHeadline(
-            a,
+      final response = await _httpClient.get<Map<String, dynamic>>(
+        'news',
+        queryParameters: request.toJson(),
+      );
+
+      _log.fine('MediaStack response received. Parsing DTO...');
+      final dto = MediaStackResponse.fromJson(response);
+      _log.info('MediaStack DTO parsed. Found ${dto.data.length} articles.');
+
+      final headlines = <Headline>[];
+      var failureCount = 0;
+
+      for (final article in dto.data) {
+        try {
+          final headline = _mapper.mapToHeadline(
+            article,
             source,
             topicCache: topicCache,
             fallbackTopic: fallbackTopic,
             countryCache: countryCache,
             mappingCache: mappingCache,
-          ),
-        )
-        .toList();
+          );
+          headlines.add(headline);
+        } catch (e, s) {
+          failureCount++;
+          _log.warning(
+            'Failed to map MediaStack article: ${article.title}',
+            e,
+            s,
+          );
+        }
+      }
+
+      _log.info(
+        'Ingestion complete. Success: ${headlines.length}, Failed: $failureCount',
+      );
+      return headlines;
+    } catch (e, s) {
+      _log.severe(
+        'Critical failure fetching from MediaStack for $sourceId',
+        e,
+        s,
+      );
+      rethrow;
+    }
   }
 }
