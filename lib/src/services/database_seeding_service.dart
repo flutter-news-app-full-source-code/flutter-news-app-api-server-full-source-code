@@ -626,6 +626,20 @@ class DatabaseSeedingService {
       });
       _log.info('Ensured indexes for "local_media_finalization_jobs".');
 
+      // Indexes for ingestion_usage
+      await _db.runCommand({
+        'createIndexes': 'ingestion_usage',
+        'indexes': [
+          {
+            // TTL index to auto-delete usage records after 1 year (365 days).
+            'key': {'updatedAt': 1},
+            'name': 'updatedAt_ttl_index',
+            'expireAfterSeconds': 31536000,
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "ingestion_usage".');
+
       _log.info('Database indexes are set up correctly.');
     } on Exception catch (e, s) {
       _log.severe('Failed to create database indexes.', e, s);
