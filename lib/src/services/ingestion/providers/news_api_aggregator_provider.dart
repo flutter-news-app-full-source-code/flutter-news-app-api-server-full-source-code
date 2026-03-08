@@ -34,27 +34,47 @@ class NewsApiAggregatorProvider implements AggregatorProvider {
     final sourceId = source.url.split('/').last;
     _log.info('Fetching headlines from NewsAPI for source: $sourceId');
 
-    final response = await _httpClient.get<Map<String, dynamic>>(
-      'everything',
-      queryParameters: {
-        'sources': sourceId,
-        'pageSize': '20',
-        'sortBy': 'publishedAt',
-      },
-    );
+    try {
+      final request = NewsApiRequest(
+        sources: sourceId,
+      );
 
-    final dto = NewsApiResponse.fromJson(response);
-    return dto.articles
-        .map(
-          (a) => _mapper.mapToHeadline(
-            a,
+      final response = await _httpClient.get<Map<String, dynamic>>(
+        'everything',
+        queryParameters: request.toJson(),
+      );
+
+      _log.fine('NewsAPI response received. Parsing DTO...');
+      final dto = NewsApiResponse.fromJson(response);
+      _log.info('NewsAPI DTO parsed. Found ${dto.articles.length} articles.');
+
+      final headlines = <Headline>[];
+      var failureCount = 0;
+
+      for (final article in dto.articles) {
+        try {
+          final headline = _mapper.mapToHeadline(
+            article,
             source,
             topicCache: topicCache,
             fallbackTopic: fallbackTopic,
             countryCache: countryCache,
             mappingCache: mappingCache,
-          ),
-        )
-        .toList();
+          );
+          headlines.add(headline);
+        } catch (e, s) {
+          failureCount++;
+          _log.warning('Failed to map NewsAPI article: ${article.title}', e, s);
+        }
+      }
+
+      _log.info(
+        'Ingestion complete. Success: ${headlines.length}, Failed: $failureCount',
+      );
+      return headlines;
+    } catch (e, s) {
+      _log.severe('Critical failure fetching from NewsAPI for $sourceId', e, s);
+      rethrow;
+    }
   }
 }
