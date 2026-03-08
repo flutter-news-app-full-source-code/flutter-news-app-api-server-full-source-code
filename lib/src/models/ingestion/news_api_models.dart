@@ -61,3 +61,29 @@ class NewsApiResponse {
   /// The list of articles returned.
   final List<NewsApiArticle> articles;
 }
+
+/// {@template news_api_request}
+/// Strongly-typed request parameters for the NewsAPI.org 'everything' endpoint.
+/// {@endtemplate}
+@JsonSerializable(createFactory: false)
+class NewsApiRequest {
+  /// {@macro news_api_request}
+  const NewsApiRequest({
+    required this.sources,
+    this.pageSize = 20,
+    this.sortBy = 'publishedAt',
+  });
+
+  /// A comma-separated list of source identifiers.
+  final String sources;
+
+  /// The number of results to return per page.
+  final int pageSize;
+
+  /// The order to sort the articles in.
+  final String sortBy;
+
+  /// Converts the request to a map of query parameters.
+  /// Note: 'apiKey' is injected by the HTTP client interceptor or header.
+  Map<String, dynamic> toJson() => _$NewsApiRequestToJson(this);
+}
