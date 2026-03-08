@@ -27,4 +27,37 @@ void main() {
       expect(article.country, 'us');
     });
   });
+
+  group('MediaStackResponse', () {
+    test('fromJson creates correct instance', () {
+      final json = {
+        'data': [
+          {
+            'title': 'Test Article',
+            'url': 'https://example.com',
+            'description': 'Description',
+            'published_at': '2023-01-01T00:00:00.000Z',
+            'category': 'general',
+            'language': 'en',
+            'country': 'us',
+          },
+        ],
+      };
+
+      final response = MediaStackResponse.fromJson(json);
+      expect(response.data.length, 1);
+      expect(response.data.first.title, 'Test Article');
+    });
+  });
+
+  group('MediaStackRequest', () {
+    test('toJson returns correct map', () {
+      const request = MediaStackRequest(sources: 'cnn', languages: 'en');
+      expect(request.toJson(), {
+        'sources': 'cnn',
+        'languages': 'en',
+        'limit': 20,
+      });
+    });
+  });
 }
