@@ -25,6 +25,7 @@ abstract class AggregatorProvider {
   Future<List<Headline>> fetchLatestHeadlines(
     Source source, {
     required Map<String, Topic> topicCache,
+    required Topic fallbackTopic,
     required Map<String, Country> countryCache,
     required Map<String, String> mappingCache,
   });
@@ -46,6 +47,7 @@ class DefaultAggregatorProvider implements AggregatorProvider {
   Future<List<Headline>> fetchLatestHeadlines(
     Source source, {
     required Map<String, Topic> topicCache,
+    required Topic fallbackTopic,
     required Map<String, Country> countryCache,
     required Map<String, String> mappingCache,
   }) async {
