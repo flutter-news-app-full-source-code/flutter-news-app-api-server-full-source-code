@@ -20,6 +20,8 @@ class BingNewsAggregatorProvider implements AggregatorProvider {
   final AggregatorMapper<BingNewsArticle> _mapper;
   final Logger _log;
 
+  static const String _kEndpoint = 'search';
+
   @override
   Future<List<Headline>> fetchLatestHeadlines(
     Source source, {
@@ -37,13 +39,12 @@ class BingNewsAggregatorProvider implements AggregatorProvider {
         query: 'site:$host',
       );
 
-      final response = await _httpClient.get<Map<String, dynamic>>(
-        'search',
-        queryParameters: request.toJson(),
+      _log.fine('Bing News request prepared. Fetching DTO...');
+      final dto = await _fetch(
+        _kEndpoint,
+        request.toJson(),
+        BingNewsResponse.fromJson,
       );
-
-      _log.fine('Bing News response received. Parsing DTO...');
-      final dto = BingNewsResponse.fromJson(response);
       _log.info('Bing News DTO parsed. Found ${dto.value.length} articles.');
 
       final headlines = <Headline>[];
@@ -74,5 +75,17 @@ class BingNewsAggregatorProvider implements AggregatorProvider {
       _log.severe('Critical failure fetching from Bing for $host', e, s);
       rethrow;
     }
+  }
+
+  Future<T> _fetch<T>(
+    String endpoint,
+    Map<String, dynamic> queryParameters,
+    T Function(Map<String, dynamic>) fromJson,
+  ) async {
+    final response = await _httpClient.get<Map<String, dynamic>>(
+      endpoint,
+      queryParameters: queryParameters,
+    );
+    return fromJson(response);
   }
 }
