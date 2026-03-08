@@ -7,6 +7,7 @@ import 'package:verity_api/src/config/app_dependencies.dart';
 import 'package:verity_api/src/config/environment_config.dart';
 import 'package:verity_api/src/middlewares/error_handler.dart';
 import 'package:verity_api/src/models/request_id.dart';
+import 'package:verity_api/src/models/ingestion/ingestion_usage.dart';
 import 'package:verity_api/src/models/storage/local_media_finalization_job.dart';
 import 'package:verity_api/src/models/storage/local_upload_token.dart';
 import 'package:verity_api/src/rbac/permission_service.dart';
@@ -242,6 +243,16 @@ Handler middleware(Handler handler) {
               .use(
                 provider<DataRepository<RankedListCardData>>(
                   (_) => deps.rankedListCardDataRepository,
+                ),
+              )
+              .use(
+                provider<DataRepository<NewsAutomationTask>>(
+                  (_) => deps.newsAutomationTaskRepository,
+                ),
+              )
+              .use(
+                provider<DataRepository<IngestionUsage>>(
+                  (_) => deps.ingestionUsageRepository,
                 ),
               )
               .use(
