@@ -38,6 +38,8 @@ class AnalyticsSyncService {
     required DataRepository<AppReview> appReviewRepository,
     required DataRepository<UserRewards> userRewardsRepository,
     required DataRepository<MediaAsset> mediaAssetRepository,
+    required DataRepository<NewsAutomationTask> newsAutomationTaskRepository,
+    required DataRepository<IngestionUsage> ingestionUsageRepository,
     required AnalyticsReportingClient? googleAnalyticsClient,
     required AnalyticsReportingClient? mixpanelClient,
     required AnalyticsMetricMapper analyticsMetricMapper,
@@ -55,6 +57,8 @@ class AnalyticsSyncService {
        _appReviewRepository = appReviewRepository,
        _userRewardsRepository = userRewardsRepository,
        _mediaAssetRepository = mediaAssetRepository,
+       _newsAutomationTaskRepository = newsAutomationTaskRepository,
+       _ingestionUsageRepository = ingestionUsageRepository,
        _googleAnalyticsClient = googleAnalyticsClient,
        _mixpanelClient = mixpanelClient,
        _mapper = analyticsMetricMapper,
@@ -75,6 +79,8 @@ class AnalyticsSyncService {
   final DataRepository<AppReview> _appReviewRepository;
   final DataRepository<UserRewards> _userRewardsRepository;
   final DataRepository<MediaAsset> _mediaAssetRepository;
+  final DataRepository<NewsAutomationTask> _newsAutomationTaskRepository;
+  final DataRepository<IngestionUsage> _ingestionUsageRepository;
   final AnalyticsReportingClient? _googleAnalyticsClient;
   final AnalyticsReportingClient? _mixpanelClient;
   final AnalyticsMetricMapper _mapper;
@@ -686,6 +692,26 @@ class AnalyticsSyncService {
           pipeline: pipeline,
         );
         return result.firstOrNull?['total'] as num? ?? 0;
+      case 'database:ingestion_tasks:active_count':
+        return _newsAutomationTaskRepository.count(
+          filter: {'status': IngestionStatus.active.name},
+        );
+      case 'database:ingestion_tasks:failed_count':
+        return _newsAutomationTaskRepository.count(
+          filter: {'status': IngestionStatus.error.name},
+        );
+      case 'database:ingestion_usage:total_headlines':
+        final pipeline = _queryBuilder.buildPipelineForMetric(
+          query,
+          startDate,
+          now,
+        );
+        if (pipeline == null) return 0;
+        final result = await _aggregate(
+          _ingestionUsageRepository,
+          pipeline: pipeline,
+        );
+        return result.firstOrNull?['total'] as num? ?? 0;
       default:
         _log.warning('Unsupported database metric total: ${query.metric}');
         return 0;
@@ -842,6 +868,8 @@ class AnalyticsSyncService {
       'headlines': _headlineRepository,
       'user_rewards': _userRewardsRepository,
       'media_asset': _mediaAssetRepository,
+      'ingestion_tasks': _newsAutomationTaskRepository,
+      'ingestion_usage': _ingestionUsageRepository,
     };
 
     final repo = repositoryMap[collectionName];
