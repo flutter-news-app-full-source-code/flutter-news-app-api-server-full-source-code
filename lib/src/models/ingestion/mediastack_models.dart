@@ -66,3 +66,29 @@ class MediaStackResponse {
   /// The list of articles returned by the API.
   final List<MediaStackArticle> data;
 }
+
+/// {@template mediastack_request}
+/// Strongly-typed request parameters for the MediaStack API.
+/// {@endtemplate}
+@JsonSerializable(createFactory: false)
+class MediaStackRequest {
+  /// {@macro mediastack_request}
+  const MediaStackRequest({
+    required this.sources,
+    required this.languages,
+    this.limit = 20,
+  });
+
+  /// A comma-separated list of source identifiers.
+  final String sources;
+
+  /// A comma-separated list of language codes (e.g., 'en').
+  final String languages;
+
+  /// The number of results to return.
+  final int limit;
+
+  /// Converts the request to a map of query parameters.
+  /// Note: 'access_key' is injected by the HTTP client interceptor.
+  Map<String, dynamic> toJson() => _$MediaStackRequestToJson(this);
+}
