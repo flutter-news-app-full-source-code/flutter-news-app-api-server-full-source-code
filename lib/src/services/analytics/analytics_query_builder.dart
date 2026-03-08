@@ -148,6 +148,28 @@ class AnalyticsQueryBuilder {
       case 'database:topics:byFollowers':
         _log.info('Building ranked list pipeline for topics by followers.');
         return _buildRankedByFollowersPipeline('topics');
+      // Ingestion Queries
+      case 'database:ingestion_usage:headlines_over_time':
+        _log.info('Building ingestion headlines over time pipeline.');
+        return _buildIngestionHeadlinesOverTimePipeline(
+          startDate,
+          endDate,
+        );
+      case 'database:ingestion_tasks:status_distribution':
+        _log.info('Building ingestion task status distribution pipeline.');
+        return _buildCategoricalCountPipeline(
+          collection: 'news_automation_tasks',
+          dateField: 'createdAt',
+          groupByField: r'$status',
+          startDate: startDate,
+          endDate: endDate,
+        );
+      case 'database:ingestion_usage:total_headlines':
+        _log.info('Building total headlines fetched pipeline.');
+        return _buildIngestionTotalHeadlinesPipeline(
+          startDate,
+          endDate,
+        );
 
       default:
         // This case is intentionally left to return null for metrics that
@@ -476,6 +498,70 @@ class AnalyticsQueryBuilder {
           'value': r'$count',
           '_id': 0,
         },
+      },
+    ];
+  }
+
+  /// Creates a pipeline for summing headlines fetched over time.
+  List<Map<String, dynamic>> _buildIngestionHeadlinesOverTimePipeline(
+    DateTime startDate,
+    DateTime endDate,
+  ) {
+    return [
+      {
+        r'$match': {
+          'updatedAt': {
+            r'$gte': startDate.toUtc().toIso8601String(),
+            r'$lt': endDate.toUtc().toIso8601String(),
+          },
+        },
+      },
+      {
+        r'$group': {
+          '_id': {
+            r'$dateToString': {
+              'format': '%Y-%m-%d',
+              'date': r'$updatedAt',
+            },
+          },
+          'total': {r'$sum': r'$headlinesFetched'},
+        },
+      },
+      {
+        r'$project': {
+          'label': r'$_id',
+          'value': r'$total',
+          '_id': 0,
+        },
+      },
+      {
+        r'$sort': {'label': 1},
+      },
+    ];
+  }
+
+  /// Creates a pipeline for summing total headlines fetched in a period.
+  List<Map<String, dynamic>> _buildIngestionTotalHeadlinesPipeline(
+    DateTime startDate,
+    DateTime endDate,
+  ) {
+    return [
+      {
+        r'$match': {
+          'updatedAt': {
+            r'$gte': startDate.toUtc().toIso8601String(),
+            r'$lt': endDate.toUtc().toIso8601String(),
+          },
+        },
+      },
+      {
+        r'$group': {
+          '_id': null,
+          'total': {r'$sum': r'$headlinesFetched'},
+        },
+      },
+      {
+        r'$project': {'total': 1, '_id': 0},
       },
     ];
   }
