@@ -135,7 +135,9 @@ void main() {
       verify(
         () => mockHttpClient.get<Map<String, dynamic>>(
           'everything',
-          queryParameters: const NewsApiRequest(sources: 'techcrunch').toJson(),
+          queryParameters: const NewsApiRequest(
+            domains: 'techcrunch.com',
+          ).toJson(),
         ),
       ).called(1);
     },
