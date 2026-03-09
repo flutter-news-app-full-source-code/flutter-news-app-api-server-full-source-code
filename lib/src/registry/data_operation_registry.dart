@@ -793,7 +793,7 @@ class DataOperationRegistry {
         // 1. Referential Integrity: Ensure the Source exists
         try {
           await sourceRepo.read(id: task.sourceId);
-        } catch (_) {
+        } on NotFoundException {
           throw const BadRequestException(
             'Invalid sourceId. The referenced Source does not exist.',
           );
