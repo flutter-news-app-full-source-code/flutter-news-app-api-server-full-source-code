@@ -32,7 +32,4 @@ Map<String, dynamic> _$IngestionTopicMappingToJson(
   'createdAt': instance.createdAt.toIso8601String(),
 };
 
-const _$AggregatorTypeEnumMap = {
-  AggregatorType.mediastack: 'mediastack',
-  AggregatorType.newsApi: 'newsApi',
-};
+const _$AggregatorTypeEnumMap = {AggregatorType.newsApi: 'newsApi'};

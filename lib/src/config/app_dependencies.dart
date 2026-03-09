@@ -728,44 +728,7 @@ class AppDependencies {
       // --- News Ingestion Stack ---
       aggregatorRegistry = AggregatorRegistry();
 
-      // 1. MediaStack
-      aggregatorRegistry.register(
-        AggregatorType.mediastack,
-        MediaStackAggregatorProvider(
-          mapper: MediaStackMapper(),
-          log: Logger('MediaStackAggregatorProvider'),
-          httpClient: HttpClient(
-            baseUrl: 'http://api.mediastack.com/v1/',
-            tokenProvider: () async => null,
-            interceptors: [
-              InterceptorsWrapper(
-                onRequest: (options, handler) {
-                  options.queryParameters['access_key'] =
-                      EnvironmentConfig.mediaStackApiKey;
-                  return handler.next(options);
-                },
-              ),
-            ],
-            logger: Logger('MediaStackHttpClient'),
-          ),
-        ),
-      );
-
-      // 2. Bing News
-      aggregatorRegistry.register(
-        AggregatorType.bing,
-        BingNewsAggregatorProvider(
-          mapper: BingNewsMapper(),
-          log: Logger('BingNewsAggregatorProvider'),
-          httpClient: HttpClient(
-            baseUrl: 'https://api.bing.microsoft.com/v7.0/news/',
-            tokenProvider: () async => EnvironmentConfig.bingNewsApiKey,
-            logger: Logger('BingNewsHttpClient'),
-          ),
-        ),
-      );
-
-      // 3. NewsAPI.org
+      // NewsAPI.org
       aggregatorRegistry.register(
         AggregatorType.newsApi,
         NewsApiAggregatorProvider(
@@ -773,7 +736,8 @@ class AppDependencies {
           log: Logger('NewsApiAggregatorProvider'),
           httpClient: HttpClient(
             baseUrl: 'https://newsapi.org/v2/',
-            tokenProvider: () async => EnvironmentConfig.newsApiOrgKey,
+            tokenProvider: () async =>
+                EnvironmentConfig.newsAggregatorProviderKey,
             logger: Logger('NewsApiHttpClient'),
           ),
         ),
