@@ -11,44 +11,16 @@ import 'package:verity_api/src/clients/email/email_onesignal_client.dart';
 import 'package:verity_api/src/clients/email/email_sendgrid_client.dart';
 import 'package:verity_api/src/config/environment_config.dart';
 import 'package:verity_api/src/database/migrations/all_migrations.dart';
-import 'package:verity_api/src/databases/mongo/data_mongodb.dart';
+import 'package:verity_api/src/database/mongo/data_mongodb.dart';
 import 'package:verity_api/src/models/idempotency_record.dart';
+import 'package:verity_api/src/models/ingestion/aggregator_type.dart';
+import 'package:verity_api/src/models/ingestion/ingestion_topic_mapping.dart';
+import 'package:verity_api/src/models/ingestion/ingestion_usage.dart';
 import 'package:verity_api/src/models/storage/local_media_finalization_job.dart';
 import 'package:verity_api/src/models/storage/local_upload_token.dart';
 import 'package:verity_api/src/rbac/permission_service.dart';
-import 'package:verity_api/src/services/analytics/analytics.dart';
-import 'package:verity_api/src/services/auth_service.dart';
-import 'package:verity_api/src/services/auth_token_service.dart';
-import 'package:verity_api/src/services/content_enrichment_service.dart';
-import 'package:verity_api/src/services/country_query_service.dart';
-import 'package:verity_api/src/services/database_migration_service.dart';
-import 'package:verity_api/src/services/database_seeding_service.dart';
-import 'package:verity_api/src/services/default_user_action_limit_service.dart';
-import 'package:verity_api/src/services/email/email_service.dart';
-import 'package:verity_api/src/services/google_auth_service.dart';
-import 'package:verity_api/src/services/idempotency_service.dart';
-import 'package:verity_api/src/services/jwt_auth_token_service.dart';
-import 'package:verity_api/src/services/media_service.dart';
-import 'package:verity_api/src/services/mongodb_rate_limit_service.dart';
-import 'package:verity_api/src/services/mongodb_token_blacklist_service.dart';
-import 'package:verity_api/src/services/mongodb_verification_code_storage_service.dart';
-import 'package:verity_api/src/services/push_notification/firebase_push_notification_client.dart';
-import 'package:verity_api/src/services/push_notification/onesignal_push_notification_client.dart';
-import 'package:verity_api/src/services/push_notification/push_notification_client.dart';
-import 'package:verity_api/src/services/push_notification/push_notification_service.dart';
-import 'package:verity_api/src/services/rate_limit_service.dart';
-import 'package:verity_api/src/services/reward/admob_ssv_verifier.dart';
 // import 'package:verity_api/src/services/reward/applovin_ssv_verifier.dart';
-import 'package:verity_api/src/services/reward/rewards_service.dart';
-import 'package:verity_api/src/services/storage/google_cloud_storage_service.dart';
-import 'package:verity_api/src/services/storage/i_storage_service.dart';
-import 'package:verity_api/src/services/storage/local_media_finalization_job_service.dart';
-import 'package:verity_api/src/services/storage/local_storage_service.dart';
-import 'package:verity_api/src/services/storage/s3_storage_service.dart';
-import 'package:verity_api/src/services/storage/upload_token_service.dart';
-import 'package:verity_api/src/services/token_blacklist_service.dart';
-import 'package:verity_api/src/services/user_action_limit_service.dart';
-import 'package:verity_api/src/services/verification_code_storage_service.dart';
+import 'package:verity_api/src/services/services.dart';
 import 'package:verity_api/src/utils/gcs_jwt_verifier.dart';
 import 'package:verity_api/src/utils/sns_message_handler.dart';
 
@@ -97,6 +69,9 @@ class AppDependencies {
   late final DataRepository<ChartCardData> chartCardDataRepository;
   late final DataRepository<RankedListCardData> rankedListCardDataRepository;
   late final DataRepository<IdempotencyRecord> idempotencyRepository;
+  late final DataRepository<NewsAutomationTask> newsAutomationTaskRepository;
+  late final DataRepository<IngestionTopicMapping> mappingRepository;
+  late final DataRepository<IngestionUsage> ingestionUsageRepository;
   late final DataRepository<LocalMediaFinalizationJob>
   localMediaFinalizationJobRepository;
 
@@ -129,6 +104,8 @@ class AppDependencies {
   late final UploadTokenService uploadTokenService;
   late final LocalMediaFinalizationJobService finalizationJobService;
   late final ContentEnrichmentService contentEnrichmentService;
+  late final AggregatorRegistry aggregatorRegistry;
+  late final NewsIngestionService newsIngestionService;
 
   late final IGcsJwtVerifier gcsJwtVerifier;
   late final SnsMessageHandler snsMessageHandler;
@@ -274,6 +251,30 @@ class AppDependencies {
         fromJson: IdempotencyRecord.fromJson,
         toJson: (item) => item.toJson(),
         logger: Logger('DataMongodb<IdempotencyRecord>'),
+      );
+
+      final newsAutomationTaskClient = DataMongodb<NewsAutomationTask>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'news_automation_tasks',
+        fromJson: NewsAutomationTask.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<NewsAutomationTask>'),
+      );
+
+      final mappingClient = DataMongodb<IngestionTopicMapping>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'ingestion_mappings',
+        fromJson: IngestionTopicMapping.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<IngestionTopicMapping>'),
+      );
+
+      final ingestionUsageClient = DataMongodb<IngestionUsage>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'ingestion_usage',
+        fromJson: IngestionUsage.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<IngestionUsage>'),
       );
 
       final localMediaFinalizationJobClient =
@@ -437,6 +438,13 @@ class AppDependencies {
       );
       rankedListCardDataRepository = DataRepository(
         dataClient: rankedListCardDataClient,
+      );
+      newsAutomationTaskRepository = DataRepository(
+        dataClient: newsAutomationTaskClient,
+      );
+      mappingRepository = DataRepository(dataClient: mappingClient);
+      ingestionUsageRepository = DataRepository(
+        dataClient: ingestionUsageClient,
       );
       idempotencyRepository = DataRepository(dataClient: idempotencyClient);
       localMediaFinalizationJobRepository = DataRepository(
@@ -717,6 +725,37 @@ class AppDependencies {
         log: Logger('ContentEnrichmentService'),
       );
 
+      // --- News Ingestion Stack ---
+      aggregatorRegistry = AggregatorRegistry();
+
+      // NewsAPI.org
+      aggregatorRegistry.register(
+        AggregatorType.newsApi,
+        NewsApiAggregatorProvider(
+          mapper: NewsApiMapper(),
+          log: Logger('NewsApiAggregatorProvider'),
+          httpClient: HttpClient(
+            baseUrl: 'https://newsapi.org/v2/',
+            tokenProvider: () async =>
+                EnvironmentConfig.newsAggregatorProviderKey,
+            logger: Logger('NewsApiHttpClient'),
+          ),
+        ),
+      );
+
+      newsIngestionService = NewsIngestionService(
+        taskRepository: newsAutomationTaskRepository,
+        headlineRepository: headlineRepository,
+        sourceRepository: sourceRepository,
+        topicRepository: topicRepository,
+        countryRepository: countryRepository,
+        mappingRepository: mappingRepository,
+        usageRepository: ingestionUsageRepository,
+        aggregatorRegistry: aggregatorRegistry,
+        idempotencyService: idempotencyService,
+        log: Logger('NewsIngestionService'),
+      );
+
       gcsJwtVerifier = GcsJwtVerifier(log: Logger('GcsJwtVerifier'));
 
       snsMessageHandler = SnsMessageHandler(
@@ -797,6 +836,8 @@ class AppDependencies {
         appReviewRepository: appReviewRepository,
         userRewardsRepository: userRewardsRepository,
         mediaAssetRepository: mediaAssetRepository,
+        newsAutomationTaskRepository: newsAutomationTaskRepository,
+        ingestionUsageRepository: ingestionUsageRepository,
         log: Logger('AnalyticsSyncService'),
       );
 

@@ -4,6 +4,7 @@ import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:logging/logging.dart';
 import 'package:verity_api/src/middlewares/ownership_check_middleware.dart';
+import 'package:verity_api/src/models/ingestion/ingestion_usage.dart';
 import 'package:verity_api/src/rbac/permission_service.dart';
 import 'package:verity_api/src/rbac/permissions.dart';
 import 'package:verity_api/src/services/content_enrichment_service.dart';
@@ -238,6 +239,13 @@ class DataOperationRegistry {
           c.read<DataRepository<UserRewards>>().read(id: id, userId: null),
       'media_asset': (c, id) =>
           c.read<DataRepository<MediaAsset>>().read(id: id, userId: null),
+      'ingestion_usage': (c, id) =>
+          c.read<DataRepository<IngestionUsage>>().read(id: id, userId: null),
+      'news_automation_task': (c, id) =>
+          c.read<DataRepository<NewsAutomationTask>>().read(
+            id: id,
+            userId: null,
+          ),
     });
 
     // --- Register "Read All" Readers ---
@@ -542,6 +550,17 @@ class DataOperationRegistry {
             sort: s,
             pagination: p,
           ),
+      'ingestion_usage': (c, uid, f, s, p) =>
+          c.read<DataRepository<IngestionUsage>>().readAll(
+            filter: f,
+            pagination: p,
+          ),
+      'news_automation_task': (c, uid, f, s, p) =>
+          c.read<DataRepository<NewsAutomationTask>>().readAll(
+            filter: f,
+            sort: s,
+            pagination: p,
+          ),
     });
 
     // --- Register Item Creators ---
@@ -762,6 +781,45 @@ class DataOperationRegistry {
 
         return context.read<DataRepository<AppReview>>().create(item: item);
       },
+      'ingestion_usage': (c, item, uid) =>
+          c.read<DataRepository<IngestionUsage>>().create(
+            item: item as IngestionUsage,
+          ),
+      'news_automation_task': (c, item, uid) async {
+        final task = item as NewsAutomationTask;
+        final sourceRepo = c.read<DataRepository<Source>>();
+        final taskRepo = c.read<DataRepository<NewsAutomationTask>>();
+
+        // 1. Referential Integrity: Ensure the Source exists
+        Source source;
+        try {
+          source = await sourceRepo.read(id: task.sourceId);
+        } on NotFoundException {
+          throw const BadRequestException(
+            'Invalid sourceId. The referenced Source does not exist.',
+          );
+        }
+
+        // 2. Business Logic: Cannot create an ACTIVE task for a non-ACTIVE source
+        if (task.status == IngestionStatus.active &&
+            source.status != ContentStatus.active) {
+          throw const ConflictException(
+            'Cannot create an active automation task for a source that is not active.',
+          );
+        }
+
+        // 3. Uniqueness: Ensure only one task exists per Source
+        final existing = await taskRepo.readAll(
+          filter: {'sourceId': task.sourceId},
+        );
+        if (existing.items.isNotEmpty) {
+          throw const ConflictException(
+            'An automation task for this Source already exists.',
+          );
+        }
+
+        return taskRepo.create(item: task);
+      },
     });
 
     // --- Register Item Updaters ---
@@ -845,11 +903,30 @@ class DataOperationRegistry {
           );
         }
 
-        return c.read<DataRepository<Source>>().update(
+        final updatedSource = await c.read<DataRepository<Source>>().update(
           id: id,
           item: finalSource,
           userId: uid,
         );
+
+        // Business Logic: Cascade Pause if Source is no longer active
+        if (updatedSource.status != ContentStatus.active) {
+          final taskRepo = c.read<DataRepository<NewsAutomationTask>>();
+          final tasks = await taskRepo.readAll(filter: {'sourceId': id});
+          for (final task in tasks.items) {
+            if (task.status == IngestionStatus.active) {
+              await taskRepo.update(
+                id: task.id,
+                item: task.copyWith(status: IngestionStatus.paused),
+              );
+              _log.info(
+                'Automatically paused automation task ${task.id} because source $id was archived/drafted.',
+              );
+            }
+          }
+        }
+
+        return updatedSource;
       },
       'country': (c, id, item, uid) => c.read<DataRepository<Country>>().update(
         id: id,
@@ -1103,6 +1180,37 @@ class DataOperationRegistry {
             id: id,
             item: item as AppReview,
           ),
+      'ingestion_usage': (c, id, item, uid) =>
+          c.read<DataRepository<IngestionUsage>>().update(
+            id: id,
+            item: item as IngestionUsage,
+          ),
+      'news_automation_task': (c, id, item, uid) async {
+        final updateRequest = item as NewsAutomationTask;
+        final taskRepo = c.read<DataRepository<NewsAutomationTask>>();
+        final sourceRepo = c.read<DataRepository<Source>>();
+
+        // Fetch existing to ensure sourceId immutability
+        final existingTask = await taskRepo.read(id: id);
+
+        if (existingTask.sourceId != updateRequest.sourceId) {
+          throw const BadRequestException(
+            'The "sourceId" of an automation task cannot be changed.',
+          );
+        }
+
+        // Business Logic: If activating, check source status
+        if (updateRequest.status == IngestionStatus.active) {
+          final source = await sourceRepo.read(id: existingTask.sourceId);
+          if (source.status != ContentStatus.active) {
+            throw const ConflictException(
+              'Cannot activate automation task because the parent Source is not active.',
+            );
+          }
+        }
+
+        return taskRepo.update(id: id, item: updateRequest);
+      },
     });
 
     // --- Register Item Deleters ---
@@ -1156,6 +1264,7 @@ class DataOperationRegistry {
         final sourceRepository = context.read<DataRepository<Source>>();
         final mediaAssetRepository = context.read<DataRepository<MediaAsset>>();
         final storageService = context.read<IStorageService>();
+        final taskRepo = context.read<DataRepository<NewsAutomationTask>>();
 
         final source = await sourceRepository.read(id: id);
         if (source.logoUrl != null && source.logoUrl!.isNotEmpty) {
@@ -1170,6 +1279,16 @@ class DataOperationRegistry {
             ),
           );
         }
+
+        // Business Logic: Cascade Delete Automation Task
+        final tasks = await taskRepo.readAll(filter: {'sourceId': id});
+        for (final task in tasks.items) {
+          await taskRepo.delete(id: task.id);
+          _log.info(
+            'Automatically deleted automation task ${task.id} because source $id was deleted.',
+          );
+        }
+
         await sourceRepository.delete(id: id, userId: uid);
       },
       'country': (c, id, uid) =>
@@ -1232,6 +1351,8 @@ class DataOperationRegistry {
         await mediaAssetRepository.delete(id: id);
         _log.info('Deleted MediaAsset record from database: $id');
       },
+      'news_automation_task': (c, id, uid) =>
+          c.read<DataRepository<NewsAutomationTask>>().delete(id: id),
     });
   }
 

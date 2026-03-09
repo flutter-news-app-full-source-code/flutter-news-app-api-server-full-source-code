@@ -35,6 +35,8 @@ void main() {
     late MockDataRepository<AppReview> mockAppReviewRepo;
     late MockDataRepository<UserRewards> mockUserRewardsRepo;
     late MockDataRepository<MediaAsset> mockMediaAssetRepo;
+    late MockDataRepository<NewsAutomationTask> mockNewsAutomationTaskRepo;
+    late MockDataRepository<IngestionUsage> mockIngestionUsageRepo;
 
     setUp(() {
       mockRemoteConfigRepo = MockDataRepository<RemoteConfig>();
@@ -53,6 +55,8 @@ void main() {
       mockAppReviewRepo = MockDataRepository<AppReview>();
       mockUserRewardsRepo = MockDataRepository<UserRewards>();
       mockMediaAssetRepo = MockDataRepository<MediaAsset>();
+      mockNewsAutomationTaskRepo = MockDataRepository<NewsAutomationTask>();
+      mockIngestionUsageRepo = MockDataRepository<IngestionUsage>();
 
       // Register fallback values for any() matchers
       registerFallbackValue(
@@ -100,6 +104,8 @@ void main() {
         appReviewRepository: mockAppReviewRepo,
         userRewardsRepository: mockUserRewardsRepo,
         mediaAssetRepository: mockMediaAssetRepo,
+        newsAutomationTaskRepository: mockNewsAutomationTaskRepo,
+        ingestionUsageRepository: mockIngestionUsageRepo,
         googleAnalyticsClient: mockAnalyticsClient,
         mixpanelClient: mockAnalyticsClient,
         analyticsMetricMapper: mockMapper,
@@ -516,5 +522,76 @@ void main() {
         expect(items.first.displayTitle[SupportedLanguage.es], 'Tecnología');
       },
     );
+
+    test('run syncs Ingestion KPIs and Charts correctly', () async {
+      final config = createRemoteConfig();
+      when(
+        () => mockRemoteConfigRepo.read(id: any(named: 'id')),
+      ).thenAnswer((_) async => config);
+
+      // Mock Mapper for Ingestion KPI
+      when(
+        () => mockMapper.getKpiQuery(KpiCardId.ingestionActiveTasks),
+      ).thenReturn(
+        const StandardMetricQuery(
+          metric: 'database:ingestion_tasks:active_count',
+        ),
+      );
+      when(
+        () => mockMapper.getKpiQuery(KpiCardId.ingestionFailedTasks),
+      ).thenReturn(
+        const StandardMetricQuery(
+          metric: 'database:ingestion_tasks:failed_count',
+        ),
+      );
+      when(
+        () => mockMapper.getKpiQuery(KpiCardId.ingestionHeadlinesFetched),
+      ).thenReturn(
+        const StandardMetricQuery(
+          metric: 'database:ingestion_usage:total_headlines',
+        ),
+      );
+
+      // Mock Repository calls
+      when(
+        () => mockNewsAutomationTaskRepo.count(filter: any(named: 'filter')),
+      ).thenAnswer((_) async => 5);
+
+      when(
+        () =>
+            mockIngestionUsageRepo.aggregate(pipeline: any(named: 'pipeline')),
+      ).thenAnswer(
+        (_) async => [
+          {'total': 1500},
+        ],
+      );
+
+      // Mock existing card lookup (return empty to trigger create)
+      when(
+        () => mockKpiCardRepo.readAll(
+          filter: any(named: 'filter'),
+          pagination: any(named: 'pagination'),
+        ),
+      ).thenAnswer(
+        (_) async => const PaginatedResponse(
+          items: [],
+          cursor: null,
+          hasMore: false,
+        ),
+      );
+
+      when(
+        () => mockKpiCardRepo.create(item: any(named: 'item')),
+      ).thenAnswer((i) async => i.namedArguments[#item] as KpiCardData);
+
+      await service.run();
+
+      // Verify Active Tasks count was called
+      verify(
+        () => mockNewsAutomationTaskRepo.count(
+          filter: {'status': IngestionStatus.active.name},
+        ),
+      ).called(KpiTimeFrame.values.length * 2); // Current + Prev for each frame
+    });
   });
 }

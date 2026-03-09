@@ -341,6 +341,20 @@ class DatabaseSeedingService {
       });
       _log.info('Ensured indexes for "user_rewards".');
 
+      // Indexes for news_automation_tasks
+      await _db.runCommand({
+        'createIndexes': 'news_automation_tasks',
+        'indexes': [
+          {
+            // Compound index for the ingestion worker's polling query.
+            // status: active AND nextRunAt <= now
+            'key': {'status': 1, 'nextRunAt': 1},
+            'name': 'worker_polling_index',
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "news_automation_tasks".');
+
       // Indexes for the users collection
       await _db.runCommand({
         'createIndexes': 'users',
@@ -611,6 +625,20 @@ class DatabaseSeedingService {
         ],
       });
       _log.info('Ensured indexes for "local_media_finalization_jobs".');
+
+      // Indexes for ingestion_usage
+      await _db.runCommand({
+        'createIndexes': 'ingestion_usage',
+        'indexes': [
+          {
+            // TTL index to auto-delete usage records after 90 days.
+            'key': {'updatedAt': 1},
+            'name': 'updatedAt_ttl_index',
+            'expireAfterSeconds': 7776000,
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "ingestion_usage".');
 
       _log.info('Database indexes are set up correctly.');
     } on Exception catch (e, s) {

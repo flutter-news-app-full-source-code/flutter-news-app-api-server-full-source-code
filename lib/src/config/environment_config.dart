@@ -160,10 +160,26 @@ abstract final class EnvironmentConfig {
   static String get defaultSenderEmail =>
       _getRequiredEnv('DEFAULT_SENDER_EMAIL');
 
-  /// Retrieves the SendGrid OTP template ID from the environment.
-  ///
-  /// Throws a [StateError] if the `OTP_TEMPLATE_ID` is not set.
+  /// Retrieves the OTP template ID from the environment.
   static String get otpTemplateId => _getRequiredEnv('OTP_TEMPLATE_ID');
+
+  /// Retrieves the News Aggregator API key from the environment.
+  static String? get newsAggregatorProviderKey =>
+      _getEnv('NEWS_AGGREGATOR_PROVIDER_KEY');
+
+  /// Retrieves the aggregator provider from the environment.
+  static String get aggregatorProvider =>
+      _getEnv('AGGREGATOR_PROVIDER') ?? 'newsapi';
+
+  /// Retrieves the delay in seconds between ingestion requests.
+  static int get ingestionRequestDelaySeconds {
+    return int.tryParse(_getEnv('INGESTION_REQUEST_DELAY_SECONDS') ?? '2') ?? 2;
+  }
+
+  /// Retrieves the daily ingestion quota.
+  static int get ingestionDailyQuota {
+    return int.tryParse(_getEnv('INGESTION_DAILY_QUOTA') ?? '100') ?? 100;
+  }
 
   /// Retrieves the SendGrid API URL from the environment, if provided.
   ///

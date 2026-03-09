@@ -67,6 +67,14 @@ void main() {
         mapper.getChartType(ChartCardId.contentHeadlinesViewsOverTime),
         ChartType.line,
       );
+      expect(
+        mapper.getChartType(ChartCardId.ingestionHeadlinesOverTime),
+        ChartType.line,
+      );
+      expect(
+        mapper.getChartType(ChartCardId.ingestionTaskStatusDistribution),
+        ChartType.bar,
+      );
     });
   });
 }

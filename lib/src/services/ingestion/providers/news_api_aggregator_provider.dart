@@ -1,0 +1,96 @@
+import 'package:core/core.dart';
+import 'package:logging/logging.dart';
+import 'package:verity_api/src/models/ingestion/news_api_models.dart';
+import 'package:verity_api/src/services/ingestion/mappers/aggregator_mapper.dart';
+import 'package:verity_api/src/services/ingestion/providers/aggregator_provider.dart'
+    show AggregatorProvider;
+import 'package:verity_api/src/services/services.dart' show AggregatorProvider;
+
+/// {@template news_api_aggregator_provider}
+/// A concrete implementation of [AggregatorProvider] for NewsAPI.org.
+/// {@endtemplate}
+class NewsApiAggregatorProvider implements AggregatorProvider {
+  /// {@macro news_api_aggregator_provider}
+  const NewsApiAggregatorProvider({
+    required HttpClient httpClient,
+    required AggregatorMapper<NewsApiArticle> mapper,
+    required Logger log,
+  }) : _httpClient = httpClient,
+       _mapper = mapper,
+       _log = log;
+
+  final HttpClient _httpClient;
+  final AggregatorMapper<NewsApiArticle> _mapper;
+  final Logger _log;
+
+  static const String _kEndpoint = 'everything';
+
+  @override
+  Future<List<Headline>> fetchLatestHeadlines(
+    Source source, {
+    required Map<String, Topic> topicCache,
+    required Topic fallbackTopic,
+    required Map<String, Country> countryCache,
+    required Map<String, String> mappingCache,
+  }) async {
+    // NewsAPI's `domains` parameter is the correct way to query by URL.
+    // We parse the URL to get the host and sanitize it by removing 'www.'.
+    final domain = Uri.parse(source.url).host.replaceFirst('www.', '');
+    _log.info('Fetching headlines from NewsAPI for domain: $domain');
+
+    try {
+      // Construct the request using the `domains` parameter.
+      final request = NewsApiRequest(
+        domains: domain,
+      );
+
+      _log.fine('NewsAPI request prepared. Fetching DTO...');
+      final dto = await _fetch(
+        _kEndpoint,
+        request.toJson(),
+        NewsApiResponse.fromJson,
+      );
+      _log.info('NewsAPI DTO parsed. Found ${dto.articles.length} articles.');
+
+      final headlines = <Headline>[];
+      var failureCount = 0;
+
+      for (final article in dto.articles) {
+        try {
+          final headline = _mapper.mapToHeadline(
+            article,
+            source,
+            topicCache: topicCache,
+            fallbackTopic: fallbackTopic,
+            countryCache: countryCache,
+            mappingCache: mappingCache,
+          );
+          headlines.add(headline);
+        } catch (e, s) {
+          failureCount++;
+          _log.warning('Failed to map NewsAPI article: ${article.title}', e, s);
+        }
+      }
+
+      _log.info(
+        'Ingestion complete. Success: ${headlines.length}, Failed: $failureCount',
+      );
+      return headlines;
+    } catch (e, s) {
+      _log.severe('Critical failure fetching from NewsAPI for $domain', e, s);
+      rethrow;
+    }
+  }
+
+  Future<T> _fetch<T>(
+    String endpoint,
+    Map<String, dynamic> queryParameters,
+    T Function(Map<String, dynamic>) fromJson,
+  ) async {
+    final response = await _httpClient.get<Map<String, dynamic>>(
+      endpoint,
+      queryParameters: queryParameters,
+    );
+    return fromJson(response);
+  }
+}

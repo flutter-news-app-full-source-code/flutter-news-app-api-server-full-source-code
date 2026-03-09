@@ -523,5 +523,103 @@ void main() {
         expect(pipeline, equals(expectedPipeline));
       });
     });
+
+    group('Ingestion Queries', () {
+      test('builds correct pipeline for headlines_over_time', () {
+        const query = StandardMetricQuery(
+          metric: 'database:ingestion_usage:headlines_over_time',
+        );
+        final pipeline = queryBuilder.buildPipelineForMetric(
+          query,
+          startDate,
+          endDate,
+        );
+
+        final expectedPipeline = [
+          {
+            r'$match': {
+              'updatedAt': {
+                r'$gte': startDate.toUtc().toIso8601String(),
+                r'$lt': endDate.toUtc().toIso8601String(),
+              },
+            },
+          },
+          {
+            r'$group': {
+              '_id': {
+                r'$dateToString': {
+                  'format': '%Y-%m-%d',
+                  'date': r'$updatedAt',
+                },
+              },
+              'total': {r'$sum': r'$headlinesFetched'},
+            },
+          },
+          {
+            r'$project': {
+              'label': r'$_id',
+              'value': r'$total',
+              '_id': 0,
+            },
+          },
+          {
+            r'$sort': {'label': 1},
+          },
+        ];
+
+        expect(pipeline, equals(expectedPipeline));
+      });
+
+      test('builds correct pipeline for task status distribution', () {
+        const query = StandardMetricQuery(
+          metric: 'database:ingestion_tasks:status_distribution',
+        );
+        final pipeline = queryBuilder.buildPipelineForMetric(
+          query,
+          startDate,
+          endDate,
+        );
+
+        final expectedPipeline = [
+          {
+            r'$match': {
+              'createdAt': {
+                r'$gte': startDate.toUtc().toIso8601String(),
+                r'$lt': endDate.toUtc().toIso8601String(),
+              },
+            },
+          },
+          {
+            r'$group': {
+              '_id': r'$status',
+              'count': {r'$sum': 1},
+            },
+          },
+          {
+            r'$project': {
+              'label': r'$_id',
+              'value': r'$count',
+              '_id': 0,
+            },
+          },
+        ];
+
+        expect(pipeline, equals(expectedPipeline));
+      });
+
+      test('builds correct pipeline for total_headlines', () {
+        const query = StandardMetricQuery(
+          metric: 'database:ingestion_usage:total_headlines',
+        );
+        final pipeline = queryBuilder.buildPipelineForMetric(
+          query,
+          startDate,
+          endDate,
+        );
+
+        expect(pipeline, isNotNull);
+        expect(pipeline!.any((stage) => stage.containsKey(r'$group')), isTrue);
+      });
+    });
   });
 }

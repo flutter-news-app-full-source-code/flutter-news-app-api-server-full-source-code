@@ -86,6 +86,9 @@ abstract class AnalyticsLabelRegistry {
       KpiCardId.rewardsAdsWatchedTotal: 'Ads Watched',
       KpiCardId.rewardsGrantedTotal: 'Rewards Granted',
       KpiCardId.rewardsActiveUsersCount: 'Active Reward Users',
+      KpiCardId.ingestionActiveTasks: 'Active Tasks',
+      KpiCardId.ingestionFailedTasks: 'Failed Tasks',
+      KpiCardId.ingestionHeadlinesFetched: 'Total Headlines Fetched',
     },
     SupportedLanguage.ar: {
       KpiCardId.usersTotalRegistered: 'إجمالي المستخدمين',
@@ -112,6 +115,9 @@ abstract class AnalyticsLabelRegistry {
       KpiCardId.rewardsAdsWatchedTotal: 'الإعلانات المشاهدة',
       KpiCardId.rewardsGrantedTotal: 'المكافآت الممنوحة',
       KpiCardId.rewardsActiveUsersCount: 'مستخدمو المكافآت النشطون',
+      KpiCardId.ingestionActiveTasks: 'المهام النشطة',
+      KpiCardId.ingestionFailedTasks: 'المهام الفاشلة',
+      KpiCardId.ingestionHeadlinesFetched: 'إجمالي العناوين المجلوبة',
     },
     SupportedLanguage.es: {
       KpiCardId.usersTotalRegistered: 'Usuarios totales',
@@ -139,6 +145,9 @@ abstract class AnalyticsLabelRegistry {
       KpiCardId.rewardsAdsWatchedTotal: 'Anuncios vistos',
       KpiCardId.rewardsGrantedTotal: 'Recompensas otorgadas',
       KpiCardId.rewardsActiveUsersCount: 'Usuarios de recompensas activos',
+      KpiCardId.ingestionActiveTasks: 'Tareas activas',
+      KpiCardId.ingestionFailedTasks: 'Tareas fallidas',
+      KpiCardId.ingestionHeadlinesFetched: 'Titulares obtenidos',
     },
     SupportedLanguage.fr: {
       KpiCardId.usersTotalRegistered: 'Utilisateurs totaux',
@@ -166,6 +175,9 @@ abstract class AnalyticsLabelRegistry {
       KpiCardId.rewardsAdsWatchedTotal: 'Publicités regardées',
       KpiCardId.rewardsGrantedTotal: 'Récompenses accordées',
       KpiCardId.rewardsActiveUsersCount: 'Utilisateurs de récompenses actifs',
+      KpiCardId.ingestionActiveTasks: 'Tâches actives',
+      KpiCardId.ingestionFailedTasks: 'Tâches échouées',
+      KpiCardId.ingestionHeadlinesFetched: 'Titres récupérés',
     },
     SupportedLanguage.pt: {
       KpiCardId.usersTotalRegistered: 'Total de usuários',
@@ -193,6 +205,9 @@ abstract class AnalyticsLabelRegistry {
       KpiCardId.rewardsAdsWatchedTotal: 'Anúncios assistidos',
       KpiCardId.rewardsGrantedTotal: 'Recompensas concedidas',
       KpiCardId.rewardsActiveUsersCount: 'Usuários de recompensas ativos',
+      KpiCardId.ingestionActiveTasks: 'Tarefas ativas',
+      KpiCardId.ingestionFailedTasks: 'Tarefas com erro',
+      KpiCardId.ingestionHeadlinesFetched: 'Manchetes coletadas',
     },
     SupportedLanguage.de: {
       KpiCardId.usersTotalRegistered: 'Benutzer gesamt',
@@ -220,6 +235,9 @@ abstract class AnalyticsLabelRegistry {
       KpiCardId.rewardsAdsWatchedTotal: 'Angesehene Anzeigen',
       KpiCardId.rewardsGrantedTotal: 'Gewährte Belohnungen',
       KpiCardId.rewardsActiveUsersCount: 'Aktive Belohnungsbenutzer',
+      KpiCardId.ingestionActiveTasks: 'Aktive Aufgaben',
+      KpiCardId.ingestionFailedTasks: 'Fehlgeschlagene Aufgaben',
+      KpiCardId.ingestionHeadlinesFetched: 'Abgerufene Schlagzeilen',
     },
     SupportedLanguage.it: {
       KpiCardId.usersTotalRegistered: 'Utenti totali',
@@ -248,6 +266,9 @@ abstract class AnalyticsLabelRegistry {
       KpiCardId.rewardsAdsWatchedTotal: 'Annunci guardati',
       KpiCardId.rewardsGrantedTotal: 'Ricompense concesse',
       KpiCardId.rewardsActiveUsersCount: 'Utenti premio attivi',
+      KpiCardId.ingestionActiveTasks: 'Attività attive',
+      KpiCardId.ingestionFailedTasks: 'Attività fallite',
+      KpiCardId.ingestionHeadlinesFetched: 'Titoli recuperati',
     },
     SupportedLanguage.zh: {
       KpiCardId.usersTotalRegistered: '用户总数',
@@ -274,6 +295,9 @@ abstract class AnalyticsLabelRegistry {
       KpiCardId.rewardsAdsWatchedTotal: '已观看广告',
       KpiCardId.rewardsGrantedTotal: '已发放奖励',
       KpiCardId.rewardsActiveUsersCount: '活跃奖励用户',
+      KpiCardId.ingestionActiveTasks: '活跃任务',
+      KpiCardId.ingestionFailedTasks: '失败任务',
+      KpiCardId.ingestionHeadlinesFetched: '获取的头条总数',
     },
     SupportedLanguage.hi: {
       KpiCardId.usersTotalRegistered: 'कुल उपयोगकर्ता',
@@ -300,6 +324,9 @@ abstract class AnalyticsLabelRegistry {
       KpiCardId.rewardsAdsWatchedTotal: 'देखे गए विज्ञापन',
       KpiCardId.rewardsGrantedTotal: 'दिए गए पुरस्कार',
       KpiCardId.rewardsActiveUsersCount: 'सक्रिय पुरस्कार उपयोगकर्ता',
+      KpiCardId.ingestionActiveTasks: 'सक्रिय कार्य',
+      KpiCardId.ingestionFailedTasks: 'विफल कार्य',
+      KpiCardId.ingestionHeadlinesFetched: 'कुल प्राप्त सुर्खियाँ',
     },
     SupportedLanguage.ja: {
       KpiCardId.usersTotalRegistered: '総ユーザー数',
@@ -326,6 +353,9 @@ abstract class AnalyticsLabelRegistry {
       KpiCardId.rewardsAdsWatchedTotal: '視聴された広告',
       KpiCardId.rewardsGrantedTotal: '付与された報酬',
       KpiCardId.rewardsActiveUsersCount: 'アクティブな報酬ユーザー',
+      KpiCardId.ingestionActiveTasks: 'アクティブなタスク',
+      KpiCardId.ingestionFailedTasks: '失敗したタスク',
+      KpiCardId.ingestionHeadlinesFetched: '取得された見出し総数',
     },
   };
 
@@ -442,6 +472,9 @@ abstract class AnalyticsLabelRegistry {
       ChartCardId.rewardsAdsWatchedOverTime: 'Ads Watched Over Time',
       ChartCardId.rewardsGrantedOverTime: 'Rewards Granted Over Time',
       ChartCardId.rewardsActiveByType: 'Active Rewards by Type',
+      ChartCardId.ingestionHeadlinesOverTime: 'Headlines Fetched Over Time',
+      ChartCardId.ingestionTaskStatusDistribution:
+          'Automation Task Status Distribution',
     },
     SupportedLanguage.ar: {
       // Users
@@ -482,6 +515,8 @@ abstract class AnalyticsLabelRegistry {
       ChartCardId.rewardsAdsWatchedOverTime: 'الإعلانات المشاهدة عبر الزمن',
       ChartCardId.rewardsGrantedOverTime: 'المكافآت الممنوحة عبر الزمن',
       ChartCardId.rewardsActiveByType: 'المكافآت النشطة حسب النوع',
+      ChartCardId.ingestionHeadlinesOverTime: 'العناوين المجلوبة عبر الزمن',
+      ChartCardId.ingestionTaskStatusDistribution: 'توزيع حالة مهام الأتمتة',
     },
     SupportedLanguage.es: {
       ChartCardId.usersRegistrationsOverTime: 'Registros a lo largo del tiempo',
@@ -524,6 +559,10 @@ abstract class AnalyticsLabelRegistry {
       ChartCardId.rewardsGrantedOverTime:
           'Recompensas otorgadas a lo largo del tiempo',
       ChartCardId.rewardsActiveByType: 'Recompensas activas por tipo',
+      ChartCardId.ingestionHeadlinesOverTime:
+          'Titulares obtenidos a lo largo del tiempo',
+      ChartCardId.ingestionTaskStatusDistribution:
+          'Distribución del estado de las tareas de automatización',
     },
     SupportedLanguage.fr: {
       ChartCardId.usersRegistrationsOverTime: 'Inscriptions au fil du temps',
@@ -564,6 +603,10 @@ abstract class AnalyticsLabelRegistry {
       ChartCardId.rewardsGrantedOverTime:
           'Récompenses accordées au fil du temps',
       ChartCardId.rewardsActiveByType: 'Récompenses actives par type',
+      ChartCardId.ingestionHeadlinesOverTime:
+          'Titres récupérés au fil du temps',
+      ChartCardId.ingestionTaskStatusDistribution:
+          "Répartition du statut des tâches d'automatisation",
     },
     SupportedLanguage.pt: {
       ChartCardId.usersRegistrationsOverTime: 'Registros ao longo do tempo',
@@ -603,6 +646,10 @@ abstract class AnalyticsLabelRegistry {
       ChartCardId.rewardsGrantedOverTime:
           'Recompensas concedidas ao longo do tempo',
       ChartCardId.rewardsActiveByType: 'Recompensas ativas por tipo',
+      ChartCardId.ingestionHeadlinesOverTime:
+          'Manchetes coletadas ao longo do tempo',
+      ChartCardId.ingestionTaskStatusDistribution:
+          'Distribuição de status das tarefas de automação',
     },
     SupportedLanguage.de: {
       ChartCardId.usersRegistrationsOverTime: 'Registrierungen im Zeitverlauf',
@@ -639,6 +686,10 @@ abstract class AnalyticsLabelRegistry {
           'Angesehene Anzeigen im Zeitverlauf',
       ChartCardId.rewardsGrantedOverTime: 'Gewährte Belohnungen im Zeitverlauf',
       ChartCardId.rewardsActiveByType: 'Aktive Belohnungen nach Typ',
+      ChartCardId.ingestionHeadlinesOverTime:
+          'Abgerufene Schlagzeilen im Zeitverlauf',
+      ChartCardId.ingestionTaskStatusDistribution:
+          'Statusverteilung der Automatisierungsaufgaben',
     },
     SupportedLanguage.it: {
       ChartCardId.usersRegistrationsOverTime: 'Registrazioni nel tempo',
@@ -675,6 +726,9 @@ abstract class AnalyticsLabelRegistry {
       ChartCardId.rewardsAdsWatchedOverTime: 'Annunci guardati nel tempo',
       ChartCardId.rewardsGrantedOverTime: 'Ricompense concesse nel tempo',
       ChartCardId.rewardsActiveByType: 'Ricompense attive per tipo',
+      ChartCardId.ingestionHeadlinesOverTime: 'Titoli recuperati nel tempo',
+      ChartCardId.ingestionTaskStatusDistribution:
+          'Distribuzione dello stato delle attività di automazione',
     },
     SupportedLanguage.zh: {
       ChartCardId.usersRegistrationsOverTime: '随时间变化的注册',
@@ -701,6 +755,8 @@ abstract class AnalyticsLabelRegistry {
       ChartCardId.rewardsAdsWatchedOverTime: '随时间观看的广告',
       ChartCardId.rewardsGrantedOverTime: '随时间发放的奖励',
       ChartCardId.rewardsActiveByType: '按类型活跃奖励',
+      ChartCardId.ingestionHeadlinesOverTime: '随时间获取的头条新闻',
+      ChartCardId.ingestionTaskStatusDistribution: '自动化任务状态分布',
     },
     SupportedLanguage.hi: {
       ChartCardId.usersRegistrationsOverTime: 'समय के साथ पंजीकरण',
@@ -735,6 +791,8 @@ abstract class AnalyticsLabelRegistry {
       ChartCardId.rewardsAdsWatchedOverTime: 'समय के साथ देखे गए विज्ञापन',
       ChartCardId.rewardsGrantedOverTime: 'समय के साथ दिए गए पुरस्कार',
       ChartCardId.rewardsActiveByType: 'प्रकार द्वारा सक्रिय पुरस्कार',
+      ChartCardId.ingestionHeadlinesOverTime: 'समय के साथ प्राप्त सुर्खियाँ',
+      ChartCardId.ingestionTaskStatusDistribution: 'स्वचालन कार्य स्थिति वितरण',
     },
     SupportedLanguage.ja: {
       ChartCardId.usersRegistrationsOverTime: '時間の経過に伴う登録',
@@ -763,6 +821,8 @@ abstract class AnalyticsLabelRegistry {
       ChartCardId.rewardsAdsWatchedOverTime: '時間の経過に伴う視聴された広告',
       ChartCardId.rewardsGrantedOverTime: '時間の経過に伴う付与された報酬',
       ChartCardId.rewardsActiveByType: 'タイプ別のアクティブな報酬',
+      ChartCardId.ingestionHeadlinesOverTime: '時間の経過に伴う取得された見出し',
+      ChartCardId.ingestionTaskStatusDistribution: '自動化タスクステータスの分布',
     },
   };
 }
