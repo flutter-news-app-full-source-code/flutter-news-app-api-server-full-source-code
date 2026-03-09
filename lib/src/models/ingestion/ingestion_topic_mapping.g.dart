@@ -34,6 +34,5 @@ Map<String, dynamic> _$IngestionTopicMappingToJson(
 
 const _$AggregatorTypeEnumMap = {
   AggregatorType.mediastack: 'mediastack',
-  AggregatorType.bing: 'bing',
   AggregatorType.newsApi: 'newsApi',
 };

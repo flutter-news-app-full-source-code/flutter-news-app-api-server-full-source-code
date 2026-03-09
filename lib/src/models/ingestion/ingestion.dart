@@ -1,5 +1,4 @@
 export 'aggregator_type.dart';
-export 'bing_news_models.dart';
 export 'ingestion_topic_mapping.dart';
 export 'ingestion_usage.dart';
 export 'mediastack_models.dart';
