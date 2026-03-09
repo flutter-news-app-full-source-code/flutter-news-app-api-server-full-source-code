@@ -78,6 +78,33 @@ The API automatically validates the structure of all incoming data, ensuring tha
 </details>
 
 <details>
+<summary><strong>🤖 Automated News Ingestion & Orchestration</strong></summary>
+
+### ⚙️ A Self-Sustaining Content Engine
+Automate the discovery and importing of global news to keep your platform fresh
+without manual intervention.
+- **Distributed Worker-Queue Pattern:** Orchestrates scheduled tasks using
+  MongoDB as a distributed lock provider, ensuring reliable execution across
+  multi-instance deployments.
+- **Intelligent Deduplication:** Leverages a high-performance idempotency layer
+  to filter out duplicate content at the source, guaranteeing a unique reading
+  experience for your users.
+- **Global Quota & Cost Management:** Protects your bottom line with built-in
+  daily usage tracking that automatically halts ingestion cycles before
+  external API limits are exceeded.
+- **Polymorphic Aggregator Stack:** A registry-based architecture enables
+  seamless integration with any external news provider (e.g., NewsAPI) while
+  standardizing data mapping and enrichment.
+> **Your Advantage:** You get a fully automated, production-grade content
+pipeline that scales with your needs. The system handles the complexities of
+scheduling, deduplication, and cost control, allowing you to focus on growing
+your audience rather than managing data entry.
+
+---
+
+</details>
+
+<details>
 <summary><strong>📧 Email & Transactional Messaging</strong></summary>
 
 ### 📨 Reliable Email Delivery
