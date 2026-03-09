@@ -65,7 +65,7 @@ class NewsApiResponse {
 /// {@template news_api_request}
 /// Strongly-typed request parameters for the NewsAPI.org 'everything' endpoint.
 /// {@endtemplate}
-@JsonSerializable(createFactory: false)
+@JsonSerializable(createFactory: false, includeIfNull: false)
 class NewsApiRequest {
   /// {@macro news_api_request}
   const NewsApiRequest({

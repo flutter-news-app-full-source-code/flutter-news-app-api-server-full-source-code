@@ -41,8 +41,8 @@ NewsApiResponse _$NewsApiResponseFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$NewsApiRequestToJson(NewsApiRequest instance) =>
     <String, dynamic>{
-      'sources': instance.sources,
-      'domains': instance.domains,
+      'sources': ?instance.sources,
+      'domains': ?instance.domains,
       'pageSize': instance.pageSize,
       'sortBy': instance.sortBy,
     };
