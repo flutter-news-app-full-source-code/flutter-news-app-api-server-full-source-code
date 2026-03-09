@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:core/core.dart';
+import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:verity_api/src/config/environment_config.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_type.dart';
@@ -135,7 +137,15 @@ class NewsIngestionService {
     final response = await _taskRepository.readAll(
       filter: {
         'status': IngestionStatus.active.name,
-        'nextRunAt': {r'$lte': now.toIso8601String()},
+        r'$or': [
+          {
+            'nextRunAt': {r'$lte': now},
+          },
+          {'nextRunAt': null},
+          {
+            'nextRunAt': {r'$exists': false},
+          },
+        ],
       },
     );
 
@@ -163,7 +173,7 @@ class NewsIngestionService {
   /// Returns `true` if quota is exceeded, `false` otherwise.
   Future<bool> _checkAndLogQuota() async {
     final now = DateTime.now().toUtc();
-    final todayId = 'usage_${now.year}-${now.month}-${now.day}';
+    final todayId = _getUsageId(now);
     final limit = EnvironmentConfig.ingestionDailyQuota;
 
     try {
@@ -182,7 +192,7 @@ class NewsIngestionService {
   /// Increments the daily usage count.
   Future<void> _incrementQuota() async {
     final now = DateTime.now().toUtc();
-    final todayId = 'usage_${now.year}-${now.month}-${now.day}';
+    final todayId = _getUsageId(now);
 
     try {
       final usage = await _usageRepository.read(id: todayId);
@@ -199,6 +209,13 @@ class NewsIngestionService {
         item: IngestionUsage(id: todayId, requestCount: 1, updatedAt: now),
       );
     }
+  }
+
+  String _getUsageId(DateTime now) {
+    // Generate a deterministic 24-character hex string for the date.
+    final dateStr = '${now.year}-${now.month}-${now.day}';
+    final bytes = utf8.encode('usage:$dateStr');
+    return sha256.convert(bytes).toString().substring(0, 24);
   }
 
   Future<void> _processTask(
