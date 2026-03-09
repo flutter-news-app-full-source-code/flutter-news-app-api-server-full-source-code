@@ -33,12 +33,15 @@ class NewsApiAggregatorProvider implements AggregatorProvider {
     required Map<String, Country> countryCache,
     required Map<String, String> mappingCache,
   }) async {
-    final sourceId = source.url.split('/').last;
-    _log.info('Fetching headlines from NewsAPI for source: $sourceId');
+    // NewsAPI's `domains` parameter is the correct way to query by URL.
+    // We parse the URL to get the host and sanitize it by removing 'www.'.
+    final domain = Uri.parse(source.url).host.replaceFirst('www.', '');
+    _log.info('Fetching headlines from NewsAPI for domain: $domain');
 
     try {
+      // Construct the request using the `domains` parameter.
       final request = NewsApiRequest(
-        sources: sourceId,
+        domains: domain,
       );
 
       _log.fine('NewsAPI request prepared. Fetching DTO...');
@@ -74,7 +77,7 @@ class NewsApiAggregatorProvider implements AggregatorProvider {
       );
       return headlines;
     } catch (e, s) {
-      _log.severe('Critical failure fetching from NewsAPI for $sourceId', e, s);
+      _log.severe('Critical failure fetching from NewsAPI for $domain', e, s);
       rethrow;
     }
   }
