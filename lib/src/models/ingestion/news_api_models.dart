@@ -69,13 +69,24 @@ class NewsApiResponse {
 class NewsApiRequest {
   /// {@macro news_api_request}
   const NewsApiRequest({
-    required this.sources,
+    this.sources,
+    this.domains,
     this.pageSize = 20,
     this.sortBy = 'publishedAt',
-  });
+  }) : assert(
+         sources != null || domains != null,
+         'Either sources or domains must be provided.',
+       ),
+       assert(
+         sources == null || domains == null,
+         'Cannot provide both sources and domains.',
+       );
 
   /// A comma-separated list of source identifiers.
-  final String sources;
+  final String? sources;
+
+  /// A comma-separated list of domains to search.
+  final String? domains;
 
   /// The number of results to return per page.
   final int pageSize;
