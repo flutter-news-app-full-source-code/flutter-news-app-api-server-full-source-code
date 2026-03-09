@@ -791,15 +791,24 @@ class DataOperationRegistry {
         final taskRepo = c.read<DataRepository<NewsAutomationTask>>();
 
         // 1. Referential Integrity: Ensure the Source exists
+        Source source;
         try {
-          await sourceRepo.read(id: task.sourceId);
+          source = await sourceRepo.read(id: task.sourceId);
         } on NotFoundException {
           throw const BadRequestException(
             'Invalid sourceId. The referenced Source does not exist.',
           );
         }
 
-        // 2. Uniqueness: Ensure only one task exists per Source
+        // 2. Business Logic: Cannot create an ACTIVE task for a non-ACTIVE source
+        if (task.status == IngestionStatus.active &&
+            source.status != ContentStatus.active) {
+          throw const ConflictException(
+            'Cannot create an active automation task for a source that is not active.',
+          );
+        }
+
+        // 3. Uniqueness: Ensure only one task exists per Source
         final existing = await taskRepo.readAll(
           filter: {'sourceId': task.sourceId},
         );
@@ -894,11 +903,30 @@ class DataOperationRegistry {
           );
         }
 
-        return c.read<DataRepository<Source>>().update(
+        final updatedSource = await c.read<DataRepository<Source>>().update(
           id: id,
           item: finalSource,
           userId: uid,
         );
+
+        // Business Logic: Cascade Pause if Source is no longer active
+        if (updatedSource.status != ContentStatus.active) {
+          final taskRepo = c.read<DataRepository<NewsAutomationTask>>();
+          final tasks = await taskRepo.readAll(filter: {'sourceId': id});
+          for (final task in tasks.items) {
+            if (task.status == IngestionStatus.active) {
+              await taskRepo.update(
+                id: task.id,
+                item: task.copyWith(status: IngestionStatus.paused),
+              );
+              _log.info(
+                'Automatically paused automation task ${task.id} because source $id was archived/drafted.',
+              );
+            }
+          }
+        }
+
+        return updatedSource;
       },
       'country': (c, id, item, uid) => c.read<DataRepository<Country>>().update(
         id: id,
@@ -1160,6 +1188,7 @@ class DataOperationRegistry {
       'news_automation_task': (c, id, item, uid) async {
         final updateRequest = item as NewsAutomationTask;
         final taskRepo = c.read<DataRepository<NewsAutomationTask>>();
+        final sourceRepo = c.read<DataRepository<Source>>();
 
         // Fetch existing to ensure sourceId immutability
         final existingTask = await taskRepo.read(id: id);
@@ -1168,6 +1197,16 @@ class DataOperationRegistry {
           throw const BadRequestException(
             'The "sourceId" of an automation task cannot be changed.',
           );
+        }
+
+        // Business Logic: If activating, check source status
+        if (updateRequest.status == IngestionStatus.active) {
+          final source = await sourceRepo.read(id: existingTask.sourceId);
+          if (source.status != ContentStatus.active) {
+            throw const ConflictException(
+              'Cannot activate automation task because the parent Source is not active.',
+            );
+          }
         }
 
         return taskRepo.update(id: id, item: updateRequest);
@@ -1225,6 +1264,7 @@ class DataOperationRegistry {
         final sourceRepository = context.read<DataRepository<Source>>();
         final mediaAssetRepository = context.read<DataRepository<MediaAsset>>();
         final storageService = context.read<IStorageService>();
+        final taskRepo = context.read<DataRepository<NewsAutomationTask>>();
 
         final source = await sourceRepository.read(id: id);
         if (source.logoUrl != null && source.logoUrl!.isNotEmpty) {
@@ -1239,6 +1279,16 @@ class DataOperationRegistry {
             ),
           );
         }
+
+        // Business Logic: Cascade Delete Automation Task
+        final tasks = await taskRepo.readAll(filter: {'sourceId': id});
+        for (final task in tasks.items) {
+          await taskRepo.delete(id: task.id);
+          _log.info(
+            'Automatically deleted automation task ${task.id} because source $id was deleted.',
+          );
+        }
+
         await sourceRepository.delete(id: id, userId: uid);
       },
       'country': (c, id, uid) =>
