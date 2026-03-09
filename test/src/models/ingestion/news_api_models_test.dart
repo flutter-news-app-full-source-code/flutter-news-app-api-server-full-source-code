@@ -57,10 +57,19 @@ void main() {
   });
 
   group('NewsApiRequest', () {
-    test('toJson returns correct map', () {
+    test('toJson with sources returns correct map', () {
       const request = NewsApiRequest(sources: 'bbc-news');
       expect(request.toJson(), {
         'sources': 'bbc-news',
+        'pageSize': 20,
+        'sortBy': 'publishedAt',
+      });
+    });
+
+    test('toJson with domains returns correct map', () {
+      const request = NewsApiRequest(domains: 'techcrunch.com');
+      expect(request.toJson(), {
+        'domains': 'techcrunch.com',
         'pageSize': 20,
         'sortBy': 'publishedAt',
       });
