@@ -139,7 +139,9 @@ class NewsIngestionService {
         'status': IngestionStatus.active.name,
         r'$or': [
           {
-            'nextRunAt': {r'$lte': now},
+            // Use ISO-8601 String for query to match the String type stored in MongoDB.
+            // Direct DateTime objects would be serialized as BSON Dates, causing a type mismatch.
+            'nextRunAt': {r'$lte': now.toIso8601String()},
           },
           {'nextRunAt': null},
           {
