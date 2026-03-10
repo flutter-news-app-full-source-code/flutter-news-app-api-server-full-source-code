@@ -2,6 +2,25 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'news_api_models.g.dart';
 
+/// {@template news_api_source}
+/// Typed DTO for a source object within a NewsAPI.org article.
+/// {@endtemplate}
+@JsonSerializable(createToJson: false, checked: true)
+class NewsApiSource {
+  /// {@macro news_api_source}
+  const NewsApiSource({required this.name, this.id});
+
+  /// Creates a [NewsApiSource] from JSON.
+  factory NewsApiSource.fromJson(Map<String, dynamic> json) =>
+      _$NewsApiSourceFromJson(json);
+
+  /// The unique identifier for the source (e.g., 'bbc-news').
+  final String? id;
+
+  /// The display name of the source.
+  final String name;
+}
+
 /// {@template news_api_article}
 /// Typed DTO for a single article returned by NewsAPI.org.
 /// {@endtemplate}
@@ -9,6 +28,7 @@ part 'news_api_models.g.dart';
 class NewsApiArticle {
   /// {@macro news_api_article}
   const NewsApiArticle({
+    required this.source,
     required this.title,
     required this.url,
     required this.publishedAt,
@@ -19,6 +39,9 @@ class NewsApiArticle {
   /// Creates a [NewsApiArticle] from JSON.
   factory NewsApiArticle.fromJson(Map<String, dynamic> json) =>
       _$NewsApiArticleFromJson(json);
+
+  /// The source of the article.
+  final NewsApiSource source;
 
   /// The headline or title of the article.
   final String title;
@@ -60,6 +83,58 @@ class NewsApiResponse {
 
   /// The list of articles returned.
   final List<NewsApiArticle> articles;
+}
+
+/// {@template news_api_catalog_source}
+/// Typed DTO for a source returned by the NewsAPI.org /sources endpoint.
+/// {@endtemplate}
+@JsonSerializable(createToJson: false, checked: true)
+class NewsApiCatalogSource {
+  /// {@macro news_api_catalog_source}
+  const NewsApiCatalogSource({
+    required this.id,
+    required this.name,
+    required this.url,
+    this.description,
+  });
+
+  /// Creates a [NewsApiCatalogSource] from JSON.
+  factory NewsApiCatalogSource.fromJson(Map<String, dynamic> json) =>
+      _$NewsApiCatalogSourceFromJson(json);
+
+  /// The unique ID.
+  final String id;
+
+  /// The display name.
+  final String name;
+
+  /// The homepage URL.
+  final String url;
+
+  /// A brief description.
+  final String? description;
+}
+
+/// {@template news_api_sources_response}
+/// Typed DTO for the NewsAPI.org /sources response.
+/// {@endtemplate}
+@JsonSerializable(createToJson: false, checked: true)
+class NewsApiSourcesResponse {
+  /// {@macro news_api_sources_response}
+  const NewsApiSourcesResponse({
+    required this.status,
+    required this.sources,
+  });
+
+  /// Creates a [NewsApiSourcesResponse] from JSON.
+  factory NewsApiSourcesResponse.fromJson(Map<String, dynamic> json) =>
+      _$NewsApiSourcesResponseFromJson(json);
+
+  /// The status of the request.
+  final String status;
+
+  /// The list of sources.
+  final List<NewsApiCatalogSource> sources;
 }
 
 /// {@template news_api_request}
