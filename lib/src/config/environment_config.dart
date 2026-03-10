@@ -98,7 +98,7 @@ abstract final class EnvironmentConfig {
   );
 
   static String _getRequiredEnv(String key) {
-    final value = _env[key];
+    final value = _getEnv(key);
     if (value == null || value.isEmpty) {
       _log.severe('$key not found in environment variables.');
       throw StateError('FATAL: $key environment variable is not set.');
