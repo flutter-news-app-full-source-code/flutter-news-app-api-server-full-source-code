@@ -39,11 +39,7 @@ abstract class AggregatorProvider {
 /// {@endtemplate}
 class DefaultAggregatorProvider implements AggregatorProvider {
   /// {@macro default_aggregator_provider}
-  const DefaultAggregatorProvider({
-    required HttpClient httpClient,
-  }) : _httpClient = httpClient;
-
-  final HttpClient _httpClient;
+  const DefaultAggregatorProvider();
 
   @override
   Future<List<AggregatorCatalogSource>> syncCatalog() async => [];
