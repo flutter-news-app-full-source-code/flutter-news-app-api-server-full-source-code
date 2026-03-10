@@ -9,8 +9,8 @@ part of 'news_api_models.dart';
 NewsApiSource _$NewsApiSourceFromJson(Map<String, dynamic> json) =>
     $checkedCreate('NewsApiSource', json, ($checkedConvert) {
       final val = NewsApiSource(
-        id: $checkedConvert('id', (v) => v as String?),
         name: $checkedConvert('name', (v) => v as String),
+        id: $checkedConvert('id', (v) => v as String?),
       );
       return val;
     });

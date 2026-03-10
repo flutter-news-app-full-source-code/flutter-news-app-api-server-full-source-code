@@ -17,8 +17,8 @@ AggregatorSourceMapping _$AggregatorSourceMappingFromJson(
       (v) => $enumDecode(_$AggregatorTypeEnumMap, v),
     ),
     externalId: $checkedConvert('externalId', (v) => v as String),
-    isEnabled: $checkedConvert('isEnabled', (v) => v as bool? ?? true),
     createdAt: $checkedConvert('createdAt', (v) => DateTime.parse(v as String)),
+    isEnabled: $checkedConvert('isEnabled', (v) => v as bool? ?? true),
   );
   return val;
 });
