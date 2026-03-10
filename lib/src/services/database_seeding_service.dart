@@ -640,6 +640,34 @@ class DatabaseSeedingService {
       });
       _log.info('Ensured indexes for "ingestion_usage".');
 
+      // Indexes for ingestion_mappings
+      await _db.runCommand({
+        'createIndexes': 'ingestion_mappings',
+        'indexes': [
+          {
+            // Unique index to prevent duplicate category-to-topic mappings
+            'key': {'provider': 1, 'externalValue': 1},
+            'name': 'provider_external_unique_index',
+            'unique': true,
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "ingestion_mappings".');
+
+      // Indexes for aggregator_source_mappings
+      await _db.runCommand({
+        'createIndexes': 'aggregator_source_mappings',
+        'indexes': [
+          {
+            // Unique index to ensure one mapping per source per provider
+            'key': {'sourceId': 1, 'aggregatorType': 1},
+            'name': 'source_provider_unique_index',
+            'unique': true,
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "aggregator_source_mappings".');
+
       _log.info('Database indexes are set up correctly.');
     } on Exception catch (e, s) {
       _log.severe('Failed to create database indexes.', e, s);
