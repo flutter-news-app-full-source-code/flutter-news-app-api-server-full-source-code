@@ -80,25 +80,24 @@ The API automatically validates the structure of all incoming data, ensuring tha
 <details>
 <summary><strong>🤖 Automated News Ingestion & Orchestration</strong></summary>
 
-### ⚙️ A Self-Sustaining Content Engine
-Automate the discovery and importing of global news to keep your platform fresh
-without manual intervention.
-- **Distributed Worker-Queue Pattern:** Orchestrates scheduled tasks using
-  MongoDB as a distributed lock provider, ensuring reliable execution across
-  multi-instance deployments.
-- **Intelligent Deduplication:** Leverages a high-performance idempotency layer
-  to filter out duplicate content at the source, guaranteeing a unique reading
-  experience for your users.
-- **Global Quota & Cost Management:** Protects your bottom line with built-in
-  daily usage tracking that automatically halts ingestion cycles before
-  external API limits are exceeded.
-- **Polymorphic Aggregator Stack:** A registry-based architecture enables
-  seamless integration with any external news provider (e.g., NewsAPI) while
-  standardizing data mapping and enrichment.
-> **Your Advantage:** You get a fully automated, production-grade content
-pipeline that scales with your needs. The system handles the complexities of
-scheduling, deduplication, and cost control, allowing you to focus on growing
-your audience rather than managing data entry.
+### 🤖 High-Efficiency News Ingestion Engine
+A professional-grade orchestration pipeline designed to maximize content 
+throughput while minimizing operational costs.
+- **Multi-Provider Polymorphism:** Out-of-the-box support for **NewsAPI** 
+  and **MediaStack**, utilizing a unified interface that enables 
+  hot-swappable ingestion strategies via environment configuration.
+- **Automated Source Discovery:** Automatically synchronizes internal 
+  sources with provider catalogs, eliminating manual mapping overhead.
+- **Intelligent Cost Control:** Optimizes API credit usage through 
+  high-density batch processing and strictly enforced daily quotas.
+- **Resilient Pipeline Architecture:** Features automated error isolation 
+  to ensure that individual source failures never interrupt the broader 
+  ingestion cycle.
+- **Enterprise Deduplication:** Employs a high-performance idempotency 
+  layer to guarantee a unique, high-quality content feed for your users.
+> **Your Advantage:** Drastically reduce operational overhead and API 
+expenditure. The engine self-heals when providers update their catalogs and 
+scales effortlessly as your content network grows.
 
 ---
 
