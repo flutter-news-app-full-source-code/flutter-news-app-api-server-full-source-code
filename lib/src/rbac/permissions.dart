@@ -28,6 +28,12 @@ abstract class Permissions {
   static const String countryUpdate = 'country.update';
   static const String countryDelete = 'country.delete';
 
+  // Person Permissions
+  static const String personCreate = 'person.create';
+  static const String personRead = 'person.read';
+  static const String personUpdate = 'person.update';
+  static const String personDelete = 'person.delete';
+
   // Language Permissions
   static const String languageCreate = 'language.create';
   static const String languageRead = 'language.read';

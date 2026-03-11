@@ -8,6 +8,7 @@ final Set<String> _guestTierPermissions = {
   Permissions.topicRead,
   Permissions.sourceRead,
   Permissions.countryRead,
+  Permissions.personRead,
   Permissions.languageRead,
   Permissions.appSettingsReadOwned,
   Permissions.appSettingsUpdateOwned,
@@ -71,6 +72,11 @@ final Set<String> _publisherRolePermissions = {
   Permissions.headlineCreate,
   Permissions.headlineUpdate,
   Permissions.headlineDelete,
+
+  // Publishers can manage persons.
+  Permissions.personCreate,
+  Permissions.personUpdate,
+  Permissions.personDelete,
 
   // Core dashboard access and quality-of-life permissions.
   Permissions.dashboardLogin,
