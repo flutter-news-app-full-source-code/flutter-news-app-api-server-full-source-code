@@ -444,6 +444,31 @@ class DatabaseSeedingService {
       });
       _log.info('Ensured analytics indexes for "headlines".');
 
+      // Indexes for the persons collection
+      await _db.runCommand({
+        'createIndexes': 'persons',
+        'indexes': [
+          {
+            'key': {'name': 'text'},
+            'name': 'persons_text_index',
+          },
+          {
+            // Wildcard index for 'name' map (multi-language search).
+            'key': {r'name.$**': 1},
+            'name': 'persons_name_wildcard_index',
+          },
+          {
+            // Wildcard index for 'description' map.
+            'key': {r'description.$**': 1},
+            'name': 'persons_description_wildcard_index',
+          },
+          {
+            'key': {'followerIds': 1},
+            'name': 'analytics_person_followers_index',
+          },
+        ],
+      });
+
       // Indexes for the sources collection
       await _db.runCommand({
         'createIndexes': 'sources',
@@ -725,6 +750,16 @@ class DatabaseSeedingService {
           },
         ],
       });
+      await _db.runCommand({
+        'createIndexes': 'persons',
+        'indexes': [
+          {
+            'key': {'mediaAssetId': 1},
+            'name': 'mediaAssetId_sparse_index',
+            'sparse': true,
+          },
+        ],
+      });
       _log.info('Ensured sparse indexes for mediaAssetId references.');
     } on Exception catch (e, s) {
       _log.severe('Failed to create mediaAssetId sparse indexes.', e, s);
@@ -835,6 +870,7 @@ class DatabaseSeedingService {
       followedCountries: const [],
       followedSources: const [],
       followedTopics: const [],
+      followedPersons: const [],
       savedHeadlines: const [],
       savedHeadlineFilters: const [],
     );
