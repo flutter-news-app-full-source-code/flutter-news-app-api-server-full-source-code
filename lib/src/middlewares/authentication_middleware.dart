@@ -22,6 +22,8 @@ Middleware authenticationProvider() {
   return (handler) {
     return (context) async {
       _log.finer('Entered.');
+      var effectiveContext = context;
+
       // Read the interface type
       AuthTokenService tokenService;
       try {
@@ -62,7 +64,9 @@ Middleware authenticationProvider() {
               final langClaim = decodedJwt.payload['lang'];
               if (langClaim != null && langClaim is String) {
                 final language = SupportedLanguage.values.byName(langClaim);
-                context = context.provide<SupportedLanguage>(() => language);
+                effectiveContext = effectiveContext.provide<SupportedLanguage>(
+                  () => language,
+                );
                 _log.finer('Provided language "$langClaim" from JWT claim.');
               }
             } on FormatException {
@@ -96,7 +100,7 @@ Middleware authenticationProvider() {
       // Provide the User object (or null) into the context
       // This makes `context.read<User?>()` available downstream.
       _log.finer('Providing User (${user?.id ?? 'null'}) to context.');
-      return handler(context.provide<User?>(() => user));
+      return handler(effectiveContext.provide<User?>(() => user));
     };
   };
 }
