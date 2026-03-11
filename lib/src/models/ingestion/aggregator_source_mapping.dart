@@ -19,7 +19,8 @@ class AggregatorSourceMapping extends Equatable {
     required this.sourceId,
     required this.aggregatorType,
     required this.externalId,
-    required this.createdAt, this.isEnabled = true,
+    required this.createdAt,
+    this.isEnabled = true,
   });
 
   /// Creates an [AggregatorSourceMapping] from JSON.

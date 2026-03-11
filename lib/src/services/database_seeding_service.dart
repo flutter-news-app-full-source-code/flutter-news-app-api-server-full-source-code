@@ -552,6 +552,12 @@ class DatabaseSeedingService {
             'name': 'createdAt_ttl_index',
             'expireAfterSeconds': 86400 * 7, // 7 days retention
           },
+          {
+            // Enables distributed locking by enforcing uniqueness on the key/scope pair.
+            'key': {'scope': 1, 'key': 1},
+            'name': 'scope_key_unique_index',
+            'unique': true,
+          },
         ],
       });
       _log.info('Ensured indexes for "idempotency_records".');
