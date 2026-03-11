@@ -4,17 +4,34 @@ import 'package:mocktail/mocktail.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 import 'package:test/test.dart';
 import 'package:verity_api/src/config/environment_config.dart';
+import 'package:verity_api/src/models/ingestion/aggregator_catalog_source.dart';
+import 'package:verity_api/src/models/ingestion/aggregator_source_mapping.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_type.dart';
 import 'package:verity_api/src/models/ingestion/ingestion_topic_mapping.dart';
 import 'package:verity_api/src/models/ingestion/ingestion_usage.dart';
 import 'package:verity_api/src/services/idempotency_service.dart';
 import 'package:verity_api/src/services/ingestion/news_ingestion_service.dart';
 import 'package:verity_api/src/services/ingestion/providers/aggregator_provider.dart';
-import 'package:verity_api/src/services/ingestion/registries/aggregator_registry.dart';
 
-class MockDataRepository<T> extends Mock implements DataRepository<T> {}
+class MockTaskRepository extends Mock
+    implements DataRepository<NewsAutomationTask> {}
 
-class MockAggregatorRegistry extends Mock implements AggregatorRegistry {}
+class MockHeadlineRepository extends Mock implements DataRepository<Headline> {}
+
+class MockSourceRepository extends Mock implements DataRepository<Source> {}
+
+class MockTopicRepository extends Mock implements DataRepository<Topic> {}
+
+class MockCountryRepository extends Mock implements DataRepository<Country> {}
+
+class MockMappingRepository extends Mock
+    implements DataRepository<IngestionTopicMapping> {}
+
+class MockSourceMappingRepository extends Mock
+    implements DataRepository<AggregatorSourceMapping> {}
+
+class MockUsageRepository extends Mock
+    implements DataRepository<IngestionUsage> {}
 
 class MockAggregatorProvider extends Mock implements AggregatorProvider {}
 
@@ -22,26 +39,31 @@ class MockIdempotencyService extends Mock implements IdempotencyService {}
 
 class MockLogger extends Mock implements Logger {}
 
+class FakeHeadline extends Fake implements Headline {}
+
 class FakeSource extends Fake implements Source {}
 
 class FakeTopic extends Fake implements Topic {}
 
 class FakeIngestionUsage extends Fake implements IngestionUsage {}
 
-class FakeHeadline extends Fake implements Headline {}
+class FakeIngestionTopicMapping extends Fake implements IngestionTopicMapping {}
 
 class FakeNewsAutomationTask extends Fake implements NewsAutomationTask {}
 
+class FakeAggregatorSourceMapping extends Fake
+    implements AggregatorSourceMapping {}
+
 void main() {
   late NewsIngestionService service;
-  late MockDataRepository<NewsAutomationTask> mockTaskRepo;
-  late MockDataRepository<Headline> mockHeadlineRepo;
-  late MockDataRepository<Source> mockSourceRepo;
-  late MockDataRepository<Topic> mockTopicRepo;
-  late MockDataRepository<Country> mockCountryRepo;
-  late MockDataRepository<IngestionTopicMapping> mockMappingRepo;
-  late MockDataRepository<IngestionUsage> mockUsageRepo;
-  late MockAggregatorRegistry mockRegistry;
+  late MockTaskRepository mockTaskRepo;
+  late MockHeadlineRepository mockHeadlineRepo;
+  late MockSourceRepository mockSourceRepo;
+  late MockTopicRepository mockTopicRepo;
+  late MockCountryRepository mockCountryRepo;
+  late MockMappingRepository mockMappingRepo;
+  late MockSourceMappingRepository mockSourceMappingRepo;
+  late MockUsageRepository mockUsageRepo;
   late MockIdempotencyService mockIdempotency;
   late MockLogger mockLogger;
   late MockAggregatorProvider mockProvider;
@@ -57,18 +79,32 @@ void main() {
     registerFallbackValue(FakeTopic());
     registerFallbackValue(FakeIngestionUsage());
     registerFallbackValue(FakeHeadline());
+    registerFallbackValue(FakeIngestionTopicMapping());
     registerFallbackValue(FakeNewsAutomationTask());
+    registerFallbackValue(FakeAggregatorSourceMapping());
+    registerFallbackValue(const PaginationOptions());
+    registerFallbackValue(<AggregatorSourceMapping>[]);
+    registerFallbackValue(<String, Source>{});
+    registerFallbackValue(<String, Topic>{});
+    registerFallbackValue(<String, Country>{});
+    registerFallbackValue(<String, String>{});
+    registerFallbackValue(
+      const PaginationOptions(limit: 300),
+    );
+    registerFallbackValue(
+      const AggregatorCatalogSource(externalId: '', name: ''),
+    );
   });
 
   setUp(() {
-    mockTaskRepo = MockDataRepository<NewsAutomationTask>();
-    mockHeadlineRepo = MockDataRepository<Headline>();
-    mockSourceRepo = MockDataRepository<Source>();
-    mockTopicRepo = MockDataRepository<Topic>();
-    mockCountryRepo = MockDataRepository<Country>();
-    mockMappingRepo = MockDataRepository<IngestionTopicMapping>();
-    mockUsageRepo = MockDataRepository<IngestionUsage>();
-    mockRegistry = MockAggregatorRegistry();
+    mockTaskRepo = MockTaskRepository();
+    mockHeadlineRepo = MockHeadlineRepository();
+    mockSourceRepo = MockSourceRepository();
+    mockTopicRepo = MockTopicRepository();
+    mockCountryRepo = MockCountryRepository();
+    mockMappingRepo = MockMappingRepository();
+    mockSourceMappingRepo = MockSourceMappingRepository();
+    mockUsageRepo = MockUsageRepository();
     mockIdempotency = MockIdempotencyService();
     mockLogger = MockLogger();
     mockProvider = MockAggregatorProvider();
@@ -80,8 +116,9 @@ void main() {
       topicRepository: mockTopicRepo,
       countryRepository: mockCountryRepo,
       mappingRepository: mockMappingRepo,
+      sourceMappingRepository: mockSourceMappingRepo,
       usageRepository: mockUsageRepo,
-      aggregatorRegistry: mockRegistry,
+      provider: mockProvider,
       idempotencyService: mockIdempotency,
       log: mockLogger,
     );
@@ -156,6 +193,18 @@ void main() {
       (_) async =>
           const PaginatedResponse(items: [], cursor: null, hasMore: false),
     );
+    when(
+      () => mockSourceMappingRepo.readAll(filter: any(named: 'filter')),
+    ).thenAnswer(
+      (_) async =>
+          const PaginatedResponse(items: [], cursor: null, hasMore: false),
+    );
+    when(
+      () => mockSourceRepo.readAll(filter: any(named: 'filter')),
+    ).thenAnswer(
+      (_) async =>
+          PaginatedResponse(items: [source], cursor: null, hasMore: false),
+    );
 
     // Default quota check (not exceeded)
     when(() => mockUsageRepo.read(id: any(named: 'id'))).thenAnswer(
@@ -166,8 +215,13 @@ void main() {
       ),
     );
 
-    // Default registry behavior
-    when(() => mockRegistry.getProvider(any())).thenReturn(mockProvider);
+    // Default idempotency (success/not duplicate)
+    when(
+      () => mockIdempotency.recordEvent(any(), scope: any(named: 'scope')),
+    ).thenAnswer((_) async {});
+    when(
+      () => mockIdempotency.isDuplicate(any(), any()),
+    ).thenAnswer((_) async => false);
   });
 
   group('NewsIngestionService', () {
@@ -202,11 +256,6 @@ void main() {
             PaginatedResponse(items: [task], cursor: null, hasMore: false),
       );
 
-      // Arrange: Lock acquisition successful
-      when(
-        () => mockIdempotency.recordEvent(any(), scope: any(named: 'scope')),
-      ).thenAnswer((_) async {});
-
       // Arrange: Source fetch
       when(
         () => mockSourceRepo.read(id: source.id),
@@ -227,15 +276,43 @@ void main() {
         status: ContentStatus.active,
         isBreaking: false,
       );
+
+      final mapping = AggregatorSourceMapping(
+        id: 'm1',
+        sourceId: source.id,
+        aggregatorType: AggregatorType.newsApi,
+        externalId: 'ext-1',
+        createdAt: DateTime.now(),
+      );
+
       when(
-        () => mockProvider.fetchLatestHeadlines(
+        () => mockSourceMappingRepo.readAll(filter: any(named: 'filter')),
+      ).thenAnswer(
+        (_) async =>
+            PaginatedResponse(items: [mapping], cursor: null, hasMore: false),
+      );
+
+      when(
+        () => mockSourceRepo.readAll(filter: any(named: 'filter')),
+      ).thenAnswer(
+        (_) async =>
+            PaginatedResponse(items: [source], cursor: null, hasMore: false),
+      );
+
+      when(
+        () => mockProvider.fetchBatchHeadlines(
           any(),
+          sourceMap: any(named: 'sourceMap'),
           topicCache: any(named: 'topicCache'),
           fallbackTopic: any(named: 'fallbackTopic'),
           countryCache: any(named: 'countryCache'),
           mappingCache: any(named: 'mappingCache'),
         ),
-      ).thenAnswer((_) async => [headline]);
+      ).thenAnswer(
+        (_) async => {
+          source.id: [headline],
+        },
+      );
 
       // Arrange: Quota increment
       when(
@@ -248,16 +325,10 @@ void main() {
             IngestionUsage(id: '', requestCount: 1, updatedAt: DateTime.now()),
       );
 
-      // Arrange: Deduplication (not duplicate)
-      when(
-        () => mockIdempotency.isDuplicate(any(), any()),
-      ).thenAnswer((_) async => false);
-
       // Arrange: Persistence
       when(
         () => mockHeadlineRepo.create(
           item: any(named: 'item'),
-          userId: any(named: 'userId'),
         ),
       ).thenAnswer((_) async => headline);
 
@@ -273,7 +344,14 @@ void main() {
       await service.run();
 
       // Assert
-      verify(() => mockHeadlineRepo.create(item: headline)).called(1);
+      verify(
+        () => mockHeadlineRepo.create(
+          item: any(
+            named: 'item',
+            that: isA<Headline>().having((h) => h.url, 'url', headline.url),
+          ),
+        ),
+      ).called(1);
       verify(
         () => mockTaskRepo.update(
           id: task.id,
@@ -298,18 +376,30 @@ void main() {
             PaginatedResponse(items: [task], cursor: null, hasMore: false),
       );
       when(
-        () => mockIdempotency.recordEvent(any(), scope: any(named: 'scope')),
-      ).thenAnswer((_) async {});
-      when(
         () => mockSourceRepo.read(id: source.id),
       ).thenAnswer((_) async => source);
+
+      // Arrange: Mapping exists so we proceed to batch
+      final mapping = AggregatorSourceMapping(
+        id: 'm1',
+        sourceId: source.id,
+        aggregatorType: AggregatorType.newsApi,
+        externalId: 'ext-1',
+        createdAt: DateTime.now(),
+      );
+      when(
+        () => mockSourceMappingRepo.readAll(filter: any(named: 'filter')),
+      ).thenAnswer(
+        (_) async =>
+            PaginatedResponse(items: [mapping], cursor: null, hasMore: false),
+      );
 
       // Arrange: Provider returns 2 headlines
       final h1 = Headline(
         // Note: Using ObjectId().oid to ensure valid ID
         id: ObjectId().oid,
         title: const {SupportedLanguage.en: 'Headline 1'},
-        url: 'u1',
+        url: 'https://example.com/u1',
         imageUrl: '',
         source: source,
         eventCountry: usCountry,
@@ -319,17 +409,30 @@ void main() {
         status: ContentStatus.active,
         isBreaking: false,
       );
-      final h2 = h1.copyWith(id: ObjectId().oid, url: 'u2');
+      final h2 = h1.copyWith(id: ObjectId().oid, url: 'https://example.com/u2');
+
+      // Arrange: Ensure source is found for batch execution
+      when(
+        () => mockSourceRepo.readAll(filter: any(named: 'filter')),
+      ).thenAnswer(
+        (_) async =>
+            PaginatedResponse(items: [source], cursor: null, hasMore: false),
+      );
 
       when(
-        () => mockProvider.fetchLatestHeadlines(
-          any(),
-          topicCache: any(named: 'topicCache'),
-          fallbackTopic: any(named: 'fallbackTopic'),
-          countryCache: any(named: 'countryCache'),
-          mappingCache: any(named: 'mappingCache'),
+        () => mockProvider.fetchBatchHeadlines(
+          any<List<AggregatorSourceMapping>>(),
+          sourceMap: any<Map<String, Source>>(named: 'sourceMap'),
+          topicCache: any<Map<String, Topic>>(named: 'topicCache'),
+          fallbackTopic: any<Topic>(named: 'fallbackTopic'),
+          countryCache: any<Map<String, Country>>(named: 'countryCache'),
+          mappingCache: any<Map<String, String>>(named: 'mappingCache'),
         ),
-      ).thenAnswer((_) async => [h1, h2]);
+      ).thenAnswer(
+        (_) async => {
+          source.id: [h1, h2],
+        },
+      );
 
       when(
         () => mockUsageRepo.update(
@@ -340,27 +443,32 @@ void main() {
         (_) async =>
             IngestionUsage(id: '', requestCount: 1, updatedAt: DateTime.now()),
       );
-      when(
-        () => mockIdempotency.isDuplicate(any(), any()),
-      ).thenAnswer((_) async => false);
 
       // Arrange: h1 fails to save, h2 succeeds
       when(
         () => mockHeadlineRepo.create(
           item: any(
             named: 'item',
-            that: isA<Headline>().having((h) => h.url, 'url', 'u1'),
+            // Use generic isA check to avoid strict matching on generated ID
+            that: isA<Headline>().having(
+              (h) => h.url,
+              'url',
+              'https://example.com/u1',
+            ),
           ),
-          userId: any(named: 'userId'),
         ),
       ).thenThrow(Exception('DB Error'));
       when(
         () => mockHeadlineRepo.create(
           item: any(
             named: 'item',
-            that: isA<Headline>().having((h) => h.url, 'url', 'u2'),
+            // Use generic isA check
+            that: isA<Headline>().having(
+              (h) => h.url,
+              'url',
+              'https://example.com/u2',
+            ),
           ),
-          userId: any(named: 'userId'),
         ),
       ).thenAnswer((_) async => h2);
 
@@ -371,26 +479,30 @@ void main() {
         ),
       ).thenAnswer((_) async => task);
 
-      // Act
       await service.run();
 
-      // Assert
       verify(
         () => mockHeadlineRepo.create(
           item: any(
             named: 'item',
-            that: isA<Headline>().having((h) => h.url, 'url', 'u1'),
+            that: isA<Headline>().having(
+              (h) => h.url,
+              'url',
+              'https://example.com/u1',
+            ),
           ),
-          userId: any(named: 'userId'),
         ),
       ).called(1);
       verify(
         () => mockHeadlineRepo.create(
           item: any(
             named: 'item',
-            that: isA<Headline>().having((h) => h.url, 'url', 'u2'),
+            that: isA<Headline>().having(
+              (h) => h.url,
+              'url',
+              'https://example.com/u2',
+            ),
           ),
-          userId: any(named: 'userId'),
         ),
       ).called(1);
       // Task should still be marked successful because at least one item (h2) succeeded
@@ -408,5 +520,172 @@ void main() {
         ),
       ).called(1);
     });
+
+    test(
+      'Phase 1: Discovery - Triggers catalog sync when mapping missing',
+      () async {
+        // Arrange: Task claimed but mapping missing in DB
+        when(
+          () => mockTaskRepo.readAll(filter: any(named: 'filter')),
+        ).thenAnswer(
+          (_) async =>
+              PaginatedResponse(items: [task], cursor: null, hasMore: false),
+        );
+        when(
+          () => mockSourceMappingRepo.readAll(filter: any(named: 'filter')),
+        ).thenAnswer(
+          (_) async => const PaginatedResponse(
+            items: [],
+            cursor: null,
+            hasMore: false,
+          ),
+        );
+
+        // Arrange: Provider returns catalog
+        final catalogSource = AggregatorCatalogSource(
+          externalId: 'ext-1',
+          name: 'Example',
+          url: source.url,
+        );
+        when(
+          () => mockProvider.syncCatalog(),
+        ).thenAnswer((_) async => [catalogSource]);
+
+        // Arrange: Repository mocks for mapping creation
+        when(
+          () => mockSourceRepo.read(id: source.id),
+        ).thenAnswer((_) async => source);
+        when(
+          () => mockSourceMappingRepo.create(item: any(named: 'item')),
+        ).thenAnswer((_) async => FakeAggregatorSourceMapping());
+
+        // Arrange: Batch fetch success
+        when(
+          () => mockSourceRepo.readAll(filter: any(named: 'filter')),
+        ).thenAnswer(
+          (_) async => PaginatedResponse(
+            items: [source],
+            cursor: null,
+            hasMore: false,
+          ),
+        );
+        when(
+          () => mockProvider.fetchBatchHeadlines(
+            any<List<AggregatorSourceMapping>>(),
+            sourceMap: any<Map<String, Source>>(named: 'sourceMap'),
+            topicCache: any<Map<String, Topic>>(named: 'topicCache'),
+            fallbackTopic: any<Topic>(named: 'fallbackTopic'),
+            countryCache: any<Map<String, Country>>(named: 'countryCache'),
+            mappingCache: any<Map<String, String>>(named: 'mappingCache'),
+          ),
+        ).thenAnswer((_) async => {});
+
+        await service.run();
+
+        verify(() => mockProvider.syncCatalog()).called(1);
+        verify(
+          () => mockSourceMappingRepo.create(item: any(named: 'item')),
+        ).called(1);
+      },
+    );
+
+    test(
+      'Phase 2: Poison Pill Isolation - Disables mapping on 400 error',
+      () async {
+        final mapping = AggregatorSourceMapping(
+          id: 'm1',
+          sourceId: source.id,
+          aggregatorType: AggregatorType.newsApi,
+          externalId: 'bad-source',
+          createdAt: DateTime.now(),
+        );
+
+        // Arrange: Task and Mapping exist
+        when(
+          () => mockTaskRepo.readAll(filter: any(named: 'filter')),
+        ).thenAnswer(
+          (_) async =>
+              PaginatedResponse(items: [task], cursor: null, hasMore: false),
+        );
+        when(
+          () => mockSourceMappingRepo.readAll(filter: any(named: 'filter')),
+        ).thenAnswer(
+          (_) async => PaginatedResponse(
+            items: [mapping],
+            cursor: null,
+            hasMore: false,
+          ),
+        );
+        when(
+          () => mockSourceRepo.readAll(filter: any(named: 'filter')),
+        ).thenAnswer(
+          (_) async => PaginatedResponse(
+            items: [source],
+            cursor: null,
+            hasMore: false,
+          ),
+        );
+
+        // Arrange: Batch fetch fails with BadRequest (Poison Pill detected)
+        when(
+          () => mockProvider.fetchBatchHeadlines(
+            any<List<AggregatorSourceMapping>>(),
+            sourceMap: any<Map<String, Source>>(named: 'sourceMap'),
+            topicCache: any<Map<String, Topic>>(named: 'topicCache'),
+            fallbackTopic: any<Topic>(named: 'fallbackTopic'),
+            countryCache: any<Map<String, Country>>(named: 'countryCache'),
+            mappingCache: any<Map<String, String>>(named: 'mappingCache'),
+          ),
+        ).thenThrow(const BadRequestException('Invalid Source'));
+
+        // Arrange: Mapping update mock
+        when(
+          () => mockSourceMappingRepo.update(
+            id: any(named: 'id'),
+            item: any(named: 'item'),
+          ),
+        ).thenAnswer((_) async => mapping);
+
+        // Arrange: Task finalization mock
+        when(
+          () => mockTaskRepo.update(
+            id: any(named: 'id'),
+            item: any(named: 'item'),
+          ),
+        ).thenAnswer((_) async => task);
+
+        await service.run();
+
+        // Assert: The mapping was disabled
+        verify(
+          () => mockSourceMappingRepo.update(
+            id: 'm1',
+            item: any(
+              named: 'item',
+              that: isA<AggregatorSourceMapping>().having(
+                (m) => m.isEnabled,
+                'isEnabled',
+                false,
+              ),
+            ),
+          ),
+        ).called(1);
+
+        // Assert: The task was marked as error
+        verify(
+          () => mockTaskRepo.update(
+            id: task.id,
+            item: any(
+              named: 'item',
+              that: isA<NewsAutomationTask>().having(
+                (t) => t.status,
+                'status',
+                IngestionStatus.error,
+              ),
+            ),
+          ),
+        ).called(1);
+      },
+    );
   });
 }

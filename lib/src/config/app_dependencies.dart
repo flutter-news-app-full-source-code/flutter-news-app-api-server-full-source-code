@@ -13,7 +13,7 @@ import 'package:verity_api/src/config/environment_config.dart';
 import 'package:verity_api/src/database/migrations/all_migrations.dart';
 import 'package:verity_api/src/database/mongo/data_mongodb.dart';
 import 'package:verity_api/src/models/idempotency_record.dart';
-import 'package:verity_api/src/models/ingestion/aggregator_type.dart';
+import 'package:verity_api/src/models/ingestion/aggregator_source_mapping.dart';
 import 'package:verity_api/src/models/ingestion/ingestion_topic_mapping.dart';
 import 'package:verity_api/src/models/ingestion/ingestion_usage.dart';
 import 'package:verity_api/src/models/storage/local_media_finalization_job.dart';
@@ -71,6 +71,7 @@ class AppDependencies {
   late final DataRepository<IdempotencyRecord> idempotencyRepository;
   late final DataRepository<NewsAutomationTask> newsAutomationTaskRepository;
   late final DataRepository<IngestionTopicMapping> mappingRepository;
+  late final DataRepository<AggregatorSourceMapping> sourceMappingRepository;
   late final DataRepository<IngestionUsage> ingestionUsageRepository;
   late final DataRepository<LocalMediaFinalizationJob>
   localMediaFinalizationJobRepository;
@@ -104,7 +105,6 @@ class AppDependencies {
   late final UploadTokenService uploadTokenService;
   late final LocalMediaFinalizationJobService finalizationJobService;
   late final ContentEnrichmentService contentEnrichmentService;
-  late final AggregatorRegistry aggregatorRegistry;
   late final NewsIngestionService newsIngestionService;
 
   late final IGcsJwtVerifier gcsJwtVerifier;
@@ -267,6 +267,14 @@ class AppDependencies {
         fromJson: IngestionTopicMapping.fromJson,
         toJson: (item) => item.toJson(),
         logger: Logger('DataMongodb<IngestionTopicMapping>'),
+      );
+
+      final sourceMappingClient = DataMongodb<AggregatorSourceMapping>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'aggregator_source_mappings',
+        fromJson: AggregatorSourceMapping.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<AggregatorSourceMapping>'),
       );
 
       final ingestionUsageClient = DataMongodb<IngestionUsage>(
@@ -443,6 +451,7 @@ class AppDependencies {
         dataClient: newsAutomationTaskClient,
       );
       mappingRepository = DataRepository(dataClient: mappingClient);
+      sourceMappingRepository = DataRepository(dataClient: sourceMappingClient);
       ingestionUsageRepository = DataRepository(
         dataClient: ingestionUsageClient,
       );
@@ -725,13 +734,32 @@ class AppDependencies {
         log: Logger('ContentEnrichmentService'),
       );
 
-      // --- News Ingestion Stack ---
-      aggregatorRegistry = AggregatorRegistry();
+      // --- News Ingestion Provider Factory ---
+      final aggregatorProviderType = EnvironmentConfig.aggregatorProvider;
+      final AggregatorProvider activeAggregatorProvider;
 
-      // NewsAPI.org
-      aggregatorRegistry.register(
-        AggregatorType.newsApi,
-        NewsApiAggregatorProvider(
+      if (aggregatorProviderType == 'mediastack') {
+        activeAggregatorProvider = MediaStackAggregatorProvider(
+          mapper: MediaStackMapper(),
+          log: Logger('MediaStackAggregatorProvider'),
+          httpClient: HttpClient(
+            baseUrl: 'https://api.mediastack.com/v1/',
+            tokenProvider: () async => null,
+            interceptors: [
+              InterceptorsWrapper(
+                onRequest: (options, handler) {
+                  options.queryParameters['access_key'] =
+                      EnvironmentConfig.newsAggregatorProviderKey;
+                  return handler.next(options);
+                },
+              ),
+            ],
+            logger: Logger('MediaStackHttpClient'),
+          ),
+        );
+      } else {
+        // Default to NewsAPI
+        activeAggregatorProvider = NewsApiAggregatorProvider(
           mapper: NewsApiMapper(),
           log: Logger('NewsApiAggregatorProvider'),
           httpClient: HttpClient(
@@ -740,8 +768,8 @@ class AppDependencies {
                 EnvironmentConfig.newsAggregatorProviderKey,
             logger: Logger('NewsApiHttpClient'),
           ),
-        ),
-      );
+        );
+      }
 
       newsIngestionService = NewsIngestionService(
         taskRepository: newsAutomationTaskRepository,
@@ -750,8 +778,9 @@ class AppDependencies {
         topicRepository: topicRepository,
         countryRepository: countryRepository,
         mappingRepository: mappingRepository,
+        sourceMappingRepository: sourceMappingRepository,
         usageRepository: ingestionUsageRepository,
-        aggregatorRegistry: aggregatorRegistry,
+        provider: activeAggregatorProvider,
         idempotencyService: idempotencyService,
         log: Logger('NewsIngestionService'),
       );

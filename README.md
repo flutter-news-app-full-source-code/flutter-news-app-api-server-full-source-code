@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://img.shields.io/badge/coverage-64%25-green?style=for-the-badge" alt="coverage">
+<img src="https://img.shields.io/badge/coverage-50%25-green?style=for-the-badge" alt="coverage">
 <a href="https://github.com/verity-hq/verity-api/wiki/Local-Setup"><img src="https://img.shields.io/badge/DOCUMENTATION-READ-slategray?style=for-the-badge" alt="Documentation: Read"></a>
 <a href="LICENSE"><img src="https://img.shields.io/badge/TRIAL_LICENSE-VIEW_TERMS-blue?style=for-the-badge" alt="Trial License: View Terms"></a>
 <a href="https://github.com/sponsors/verity-hq"><img src="https://img.shields.io/badge/LIFETIME_LICENSE-PURCHASE-purple?style=for-the-badge" alt="Lifetime License: Purchase"></a>
@@ -80,25 +80,25 @@ The API automatically validates the structure of all incoming data, ensuring tha
 <details>
 <summary><strong>🤖 Automated News Ingestion & Orchestration</strong></summary>
 
-### ⚙️ A Self-Sustaining Content Engine
-Automate the discovery and importing of global news to keep your platform fresh
-without manual intervention.
-- **Distributed Worker-Queue Pattern:** Orchestrates scheduled tasks using
-  MongoDB as a distributed lock provider, ensuring reliable execution across
-  multi-instance deployments.
-- **Intelligent Deduplication:** Leverages a high-performance idempotency layer
-  to filter out duplicate content at the source, guaranteeing a unique reading
-  experience for your users.
-- **Global Quota & Cost Management:** Protects your bottom line with built-in
-  daily usage tracking that automatically halts ingestion cycles before
-  external API limits are exceeded.
-- **Polymorphic Aggregator Stack:** A registry-based architecture enables
-  seamless integration with any external news provider (e.g., NewsAPI) while
-  standardizing data mapping and enrichment.
-> **Your Advantage:** You get a fully automated, production-grade content
-pipeline that scales with your needs. The system handles the complexities of
-scheduling, deduplication, and cost control, allowing you to focus on growing
-your audience rather than managing data entry.
+### 🤖 High-Efficiency News Ingestion Engine
+A professional-grade orchestration pipeline designed to maximize content 
+throughput while minimizing operational costs and ensuring data quality.
+- **Multi-Provider Polymorphism:** Out-of-the-box support for **NewsAPI** 
+  and **MediaStack**, utilizing a unified interface that enables 
+  hot-swappable ingestion strategies via environment configuration.
+- **On-Demand Source Discovery:** Automatically synchronizes internal 
+  sources with provider catalogs using a host-based matching heuristic, 
+  eliminating manual mapping overhead.
+- **Intelligent Cost Control:** Optimizes API credit usage through 
+  high-density batch processing and strictly enforced daily quotas.
+- **Resilient Pipeline Architecture:** Implements a "Poison Pill" isolation 
+  strategy that automatically de-batches and disables problematic sources to 
+  prevent upstream failures from halting the entire ingestion cycle.
+- **Enterprise Deduplication:** Employs a high-performance idempotency 
+  layer to guarantee a unique, high-quality content feed for your users.
+> **Your Advantage:** Drastically reduce operational overhead and API 
+expenditure. The engine self-heals when providers update their catalogs and 
+scales effortlessly as your content network grows.
 
 ---
 

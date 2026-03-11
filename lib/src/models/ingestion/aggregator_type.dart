@@ -4,4 +4,7 @@
 enum AggregatorType {
   /// NewsAPI.org API.
   newsApi,
+
+  /// MediaStack API.
+  mediaStack,
 }

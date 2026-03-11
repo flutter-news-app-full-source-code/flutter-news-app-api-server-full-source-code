@@ -1,10 +1,8 @@
 import 'dart:async';
 
 import 'package:core/core.dart';
-import 'package:verity_api/src/services/content_enrichment_service.dart'
-    show ContentEnrichmentService;
-import 'package:verity_api/src/services/services.dart'
-    show ContentEnrichmentService;
+import 'package:verity_api/src/models/ingestion/aggregator_catalog_source.dart';
+import 'package:verity_api/src/models/ingestion/aggregator_source_mapping.dart';
 
 /// {@template aggregator_provider}
 /// Abstract contract for external news aggregator integrations.
@@ -14,16 +12,20 @@ import 'package:verity_api/src/services/services.dart'
 /// their proprietary JSON structures into the system's [Headline] model.
 /// {@endtemplate}
 abstract class AggregatorProvider {
-  /// Fetches the latest headlines for a specific [Source].
+  /// Fetches the entire list of supported sources from the provider.
+  /// Used for on-demand discovery and mapping.
+  Future<List<AggregatorCatalogSource>> syncCatalog();
+
+  /// Fetches headlines for a batch of sources in a single request.
   ///
-  /// The [source] provides the necessary metadata (URL, language, headquarters)
-  /// to contextualize the API request.
+  /// [mappings] provides the link between internal Source IDs and external IDs.
+  /// [sourceMap] provides the full Source entities for mapping context.
   ///
-  /// Returns a list of "Raw" [Headline] objects. These headlines are
-  /// considered raw because they contain partial embedded entities that
-  /// must be hydrated by the [ContentEnrichmentService] before persistence.
-  Future<List<Headline>> fetchLatestHeadlines(
-    Source source, {
+  /// Returns a Map where the key is the internal Source ID and the value
+  /// is the list of headlines fetched for that source.
+  Future<Map<String, List<Headline>>> fetchBatchHeadlines(
+    List<AggregatorSourceMapping> mappings, {
+    required Map<String, Source> sourceMap,
     required Map<String, Topic> topicCache,
     required Topic fallbackTopic,
     required Map<String, Country> countryCache,
@@ -37,22 +39,18 @@ abstract class AggregatorProvider {
 /// {@endtemplate}
 class DefaultAggregatorProvider implements AggregatorProvider {
   /// {@macro default_aggregator_provider}
-  const DefaultAggregatorProvider({
-    required HttpClient httpClient,
-  }) : _httpClient = httpClient;
-
-  final HttpClient _httpClient;
+  const DefaultAggregatorProvider();
 
   @override
-  Future<List<Headline>> fetchLatestHeadlines(
-    Source source, {
+  Future<List<AggregatorCatalogSource>> syncCatalog() async => [];
+
+  @override
+  Future<Map<String, List<Headline>>> fetchBatchHeadlines(
+    List<AggregatorSourceMapping> mappings, {
+    required Map<String, Source> sourceMap,
     required Map<String, Topic> topicCache,
     required Topic fallbackTopic,
     required Map<String, Country> countryCache,
     required Map<String, String> mappingCache,
-  }) async {
-    // Connectivity check for the source URL.
-    unawaited(_httpClient.get<dynamic>(source.url));
-    return [];
-  }
+  }) async => {};
 }

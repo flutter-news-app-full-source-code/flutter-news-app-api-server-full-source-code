@@ -4,12 +4,15 @@ import 'dart:convert';
 import 'package:core/core.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
+import 'package:mongo_dart/mongo_dart.dart';
 import 'package:verity_api/src/config/environment_config.dart';
+import 'package:verity_api/src/models/ingestion/aggregator_catalog_source.dart';
+import 'package:verity_api/src/models/ingestion/aggregator_source_mapping.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_type.dart';
 import 'package:verity_api/src/models/ingestion/ingestion_topic_mapping.dart';
 import 'package:verity_api/src/models/ingestion/ingestion_usage.dart';
 import 'package:verity_api/src/services/idempotency_service.dart';
-import 'package:verity_api/src/services/ingestion/registries/aggregator_registry.dart';
+import 'package:verity_api/src/services/ingestion/providers/aggregator_provider.dart';
 
 /// {@template news_ingestion_service}
 /// Orchestrates the automated ingestion of news from external aggregators.
@@ -27,8 +30,9 @@ class NewsIngestionService {
     required DataRepository<Topic> topicRepository,
     required DataRepository<Country> countryRepository,
     required DataRepository<IngestionTopicMapping> mappingRepository,
+    required DataRepository<AggregatorSourceMapping> sourceMappingRepository,
     required DataRepository<IngestionUsage> usageRepository,
-    required AggregatorRegistry aggregatorRegistry,
+    required AggregatorProvider provider,
     required IdempotencyService idempotencyService,
     required Logger log,
   }) : _taskRepository = taskRepository,
@@ -37,8 +41,9 @@ class NewsIngestionService {
        _topicRepository = topicRepository,
        _countryRepository = countryRepository,
        _mappingRepository = mappingRepository,
+       _sourceMappingRepository = sourceMappingRepository,
        _usageRepository = usageRepository,
-       _aggregatorRegistry = aggregatorRegistry,
+       _provider = provider,
        _idempotencyService = idempotencyService,
        _log = log;
 
@@ -48,8 +53,9 @@ class NewsIngestionService {
   final DataRepository<Topic> _topicRepository;
   final DataRepository<Country> _countryRepository;
   final DataRepository<IngestionTopicMapping> _mappingRepository;
+  final DataRepository<AggregatorSourceMapping> _sourceMappingRepository;
   final DataRepository<IngestionUsage> _usageRepository;
-  final AggregatorRegistry _aggregatorRegistry;
+  final AggregatorProvider _provider;
   final IdempotencyService _idempotencyService;
   final Logger _log;
 
@@ -105,29 +111,371 @@ class NewsIngestionService {
         )[m.externalValue.toLowerCase()] = m.internalTopicId;
       }
 
-      // 2. Claim Tasks
+      // 2. Claim Due Tasks
       final tasks = await _claimPendingTasks();
       _log.info('Claimed ${tasks.length} tasks for processing.');
+      if (tasks.isEmpty) return;
 
-      for (final task in tasks) {
-        await _processTask(
-          task,
-          topicCache,
-          fallbackTopic,
-          countryCache,
-          mappingCache,
-        );
+      // 3. Group Tasks by Provider
+      final providerType = AggregatorType.values.firstWhere(
+        (e) => e.name.toLowerCase() == EnvironmentConfig.aggregatorProvider,
+        orElse: () => AggregatorType.newsApi,
+      );
 
-        // Rate Limiting: Pause between tasks to respect provider limits.
-        final delay = EnvironmentConfig.ingestionRequestDelaySeconds;
-        await Future<void>.delayed(Duration(seconds: delay));
+      // Phase 1: Discovery & Mapping
+      // Ensure all claimed tasks have a valid provider mapping.
+      final validMappings = await _ensureMappings(tasks, providerType);
+      _log.info(
+        'Discovery phase complete. Yielded ${validMappings.length} valid source mappings.',
+      );
 
-        // Re-check quota after every task to fail fast if we hit the limit mid-cycle
-        if (await _checkAndLogQuota()) break;
+      if (validMappings.isEmpty) {
+        _log.warning('No valid mappings found for this cycle.');
+        return;
       }
+
+      // Phase 2: Batch Fetching
+      // Execute the N:1 request and attribute results.
+      await _executeProviderBatch(
+        validMappings,
+        tasks,
+        providerType,
+        topicCache,
+        fallbackTopic,
+        countryCache,
+        mappingCache,
+      );
     } catch (e, s) {
       _log.severe('Critical failure in ingestion cycle.', e, s);
     }
+  }
+
+  /// Phase 1: Discovery
+  /// Checks the database for existing mappings. If missing, triggers on-demand
+  /// catalog sync from the provider and performs host-based matching.
+  Future<List<AggregatorSourceMapping>> _ensureMappings(
+    List<NewsAutomationTask> tasks,
+    AggregatorType providerType,
+  ) async {
+    final results = <AggregatorSourceMapping>[];
+    List<AggregatorCatalogSource>? catalog;
+
+    for (final task in tasks) {
+      try {
+        // 1. Check DB for existing mapping
+        final existing = await _sourceMappingRepository.readAll(
+          filter: {
+            'sourceId': task.sourceId,
+            'aggregatorType': providerType.name,
+            'isEnabled': true,
+          },
+        );
+
+        if (existing.items.isNotEmpty) {
+          results.add(existing.items.first);
+          continue;
+        }
+
+        // 2. Missing Mapping: Trigger On-Demand Discovery
+        _log.info(
+          '>> Discovery Triggered: Source ${task.sourceId} has no mapping for $providerType.',
+        );
+        catalog ??= await _provider.syncCatalog();
+
+        final source = await _sourceRepository.read(id: task.sourceId);
+        // Normalization: strip 'www.' to ensure 'nytimes.com' matches 'www.nytimes.com'
+        final sourceHost = Uri.parse(
+          source.url,
+        ).host.replaceAll(RegExp(r'^www\.'), '');
+
+        _log.fine(
+          '   Comparing Local Host: "$sourceHost" (derived from ${source.url})',
+        );
+
+        // Tier 1: Robust Host Match
+        var match = catalog.cast<AggregatorCatalogSource?>().firstWhere(
+          (s) {
+            if (s?.url == null) return false;
+            final catHost = Uri.parse(
+              s!.url!,
+            ).host.replaceAll(RegExp(r'^www\.'), '');
+
+            final isMatch = catHost == sourceHost;
+            if (isMatch) _log.fine('   >> Tier 1 Match Found: "$catHost"');
+            return catHost == sourceHost;
+          },
+          orElse: () => null,
+        );
+
+        // Tier 2: Fuzzy Name Match (Fallback)
+        // Handles cases where URLs differ significantly but names align.
+        if (match == null) {
+          _log.fine(
+            '   >> Tier 1 Failed. Attempting Tier 2 (Fuzzy Name Match)...',
+          );
+          match = catalog.cast<AggregatorCatalogSource?>().firstWhere(
+            (s) {
+              final catName = s?.name.toLowerCase().trim();
+              if (catName == null) return false;
+              // Check against all local translations (e.g. 'The New York Times')
+              final hasMatch = source.name.values.any(
+                (localName) => localName.toLowerCase().trim() == catName,
+              );
+              if (hasMatch) {
+                _log.fine(
+                  '   >> Tier 2 Match Found: Name "$catName" matches local translation.',
+                );
+              }
+              return hasMatch;
+            },
+            orElse: () => null,
+          );
+        }
+
+        if (match == null) {
+          throw const NotFoundException('Source not in catalog');
+        }
+
+        // 3. Persist Mapping
+        final mapping = AggregatorSourceMapping(
+          id: ObjectId().oid,
+          sourceId: task.sourceId,
+          aggregatorType: providerType,
+          externalId: match.externalId,
+          createdAt: DateTime.now(),
+        );
+        await _sourceMappingRepository.create(item: mapping);
+        _log.info(
+          '>> Mapping Created: Source ${task.sourceId} -> ${match.externalId} ($providerType)',
+        );
+        results.add(mapping);
+      } on NotFoundException {
+        _log.warning('Source ${task.sourceId} not supported by $providerType');
+        await _finalizeTask(
+          task,
+          success: false,
+          error:
+              'Source not supported by provider, make sure the source url is correct.',
+        );
+      } catch (e, s) {
+        _log.severe('Discovery error for task ${task.id}', e, s);
+      }
+    }
+    return results;
+  }
+
+  /// Phase 2: Batch Fetching
+  /// Orchestrates the N:1 request and handles the "Poison Pill" fallback.
+  Future<void> _executeProviderBatch(
+    List<AggregatorSourceMapping> mappings,
+    List<NewsAutomationTask> tasks,
+    AggregatorType providerType,
+    Map<String, Topic> topicCache,
+    Topic fallbackTopic,
+    Map<String, Country> countryCache,
+    Map<AggregatorType, Map<String, String>> mappingCache,
+  ) async {
+    // Fetch full Source entities for mapping context
+    final sourceIds = mappings.map((m) => m.sourceId).toSet();
+    final sourceResponse = await _sourceRepository.readAll(
+      filter: {
+        '_id': {r'$in': sourceIds.toList()},
+      },
+    );
+    final sourceMap = {for (final s in sourceResponse.items) s.id: s};
+
+    try {
+      // Execute the Batch Request
+      final batchResults = await _provider.fetchBatchHeadlines(
+        mappings,
+        sourceMap: sourceMap,
+        topicCache: topicCache,
+        fallbackTopic: fallbackTopic,
+        countryCache: countryCache,
+        mappingCache: mappingCache[providerType] ?? {},
+      );
+
+      await _incrementQuota();
+
+      // Process results for each source in the batch
+      for (final mapping in mappings) {
+        final task = tasks.firstWhere((t) => t.sourceId == mapping.sourceId);
+        final headlines = batchResults[mapping.sourceId] ?? [];
+
+        await _processHeadlines(headlines, task);
+      }
+    } on BadRequestException {
+      _log.warning(
+        'Batch failed with 400. Initiating poison pill isolation...',
+      );
+      await _isolatePoisonPill(
+        mappings,
+        tasks,
+        providerType,
+        sourceMap,
+        topicCache,
+        fallbackTopic,
+        countryCache,
+        mappingCache,
+      );
+    } catch (e, s) {
+      _log.severe('Critical batch failure.', e, s);
+      // Mark all tasks in this batch as failed
+      for (final mapping in mappings) {
+        final task = tasks.firstWhere((t) => t.sourceId == mapping.sourceId);
+        await _finalizeTask(task, success: false, error: e.toString());
+      }
+    }
+  }
+
+  /// The "De-batching Fallback"
+  /// Executes 1:1 requests to identify which source is causing the 400 error.
+  Future<void> _isolatePoisonPill(
+    List<AggregatorSourceMapping> mappings,
+    List<NewsAutomationTask> tasks,
+    AggregatorType providerType,
+    Map<String, Source> sourceMap,
+    Map<String, Topic> topicCache,
+    Topic fallbackTopic,
+    Map<String, Country> countryCache,
+    Map<AggregatorType, Map<String, String>> mappingCache,
+  ) async {
+    for (final mapping in mappings) {
+      final task = tasks.firstWhere((t) => t.sourceId == mapping.sourceId);
+
+      try {
+        // Execute 1:1 fetch
+        final results = await _provider.fetchBatchHeadlines(
+          [mapping],
+          sourceMap: sourceMap,
+          topicCache: topicCache,
+          fallbackTopic: fallbackTopic,
+          countryCache: countryCache,
+          mappingCache: mappingCache[providerType] ?? {},
+        );
+
+        await _incrementQuota();
+        await _processHeadlines(results[mapping.sourceId] ?? [], task);
+      } on BadRequestException {
+        _log.severe('Poison pill identified: ${mapping.externalId}');
+        // Disable the mapping to prevent future batch failures
+        await _sourceMappingRepository.update(
+          id: mapping.id,
+          item: AggregatorSourceMapping(
+            id: mapping.id,
+            sourceId: mapping.sourceId,
+            aggregatorType: mapping.aggregatorType,
+            externalId: mapping.externalId,
+            isEnabled: false,
+            createdAt: mapping.createdAt,
+          ),
+        );
+        await _finalizeTask(
+          task,
+          success: false,
+          error: 'Source rejected by provider.',
+        );
+      } catch (e) {
+        await _finalizeTask(task, success: false, error: e.toString());
+      }
+    }
+  }
+
+  Future<void> _processHeadlines(
+    List<Headline> headlines,
+    NewsAutomationTask task,
+  ) async {
+    var savedCount = 0;
+    var skippedCount = 0;
+    var errorCount = 0;
+
+    for (final raw in headlines) {
+      // QUALITY CONTROL: Filter noise and siblings
+      if (!_validateArticleQuality(raw, task)) {
+        _log.fine('   [QC] Article rejected: ${raw.url}');
+        skippedCount++;
+        continue;
+      }
+
+      try {
+        final isDuplicate = await _idempotencyService.isDuplicate(
+          'headline_ingestion',
+          '${raw.source.id}:${raw.url}',
+        );
+
+        if (isDuplicate) {
+          _log.finer('   [Dedupe] Skipped duplicate: ${raw.url}');
+          skippedCount++;
+          continue;
+        }
+
+        await _headlineRepository.create(item: raw);
+        await _idempotencyService.recordEvent(
+          '${raw.source.id}:${raw.url}',
+          scope: 'headline_ingestion',
+        );
+        _log.fine('   [Success] Saved headline: ${raw.url}');
+        savedCount++;
+      } catch (e, s) {
+        _log.warning('Failed to save headline: ${raw.url}', e, s);
+        errorCount++;
+      }
+    }
+
+    final isSuccess = errorCount == 0 || savedCount > 0 || skippedCount > 0;
+    await _finalizeTask(
+      task,
+      success: isSuccess,
+      savedCount: savedCount,
+      error: isSuccess ? null : 'Batch processing failed.',
+    );
+  }
+
+  /// Validates the quality and relevance of a fetched article.
+  /// Returns `true` if the article should be processed, `false` otherwise.
+  bool _validateArticleQuality(Headline headline, NewsAutomationTask task) {
+    final articleUrl = Uri.parse(headline.url);
+    final sourceUrl = Uri.parse(headline.source.url);
+
+    // 1. Host Consistency Check (Prevents Sibling Leakage)
+    // Ensures 'arabic.cnn.com' is not accepted for 'edition.cnn.com'.
+    // Logic: Article host must contain the Source host (handling subdomains).
+    // Normalization: strip 'www.' for comparison.
+    final cleanArticleHost = articleUrl.host.replaceAll(RegExp(r'^www\.'), '');
+    final cleanSourceHost = sourceUrl.host.replaceAll(RegExp(r'^www\.'), '');
+
+    if (!cleanArticleHost.endsWith(cleanSourceHost)) {
+      // Special Case: Allow if the source host is just a domain and article is subdomain
+      // But reject if source is 'edition.cnn.com' and article is 'arabic.cnn.com'
+      _log.info(
+        '[QC] Host Mismatch (Leakage): Article="$cleanArticleHost" does not end with Source="$cleanSourceHost". URL: ${headline.url}',
+      );
+      return false;
+    }
+
+    // 2. Global Noise Filter (Path Blacklist)
+    // Rejects known non-news patterns like TV schedules, weather, etc.
+    const noisePatterns = [
+      '/programmes/',
+      '/schedules/',
+      '/weather/',
+      '/tv/',
+      '/radio/',
+      '/help/',
+      '/contact/',
+      '/terms',
+      '/privacy',
+    ];
+    if (noisePatterns.any(
+      (pattern) => articleUrl.path.toLowerCase().contains(pattern),
+    )) {
+      _log.info(
+        '[QC] Noise Pattern Detected: URL contains blacklist pattern. URL: ${headline.url}',
+      );
+      return false;
+    }
+
+    return true;
   }
 
   Future<List<NewsAutomationTask>> _claimPendingTasks() async {
@@ -149,6 +497,10 @@ class NewsIngestionService {
           },
         ],
       },
+    );
+
+    _log.info(
+      'Found ${response.items.length} candidate tasks due for execution.',
     );
 
     final claimed = <NewsAutomationTask>[];
@@ -218,140 +570,6 @@ class NewsIngestionService {
     final dateStr = '${now.year}-${now.month}-${now.day}';
     final bytes = utf8.encode('usage:$dateStr');
     return sha256.convert(bytes).toString().substring(0, 24);
-  }
-
-  Future<void> _processTask(
-    NewsAutomationTask task,
-    Map<String, Topic> topicCache,
-    Topic fallbackTopic,
-    Map<String, Country> countryCache,
-    Map<AggregatorType, Map<String, String>> mappingCache,
-  ) async {
-    _log.info('Processing task ${task.id} for source ${task.sourceId}');
-
-    try {
-      // 1. Fetch the authoritative Source document
-      final source = await _sourceRepository.read(id: task.sourceId);
-
-      // 2. Resolve Provider from Registry
-      // The provider type is determined by the environment config.
-      final providerType = AggregatorType.values.byName(
-        EnvironmentConfig.aggregatorProvider,
-      );
-      final provider = _aggregatorRegistry.getProvider(providerType);
-
-      final headlines = await provider.fetchLatestHeadlines(
-        source,
-        topicCache: topicCache,
-        fallbackTopic: fallbackTopic,
-        countryCache: countryCache,
-        // Pass only the relevant mapping for this provider
-        mappingCache: mappingCache[providerType] ?? {},
-      );
-      _log.info('Fetched ${headlines.length} headlines from aggregator.');
-
-      // Increment quota for the 1 API call we just made
-      await _incrementQuota();
-
-      var savedCount = 0;
-      var skippedCount = 0;
-      var errorCount = 0;
-
-      for (final raw in headlines) {
-        try {
-          // 3. Deduplication
-          final isDuplicate = await _idempotencyService.isDuplicate(
-            'headline_ingestion',
-            '${raw.source.id}:${raw.url}',
-          );
-
-          if (isDuplicate) {
-            skippedCount++;
-            continue;
-          }
-
-          final processed = raw;
-
-          // --- TODO(fulleni): Multi-language Title AI Translation ---
-          // Invoke TranslationService to fill processed.title for other languages.
-
-          // --- TODO(fulleni): AI content enrichement ---
-          // 1. Use AI to extract actual eventCountry from title/description.
-          // 2. Use AI to determine if isBreaking should be true.
-          // 3. Use AI to refine Topic if the provider mapping is too generic.
-
-          // 4. Persistence
-          await _headlineRepository.create(item: processed);
-
-          await _idempotencyService.recordEvent(
-            '${raw.source.id}:${raw.url}',
-            scope: 'headline_ingestion',
-          );
-
-          savedCount++;
-        } catch (e, s) {
-          // Partial Batch Failure: Log error but continue processing other headlines.
-          _log.warning('Failed to save headline: ${raw.url}', e, s);
-          errorCount++;
-        }
-      }
-
-      _log.info(
-        'Task ${task.id} complete. Saved: $savedCount, Skipped: $skippedCount, Errors: $errorCount',
-      );
-
-      // Mark task as successful if at least one headline was processed or if the batch was empty/all duplicates.
-      // Only mark as error if EVERYTHING failed and there were items to process.
-      final isSuccess = errorCount == 0 || savedCount > 0 || skippedCount > 0;
-      await _finalizeTask(
-        task,
-        success: isSuccess,
-        savedCount: savedCount,
-        error: isSuccess ? null : 'Batch failed completely.',
-      );
-    } on UnauthorizedException catch (e) {
-      // 401: Critical Configuration Error.
-      // Retrying immediately won't fix a bad API key.
-      _log.severe(
-        'CRITICAL: Provider rejected API Key for task ${task.id}.',
-        e,
-      );
-      await _finalizeTask(
-        task,
-        success: false,
-        error: 'Auth Failed: ${e.message}',
-      );
-    } on ServerException catch (e) {
-      // 5xx or 429: Temporary Provider Issue.
-      // This includes Rate Limits if mapped to ServerException by HttpClient.
-      _log.warning('Provider server error for task ${task.id}.', e);
-      await _finalizeTask(
-        task,
-        success: false,
-        error: 'Provider Error: ${e.message}',
-      );
-    } on NetworkException catch (e) {
-      // Connectivity Issue.
-      _log.warning('Network error processing task ${task.id}.', e);
-      await _finalizeTask(
-        task,
-        success: false,
-        error: 'Network Connectivity Error',
-      );
-    } on BadRequestException catch (e) {
-      // 400: Logic Error.
-      // Our request parameters are likely invalid.
-      _log.severe('Bad request sent to provider for task ${task.id}.', e);
-      await _finalizeTask(
-        task,
-        success: false,
-        error: 'Bad Request: ${e.message}',
-      );
-    } catch (e, s) {
-      // Catch-all for unexpected errors (e.g., parsing exceptions).
-      _log.severe('Failed to process task ${task.id}', e, s);
-      await _finalizeTask(task, success: false, error: e.toString());
-    }
   }
 
   Future<void> _finalizeTask(

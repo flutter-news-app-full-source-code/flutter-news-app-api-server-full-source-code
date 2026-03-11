@@ -552,6 +552,12 @@ class DatabaseSeedingService {
             'name': 'createdAt_ttl_index',
             'expireAfterSeconds': 86400 * 7, // 7 days retention
           },
+          {
+            // Enables distributed locking by enforcing uniqueness on the key/scope pair.
+            'key': {'scope': 1, 'key': 1},
+            'name': 'scope_key_unique_index',
+            'unique': true,
+          },
         ],
       });
       _log.info('Ensured indexes for "idempotency_records".');
@@ -639,6 +645,34 @@ class DatabaseSeedingService {
         ],
       });
       _log.info('Ensured indexes for "ingestion_usage".');
+
+      // Indexes for ingestion_mappings
+      await _db.runCommand({
+        'createIndexes': 'ingestion_mappings',
+        'indexes': [
+          {
+            // Unique index to prevent duplicate category-to-topic mappings
+            'key': {'provider': 1, 'externalValue': 1},
+            'name': 'provider_external_unique_index',
+            'unique': true,
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "ingestion_mappings".');
+
+      // Indexes for aggregator_source_mappings
+      await _db.runCommand({
+        'createIndexes': 'aggregator_source_mappings',
+        'indexes': [
+          {
+            // Unique index to ensure one mapping per source per provider
+            'key': {'sourceId': 1, 'aggregatorType': 1},
+            'name': 'source_provider_unique_index',
+            'unique': true,
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "aggregator_source_mappings".');
 
       _log.info('Database indexes are set up correctly.');
     } on Exception catch (e, s) {

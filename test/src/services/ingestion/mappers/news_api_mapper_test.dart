@@ -54,6 +54,7 @@ void main() {
 
   test('mapToHeadline maps fields correctly', () {
     final article = NewsApiArticle(
+      source: const NewsApiSource(name: 'Test', id: 'test'),
       title: 'Breaking News',
       url: 'https://example.com/breaking',
       publishedAt: DateTime.now(),
@@ -78,5 +79,48 @@ void main() {
     // NewsAPI doesn't provide categories per article, so it should always
     // resolve to the fallback topic (or whatever logic is in resolveTopic).
     expect(headline.topic, fallbackTopic);
+  });
+
+  test('mapToHeadline uses source language for title key', () {
+    final frenchSource = source.copyWith(language: SupportedLanguage.fr);
+    final article = NewsApiArticle(
+      source: const NewsApiSource(name: 'Test', id: 'test'),
+      title: 'Nouvelles de dernière heure',
+      url: 'https://example.com/breaking',
+      publishedAt: DateTime.now(),
+    );
+
+    final headline = mapper.mapToHeadline(
+      article,
+      frenchSource,
+      topicCache: topicCache,
+      fallbackTopic: fallbackTopic,
+      countryCache: countryCache,
+      mappingCache: mappingCache,
+    );
+
+    expect(headline.title[SupportedLanguage.fr], 'Nouvelles de dernière heure');
+    expect(headline.title.containsKey(SupportedLanguage.en), isFalse);
+  });
+
+  test('resolveTopic uses mappingCache if available', () {
+    final techTopic = Topic(
+      id: 'topic-tech',
+      name: const {SupportedLanguage.en: 'Technology'},
+      description: const {},
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      status: ContentStatus.active,
+    );
+    topicCache['topic-tech'] = techTopic;
+    mappingCache['technology'] = 'topic-tech';
+
+    final resolved = mapper.resolveTopic(
+      'technology',
+      topicCache,
+      fallbackTopic,
+      mappingCache,
+    );
+    expect(resolved, techTopic);
   });
 }

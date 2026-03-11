@@ -98,7 +98,7 @@ abstract final class EnvironmentConfig {
   );
 
   static String _getRequiredEnv(String key) {
-    final value = _env[key];
+    final value = _getEnv(key);
     if (value == null || value.isEmpty) {
       _log.severe('$key not found in environment variables.');
       throw StateError('FATAL: $key environment variable is not set.');
@@ -169,7 +169,7 @@ abstract final class EnvironmentConfig {
 
   /// Retrieves the aggregator provider from the environment.
   static String get aggregatorProvider =>
-      _getEnv('AGGREGATOR_PROVIDER') ?? 'newsapi';
+      _getEnv('AGGREGATOR_PROVIDER')?.toLowerCase() ?? 'newsapi';
 
   /// Retrieves the delay in seconds between ingestion requests.
   static int get ingestionRequestDelaySeconds {

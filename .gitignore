@@ -16,4 +16,4 @@ coverage/
 
 # Environment variables
 .env
-storage/
+/storage/
