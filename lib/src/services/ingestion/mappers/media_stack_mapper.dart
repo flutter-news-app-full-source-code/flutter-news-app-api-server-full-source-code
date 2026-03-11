@@ -24,7 +24,6 @@ class MediaStackMapper extends AggregatorMapper<MediaStackArticle> {
       url: normalizeUrl(article.url),
       imageUrl: article.image ?? '',
       source: source,
-      eventCountry: source.headquarters,
       // MediaStack provides a category string (e.g., 'business').
       topic: resolveTopic(
         article.category,
@@ -36,6 +35,8 @@ class MediaStackMapper extends AggregatorMapper<MediaStackArticle> {
       updatedAt: now,
       status: ContentStatus.active,
       isBreaking: false,
+      mentionedCountries: [source.headquarters],
+      mentionedPersons: const [],
     );
   }
 }
