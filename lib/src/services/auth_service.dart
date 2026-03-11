@@ -599,6 +599,7 @@ class AuthService {
         followedCountries: const [],
         followedSources: const [],
         followedTopics: const [],
+        followedPersons: const [],
         savedHeadlines: const [],
         savedHeadlineFilters: const [],
       );
