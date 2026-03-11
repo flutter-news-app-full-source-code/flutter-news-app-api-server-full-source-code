@@ -117,8 +117,9 @@ class NewsIngestionService {
       if (tasks.isEmpty) return;
 
       // 3. Group Tasks by Provider
-      final providerType = AggregatorType.values.byName(
-        EnvironmentConfig.aggregatorProvider,
+      final providerType = AggregatorType.values.firstWhere(
+        (e) => e.name.toLowerCase() == EnvironmentConfig.aggregatorProvider,
+        orElse: () => AggregatorType.newsApi,
       );
 
       // Phase 1: Discovery & Mapping
