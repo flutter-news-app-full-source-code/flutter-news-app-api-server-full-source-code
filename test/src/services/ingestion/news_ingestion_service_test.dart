@@ -399,7 +399,7 @@ void main() {
         // Note: Using ObjectId().oid to ensure valid ID
         id: ObjectId().oid,
         title: const {SupportedLanguage.en: 'Headline 1'},
-        url: 'u1',
+        url: 'https://example.com/u1',
         imageUrl: '',
         source: source,
         eventCountry: usCountry,
@@ -409,7 +409,7 @@ void main() {
         status: ContentStatus.active,
         isBreaking: false,
       );
-      final h2 = h1.copyWith(id: ObjectId().oid, url: 'u2');
+      final h2 = h1.copyWith(id: ObjectId().oid, url: 'https://example.com/u2');
 
       // Arrange: Ensure source is found for batch execution
       when(
@@ -450,7 +450,11 @@ void main() {
           item: any(
             named: 'item',
             // Use generic isA check to avoid strict matching on generated ID
-            that: isA<Headline>().having((h) => h.url, 'url', 'u1'),
+            that: isA<Headline>().having(
+              (h) => h.url,
+              'url',
+              'https://example.com/u1',
+            ),
           ),
         ),
       ).thenThrow(Exception('DB Error'));
@@ -459,7 +463,11 @@ void main() {
           item: any(
             named: 'item',
             // Use generic isA check
-            that: isA<Headline>().having((h) => h.url, 'url', 'u2'),
+            that: isA<Headline>().having(
+              (h) => h.url,
+              'url',
+              'https://example.com/u2',
+            ),
           ),
         ),
       ).thenAnswer((_) async => h2);
@@ -477,7 +485,11 @@ void main() {
         () => mockHeadlineRepo.create(
           item: any(
             named: 'item',
-            that: isA<Headline>().having((h) => h.url, 'url', 'u1'),
+            that: isA<Headline>().having(
+              (h) => h.url,
+              'url',
+              'https://example.com/u1',
+            ),
           ),
         ),
       ).called(1);
@@ -485,7 +497,11 @@ void main() {
         () => mockHeadlineRepo.create(
           item: any(
             named: 'item',
-            that: isA<Headline>().having((h) => h.url, 'url', 'u2'),
+            that: isA<Headline>().having(
+              (h) => h.url,
+              'url',
+              'https://example.com/u2',
+            ),
           ),
         ),
       ).called(1);
