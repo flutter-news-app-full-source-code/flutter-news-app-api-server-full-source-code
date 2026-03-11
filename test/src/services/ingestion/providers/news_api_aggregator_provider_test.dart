@@ -195,7 +195,7 @@ void main() {
       ),
     );
 
-    final sourceMap = {for (var m in manyMappings) m.sourceId: source};
+    final sourceMap = {for (final m in manyMappings) m.sourceId: source};
 
     when(
       () => mockHttpClient.get<Map<String, dynamic>>(
