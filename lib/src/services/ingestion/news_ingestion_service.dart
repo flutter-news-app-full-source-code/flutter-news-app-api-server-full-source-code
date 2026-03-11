@@ -125,7 +125,9 @@ class NewsIngestionService {
       // Phase 1: Discovery & Mapping
       // Ensure all claimed tasks have a valid provider mapping.
       final validMappings = await _ensureMappings(tasks, providerType);
-      _log.info('Discovery complete. ${validMappings.length} sources mapped.');
+      _log.info(
+        'Discovery phase complete. Yielded ${validMappings.length} valid source mappings.',
+      );
 
       if (validMappings.isEmpty) {
         _log.warning('No valid mappings found for this cycle.');
@@ -176,20 +178,63 @@ class NewsIngestionService {
 
         // 2. Missing Mapping: Trigger On-Demand Discovery
         _log.info(
-          'Mapping missing for source ${task.sourceId}. Discovering...',
+          '>> Discovery Triggered: Source ${task.sourceId} has no mapping for $providerType.',
         );
         catalog ??= await _provider.syncCatalog();
 
         final source = await _sourceRepository.read(id: task.sourceId);
-        final sourceHost = Uri.parse(source.url).host.replaceFirst('www.', '');
+        // Normalization: strip 'www.' to ensure 'nytimes.com' matches 'www.nytimes.com'
+        final sourceHost = Uri.parse(
+          source.url,
+        ).host.replaceAll(RegExp(r'^www\.'), '');
 
-        // Match by URL host (deterministic)
-        final match = catalog.firstWhere(
-          (s) =>
-              s.url != null &&
-              Uri.parse(s.url!).host.replaceFirst('www.', '') == sourceHost,
-          orElse: () => throw const NotFoundException('Source not in catalog'),
+        _log.fine(
+          '   Comparing Local Host: "$sourceHost" (derived from ${source.url})',
         );
+
+        // Tier 1: Robust Host Match
+        var match = catalog.cast<AggregatorCatalogSource?>().firstWhere(
+          (s) {
+            if (s?.url == null) return false;
+            final catHost = Uri.parse(
+              s!.url!,
+            ).host.replaceAll(RegExp(r'^www\.'), '');
+
+            final isMatch = catHost == sourceHost;
+            if (isMatch) _log.fine('   >> Tier 1 Match Found: "$catHost"');
+            return catHost == sourceHost;
+          },
+          orElse: () => null,
+        );
+
+        // Tier 2: Fuzzy Name Match (Fallback)
+        // Handles cases where URLs differ significantly but names align.
+        if (match == null) {
+          _log.fine(
+            '   >> Tier 1 Failed. Attempting Tier 2 (Fuzzy Name Match)...',
+          );
+          match = catalog.cast<AggregatorCatalogSource?>().firstWhere(
+            (s) {
+              final catName = s?.name.toLowerCase().trim();
+              if (catName == null) return false;
+              // Check against all local translations (e.g. 'The New York Times')
+              final hasMatch = source.name.values.any(
+                (localName) => localName.toLowerCase().trim() == catName,
+              );
+              if (hasMatch) {
+                _log.fine(
+                  '   >> Tier 2 Match Found: Name "$catName" matches local translation.',
+                );
+              }
+              return hasMatch;
+            },
+            orElse: () => null,
+          );
+        }
+
+        if (match == null) {
+          throw const NotFoundException('Source not in catalog');
+        }
 
         // 3. Persist Mapping
         final mapping = AggregatorSourceMapping(
@@ -200,13 +245,17 @@ class NewsIngestionService {
           createdAt: DateTime.now(),
         );
         await _sourceMappingRepository.create(item: mapping);
+        _log.info(
+          '>> Mapping Created: Source ${task.sourceId} -> ${match.externalId} ($providerType)',
+        );
         results.add(mapping);
       } on NotFoundException {
         _log.warning('Source ${task.sourceId} not supported by $providerType');
         await _finalizeTask(
           task,
           success: false,
-          error: 'Source not supported by provider catalog.',
+          error:
+              'Source not supported by provider, make sure the source url is correct.',
         );
       } catch (e, s) {
         _log.severe('Discovery error for task ${task.id}', e, s);
@@ -341,6 +390,13 @@ class NewsIngestionService {
     var errorCount = 0;
 
     for (final raw in headlines) {
+      // QUALITY CONTROL: Filter noise and siblings
+      if (!_validateArticleQuality(raw, task)) {
+        _log.fine('   [QC] Article rejected: ${raw.url}');
+        skippedCount++;
+        continue;
+      }
+
       try {
         final isDuplicate = await _idempotencyService.isDuplicate(
           'headline_ingestion',
@@ -348,6 +404,7 @@ class NewsIngestionService {
         );
 
         if (isDuplicate) {
+          _log.finer('   [Dedupe] Skipped duplicate: ${raw.url}');
           skippedCount++;
           continue;
         }
@@ -357,6 +414,7 @@ class NewsIngestionService {
           '${raw.source.id}:${raw.url}',
           scope: 'headline_ingestion',
         );
+        _log.fine('   [Success] Saved headline: ${raw.url}');
         savedCount++;
       } catch (e, s) {
         _log.warning('Failed to save headline: ${raw.url}', e, s);
@@ -371,6 +429,53 @@ class NewsIngestionService {
       savedCount: savedCount,
       error: isSuccess ? null : 'Batch processing failed.',
     );
+  }
+
+  /// Validates the quality and relevance of a fetched article.
+  /// Returns `true` if the article should be processed, `false` otherwise.
+  bool _validateArticleQuality(Headline headline, NewsAutomationTask task) {
+    final articleUrl = Uri.parse(headline.url);
+    final sourceUrl = Uri.parse(headline.source.url);
+
+    // 1. Host Consistency Check (Prevents Sibling Leakage)
+    // Ensures 'arabic.cnn.com' is not accepted for 'edition.cnn.com'.
+    // Logic: Article host must contain the Source host (handling subdomains).
+    // Normalization: strip 'www.' for comparison.
+    final cleanArticleHost = articleUrl.host.replaceAll(RegExp(r'^www\.'), '');
+    final cleanSourceHost = sourceUrl.host.replaceAll(RegExp(r'^www\.'), '');
+
+    if (!cleanArticleHost.endsWith(cleanSourceHost)) {
+      // Special Case: Allow if the source host is just a domain and article is subdomain
+      // But reject if source is 'edition.cnn.com' and article is 'arabic.cnn.com'
+      _log.info(
+        '[QC] Host Mismatch (Leakage): Article="$cleanArticleHost" does not end with Source="$cleanSourceHost". URL: ${headline.url}',
+      );
+      return false;
+    }
+
+    // 2. Global Noise Filter (Path Blacklist)
+    // Rejects known non-news patterns like TV schedules, weather, etc.
+    const noisePatterns = [
+      '/programmes/',
+      '/schedules/',
+      '/weather/',
+      '/tv/',
+      '/radio/',
+      '/help/',
+      '/contact/',
+      '/terms',
+      '/privacy',
+    ];
+    if (noisePatterns.any(
+      (pattern) => articleUrl.path.toLowerCase().contains(pattern),
+    )) {
+      _log.info(
+        '[QC] Noise Pattern Detected: URL contains blacklist pattern. URL: ${headline.url}',
+      );
+      return false;
+    }
+
+    return true;
   }
 
   Future<List<NewsAutomationTask>> _claimPendingTasks() async {
@@ -392,6 +497,10 @@ class NewsIngestionService {
           },
         ],
       },
+    );
+
+    _log.info(
+      'Found ${response.items.length} candidate tasks due for execution.',
     );
 
     final claimed = <NewsAutomationTask>[];
