@@ -153,6 +153,15 @@ class DataOperationRegistry {
         final lang = c.read<SupportedLanguage>();
         return LocalizationUtils.localizeSource(item, lang);
       },
+      'person': (c, id) async {
+        final item = await c.read<DataRepository<Person>>().read(
+          id: id,
+          userId: null,
+        );
+        if (_isPrivileged(c)) return item;
+        final lang = c.read<SupportedLanguage>();
+        return LocalizationUtils.localizePerson(item, lang);
+      },
       'country': (c, id) async {
         final item = await c.read<DataRepository<Country>>().read(
           id: id,
@@ -321,6 +330,30 @@ class DataOperationRegistry {
         );
         final localizedItems = response.items
             .map((i) => LocalizationUtils.localizeSource(i, lang))
+            .toList();
+        return response.copyWith(items: localizedItems);
+      },
+      'person': (c, uid, f, s, p) async {
+        final lang = c.read<SupportedLanguage>();
+        final rewrittenSort = LocalizationUtils.rewriteSortOptions(s, lang, [
+          'name',
+          'description',
+        ]);
+        final searchFilter = LocalizationUtils.rewriteSearchQuery(f, ['name']);
+        final expandedFilter = LocalizationUtils.expandFilterForLocalization(
+          searchFilter,
+          lang,
+          ['name', 'description'],
+          isPrivileged: _isPrivileged(c),
+        );
+        final response = await c.read<DataRepository<Person>>().readAll(
+          userId: uid,
+          filter: expandedFilter,
+          sort: rewrittenSort,
+          pagination: p,
+        );
+        final localizedItems = response.items
+            .map((i) => LocalizationUtils.localizePerson(i, lang))
             .toList();
         return response.copyWith(items: localizedItems);
       },
@@ -616,6 +649,18 @@ class DataOperationRegistry {
 
         return c.read<DataRepository<Topic>>().create(
           item: topicToCreate,
+          userId: uid,
+        );
+      },
+      'person': (c, item, uid) async {
+        var personToCreate = item as Person;
+        if (personToCreate.mediaAssetId != null) {
+          personToCreate = personToCreate.copyWith(
+            imageUrl: const ValueWrapper(null),
+          );
+        }
+        return c.read<DataRepository<Person>>().create(
+          item: personToCreate,
           userId: uid,
         );
       },
@@ -927,6 +972,34 @@ class DataOperationRegistry {
         }
 
         return updatedSource;
+      },
+      'person': (c, id, item, uid) async {
+        final rawPerson = await c.read<DataRepository<Person>>().read(id: id);
+        final requestedUpdatePerson = item as Person;
+
+        var finalPerson = requestedUpdatePerson.copyWith(
+          name: LocalizationUtils.mergeTranslations(
+            rawPerson.name,
+            requestedUpdatePerson.name,
+          ),
+          description: LocalizationUtils.mergeTranslations(
+            rawPerson.description,
+            requestedUpdatePerson.description,
+          ),
+        );
+
+        if (requestedUpdatePerson.mediaAssetId != rawPerson.mediaAssetId &&
+            requestedUpdatePerson.mediaAssetId != null) {
+          finalPerson = finalPerson.copyWith(
+            imageUrl: const ValueWrapper(null),
+          );
+        }
+
+        return c.read<DataRepository<Person>>().update(
+          id: id,
+          item: finalPerson,
+          userId: uid,
+        );
       },
       'country': (c, id, item, uid) => c.read<DataRepository<Country>>().update(
         id: id,
@@ -1290,6 +1363,27 @@ class DataOperationRegistry {
         }
 
         await sourceRepository.delete(id: id, userId: uid);
+      },
+      'person': (context, id, uid) async {
+        _log.info('Executing custom deleter for person ID: $id.');
+        final personRepository = context.read<DataRepository<Person>>();
+        final mediaAssetRepository = context.read<DataRepository<MediaAsset>>();
+        final storageService = context.read<IStorageService>();
+
+        final person = await personRepository.read(id: id);
+        if (person.imageUrl != null && person.imageUrl!.isNotEmpty) {
+          unawaited(
+            cleanupMediaAssetByUrl(
+              url: person.imageUrl,
+              mediaAssetRepository: mediaAssetRepository,
+              storageService: storageService,
+            ).catchError(
+              (Object e, StackTrace s) =>
+                  _log.severe('Asset cleanup failed.', e, s),
+            ),
+          );
+        }
+        await personRepository.delete(id: id, userId: uid);
       },
       'country': (c, id, uid) =>
           c.read<DataRepository<Country>>().delete(id: id, userId: uid),

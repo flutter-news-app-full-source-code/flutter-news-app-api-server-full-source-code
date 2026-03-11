@@ -224,6 +224,34 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresAuthentication: true,
     ),
   ),
+  'person': ModelConfig<Person>(
+    fromJson: Person.fromJson,
+    getId: (p) => p.id,
+    translatableFields: ['name', 'description'],
+    localize: LocalizationUtils.localizePerson,
+    getCollectionPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.personRead,
+      requiresAuthentication: true,
+    ),
+    getItemPermission: const ModelActionPermission(
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.personRead,
+      requiresAuthentication: true,
+    ),
+    postPermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+      requiresAuthentication: true,
+    ),
+    putPermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+      requiresAuthentication: true,
+    ),
+    deletePermission: const ModelActionPermission(
+      type: RequiredPermissionType.adminOnly,
+      requiresAuthentication: true,
+    ),
+  ),
   'country': ModelConfig<Country>(
     fromJson: Country.fromJson,
     getId: (c) => c.id,
