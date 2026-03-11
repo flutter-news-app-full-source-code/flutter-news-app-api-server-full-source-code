@@ -82,17 +82,18 @@ The API automatically validates the structure of all incoming data, ensuring tha
 
 ### 🤖 High-Efficiency News Ingestion Engine
 A professional-grade orchestration pipeline designed to maximize content 
-throughput while minimizing operational costs.
+throughput while minimizing operational costs and ensuring data quality.
 - **Multi-Provider Polymorphism:** Out-of-the-box support for **NewsAPI** 
   and **MediaStack**, utilizing a unified interface that enables 
   hot-swappable ingestion strategies via environment configuration.
-- **Automated Source Discovery:** Automatically synchronizes internal 
-  sources with provider catalogs, eliminating manual mapping overhead.
+- **On-Demand Source Discovery:** Automatically synchronizes internal 
+  sources with provider catalogs using a host-based matching heuristic, 
+  eliminating manual mapping overhead.
 - **Intelligent Cost Control:** Optimizes API credit usage through 
   high-density batch processing and strictly enforced daily quotas.
-- **Resilient Pipeline Architecture:** Features automated error isolation 
-  to ensure that individual source failures never interrupt the broader 
-  ingestion cycle.
+- **Resilient Pipeline Architecture:** Implements a "Poison Pill" isolation 
+  strategy that automatically de-batches and disables problematic sources to 
+  prevent upstream failures from halting the entire ingestion cycle.
 - **Enterprise Deduplication:** Employs a high-performance idempotency 
   layer to guarantee a unique, high-quality content feed for your users.
 > **Your Advantage:** Drastically reduce operational overhead and API 
