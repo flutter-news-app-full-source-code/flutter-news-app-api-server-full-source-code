@@ -125,7 +125,7 @@ void main() {
     });
 
     test('throws assertion error if both sources and domains are null', () {
-      expect(() => NewsApiRequest(), throwsA(isA<AssertionError>()));
+      expect(NewsApiRequest.new, throwsA(isA<AssertionError>()));
     });
 
     test('throws assertion error if both sources and domains are provided', () {
