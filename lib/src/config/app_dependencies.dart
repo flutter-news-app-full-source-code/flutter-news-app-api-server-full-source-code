@@ -743,7 +743,7 @@ class AppDependencies {
           mapper: MediaStackMapper(),
           log: Logger('MediaStackAggregatorProvider'),
           httpClient: HttpClient(
-            baseUrl: 'http://api.mediastack.com/v1/',
+            baseUrl: 'https://api.mediastack.com/v1/',
             tokenProvider: () async => null,
             interceptors: [
               InterceptorsWrapper(
