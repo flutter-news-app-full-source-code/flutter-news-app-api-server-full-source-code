@@ -453,8 +453,17 @@ class DefaultPushNotificationService implements IPushNotificationService {
     // 4. Check country match (wildcard if empty).
     final countryMatch =
         filter.criteria.countries.isEmpty ||
-        filter.criteria.countries.any((c) => c.id == headline.eventCountry.id);
+        headline.mentionedCountries.any(
+          (hc) => filter.criteria.countries.any((fc) => fc.id == hc.id),
+        );
 
-    return topicMatch && sourceMatch && countryMatch;
+    // 5. Check person match (wildcard if empty).
+    final personMatch =
+        filter.criteria.persons.isEmpty ||
+        headline.mentionedPersons.any(
+          (hp) => filter.criteria.persons.any((fp) => fp.id == hp.id),
+        );
+
+    return topicMatch && sourceMatch && countryMatch && personMatch;
   }
 }
