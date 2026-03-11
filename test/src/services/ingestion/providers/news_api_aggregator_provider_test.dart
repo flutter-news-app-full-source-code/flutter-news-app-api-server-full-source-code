@@ -206,7 +206,7 @@ void main() {
       (_) async => {
         'status': 'ok',
         'totalResults': 0,
-        'articles': [],
+        'articles': <Map<String, dynamic>>[],
       },
     );
 
