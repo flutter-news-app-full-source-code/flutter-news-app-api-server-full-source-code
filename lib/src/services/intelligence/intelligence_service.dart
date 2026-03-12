@@ -42,6 +42,7 @@ class IntelligenceService {
     required AiStrategy<TInput, TOutput> strategy,
     required TInput input,
   }) async {
+    _log.finer('Executing AI strategy: ${strategy.identifier}');
     // 1. Guard: Check if AI is enabled in Environment and Quota
     if (!EnvironmentConfig.aiIngestionEnabled) {
       _log.info('AI is disabled via environment toggle. Skipping.');
@@ -52,17 +53,23 @@ class IntelligenceService {
     final usageId = _getUsageId(now);
 
     // 2. Quota Check: Prevent over-spending
+    _log.finer('Checking AI token quota for usage ID: $usageId');
     final currentUsage = await _getUsage(usageId);
     if (currentUsage.tokenUsage >= EnvironmentConfig.aiDailyTokenQuota) {
       _log.warning('Daily AI Token Quota exceeded ($usageId). Blocking.');
       throw const ForbiddenException('Daily AI token quota reached.');
     }
+    _log.finer(
+      'Quota check passed. Current usage: ${currentUsage.tokenUsage} / ${EnvironmentConfig.aiDailyTokenQuota}',
+    );
 
     // 3. Execution: Prepare prompt with enabled languages and active topics
+    _log.finer('Fetching remote config for AI prompt context...');
     final config = await _remoteConfigRepository.read(id: kRemoteConfigId);
     final enabledLangs = config.app.localization.enabledLanguages;
 
     // Fetch active topics to provide as a strict choice list to the AI.
+    _log.finer('Fetching active topics for AI prompt context...');
     final activeTopics = await _topicRepository.readAll(
       filter: {'status': ContentStatus.active.name},
       pagination: const PaginationOptions(limit: 200),
@@ -70,6 +77,7 @@ class IntelligenceService {
     final activeTopicNames = activeTopics.items
         .map((t) => t.name[SupportedLanguage.en] ?? t.id)
         .toList();
+    _log.finer('Found ${activeTopicNames.length} active topics.');
 
     final inputDescription = input is List
         ? '${input.length} items'
@@ -78,19 +86,28 @@ class IntelligenceService {
         : input.toString();
 
     _log.info('[AI:${strategy.identifier}] Processing: $inputDescription');
+    _log.finer('Building prompt for strategy: ${strategy.identifier}');
     final messages = strategy.buildPrompt(
       input,
       enabledLanguages: enabledLangs,
       predefinedChoices: activeTopicNames,
     );
+    _log.finer('Prompt built. Dispatching to AI client...');
 
     final response = await _client.generateCompletion(messages: messages);
+    _log.finer(
+      'AI client responded. Tokens used: ${response.totalTokens}.',
+    );
 
     // 4. Persistence: Update token usage
+    _log.finer('Recording token usage...');
     await _recordUsage(usageId, response.totalTokens);
 
     // 5. Mapping: Return domain objects
-    return strategy.mapResponse(response.data, input);
+    _log.finer('Mapping AI response to domain objects...');
+    final output = strategy.mapResponse(response.data, input);
+    _log.finer('Response mapping complete.');
+    return output;
   }
 
   Future<AiUsage> _getUsage(String id) async {

@@ -494,6 +494,7 @@ class NewsIngestionService {
 
     for (final candidate in candidates) {
       final raw = candidate.headline;
+      _log.finer('Processing candidate: ${raw.url}');
       // QUALITY CONTROL: Filter noise and siblings
       if (!ArticleValidator.validate(raw)) {
         _log.fine('   [QC] Article rejected: ${raw.url}');
@@ -504,21 +505,28 @@ class NewsIngestionService {
       // AI FILTERING & ENRICHMENT
       var finalHeadline = raw;
       if (enrichmentMap != null && enrichmentMap.containsKey(raw.id)) {
+        _log.finer('Applying AI enrichment for headline: ${raw.id}');
         final enrichment = enrichmentMap[raw.id]!;
 
         // 1. Junk Filter
         if (!enrichment.isNews) {
-          _log.fine('   [AI Filter] Rejected junk: ${raw.url}');
+          _log.fine('   [AI Filter] Rejected junk content: ${raw.url}');
           skippedCount++;
           continue;
         }
 
         // 2. Identity Resolution (Resolve names to Person entities)
+        _log.finer(
+          '   [AI Enrich] Resolving persons: ${enrichment.extractedPersons}',
+        );
         final resolvedPersons = await _identityResolutionService.resolvePersons(
           enrichment.extractedPersons,
         );
 
         // 3. Country Resolution
+        _log.finer(
+          '   [AI Enrich] Resolving countries: ${enrichment.extractedCountryCodes}',
+        );
         final resolvedCountries = <Country>[];
         for (final code in enrichment.extractedCountryCodes) {
           final country = countryCache[code.toLowerCase()];
@@ -526,6 +534,7 @@ class NewsIngestionService {
         }
 
         // 4. Apply Enrichment
+        _log.finer('   [AI Enrich] Applying all enrichments to headline.');
         finalHeadline = raw.copyWith(
           // Use AI-inferred topic if available and resolved
           topic:
@@ -543,26 +552,30 @@ class NewsIngestionService {
           // Use AI breaking score threshold (e.g. > 0.8) to set flag
           isBreaking: enrichment.breakingConfidence > 0.8,
         );
+      } else {
+        _log.finer('No AI enrichment data found for headline: ${raw.id}');
       }
 
       try {
+        _log.finer('Checking for duplicates for URL: ${raw.url}');
         final isDuplicate = await _idempotencyService.isDuplicate(
           'headline_ingestion',
           '${raw.source.id}:${raw.url}',
         );
 
         if (isDuplicate) {
-          _log.finer('   [Dedupe] Skipped duplicate: ${raw.url}');
+          _log.fine('   [Dedupe] Skipped duplicate: ${raw.url}');
           skippedCount++;
           continue;
         }
 
+        _log.finer('Persisting final headline: ${finalHeadline.id}');
         await _headlineRepository.create(item: finalHeadline);
         await _idempotencyService.recordEvent(
           '${finalHeadline.source.id}:${finalHeadline.url}',
           scope: 'headline_ingestion',
         );
-        _log.fine('   [Success] Saved headline: ${finalHeadline.url}');
+        _log.fine('   [Success] Persisted headline: ${finalHeadline.url}');
         savedCount++;
         successfullySaved.add(finalHeadline);
       } catch (e, s) {
@@ -676,7 +689,9 @@ class NewsIngestionService {
 
   String _getUsageId(DateTime now) {
     // Generate a deterministic 24-character hex string for the date.
-    final dateStr = '${now.year}-${now.month}-${now.day}';
+    final dateStr =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')}';
     final bytes = utf8.encode('usage:$dateStr');
     return sha256.convert(bytes).toString().substring(0, 24);
   }
