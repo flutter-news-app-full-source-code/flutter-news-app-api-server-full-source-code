@@ -81,6 +81,17 @@ Future<Response> _post(RequestContext context, User user) async {
       }
       allowedMimeTypes = EnvironmentConfig.mediaSourceImageMimeTypes;
       maxSizeInBytes = EnvironmentConfig.mediaSourceImageMaxSizeInBytes;
+    case MediaAssetPurpose.personPhoto:
+      if (!permissionService.hasAnyPermission(user, {
+        Permissions.personCreate,
+        Permissions.personUpdate,
+      })) {
+        throw const ForbiddenException(
+          'No permission to upload person photos.',
+        );
+      }
+      allowedMimeTypes = EnvironmentConfig.mediaPersonPhotoMimeTypes;
+      maxSizeInBytes = EnvironmentConfig.mediaPersonPhotoMaxSizeInBytes;
   }
 
   // --- 2. Content-Type Validation ---
