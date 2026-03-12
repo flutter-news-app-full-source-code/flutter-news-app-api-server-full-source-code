@@ -10,15 +10,20 @@ typedef SingleEnrichmentResult = ({
 });
 
 /// {@template single_enrichment_strategy}
-/// Strategy for enriching a single headline manually via the Admin Dashboard.
+/// A specialized strategy designed to hydrate partial content via the
+/// administrative dashboard.
 ///
-/// This is used when an admin wants to auto-fill details for a draft or
-/// manually created headline. It populates topics, extracts persons, and
-/// generates translations.
+/// This strategy accepts a draft headline and performs a comprehensive analysis
+/// to generate translations, infer topics, and resolve referenced entities.
 ///
-/// This strategy returns a simple DTO, not a persisted entity. The calling
-/// service is responsible for resolving the returned slugs and names into
-/// full database entities.
+/// **Data Persistence Strategy:**
+/// *   **Dependencies (Persisted):** Referenced public figures are immediately
+///     resolved against the `persons` collection. New entities are automatically
+///     created and saved to ensure data integrity and linkability.
+/// *   **Headline (Ephemeral):** The headline object itself is returned as a
+///     transient data transfer object (DTO) and is **not** saved to the
+///     database. This allows administrators to review and refine the AI-generated
+///     suggestions before committing the final record.
 /// {@endtemplate}
 class SingleEnrichmentStrategy
     extends AiStrategy<Headline, SingleEnrichmentResult> {
@@ -45,7 +50,7 @@ class SingleEnrichmentStrategy
 You are an expert news editor. Based on the provided headline title, return a valid JSON object with the following fields:
 1. "topicSlug": A string. From this exact list, select the single most relevant topic slug: [$predefinedChoices].
 2. "extractedPersons": A list of strings, containing the full names of any public figures mentioned.
-3. "extractedCountryCodes": A list of 2-letter ISO 3166-1 country codes (e.g. "US", "FR") for countries mentioned in the headline.
+3. "extractedCountryCodes": A list of 2-letter ISO 3166-1 country codes (e.g. "US", "FR") representing any mentioned countries, or the parent countries of any specific cities, regions, or landmarks found in the headline.
 4. "translations": A dictionary translating the title into these languages: [$missingLanguages]. Do NOT include an image URL.
 
 Return ONLY valid JSON. Do not generate fields that were not requested.

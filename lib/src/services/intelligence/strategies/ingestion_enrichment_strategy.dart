@@ -54,7 +54,7 @@ For each article, provide:
 1. "isNews": A boolean. It MUST be `false` if the content is a list of links, a weather report, a stock ticker, an ad, a navigational element, or any other non-story content. It must be `true` only for a standard news article.
 2. "topicSlug": A string. From this exact list, select the single most relevant topic slug: [$predefinedChoices]. If none are a perfect match, choose the closest one. A result is mandatory.
 3. "extractedPersons": A list of strings, containing the full names of any public figures mentioned (e.g., politicians, CEOs).
-4. "extractedCountryCodes": A list of 2-letter ISO 3166-1 country codes (e.g. "US", "FR") for countries mentioned in the article.
+4. "extractedCountryCodes": A list of 2-letter ISO 3166-1 country codes (e.g. "US", "FR") representing any mentioned countries, or the parent countries of any specific cities, regions, or landmarks found in the text.
 5. "breakingConfidence": A float from 0.0 to 1.0 indicating how likely this is to be urgent, breaking news.
 6. "translations": A dictionary translating the original title into these languages: [$languages].
 
