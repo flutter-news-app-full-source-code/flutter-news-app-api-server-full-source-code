@@ -75,7 +75,7 @@ void main() {
     expect(headline.url, 'https://example.com/breaking');
     expect(headline.imageUrl, 'https://example.com/breaking.jpg');
     expect(headline.source, source);
-    expect(headline.eventCountry, source.headquarters);
+    expect(headline.mentionedCountries.first, source.headquarters);
     // NewsAPI doesn't provide categories per article, so it should always
     // resolve to the fallback topic (or whatever logic is in resolveTopic).
     expect(headline.topic, fallbackTopic);

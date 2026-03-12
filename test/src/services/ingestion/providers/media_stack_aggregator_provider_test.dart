@@ -142,7 +142,7 @@ void main() {
       url: 'https://bbc.com/1',
       imageUrl: '',
       source: source,
-      eventCountry: source.headquarters,
+      mentionedCountries: [source.headquarters],
       topic: fallbackTopic,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
