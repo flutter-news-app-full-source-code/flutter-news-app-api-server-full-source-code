@@ -59,6 +59,7 @@ class IdempotencyService {
   /// Throws [ConflictException] if the event was recorded concurrently.
   Future<void> recordEvent(String eventId, {String? scope}) async {
     final effectiveScope = scope ?? 'default';
+    _log.fine('Acquiring idempotency lock: [$effectiveScope] $eventId');
     try {
       final dbId = _generateDeterministicId(eventId, effectiveScope);
       final record = IdempotencyRecord(
@@ -68,6 +69,7 @@ class IdempotencyService {
         createdAt: DateTime.now(),
       );
       await _repository.create(item: record);
+      _log.finest('Lock persisted: $dbId');
     } catch (e, s) {
       _log.severe('Error recording idempotency for event $eventId', e, s);
       rethrow;
