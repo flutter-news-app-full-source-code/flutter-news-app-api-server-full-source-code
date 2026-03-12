@@ -17,6 +17,7 @@ void main() {
   late MockDataRepository<User> mockUserRepo;
   late MockDataRepository<Headline> mockHeadlineRepo;
   late MockDataRepository<Topic> mockTopicRepo;
+  late MockDataRepository<Person> mockPersonRepo;
   late MockDataRepository<Source> mockSourceRepo;
   late MockStorageService mockStorageService;
   late MockLogger mockLogger;
@@ -26,6 +27,7 @@ void main() {
     mockUserRepo = MockDataRepository<User>();
     mockHeadlineRepo = MockDataRepository<Headline>();
     mockTopicRepo = MockDataRepository<Topic>();
+    mockPersonRepo = MockDataRepository<Person>();
     mockSourceRepo = MockDataRepository<Source>();
     mockStorageService = MockStorageService();
     mockLogger = MockLogger();
@@ -35,6 +37,7 @@ void main() {
       userRepository: mockUserRepo,
       headlineRepository: mockHeadlineRepo,
       topicRepository: mockTopicRepo,
+      personRepository: mockPersonRepo,
       sourceRepository: mockSourceRepo,
       storageService: mockStorageService,
       log: mockLogger,
@@ -96,7 +99,7 @@ void main() {
         url: 'fallback',
         imageUrl: 'fallback',
         source: fallbackSource,
-        eventCountry: fallbackCountry,
+        mentionedCountries: const [fallbackCountry],
         topic: fallbackTopic,
         createdAt: DateTime.fromMillisecondsSinceEpoch(0),
         updatedAt: DateTime.fromMillisecondsSinceEpoch(0),
@@ -279,12 +282,14 @@ void main() {
             updatedAt: DateTime.now(),
             status: ContentStatus.active,
           ),
-          eventCountry: const Country(
-            id: 'c',
-            isoCode: 'US',
-            name: {SupportedLanguage.en: 'US'},
-            flagUrl: 'f',
-          ),
+          mentionedCountries: const [
+            Country(
+              id: 'c',
+              isoCode: 'US',
+              name: {SupportedLanguage.en: 'US'},
+              flagUrl: 'f',
+            ),
+          ],
           topic: Topic(
             id: 't',
             name: const {SupportedLanguage.en: 'T'},
