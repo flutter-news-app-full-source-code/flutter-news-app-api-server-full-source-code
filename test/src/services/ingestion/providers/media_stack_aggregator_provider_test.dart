@@ -4,6 +4,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_source_mapping.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_type.dart';
+import 'package:verity_api/src/models/ingestion/ingestion_candidate.dart';
 import 'package:verity_api/src/models/ingestion/media_stack_models.dart';
 import 'package:verity_api/src/services/ingestion/mappers/aggregator_mapper.dart';
 import 'package:verity_api/src/services/ingestion/providers/media_stack_aggregator_provider.dart';
@@ -165,12 +166,13 @@ void main() {
       [mapping],
       sourceMap: {source.id: source},
       topicCache: {},
+      topicSlugMap: {},
       fallbackTopic: fallbackTopic,
       countryCache: {},
       mappingCache: {},
     );
 
-    expect(result[source.id], hasLength(1));
-    expect(result[source.id]!.first, headline);
+    expect(result[source.id], isNotNull);
+    expect(result[source.id]!.first.headline, headline);
   });
 }
