@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:core/core.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_catalog_source.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_source_mapping.dart';
+import 'package:verity_api/src/models/ingestion/ingestion_candidate.dart';
 
 /// {@template aggregator_provider}
 /// Abstract contract for external news aggregator integrations.
@@ -23,12 +24,13 @@ abstract class AggregatorProvider {
   ///
   /// Returns a Map where the key is the internal Source ID and the value
   /// is the list of headlines fetched for that source.
-  Future<Map<String, List<Headline>>> fetchBatchHeadlines(
+  Future<Map<String, List<IngestionCandidate>>> fetchBatchHeadlines(
     List<AggregatorSourceMapping> mappings, {
     required Map<String, Source> sourceMap,
     required Map<String, Topic> topicCache,
     required Topic fallbackTopic,
     required Map<String, Country> countryCache,
+    required Map<String, Topic> topicSlugMap,
     required Map<String, String> mappingCache,
   });
 }
@@ -45,12 +47,13 @@ class DefaultAggregatorProvider implements AggregatorProvider {
   Future<List<AggregatorCatalogSource>> syncCatalog() async => [];
 
   @override
-  Future<Map<String, List<Headline>>> fetchBatchHeadlines(
+  Future<Map<String, List<IngestionCandidate>>> fetchBatchHeadlines(
     List<AggregatorSourceMapping> mappings, {
     required Map<String, Source> sourceMap,
     required Map<String, Topic> topicCache,
     required Topic fallbackTopic,
     required Map<String, Country> countryCache,
+    required Map<String, Topic> topicSlugMap,
     required Map<String, String> mappingCache,
   }) async => {};
 }
