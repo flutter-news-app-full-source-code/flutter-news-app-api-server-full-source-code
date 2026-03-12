@@ -272,12 +272,6 @@ void main() {
                 updatedAt: DateTime.now(),
                 status: ContentStatus.active,
               ),
-              eventCountry: const Country(
-                isoCode: 'US',
-                name: {SupportedLanguage.en: 'USA'},
-                flagUrl: '',
-                id: 'c1',
-              ),
               topic: Topic(
                 id: 't1',
                 name: const {SupportedLanguage.en: 't'},

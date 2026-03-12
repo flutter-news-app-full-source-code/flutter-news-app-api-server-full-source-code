@@ -22,34 +22,48 @@ class ContentEnrichmentService {
     required DataRepository<Source> sourceRepository,
     required DataRepository<Topic> topicRepository,
     required DataRepository<Country> countryRepository,
+    required DataRepository<Person> personRepository,
     required DataRepository<Headline> headlineRepository,
     required Logger log,
   }) : _sourceRepository = sourceRepository,
        _topicRepository = topicRepository,
        _countryRepository = countryRepository,
+       _personRepository = personRepository,
        _headlineRepository = headlineRepository,
        _log = log;
 
   final DataRepository<Source> _sourceRepository;
   final DataRepository<Topic> _topicRepository;
   final DataRepository<Country> _countryRepository;
+  final DataRepository<Person> _personRepository;
   final DataRepository<Headline> _headlineRepository;
   final Logger _log;
 
-  /// Enriches a [Headline] by fetching the full [Source], [Topic], and
-  /// [Country] entities.
+  /// Enriches a [Headline] by fetching full related entities.
   Future<Headline> enrichHeadline(Headline headline) async {
     _log.info('Enriching headline: ${headline.id}');
+
+    final countryIds = headline.mentionedCountries.map((e) => e.id).toSet();
+    final personIds = headline.mentionedPersons.map((e) => e.id).toSet();
+
     final results = await Future.wait([
       _sourceRepository.read(id: headline.source.id),
       _topicRepository.read(id: headline.topic.id),
-      _countryRepository.read(id: headline.eventCountry.id),
+      _fetchMap(_countryRepository, countryIds),
+      _fetchMap(_personRepository, personIds),
     ]);
 
     return headline.copyWith(
       source: results[0] as Source,
       topic: results[1] as Topic,
-      eventCountry: results[2] as Country,
+      mentionedCountries: _enrichList(
+        headline.mentionedCountries,
+        results[2] as Map<String, Country>,
+      ),
+      mentionedPersons: _enrichList(
+        headline.mentionedPersons,
+        results[3] as Map<String, Person>,
+      ),
     );
   }
 
@@ -73,12 +87,14 @@ class ContentEnrichmentService {
     final topicIds = <String>{...prefs.followedTopics.map((e) => e.id)};
     final sourceIds = <String>{...prefs.followedSources.map((e) => e.id)};
     final countryIds = <String>{...prefs.followedCountries.map((e) => e.id)};
+    final personIds = <String>{...prefs.followedPersons.map((e) => e.id)};
     final headlineIds = <String>{...prefs.savedHeadlines.map((e) => e.id)};
 
     for (final filter in prefs.savedHeadlineFilters) {
       topicIds.addAll(filter.criteria.topics.map((e) => e.id));
       sourceIds.addAll(filter.criteria.sources.map((e) => e.id));
       countryIds.addAll(filter.criteria.countries.map((e) => e.id));
+      personIds.addAll(filter.criteria.persons.map((e) => e.id));
     }
 
     // 2. Execute Fetches in Parallel
@@ -86,13 +102,15 @@ class ContentEnrichmentService {
       _fetchMap(_topicRepository, topicIds),
       _fetchMap(_sourceRepository, sourceIds),
       _fetchMap(_countryRepository, countryIds),
+      _fetchMap(_personRepository, personIds),
       _fetchMap(_headlineRepository, headlineIds),
     ]);
 
     final topicMap = results[0] as Map<String, Topic>;
     final sourceMap = results[1] as Map<String, Source>;
     final countryMap = results[2] as Map<String, Country>;
-    final headlineMap = results[3] as Map<String, Headline>;
+    final personMap = results[3] as Map<String, Person>;
+    final headlineMap = results[4] as Map<String, Headline>;
 
     // 3. Re-assemble Preferences with Enriched Data
     final enrichedFilters = prefs.savedHeadlineFilters.map((filter) {
@@ -101,6 +119,7 @@ class ContentEnrichmentService {
           topics: _enrichList(filter.criteria.topics, topicMap),
           sources: _enrichList(filter.criteria.sources, sourceMap),
           countries: _enrichList(filter.criteria.countries, countryMap),
+          persons: _enrichList(filter.criteria.persons, personMap),
         ),
       );
     }).toList();
@@ -109,6 +128,7 @@ class ContentEnrichmentService {
       followedTopics: _enrichList(prefs.followedTopics, topicMap),
       followedSources: _enrichList(prefs.followedSources, sourceMap),
       followedCountries: _enrichList(prefs.followedCountries, countryMap),
+      followedPersons: _enrichList(prefs.followedPersons, personMap),
       savedHeadlines: _enrichList(prefs.savedHeadlines, headlineMap),
       savedHeadlineFilters: enrichedFilters,
     );

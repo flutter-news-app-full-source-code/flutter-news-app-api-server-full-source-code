@@ -86,6 +86,17 @@ class DefaultUserActionLimitService implements UserActionLimitService {
       );
     }
 
+    if (updatedPreferences.followedPersons.length > followedItemsLimit) {
+      _log.warning(
+        'User ${user.id} exceeded followed persons limit: '
+        '$followedItemsLimit (attempted '
+        '${updatedPreferences.followedPersons.length}).',
+      );
+      throw ForbiddenException(
+        'You have reached your limit of $followedItemsLimit followed persons.',
+      );
+    }
+
     if (updatedPreferences.savedHeadlines.length > savedHeadlinesLimit) {
       _log.warning(
         'User ${user.id} exceeded saved headlines limit: '

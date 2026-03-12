@@ -42,12 +42,14 @@ void main() {
           updatedAt: DateTime.now(),
           status: ContentStatus.active,
         ),
-        eventCountry: const Country(
-          id: 'country-id',
-          isoCode: 'US',
-          name: {SupportedLanguage.en: 'United States'},
-          flagUrl: '',
-        ),
+        mentionedCountries: const [
+          Country(
+            id: 'country-id',
+            isoCode: 'US',
+            name: {SupportedLanguage.en: 'United States'},
+            flagUrl: '',
+          ),
+        ],
         topic: Topic(
           id: 'topic-id',
           name: const {SupportedLanguage.en: 'Test Topic'},

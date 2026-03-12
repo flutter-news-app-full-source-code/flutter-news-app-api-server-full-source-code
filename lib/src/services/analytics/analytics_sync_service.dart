@@ -38,6 +38,7 @@ class AnalyticsSyncService {
     required DataRepository<AppReview> appReviewRepository,
     required DataRepository<UserRewards> userRewardsRepository,
     required DataRepository<MediaAsset> mediaAssetRepository,
+    required DataRepository<Person> personRepository,
     required DataRepository<NewsAutomationTask> newsAutomationTaskRepository,
     required DataRepository<IngestionUsage> ingestionUsageRepository,
     required AnalyticsReportingClient? googleAnalyticsClient,
@@ -57,6 +58,7 @@ class AnalyticsSyncService {
        _appReviewRepository = appReviewRepository,
        _userRewardsRepository = userRewardsRepository,
        _mediaAssetRepository = mediaAssetRepository,
+       _personRepository = personRepository,
        _newsAutomationTaskRepository = newsAutomationTaskRepository,
        _ingestionUsageRepository = ingestionUsageRepository,
        _googleAnalyticsClient = googleAnalyticsClient,
@@ -79,6 +81,7 @@ class AnalyticsSyncService {
   final DataRepository<AppReview> _appReviewRepository;
   final DataRepository<UserRewards> _userRewardsRepository;
   final DataRepository<MediaAsset> _mediaAssetRepository;
+  final DataRepository<Person> _personRepository;
   final DataRepository<NewsAutomationTask> _newsAutomationTaskRepository;
   final DataRepository<IngestionUsage> _ingestionUsageRepository;
   final AnalyticsReportingClient? _googleAnalyticsClient;
@@ -612,6 +615,8 @@ class AnalyticsSyncService {
         return _sourceRepository.count(filter: filter);
       case 'database:topics:count':
         return _topicRepository.count(filter: filter);
+      case 'database:persons:count':
+        return _personRepository.count(filter: filter);
       case 'database:sources:followers':
         // This requires aggregation to sum the size of all follower arrays.
         final pipeline = [
@@ -654,6 +659,27 @@ class AnalyticsSyncService {
           },
         ];
         final result = await _aggregate(_topicRepository, pipeline: pipeline);
+        return result.firstOrNull?['total'] as num? ?? 0;
+      case 'database:persons:followers':
+        final pipeline = [
+          {
+            r'$project': {
+              'followerCount': {
+                r'$size': {
+                  // ignore: inference_failure_on_collection_literal
+                  r'$ifNull': [r'$followerIds', []],
+                },
+              },
+            },
+          },
+          {
+            r'$group': {
+              '_id': null,
+              'total': {r'$sum': r'$followerCount'},
+            },
+          },
+        ];
+        final result = await _aggregate(_personRepository, pipeline: pipeline);
         return result.firstOrNull?['total'] as num? ?? 0;
       case 'database:reports:pending':
         return _reportRepository.count(
@@ -865,6 +891,7 @@ class AnalyticsSyncService {
       'app_reviews': _appReviewRepository,
       'sources': _sourceRepository,
       'topics': _topicRepository,
+      'persons': _personRepository,
       'headlines': _headlineRepository,
       'user_rewards': _userRewardsRepository,
       'media_asset': _mediaAssetRepository,

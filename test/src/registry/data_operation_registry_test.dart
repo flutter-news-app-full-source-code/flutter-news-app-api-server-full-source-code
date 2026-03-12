@@ -80,12 +80,14 @@ void main() {
             updatedAt: DateTime.now(),
             status: ContentStatus.active,
           ),
-          eventCountry: const Country(
-            id: 'c',
-            isoCode: 'US',
-            name: {},
-            flagUrl: 'f',
-          ),
+          mentionedCountries: const [
+            Country(
+              id: 'c',
+              isoCode: 'US',
+              name: {},
+              flagUrl: 'f',
+            ),
+          ],
           topic: Topic(
             id: 't',
             name: const {},
@@ -108,6 +110,7 @@ void main() {
           followedCountries: [],
           followedSources: [],
           followedTopics: [],
+          followedPersons: [],
           savedHeadlines: [],
           savedHeadlineFilters: [],
         ),
@@ -699,12 +702,14 @@ void main() {
             updatedAt: DateTime.now(),
             status: ContentStatus.active,
           ),
-          eventCountry: const Country(
-            id: 'c',
-            isoCode: 'US',
-            name: {},
-            flagUrl: '',
-          ),
+          mentionedCountries: const [
+            Country(
+              id: 'c',
+              isoCode: 'US',
+              name: {},
+              flagUrl: '',
+            ),
+          ],
           topic: Topic(
             id: 't',
             name: const {},
@@ -1262,12 +1267,14 @@ void main() {
             updatedAt: DateTime.now(),
             status: ContentStatus.active,
           ),
-          eventCountry: const Country(
-            id: 'c1',
-            isoCode: 'US',
-            name: {},
-            flagUrl: '',
-          ),
+          mentionedCountries: const [
+            Country(
+              id: 'c1',
+              isoCode: 'US',
+              name: {},
+              flagUrl: '',
+            ),
+          ],
           topic: Topic(
             id: 't1',
             name: const {},

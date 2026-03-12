@@ -379,4 +379,21 @@ abstract final class EnvironmentConfig {
     final mb = int.tryParse(_getEnv('MEDIA_SOURCE_IMAGE_MAX_SIZE_MB') ?? '2');
     return (mb ?? 2) * 1024 * 1024;
   }
+
+  /// Retrieves the whitelisted MIME types for person photo uploads.
+  /// Defaults to common image types if not set.
+  static List<String> get mediaPersonPhotoMimeTypes {
+    final types = _getEnv('MEDIA_PERSON_PHOTO_MIME_TYPES');
+    if (types == null || types.isEmpty) {
+      return ['image/jpeg', 'image/png', 'image/webp'];
+    }
+    return types.split(',').map((e) => e.trim()).toList();
+  }
+
+  /// Retrieves the maximum file size in bytes for person photo uploads.
+  /// Defaults to 2MB if not set or if parsing fails.
+  static int get mediaPersonPhotoMaxSizeInBytes {
+    final mb = int.tryParse(_getEnv('MEDIA_PERSON_PHOTO_MAX_SIZE_MB') ?? '2');
+    return (mb ?? 2) * 1024 * 1024;
+  }
 }

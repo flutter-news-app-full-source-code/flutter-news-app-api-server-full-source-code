@@ -163,6 +163,9 @@ Handler middleware(Handler handler) {
               .use(provider<DataRepository<Topic>>((_) => deps.topicRepository))
               .use(
                 provider<DataRepository<Source>>((_) => deps.sourceRepository),
+              )
+              .use(
+                provider<DataRepository<Person>>((_) => deps.personRepository),
               ) //
               .use(
                 provider<DataRepository<Country>>(

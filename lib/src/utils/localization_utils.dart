@@ -46,12 +46,25 @@ abstract class LocalizationUtils {
       title: pickTranslation(item.title, lang),
       source: localizeSource(item.source, lang),
       topic: localizeTopic(item.topic, lang),
-      eventCountry: localizeCountry(item.eventCountry, lang),
+      mentionedCountries: item.mentionedCountries
+          .map((c) => localizeCountry(c, lang))
+          .toList(),
+      mentionedPersons: item.mentionedPersons
+          .map((p) => localizePerson(p, lang))
+          .toList(),
     );
   }
 
   /// Localizes a [Topic].
   static Topic localizeTopic(Topic item, SupportedLanguage lang) {
+    return item.copyWith(
+      name: pickTranslation(item.name, lang),
+      description: pickTranslation(item.description, lang),
+    );
+  }
+
+  /// Localizes a [Person].
+  static Person localizePerson(Person item, SupportedLanguage lang) {
     return item.copyWith(
       name: pickTranslation(item.name, lang),
       description: pickTranslation(item.description, lang),
@@ -141,6 +154,7 @@ abstract class LocalizationUtils {
       topics: item.topics.map((t) => localizeTopic(t, lang)).toList(),
       sources: item.sources.map((s) => localizeSource(s, lang)).toList(),
       countries: item.countries.map((c) => localizeCountry(c, lang)).toList(),
+      persons: item.persons.map((p) => localizePerson(p, lang)).toList(),
     );
   }
 

@@ -167,6 +167,7 @@ void main() {
           followedCountries: const [],
           followedSources: const [],
           followedTopics: const [],
+          followedPersons: const [],
           savedHeadlines: const [],
           savedHeadlineFilters: const [],
         );
@@ -197,6 +198,7 @@ void main() {
             ),
             followedSources: const [],
             followedTopics: const [],
+            followedPersons: const [],
             savedHeadlines: const [],
             savedHeadlineFilters: const [],
           );
@@ -240,6 +242,7 @@ void main() {
               ),
             ),
             followedTopics: const [],
+            followedPersons: const [],
             savedHeadlines: const [],
             savedHeadlineFilters: const [],
           );
@@ -274,6 +277,7 @@ void main() {
                 status: ContentStatus.active,
               ),
             ),
+            followedPersons: const [],
             savedHeadlines: const [],
             savedHeadlineFilters: const [],
           );
@@ -297,6 +301,7 @@ void main() {
             followedCountries: const [],
             followedSources: const [],
             followedTopics: const [],
+            followedPersons: const [],
             savedHeadlines: List.generate(
               11,
               (i) => Headline(
@@ -322,12 +327,14 @@ void main() {
                   updatedAt: DateTime.now(),
                   status: ContentStatus.active,
                 ),
-                eventCountry: const Country(
-                  id: 'c',
-                  isoCode: 'US',
-                  name: {SupportedLanguage.en: 'US'},
-                  flagUrl: '',
-                ),
+                mentionedCountries: const [
+                  Country(
+                    id: 'c',
+                    isoCode: 'US',
+                    name: {SupportedLanguage.en: 'US'},
+                    flagUrl: '',
+                  ),
+                ],
                 topic: Topic(
                   id: 't',
                   name: const {SupportedLanguage.en: 'T'},
@@ -365,6 +372,7 @@ void main() {
             followedCountries: const [],
             followedSources: const [],
             followedTopics: const [],
+            followedPersons: const [],
             savedHeadlines: const [],
             savedHeadlineFilters: List.generate(
               3,
@@ -376,6 +384,7 @@ void main() {
                   topics: [],
                   sources: [],
                   countries: [],
+                  persons: [],
                 ),
                 isPinned: false,
                 deliveryTypes: const {},
@@ -402,6 +411,7 @@ void main() {
             followedCountries: const [],
             followedSources: const [],
             followedTopics: const [],
+            followedPersons: const [],
             savedHeadlines: const [],
             savedHeadlineFilters: List.generate(
               2,
@@ -413,6 +423,7 @@ void main() {
                   topics: [],
                   sources: [],
                   countries: [],
+                  persons: [],
                 ),
                 isPinned: true, // Both pinned
                 deliveryTypes: const {},
@@ -439,6 +450,7 @@ void main() {
             followedCountries: const [],
             followedSources: const [],
             followedTopics: const [],
+            followedPersons: const [],
             savedHeadlines: const [],
             savedHeadlineFilters: List.generate(
               2,
@@ -450,6 +462,7 @@ void main() {
                   topics: [],
                   sources: [],
                   countries: [],
+                  persons: [],
                 ),
                 isPinned: false,
                 deliveryTypes: const {
@@ -498,6 +511,7 @@ void main() {
             followedCountries: const [],
             followedSources: const [],
             followedTopics: const [],
+            followedPersons: const [],
             savedHeadlines: const [],
             savedHeadlineFilters: const [],
           );

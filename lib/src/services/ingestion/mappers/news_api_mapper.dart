@@ -35,12 +35,13 @@ class NewsApiMapper extends AggregatorMapper<NewsApiArticle> {
       url: normalizeUrl(article.url),
       imageUrl: article.urlToImage ?? '',
       source: source,
-      eventCountry: source.headquarters,
       topic: resolveTopic(null, topicCache, fallbackTopic, mappingCache),
       createdAt: now,
       updatedAt: now,
       status: ContentStatus.active,
       isBreaking: false,
+      mentionedCountries: [source.headquarters],
+      mentionedPersons: const [],
     );
   }
 }

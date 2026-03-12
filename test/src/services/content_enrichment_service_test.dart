@@ -10,6 +10,8 @@ class MockTopicRepository extends Mock implements DataRepository<Topic> {}
 
 class MockCountryRepository extends Mock implements DataRepository<Country> {}
 
+class MockPersonRepository extends Mock implements DataRepository<Person> {}
+
 class MockHeadlineRepository extends Mock implements DataRepository<Headline> {}
 
 void main() {
@@ -17,6 +19,7 @@ void main() {
     late MockSourceRepository mockSourceRepo;
     late MockTopicRepository mockTopicRepo;
     late MockCountryRepository mockCountryRepo;
+    late MockPersonRepository mockPersonRepo;
     late MockHeadlineRepository mockHeadlineRepo;
     late ContentEnrichmentService service;
 
@@ -24,11 +27,13 @@ void main() {
       mockSourceRepo = MockSourceRepository();
       mockTopicRepo = MockTopicRepository();
       mockCountryRepo = MockCountryRepository();
+      mockPersonRepo = MockPersonRepository();
       mockHeadlineRepo = MockHeadlineRepository();
       service = ContentEnrichmentService(
         sourceRepository: mockSourceRepo,
         topicRepository: mockTopicRepo,
         countryRepository: mockCountryRepo,
+        personRepository: mockPersonRepo,
         headlineRepository: mockHeadlineRepo,
         log: Logger('TestContentEnrichmentService'),
       );
@@ -67,7 +72,7 @@ void main() {
       id: 'h1',
       title: const {},
       source: testSource,
-      eventCountry: testCountry,
+      mentionedCountries: const [testCountry],
       topic: testTopic,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
@@ -85,23 +90,39 @@ void main() {
         () => mockTopicRepo.read(id: 't1'),
       ).thenAnswer((_) async => testTopic);
       when(
-        () => mockCountryRepo.read(id: 'c1'),
-      ).thenAnswer((_) async => testCountry);
+        () => mockCountryRepo.readAll(
+          filter: any(named: 'filter'),
+          pagination: any(named: 'pagination'),
+        ),
+      ).thenAnswer(
+        (_) async => const PaginatedResponse(
+          items: [testCountry],
+          cursor: null,
+          hasMore: false,
+        ),
+      );
 
       // Create a headline with partial data (e.g. missing translations)
       final partialHeadline = testHeadline.copyWith(
-        eventCountry: testCountry.copyWith(name: {SupportedLanguage.en: 'USA'}),
+        mentionedCountries: [
+          testCountry.copyWith(name: {SupportedLanguage.en: 'USA'}),
+        ],
       );
 
       final result = await service.enrichHeadline(partialHeadline);
 
       expect(
-        result.eventCountry.name,
+        result.mentionedCountries.first.name,
         containsPair(SupportedLanguage.es, 'EEUU'),
       );
       verify(() => mockSourceRepo.read(id: 's1')).called(1);
       verify(() => mockTopicRepo.read(id: 't1')).called(1);
-      verify(() => mockCountryRepo.read(id: 'c1')).called(1);
+      verify(
+        () => mockCountryRepo.readAll(
+          filter: any(named: 'filter'),
+          pagination: any(named: 'pagination'),
+        ),
+      ).called(1);
     });
 
     test('enrichSource fetches and replaces headquarters', () async {
@@ -128,6 +149,7 @@ void main() {
         followedCountries: const [testCountry],
         followedSources: [testSource],
         followedTopics: [testTopic],
+        followedPersons: const [],
         savedHeadlines: [testHeadline],
         savedHeadlineFilters: [
           SavedHeadlineFilter(
@@ -138,6 +160,7 @@ void main() {
               topics: [testTopic],
               sources: const [],
               countries: const [],
+              persons: const [],
             ),
             isPinned: false,
             deliveryTypes: const {},
@@ -224,6 +247,7 @@ void main() {
           followedCountries: const [],
           followedSources: const [],
           followedTopics: [testTopic], // Topic exists in prefs
+          followedPersons: const [],
           savedHeadlines: const [],
           savedHeadlineFilters: const [],
         );

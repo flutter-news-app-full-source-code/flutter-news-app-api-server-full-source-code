@@ -74,6 +74,8 @@ abstract class AnalyticsLabelRegistry {
       KpiCardId.contentTopicsTotalTopics: 'Total Topics',
       KpiCardId.contentTopicsNewTopics: 'New Topics',
       KpiCardId.contentTopicsTotalFollowers: 'Total Followers',
+      KpiCardId.contentPersonsTotal: 'Total Persons',
+      KpiCardId.contentPersonsTotalFollowers: 'Total Followers',
       KpiCardId.engagementsTotalReactions: 'Total Reactions',
       KpiCardId.engagementsTotalComments: 'Total Comments',
       KpiCardId.engagementsAverageEngagementRate: 'Avg. Engagement Rate',
@@ -103,6 +105,8 @@ abstract class AnalyticsLabelRegistry {
       KpiCardId.contentTopicsTotalTopics: 'إجمالي المواضيع',
       KpiCardId.contentTopicsNewTopics: 'مواضيع جديدة',
       KpiCardId.contentTopicsTotalFollowers: 'إجمالي المتابعين',
+      KpiCardId.contentPersonsTotal: 'إجمالي الأشخاص',
+      KpiCardId.contentPersonsTotalFollowers: 'إجمالي المتابعين',
       KpiCardId.engagementsTotalReactions: 'إجمالي التفاعلات',
       KpiCardId.engagementsTotalComments: 'إجمالي التعليقات',
       KpiCardId.engagementsAverageEngagementRate: 'متوسط معدل التفاعل',
@@ -132,6 +136,8 @@ abstract class AnalyticsLabelRegistry {
       KpiCardId.contentTopicsTotalTopics: 'Temas totales',
       KpiCardId.contentTopicsNewTopics: 'Nuevos temas',
       KpiCardId.contentTopicsTotalFollowers: 'Seguidores totales',
+      KpiCardId.contentPersonsTotal: 'Personas totales',
+      KpiCardId.contentPersonsTotalFollowers: 'Seguidores totales',
       KpiCardId.engagementsTotalReactions: 'Reacciones totales',
       KpiCardId.engagementsTotalComments: 'Comentarios totales',
       KpiCardId.engagementsAverageEngagementRate: 'Tasa de participación media',
@@ -162,6 +168,8 @@ abstract class AnalyticsLabelRegistry {
       KpiCardId.contentTopicsTotalTopics: 'Sujets totaux',
       KpiCardId.contentTopicsNewTopics: 'Nouveaux sujets',
       KpiCardId.contentTopicsTotalFollowers: 'Abonnés totaux',
+      KpiCardId.contentPersonsTotal: 'Personnes totales',
+      KpiCardId.contentPersonsTotalFollowers: 'Abonnés totaux',
       KpiCardId.engagementsTotalReactions: 'Réactions totales',
       KpiCardId.engagementsTotalComments: 'Commentaires totaux',
       KpiCardId.engagementsAverageEngagementRate: "Taux d'engagement moyen",
@@ -192,6 +200,8 @@ abstract class AnalyticsLabelRegistry {
       KpiCardId.contentTopicsTotalTopics: 'Total de tópicos',
       KpiCardId.contentTopicsNewTopics: 'Novos tópicos',
       KpiCardId.contentTopicsTotalFollowers: 'Total de seguidores',
+      KpiCardId.contentPersonsTotal: 'Total de pessoas',
+      KpiCardId.contentPersonsTotalFollowers: 'Total de seguidores',
       KpiCardId.engagementsTotalReactions: 'Total de reações',
       KpiCardId.engagementsTotalComments: 'Total de comentários',
       KpiCardId.engagementsAverageEngagementRate: 'Taxa média de engajamento',
@@ -222,6 +232,8 @@ abstract class AnalyticsLabelRegistry {
       KpiCardId.contentTopicsTotalTopics: 'Themen gesamt',
       KpiCardId.contentTopicsNewTopics: 'Neue Themen',
       KpiCardId.contentTopicsTotalFollowers: 'Follower gesamt',
+      KpiCardId.contentPersonsTotal: 'Personen gesamt',
+      KpiCardId.contentPersonsTotalFollowers: 'Follower gesamt',
       KpiCardId.engagementsTotalReactions: 'Reaktionen gesamt',
       KpiCardId.engagementsTotalComments: 'Kommentare gesamt',
       KpiCardId.engagementsAverageEngagementRate: 'Durchschn. Engagement-Rate',
@@ -252,6 +264,8 @@ abstract class AnalyticsLabelRegistry {
       KpiCardId.contentTopicsTotalTopics: 'Argomenti totali',
       KpiCardId.contentTopicsNewTopics: 'Nuovi argomenti',
       KpiCardId.contentTopicsTotalFollowers: 'Follower totali',
+      KpiCardId.contentPersonsTotal: 'Persone totali',
+      KpiCardId.contentPersonsTotalFollowers: 'Follower totali',
       KpiCardId.engagementsTotalReactions: 'Reazioni totali',
       KpiCardId.engagementsTotalComments: 'Commenti totali',
       KpiCardId.engagementsAverageEngagementRate:
@@ -283,6 +297,8 @@ abstract class AnalyticsLabelRegistry {
       KpiCardId.contentTopicsTotalTopics: '主题总数',
       KpiCardId.contentTopicsNewTopics: '新主题',
       KpiCardId.contentTopicsTotalFollowers: '总关注者',
+      KpiCardId.contentPersonsTotal: '人员总数',
+      KpiCardId.contentPersonsTotalFollowers: '总关注者',
       KpiCardId.engagementsTotalReactions: '总反应',
       KpiCardId.engagementsTotalComments: '总评论',
       KpiCardId.engagementsAverageEngagementRate: '平均参与率',
@@ -312,6 +328,8 @@ abstract class AnalyticsLabelRegistry {
       KpiCardId.contentTopicsTotalTopics: 'कुल विषय',
       KpiCardId.contentTopicsNewTopics: 'नए विषय',
       KpiCardId.contentTopicsTotalFollowers: 'कुल अनुयायी',
+      KpiCardId.contentPersonsTotal: 'कुल व्यक्ति',
+      KpiCardId.contentPersonsTotalFollowers: 'कुल अनुयायी',
       KpiCardId.engagementsTotalReactions: 'कुल प्रतिक्रियाएँ',
       KpiCardId.engagementsTotalComments: 'कुल टिप्पणियाँ',
       KpiCardId.engagementsAverageEngagementRate: 'औसत जुड़ाव दर',
@@ -341,6 +359,8 @@ abstract class AnalyticsLabelRegistry {
       KpiCardId.contentTopicsTotalTopics: '総トピック数',
       KpiCardId.contentTopicsNewTopics: '新しいトピック',
       KpiCardId.contentTopicsTotalFollowers: '総フォロワー数',
+      KpiCardId.contentPersonsTotal: '総人数',
+      KpiCardId.contentPersonsTotalFollowers: '総フォロワー数',
       KpiCardId.engagementsTotalReactions: '総リアクション数',
       KpiCardId.engagementsTotalComments: '総コメント数',
       KpiCardId.engagementsAverageEngagementRate: '平均エンゲージメント率',
@@ -453,6 +473,7 @@ abstract class AnalyticsLabelRegistry {
       ChartCardId.contentTopicsHeadlinesPublishedOverTime:
           'Headlines Published Over Time',
       ChartCardId.contentTopicsEngagementByTopic: 'Engagement by Topic',
+      ChartCardId.contentPersonsMentionsOverTime: 'Mentions Over Time',
       // Engagements
       ChartCardId.engagementsReactionsOverTime: 'Reactions Over Time',
       ChartCardId.engagementsCommentsOverTime: 'Comments Over Time',
@@ -496,6 +517,7 @@ abstract class AnalyticsLabelRegistry {
       ChartCardId.contentTopicsHeadlinesPublishedOverTime:
           'العناوين المنشورة عبر الزمن',
       ChartCardId.contentTopicsEngagementByTopic: 'التفاعل حسب الموضوع',
+      ChartCardId.contentPersonsMentionsOverTime: 'الإشارات عبر الزمن',
       // Engagements
       ChartCardId.engagementsReactionsOverTime: 'التفاعلات عبر الزمن',
       ChartCardId.engagementsCommentsOverTime: 'التعليقات عبر الزمن',
@@ -538,6 +560,8 @@ abstract class AnalyticsLabelRegistry {
       ChartCardId.contentTopicsHeadlinesPublishedOverTime:
           'Titulares publicados a lo largo del tiempo',
       ChartCardId.contentTopicsEngagementByTopic: 'Participación por tema',
+      ChartCardId.contentPersonsMentionsOverTime:
+          'Menciones a lo largo del tiempo',
       ChartCardId.engagementsReactionsOverTime:
           'Reacciones a lo largo del tiempo',
       ChartCardId.engagementsCommentsOverTime:
@@ -584,6 +608,7 @@ abstract class AnalyticsLabelRegistry {
       ChartCardId.contentTopicsHeadlinesPublishedOverTime:
           'Titres publiés au fil du temps',
       ChartCardId.contentTopicsEngagementByTopic: 'Engagement par sujet',
+      ChartCardId.contentPersonsMentionsOverTime: 'Mentions au fil du temps',
       ChartCardId.engagementsReactionsOverTime: 'Réactions au fil du temps',
       ChartCardId.engagementsCommentsOverTime: 'Commentaires au fil du temps',
       ChartCardId.engagementsReactionsByType: 'Réactions par type',
@@ -627,6 +652,7 @@ abstract class AnalyticsLabelRegistry {
       ChartCardId.contentTopicsHeadlinesPublishedOverTime:
           'Manchetes publicadas ao longo do tempo',
       ChartCardId.contentTopicsEngagementByTopic: 'Engajamento por tópico',
+      ChartCardId.contentPersonsMentionsOverTime: 'Menções ao longo do tempo',
       ChartCardId.engagementsReactionsOverTime: 'Reações ao longo do tempo',
       ChartCardId.engagementsCommentsOverTime: 'Comentários ao longo do tempo',
       ChartCardId.engagementsReactionsByType: 'Reações por tipo',
@@ -668,6 +694,7 @@ abstract class AnalyticsLabelRegistry {
       ChartCardId.contentTopicsHeadlinesPublishedOverTime:
           'Veröffentlichte Schlagzeilen im Zeitverlauf',
       ChartCardId.contentTopicsEngagementByTopic: 'Engagement nach Thema',
+      ChartCardId.contentPersonsMentionsOverTime: 'Erwähnungen im Zeitverlauf',
       ChartCardId.engagementsReactionsOverTime: 'Reaktionen im Zeitverlauf',
       ChartCardId.engagementsCommentsOverTime: 'Kommentare im Zeitverlauf',
       ChartCardId.engagementsReactionsByType: 'Reaktionen nach Typ',
@@ -710,6 +737,7 @@ abstract class AnalyticsLabelRegistry {
           'Titoli pubblicati nel tempo',
       ChartCardId.contentTopicsEngagementByTopic:
           'Coinvolgimento per argomento',
+      ChartCardId.contentPersonsMentionsOverTime: 'Menzioni nel tempo',
       ChartCardId.engagementsReactionsOverTime: 'Reazioni nel tempo',
       ChartCardId.engagementsCommentsOverTime: 'Commenti nel tempo',
       ChartCardId.engagementsReactionsByType: 'Reazioni per tipo',
@@ -743,6 +771,7 @@ abstract class AnalyticsLabelRegistry {
       ChartCardId.contentHeadlinesBreakingNewsDistribution: '突发新闻分布',
       ChartCardId.contentTopicsHeadlinesPublishedOverTime: '随时间发布的头条新闻',
       ChartCardId.contentTopicsEngagementByTopic: '按主题参与',
+      ChartCardId.contentPersonsMentionsOverTime: '随时间变化的提及',
       ChartCardId.engagementsReactionsOverTime: '随时间变化的反应',
       ChartCardId.engagementsCommentsOverTime: '随时间变化的评论',
       ChartCardId.engagementsReactionsByType: '按类型反应',
@@ -774,6 +803,7 @@ abstract class AnalyticsLabelRegistry {
       ChartCardId.contentTopicsHeadlinesPublishedOverTime:
           'समय के साथ प्रकाशित सुर्खियाँ',
       ChartCardId.contentTopicsEngagementByTopic: 'विषय द्वारा जुड़ाव',
+      ChartCardId.contentPersonsMentionsOverTime: 'समय के साथ उल्लेख',
       ChartCardId.engagementsReactionsOverTime: 'समय के साथ प्रतिक्रियाएँ',
       ChartCardId.engagementsCommentsOverTime: 'समय के साथ टिप्पणियाँ',
       ChartCardId.engagementsReactionsByType: 'प्रकार द्वारा प्रतिक्रियाएँ',
@@ -807,6 +837,7 @@ abstract class AnalyticsLabelRegistry {
       ChartCardId.contentHeadlinesBreakingNewsDistribution: 'ニュース速報の分布',
       ChartCardId.contentTopicsHeadlinesPublishedOverTime: '時間の経過に伴う公開された見出し',
       ChartCardId.contentTopicsEngagementByTopic: 'トピック別のエンゲージメント',
+      ChartCardId.contentPersonsMentionsOverTime: '時間の経過に伴う言及',
       ChartCardId.engagementsReactionsOverTime: '時間の経過に伴うリアクション',
       ChartCardId.engagementsCommentsOverTime: '時間の経過に伴うコメント',
       ChartCardId.engagementsReactionsByType: 'タイプ別のリアクション',

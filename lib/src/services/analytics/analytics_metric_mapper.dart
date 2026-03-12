@@ -81,6 +81,13 @@ class AnalyticsMetricMapper {
     KpiCardId.contentTopicsTotalFollowers: const StandardMetricQuery(
       metric: 'database:topics:followers',
     ),
+    // Person KPIs
+    KpiCardId.contentPersonsTotal: const StandardMetricQuery(
+      metric: 'database:persons:count',
+    ),
+    KpiCardId.contentPersonsTotalFollowers: const StandardMetricQuery(
+      metric: 'database:persons:followers',
+    ),
     // Engagement KPIs
     KpiCardId.engagementsTotalReactions: const EventCountQuery(
       event: AnalyticsEvent.reactionCreated,
@@ -190,6 +197,16 @@ class AnalyticsMetricMapper {
         ),
     ChartCardId.contentTopicsEngagementByTopic: const StandardMetricQuery(
       metric: 'database:headlines:topicEngagement',
+    ),
+    // Persons Tab
+    ChartCardId.contentPersonsMentionsOverTime: const StandardMetricQuery(
+      metric: 'database:persons:mentionsOverTime',
+    ),
+    ChartCardId.contentPersonsEngagementByEntity: const StandardMetricQuery(
+      metric: 'database:persons:engagement',
+    ),
+    ChartCardId.contentHeadlinesViewsByPerson: const StandardMetricQuery(
+      metric: 'database:headlines:viewsByPerson',
     ),
     ChartCardId.contentHeadlinesBreakingNewsDistribution:
         const StandardMetricQuery(

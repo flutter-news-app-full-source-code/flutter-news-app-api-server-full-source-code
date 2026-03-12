@@ -89,6 +89,7 @@ void registerSharedFallbackValues() {
       followedCountries: [],
       followedSources: [],
       followedTopics: [],
+      followedPersons: [],
       savedHeadlines: [],
       savedHeadlineFilters: [],
     ),
@@ -357,7 +358,8 @@ Headline createTestHeadline({
   String? imageUrl,
   String? mediaAssetId,
   Source? source,
-  Country? eventCountry,
+  List<Country>? mentionedCountries,
+  List<Person>? mentionedPersons,
   Topic? topic,
   bool isBreaking = false,
   ContentStatus status = ContentStatus.active,
@@ -382,7 +384,8 @@ Headline createTestHeadline({
           updatedAt: DateTime.now(),
           status: ContentStatus.active,
         ),
-    eventCountry: eventCountry ?? countriesFixturesData.first,
+    mentionedCountries: mentionedCountries ?? [countriesFixturesData.first],
+    mentionedPersons: mentionedPersons ?? const [],
     topic:
         topic ??
         Topic(

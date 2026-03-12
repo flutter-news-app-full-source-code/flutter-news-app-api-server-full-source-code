@@ -53,6 +53,7 @@ class AppDependencies {
   late final DataRepository<Headline> headlineRepository;
   late final DataRepository<Topic> topicRepository;
   late final DataRepository<Source> sourceRepository;
+  late final DataRepository<Person> personRepository;
   late final DataRepository<Country> countryRepository;
   late final DataRepository<Language> languageRepository;
   late final DataRepository<User> userRepository;
@@ -186,6 +187,14 @@ class AppDependencies {
         toJson: (item) => item.toJson(),
         searchableFields: ['name'],
         logger: Logger('DataMongodb<Source>'),
+      );
+      final personClient = DataMongodb<Person>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'persons',
+        fromJson: Person.fromJson,
+        toJson: (item) => item.toJson(),
+        searchableFields: ['name'],
+        logger: Logger('DataMongodb<Person>'),
       );
       final countryClient = DataMongodb<Country>(
         connectionManager: _mongoDbConnectionManager,
@@ -417,6 +426,7 @@ class AppDependencies {
       headlineRepository = DataRepository(dataClient: headlineClient);
       topicRepository = DataRepository(dataClient: topicClient);
       sourceRepository = DataRepository(dataClient: sourceClient);
+      personRepository = DataRepository(dataClient: personClient);
       countryRepository = DataRepository(dataClient: countryClient);
       languageRepository = DataRepository(dataClient: languageClient);
       userRepository = DataRepository(dataClient: userClient);
@@ -711,6 +721,7 @@ class AppDependencies {
         userRepository: userRepository,
         headlineRepository: headlineRepository,
         topicRepository: topicRepository,
+        personRepository: personRepository,
         sourceRepository: sourceRepository,
         storageService: storageService,
         log: Logger('MediaService'),
@@ -731,6 +742,7 @@ class AppDependencies {
         topicRepository: topicRepository,
         countryRepository: countryRepository,
         headlineRepository: headlineRepository,
+        personRepository: personRepository,
         log: Logger('ContentEnrichmentService'),
       );
 
@@ -856,6 +868,7 @@ class AppDependencies {
         userRepository: userRepository,
         topicRepository: topicRepository,
         sourceRepository: sourceRepository,
+        personRepository: personRepository,
         reportRepository: reportRepository,
         headlineRepository: headlineRepository,
         googleAnalyticsClient: googleAnalyticsClient,

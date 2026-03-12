@@ -106,6 +106,13 @@ class AnalyticsQueryBuilder {
           startDate: startDate,
           endDate: endDate,
         );
+      case 'database:persons:mentionsOverTime':
+        _log.info('Building pipeline for person mentions over time.');
+        return _buildGenericCreationOverTimePipeline(
+          collection: 'persons',
+          startDate: startDate,
+          endDate: endDate,
+        );
       // Rewards Queries
       case 'database:user_rewards:active_count':
         _log.info('Building pipeline for active rewards count.');
@@ -148,6 +155,9 @@ class AnalyticsQueryBuilder {
       case 'database:topics:byFollowers':
         _log.info('Building ranked list pipeline for topics by followers.');
         return _buildRankedByFollowersPipeline('topics');
+      case 'database:persons:byFollowers':
+        _log.info('Building ranked list pipeline for persons by followers.');
+        return _buildRankedByFollowersPipeline('persons');
       // Ingestion Queries
       case 'database:ingestion_usage:headlines_over_time':
         _log.info('Building ingestion headlines over time pipeline.');
@@ -498,6 +508,41 @@ class AnalyticsQueryBuilder {
           'value': r'$count',
           '_id': 0,
         },
+      },
+    ];
+  }
+
+  /// Creates a generic pipeline for counting document creation over time.
+  List<Map<String, dynamic>> _buildGenericCreationOverTimePipeline({
+    required String collection,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) {
+    return [
+      {
+        r'$match': {
+          'createdAt': {
+            r'$gte': startDate.toUtc().toIso8601String(),
+            r'$lt': endDate.toUtc().toIso8601String(),
+          },
+        },
+      },
+      {
+        r'$group': {
+          '_id': {
+            r'$dateToString': {
+              'format': '%Y-%m-%d',
+              'date': r'$createdAt',
+            },
+          },
+          'count': {r'$sum': 1},
+        },
+      },
+      {
+        r'$project': {'label': r'$_id', 'value': r'$count', '_id': 0},
+      },
+      {
+        r'$sort': {'label': 1},
       },
     ];
   }

@@ -117,7 +117,7 @@ void main() {
         url: 'https://techcrunch.com/article',
         imageUrl: '',
         source: source,
-        eventCountry: source.headquarters,
+        mentionedCountries: [source.headquarters],
         topic: fallbackTopic,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
