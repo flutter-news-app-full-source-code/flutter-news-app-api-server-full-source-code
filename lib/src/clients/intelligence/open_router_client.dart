@@ -48,8 +48,6 @@ class OpenRouterClient implements IntelligenceClient {
         options: Options(
           headers: {
             'Authorization': 'Bearer $apiKey',
-            'HTTP-Referer': EnvironmentConfig.apiBaseUrl,
-            'X-Title': 'Verity API Ingestion',
           },
         ),
       );
