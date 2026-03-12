@@ -78,27 +78,30 @@ The API automatically validates the structure of all incoming data, ensuring tha
 </details>
 
 <details>
+<summary><strong>🧠 Native Intelligence Engine</strong></summary>
+
+### ⚡ A Strategy-Driven, Model-Agnostic AI Orchestration Layer
+A commercial-grade intelligence engine designed for maximum leverage and zero vendor lock-in. It is architected to orchestrate any AI model from any provider, ensuring you can always deploy the best tool for the job.
+- **Provider-Agnostic Core:** Built on the Strategy Pattern, the engine is decoupled from any single AI provider. It supports any provider with a compatible API (e.g., OpenAI, Google, Anthropic, Mistral) through a unified interface, allowing you to swap between GPT-4, Claude, Gemini, and more without rewriting business logic.
+- **Task-Specific Intelligence:** The engine uses specialized, purpose-built strategies for distinct business goals: a high-throughput `IngestionEnrichmentStrategy` for automated pipeline processing and a precision `SingleEnrichmentStrategy` for on-demand administrative tasks.
+- **Strict Governance & Cost Control:** A centralized governance layer enforces hard daily token quotas and logs every transaction. The system automatically blocks requests when limits are reached to prevent budget overruns.
+> **Your Advantage:** Deploy AI features with strategic and financial confidence. Avoid vendor lock-in, leverage the most powerful and cost-effective models on the market, and maintain complete control over your operational spend.
+
+</details>
+
+<details>
 <summary><strong>🤖 Automated News Ingestion & Orchestration</strong></summary>
 
 ### 🤖 High-Efficiency News Ingestion Engine
-A professional-grade orchestration pipeline designed to maximize content 
-throughput while minimizing operational costs and ensuring data quality.
-- **Multi-Provider Polymorphism:** Out-of-the-box support for **NewsAPI** 
-  and **MediaStack**, utilizing a unified interface that enables 
-  hot-swappable ingestion strategies via environment configuration.
-- **On-Demand Source Discovery:** Automatically synchronizes internal 
-  sources with provider catalogs using a host-based matching heuristic, 
-  eliminating manual mapping overhead.
-- **Intelligent Cost Control:** Optimizes API credit usage through 
-  high-density batch processing and strictly enforced daily quotas.
-- **Resilient Pipeline Architecture:** Implements a "Poison Pill" isolation 
-  strategy that automatically de-batches and disables problematic sources to 
-  prevent upstream failures from halting the entire ingestion cycle.
-- **Enterprise Deduplication:** Employs a high-performance idempotency 
-  layer to guarantee a unique, high-quality content feed for your users.
-> **Your Advantage:** Drastically reduce operational overhead and API 
-expenditure. The engine self-heals when providers update their catalogs and 
-scales effortlessly as your content network grows.
+A professional-grade orchestration pipeline designed to maximize content throughput while minimizing operational costs and ensuring data quality.
+- **Multi-Provider Polymorphism:** Out-of-the-box support for **NewsAPI** and **MediaStack**, utilizing a unified interface that enables hot-swappable ingestion strategies via environment configuration.
+- **On-Demand Source Discovery:** Automatically synchronizes internal sources with provider catalogs using a host-based matching heuristic, eliminating manual mapping overhead.
+- **AI-Powered Enrichment:** Leverages the native intelligence engine to perform junk filtering, entity extraction (persons, places), and multi-language translation during ingestion.
+- **Intelligent Cost Control:** Optimizes API credit usage through high-density batch processing and strictly enforced daily quotas.
+- **Resilient Pipeline Architecture:** Implements a "Poison Pill" isolation strategy that automatically de-batches and disables problematic sources to prevent upstream failures from halting the entire ingestion cycle.
+- **Enterprise Deduplication:** Employs a high-performance idempotency layer to guarantee a unique, high-quality content feed for your users.
+- **Automated Breaking News Dispatch:** Automatically identifies high-confidence breaking news during ingestion and triggers intelligent, deduplicated push notifications to subscribers, ensuring instant awareness without manual intervention.
+> **Your Advantage:** Drastically reduce operational overhead and API expenditure. The engine self-heals when providers update their catalogs and scales effortlessly as your content network grows.
 
 ---
 
