@@ -121,6 +121,9 @@ void main() {
       provider: mockProvider,
       idempotencyService: mockIdempotency,
       log: mockLogger,
+      intelligenceService: null,
+      identityResolutionService: null,
+      pushNotificationService: null,
     );
 
     // Setup default environment overrides
