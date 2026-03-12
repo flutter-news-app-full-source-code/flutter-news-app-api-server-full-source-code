@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:core/core.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
-import 'package:verity_api/src/clients/intelligence/open_router_client.dart';
+import 'package:verity_api/src/clients/intelligence/intelligence_client.dart';
 import 'package:verity_api/src/config/environment_config.dart';
 import 'package:verity_api/src/models/intelligence/ai_usage.dart';
 import 'package:verity_api/src/services/intelligence/strategies/ai_strategy.dart';
@@ -18,7 +18,7 @@ import 'package:verity_api/src/services/intelligence/strategies/ai_strategy.dart
 class IntelligenceService {
   /// {@macro intelligence_service}
   IntelligenceService({
-    required OpenRouterClient client,
+    required IntelligenceClient client,
     required DataRepository<AiUsage> usageRepository,
     required DataRepository<Topic> topicRepository,
     required DataRepository<RemoteConfig> remoteConfigRepository,
@@ -29,7 +29,7 @@ class IntelligenceService {
        _remoteConfigRepository = remoteConfigRepository,
        _log = log;
 
-  final OpenRouterClient _client;
+  final IntelligenceClient _client;
   final DataRepository<AiUsage> _usageRepository;
   final DataRepository<Topic> _topicRepository;
   final DataRepository<RemoteConfig> _remoteConfigRepository;
