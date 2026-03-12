@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:core/core.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
@@ -10,7 +11,7 @@ import 'package:verity_api/src/services/intelligence/strategies/ai_strategy.dart
 /// {@template intelligence_service}
 /// Orchestrates all AI-powered operations with strict token governance.
 ///
-/// This service uses the Strategy pattern to handle diverse AI tasks 
+/// This service uses the Strategy pattern to handle diverse AI tasks
 /// (Ingestion, Summarization, etc.) while centralizing the cost-control
 /// logic and token quota management.
 /// {@endtemplate}
@@ -19,15 +20,18 @@ class IntelligenceService {
   IntelligenceService({
     required OpenRouterClient client,
     required DataRepository<AiUsage> usageRepository,
+    required DataRepository<Topic> topicRepository,
     required DataRepository<RemoteConfig> remoteConfigRepository,
     required Logger log,
   }) : _client = client,
        _usageRepository = usageRepository,
+       _topicRepository = topicRepository,
        _remoteConfigRepository = remoteConfigRepository,
        _log = log;
 
   final OpenRouterClient _client;
   final DataRepository<AiUsage> _usageRepository;
+  final DataRepository<Topic> _topicRepository;
   final DataRepository<RemoteConfig> _remoteConfigRepository;
   final Logger _log;
 
@@ -46,7 +50,7 @@ class IntelligenceService {
 
     final now = DateTime.now().toUtc();
     final usageId = _getUsageId(now);
-    
+
     // 2. Quota Check: Prevent over-spending
     final currentUsage = await _getUsage(usageId);
     if (currentUsage.tokenUsage >= EnvironmentConfig.aiDailyTokenQuota) {
@@ -54,14 +58,24 @@ class IntelligenceService {
       throw const ForbiddenException('Daily AI token quota reached.');
     }
 
-    // 3. Execution: Prepare prompt based on enabled languages
+    // 3. Execution: Prepare prompt with enabled languages and active topics
     final config = await _remoteConfigRepository.read(id: kRemoteConfigId);
     final enabledLangs = config.app.localization.enabledLanguages;
 
+    // Fetch active topics to provide as a strict choice list to the AI.
+    final activeTopics = await _topicRepository.readAll(
+      filter: {'status': ContentStatus.active.name},
+      pagination: const PaginationOptions(limit: 200),
+    );
+    final activeTopicNames = activeTopics.items
+        .map((t) => t.name[SupportedLanguage.en] ?? t.id)
+        .toList();
+
     _log.info('[AI:${strategy.identifier}] Building prompt for $input');
     final messages = strategy.buildPrompt(
-      input, 
+      input,
       enabledLanguages: enabledLangs,
+      activeTopicNames: activeTopicNames,
     );
 
     final response = await _client.generateCompletion(messages: messages);
@@ -78,9 +92,9 @@ class IntelligenceService {
       return await _usageRepository.read(id: id);
     } on NotFoundException {
       return AiUsage(
-        id: id, 
-        tokenUsage: 0, 
-        requestCount: 0, 
+        id: id,
+        tokenUsage: 0,
+        requestCount: 0,
         updatedAt: DateTime.now(),
       );
     }
@@ -99,13 +113,14 @@ class IntelligenceService {
     } else {
       await _usageRepository.update(id: id, item: updated);
     }
-    
+
     _log.info('AI Usage Updated: ${updated.tokenUsage} tokens today.');
   }
 
   String _getUsageId(DateTime now) {
     // Deterministic ID for the 24h window (YYYY-MM-DD)
-    final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-'
+    final dateStr =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-'
         '${now.day.toString().padLeft(2, '0')}';
     final bytes = utf8.encode('ai_usage:$dateStr');
     // MongoDB objectId compatibility (24 chars)
