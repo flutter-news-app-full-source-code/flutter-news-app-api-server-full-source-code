@@ -9,6 +9,7 @@ import 'package:verity_api/src/clients/email/email_client.dart';
 import 'package:verity_api/src/clients/email/email_logging_client.dart';
 import 'package:verity_api/src/clients/email/email_onesignal_client.dart';
 import 'package:verity_api/src/clients/email/email_sendgrid_client.dart';
+import 'package:verity_api/src/clients/intelligence/intelligence_client.dart';
 import 'package:verity_api/src/clients/intelligence/open_router_client.dart';
 import 'package:verity_api/src/config/environment_config.dart';
 import 'package:verity_api/src/database/migrations/all_migrations.dart';
@@ -760,17 +761,27 @@ class AppDependencies {
         log: Logger('ContentEnrichmentService'),
       );
 
-      final intelligenceHttpClient = HttpClient(
-        baseUrl: 'https://openrouter.ai/api/v1/',
-        tokenProvider: () async => null,
-        logger: Logger('OpenRouterHttpClient'),
-      );
+      // --- Intelligence Client Factory ---
+      final aiProvider = EnvironmentConfig.aiProvider;
+      final IntelligenceClient intelligenceClient;
 
-      intelligenceService = IntelligenceService(
-        client: OpenRouterClient(
+      if (aiProvider == 'openrouter') {
+        final intelligenceHttpClient = HttpClient(
+          baseUrl: 'https://openrouter.ai/api/v1/',
+          tokenProvider: () async => null,
+          logger: Logger('OpenRouterHttpClient'),
+        );
+        intelligenceClient = OpenRouterClient(
           httpClient: intelligenceHttpClient,
           log: Logger('OpenRouterClient'),
-        ),
+        );
+      } else {
+        // Fallback or error if an unknown provider is specified
+        throw StateError('Unknown AI Provider: $aiProvider');
+      }
+
+      intelligenceService = IntelligenceService(
+        client: intelligenceClient,
         usageRepository: aiUsageRepository,
         remoteConfigRepository: remoteConfigRepository,
         topicRepository: topicRepository,

@@ -185,6 +185,10 @@ abstract final class EnvironmentConfig {
   static bool get aiIngestionEnabled =>
       (_getEnv('AI_INGESTION_ENABLED') ?? 'false').toLowerCase() == 'true';
 
+  /// Retrieves the AI provider from the environment.
+  static String get aiProvider =>
+      _getEnv('AI_PROVIDER')?.toLowerCase() ?? 'openrouter';
+
   /// OpenRouter API Key.
   static String? get aiApiKey => _getEnv('AI_API_KEY');
 
