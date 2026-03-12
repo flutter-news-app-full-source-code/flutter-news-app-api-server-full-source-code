@@ -32,7 +32,7 @@ void main() {
     test(
       'generateCompletion throws AuthenticationException if key missing',
       () async {
-        EnvironmentConfig.setOverride('AI_API_KEY', null);
+        EnvironmentConfig.setOverride('AI_API_KEY', '');
         expect(
           () => client.generateCompletion(messages: []),
           throwsA(isA<AuthenticationException>()),
