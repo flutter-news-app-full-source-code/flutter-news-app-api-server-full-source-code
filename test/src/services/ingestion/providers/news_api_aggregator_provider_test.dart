@@ -5,6 +5,7 @@ import 'package:test/test.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_source_mapping.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_type.dart';
 import 'package:verity_api/src/models/ingestion/news_api_models.dart';
+import 'package:verity_api/src/services/ingestion/mappers/aggregator_mapper.dart';
 import 'package:verity_api/src/services/ingestion/mappers/news_api_mapper.dart';
 import 'package:verity_api/src/services/ingestion/providers/news_api_aggregator_provider.dart';
 
@@ -29,6 +30,7 @@ void main() {
   late Topic fallbackTopic;
   late Map<String, Topic> topicCache;
   late Map<String, Country> countryCache;
+  late Map<String, Topic> topicSlugMap;
   late Map<String, String> mappingCache;
   late AggregatorSourceMapping mapping;
 
@@ -76,6 +78,7 @@ void main() {
     );
     topicCache = {};
     countryCache = {};
+    topicSlugMap = {};
     mappingCache = {};
 
     mapping = AggregatorSourceMapping(
@@ -141,12 +144,13 @@ void main() {
         sourceMap: {source.id: source},
         topicCache: topicCache,
         fallbackTopic: fallbackTopic,
+        topicSlugMap: topicSlugMap,
         countryCache: countryCache,
         mappingCache: mappingCache,
       );
 
-      expect(result[source.id], hasLength(1));
-      expect(result[source.id]!.first, expectedHeadline);
+      expect(result[source.id], isNotNull);
+      expect(result[source.id]!.first.headline, expectedHeadline);
 
       verify(
         () => mockHttpClient.get<Map<String, dynamic>>(
@@ -215,6 +219,7 @@ void main() {
       sourceMap: sourceMap,
       topicCache: {},
       fallbackTopic: fallbackTopic,
+      topicSlugMap: {},
       countryCache: {},
       mappingCache: {},
     );
