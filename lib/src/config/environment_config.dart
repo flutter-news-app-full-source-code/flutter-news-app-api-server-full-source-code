@@ -190,7 +190,7 @@ abstract final class EnvironmentConfig {
 
   /// The specific AI model identifier from OpenRouter.
   static String get aiModel =>
-      _getEnv('AI_MODEL') ?? 'google/gemini-3-flash-preview';
+      _getEnv('AI_MODEL') ?? 'google/gemini-3.1-flash-lite-preview';
 
   /// Daily token quota for AI operations.
   static int get aiDailyTokenQuota =>
