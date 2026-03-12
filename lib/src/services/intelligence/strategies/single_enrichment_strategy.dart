@@ -1,6 +1,13 @@
 import 'package:core/core.dart';
 import 'package:verity_api/src/services/intelligence/strategies/ai_strategy.dart';
-import 'package:verity_api/src/utils/localization_utils.dart';
+
+/// The result of a single headline enrichment operation.
+typedef SingleEnrichmentResult = ({
+  String? topicSlug,
+  List<String> extractedPersons,
+  List<String> extractedCountryCodes,
+  Map<SupportedLanguage, String> translations,
+});
 
 /// {@template single_enrichment_strategy}
 /// Strategy for enriching a single headline manually via the Admin Dashboard.
@@ -8,8 +15,13 @@ import 'package:verity_api/src/utils/localization_utils.dart';
 /// This is used when an admin wants to auto-fill details for a draft or
 /// manually created headline. It populates topics, extracts persons, and
 /// generates translations.
+///
+/// This strategy returns a simple DTO, not a persisted entity. The calling
+/// service is responsible for resolving the returned slugs and names into
+/// full database entities.
 /// {@endtemplate}
-class SingleEnrichmentStrategy extends AiStrategy<Headline, Headline> {
+class SingleEnrichmentStrategy
+    extends AiStrategy<Headline, SingleEnrichmentResult> {
   @override
   String get identifier => 'single_enrichment';
 
@@ -17,78 +29,60 @@ class SingleEnrichmentStrategy extends AiStrategy<Headline, Headline> {
   List<Map<String, String>> buildPrompt(
     Headline input, {
     required List<SupportedLanguage> enabledLanguages,
+    List<String> activeTopicNames = const [],
   }) {
-    final languages = enabledLanguages.map((e) => e.name).join(', ');
+    // We only need to request translations for languages not already present.
+    final missingLanguages = enabledLanguages
+        .where((lang) => !input.title.containsKey(lang))
+        .map((e) => e.name)
+        .join(', ');
 
     return [
       {
         'role': 'system',
         'content':
             '''
-You are an expert news editor. Analyze the given headline and return a valid JSON object with the following fields:
-1. "topicId": Infer the most relevant topic ID from the context.
-2. "extractedPersons": A list of full names of public figures mentioned.
-3. "translations": A dictionary where keys are language codes ($languages) and values are the translated title.
+You are an expert news editor. Based on the provided headline title, return a valid JSON object with the following fields:
+1. "topicSlug": A string. From this exact list, select the single most relevant topic slug: [$activeTopicNames].
+2. "extractedPersons": A list of strings, containing the full names of any public figures mentioned.
+3. "extractedCountryCodes": A list of 2-letter ISO 3166-1 country codes (e.g. "US", "FR") for countries mentioned in the headline.
+4. "translations": A dictionary translating the title into these languages: [$missingLanguages]. Do NOT include an image URL.
+
+Return ONLY valid JSON. Do not generate fields that were not requested.
 ''',
       },
       {
         'role': 'user',
-        'content': 'Title: ${input.title.values.first}. URL: ${input.url}',
+        'content': 'Title: ${input.title.values.first}',
       },
     ];
   }
 
   @override
-  Headline mapResponse(Map<String, dynamic> data, Headline input) {
-    // 1. Parse Translations
+  SingleEnrichmentResult mapResponse(
+    Map<String, dynamic> data,
+    Headline input,
+  ) {
     final rawTranslations = data['translations'] as Map<String, dynamic>? ?? {};
     final translations = <SupportedLanguage, String>{};
-
     for (final entry in rawTranslations.entries) {
       try {
         final lang = SupportedLanguage.values.byName(entry.key);
         translations[lang] = entry.value as String;
       } catch (_) {
-        // Ignore unsupported languages returned by AI hallucination
+        // Ignore unsupported languages from AI hallucination
       }
     }
 
-    // Merge with existing title to ensure original is preserved if needed,
-    // though typically the AI should provide the full set.
-    final updatedTitle = LocalizationUtils.mergeTranslations(
-      input.title,
-      translations,
-    );
-
-    // 2. Parse Topic
-    // Note: In a real app, we might want to validate this ID against the DB.
-    // Here we assume the AI (if fine-tuned or prompted with valid IDs) returns
-    // a plausible string, or we rely on the admin to verify before saving.
-    final topicId = data['topicId'] as String?;
-    final updatedTopic = topicId != null
-        ? input.topic.copyWith(id: topicId)
-        : input.topic;
-
-    // 3. Parse Persons
-    // The IdentityResolutionService is NOT called here because this strategy
-    // returns a non-persisted object to the Admin UI. The Admin will verify
-    // and save, triggering identity resolution/linking at the repository level
-    // or via a subsequent call if needed. For now, we populate the
-    // names into temporary Person objects.
-    final rawNames = List<String>.from(data['extractedPersons'] ?? []);
-    final tempPersons = rawNames.map((name) {
-      // We use a placeholder ID as these are not yet DB entities.
-      return Person(
-        id: '',
-        name: {SupportedLanguage.en: name},
-        description: const {},
-      );
-    }).toList();
-
-    return input.copyWith(
-      title: updatedTitle,
-      topic: updatedTopic,
-      mentionedPersons: tempPersons,
+    return (
+      topicSlug: data['topicSlug'] as String?,
+      extractedPersons: List<String>.from(
+        data['extractedPersons'] as List? ?? [],
+      ),
+      extractedCountryCodes: List<String>.from(
+        data['extractedCountryCodes'] as List? ?? [],
+      ),
+      translations: translations,
     );
   }
 }
