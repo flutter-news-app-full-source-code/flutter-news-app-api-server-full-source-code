@@ -2,6 +2,7 @@ import 'package:core/core.dart';
 import 'package:logging/logging.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_catalog_source.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_source_mapping.dart';
+import 'package:verity_api/src/models/ingestion/ingestion_candidate.dart';
 import 'package:verity_api/src/models/ingestion/media_stack_models.dart';
 import 'package:verity_api/src/services/ingestion/mappers/aggregator_mapper.dart';
 import 'package:verity_api/src/services/ingestion/providers/aggregator_provider.dart';
@@ -55,18 +56,19 @@ class MediaStackAggregatorProvider implements AggregatorProvider {
   }
 
   @override
-  Future<Map<String, List<Headline>>> fetchBatchHeadlines(
+  Future<Map<String, List<IngestionCandidate>>> fetchBatchHeadlines(
     List<AggregatorSourceMapping> mappings, {
     required Map<String, Source> sourceMap,
     required Map<String, Topic> topicCache,
     required Topic fallbackTopic,
     required Map<String, Country> countryCache,
+    required Map<String, Topic> topicSlugMap,
     required Map<String, String> mappingCache,
   }) async {
     _log.info(
       'Fetching MediaStack headlines for ${mappings.length} sources...',
     );
-    final results = <String, List<Headline>>{};
+    final results = <String, List<IngestionCandidate>>{};
 
     for (var i = 0; i < mappings.length; i += _kMaxBatchSize) {
       final chunk = mappings.skip(i).take(_kMaxBatchSize).toList();
@@ -101,7 +103,14 @@ class MediaStackAggregatorProvider implements AggregatorProvider {
               countryCache: countryCache,
               mappingCache: mappingCache,
             );
-            results.putIfAbsent(mapping.sourceId, () => []).add(headline);
+            results
+                .putIfAbsent(mapping.sourceId, () => [])
+                .add(
+                  IngestionCandidate(
+                    headline: headline,
+                    rawDescription: article.description,
+                  ),
+                );
           } catch (e, s) {
             _log.warning(
               'Failed to map MediaStack article: ${article.title}',
