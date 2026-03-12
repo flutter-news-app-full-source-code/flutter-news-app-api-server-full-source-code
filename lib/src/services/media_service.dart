@@ -19,6 +19,7 @@ class MediaService {
     required DataRepository<User> userRepository,
     required DataRepository<Headline> headlineRepository,
     required DataRepository<Topic> topicRepository,
+    required DataRepository<Person> personRepository,
     required DataRepository<Source> sourceRepository,
     required IStorageService storageService,
     required Logger log,
@@ -26,6 +27,7 @@ class MediaService {
        _userRepository = userRepository,
        _headlineRepository = headlineRepository,
        _topicRepository = topicRepository,
+       _personRepository = personRepository,
        _sourceRepository = sourceRepository,
        _storageService = storageService,
        _log = log;
@@ -34,6 +36,7 @@ class MediaService {
   final DataRepository<User> _userRepository;
   final DataRepository<Headline> _headlineRepository;
   final DataRepository<Topic> _topicRepository;
+  final DataRepository<Person> _personRepository;
   final DataRepository<Source> _sourceRepository;
   final IStorageService _storageService;
   final Logger _log;
@@ -122,6 +125,29 @@ class MediaService {
             ),
           );
         }
+      case MediaAssetPurpose.personPhoto:
+        final persons = await _personRepository.readAll(
+          filter: {'mediaAssetId': mediaAsset.id},
+        );
+        if (persons.items.isNotEmpty) {
+          final personToUpdate = persons.items.first;
+          parentEntityId = personToUpdate.id;
+          parentEntityType = MediaAssetEntityType.person;
+          _log.info(
+            'Found person ${personToUpdate.id} linked to asset '
+            '${mediaAsset.id}. Updating imageUrl.',
+          );
+
+          await _cleanupOldAsset(personToUpdate.imageUrl);
+
+          await _personRepository.update(
+            id: personToUpdate.id,
+            item: personToUpdate.copyWith(
+              imageUrl: ValueWrapper(publicUrl),
+              mediaAssetId: const ValueWrapper(null),
+            ),
+          );
+        }
       case MediaAssetPurpose.sourceImage:
         final sources = await _sourceRepository.readAll(
           filter: {'mediaAssetId': mediaAsset.id},
@@ -201,6 +227,14 @@ class MediaService {
                 item: topic.copyWith(iconUrl: const ValueWrapper(null)),
               );
             }
+          case MediaAssetEntityType.person:
+            final person = await _personRepository.read(id: entityId);
+            if (person.imageUrl == mediaAsset.publicUrl) {
+              await _personRepository.update(
+                id: person.id,
+                item: person.copyWith(imageUrl: const ValueWrapper(null)),
+              );
+            }
           case MediaAssetEntityType.source:
             final source = await _sourceRepository.read(id: entityId);
             if (source.logoUrl == mediaAsset.publicUrl) {
@@ -217,6 +251,25 @@ class MediaService {
 
     await _mediaAssetRepository.delete(id: mediaAsset.id);
     _log.info('Deleted MediaAsset record ${mediaAsset.id} from database.');
+  }
+
+  /// Deletes all media assets associated with a specific entity.
+  ///
+  /// This should be called when an entity (like a Person) is deleted to
+  /// ensure orphan files are removed from storage.
+  Future<void> deleteMediaForEntity({
+    required String entityId,
+    required MediaAssetEntityType entityType,
+  }) async {
+    _log.info('Cleaning up media for $entityType $entityId.');
+    final assets = await _mediaAssetRepository.readAll(
+      filter: {
+        'associatedEntityId': entityId,
+        'associatedEntityType': entityType.name,
+      },
+    );
+
+    await Future.wait(assets.items.map(handleAssetDeletion));
   }
 
   Future<void> _cleanupOldAsset(String? oldUrl) async {
