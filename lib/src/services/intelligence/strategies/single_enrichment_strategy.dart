@@ -29,7 +29,7 @@ class SingleEnrichmentStrategy
   List<Map<String, String>> buildPrompt(
     Headline input, {
     required List<SupportedLanguage> enabledLanguages,
-    List<String> activeTopicNames = const [],
+    List<String> predefinedChoices = const [],
   }) {
     // We only need to request translations for languages not already present.
     final missingLanguages = enabledLanguages
@@ -43,7 +43,7 @@ class SingleEnrichmentStrategy
         'content':
             '''
 You are an expert news editor. Based on the provided headline title, return a valid JSON object with the following fields:
-1. "topicSlug": A string. From this exact list, select the single most relevant topic slug: [$activeTopicNames].
+1. "topicSlug": A string. From this exact list, select the single most relevant topic slug: [$predefinedChoices].
 2. "extractedPersons": A list of strings, containing the full names of any public figures mentioned.
 3. "extractedCountryCodes": A list of 2-letter ISO 3166-1 country codes (e.g. "US", "FR") for countries mentioned in the headline.
 4. "translations": A dictionary translating the title into these languages: [$missingLanguages]. Do NOT include an image URL.

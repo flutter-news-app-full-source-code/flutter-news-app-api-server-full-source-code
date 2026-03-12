@@ -75,7 +75,7 @@ class IntelligenceService {
     final messages = strategy.buildPrompt(
       input,
       enabledLanguages: enabledLangs,
-      activeTopicNames: activeTopicNames,
+      predefinedChoices: activeTopicNames,
     );
 
     final response = await _client.generateCompletion(messages: messages);

@@ -14,6 +14,7 @@ abstract class AiStrategy<TInput, TOutput> {
   List<Map<String, String>> buildPrompt(
     TInput input, {
     required List<SupportedLanguage> enabledLanguages,
+    List<String> predefinedChoices = const [],
   });
 
   /// Maps the raw JSON response from the LLM to the expected domain output.

@@ -28,7 +28,7 @@ class IngestionEnrichmentStrategy
   List<Map<String, String>> buildPrompt(
     List<IngestionCandidate> input, {
     required List<SupportedLanguage> enabledLanguages,
-    List<String> activeTopicNames = const [],
+    List<String> predefinedChoices = const [],
   }) {
     final languages = enabledLanguages.map((e) => e.name).join(', ');
 
@@ -52,7 +52,7 @@ class IngestionEnrichmentStrategy
 You are an expert news analyst and translator. Analyze the provided articles and return a JSON object where keys are the article IDs.
 For each article, provide:
 1. "isNews": A boolean. It MUST be `false` if the content is a list of links, a weather report, a stock ticker, an ad, a navigational element, or any other non-story content. It must be `true` only for a standard news article.
-2. "topicSlug": A string. From this exact list, select the single most relevant topic slug: [$activeTopicNames]. If none are a perfect match, choose the closest one. A result is mandatory.
+2. "topicSlug": A string. From this exact list, select the single most relevant topic slug: [$predefinedChoices]. If none are a perfect match, choose the closest one. A result is mandatory.
 3. "extractedPersons": A list of strings, containing the full names of any public figures mentioned (e.g., politicians, CEOs).
 4. "extractedCountryCodes": A list of 2-letter ISO 3166-1 country codes (e.g. "US", "FR") for countries mentioned in the article.
 5. "breakingConfidence": A float from 0.0 to 1.0 indicating how likely this is to be urgent, breaking news.
