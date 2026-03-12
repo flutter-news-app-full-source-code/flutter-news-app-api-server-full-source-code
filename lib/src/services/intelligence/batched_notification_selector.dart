@@ -22,6 +22,20 @@ class BatchedNotificationSelector {
   final Logger _log;
 
   /// Processes a batch of potential breaking news and dispatches notifications.
+  ///
+  /// **Spam Prevention Strategy: "Topic Clustering"**
+  /// Instead of notifying for every breaking headline (which causes fatigue),
+  /// we group concurrent headlines by [Topic].
+  ///
+  /// Logic:
+  /// 1. Filter out candidates with low breaking confidence (< 0.7).
+  /// 2. Group the remaining candidates by their `topic.id`.
+  /// 3. For each topic group, select ONLY the single headline with the
+  ///    highest confidence score.
+  ///
+  /// This ensures that if 5 articles about "US Politics" break at once,
+  /// users receive only the definitive story, while still allowing a concurrent
+  /// "Technology" story to be delivered.
   Future<void> processBatch({
     required List<Headline> candidates,
     required Map<String, double> confidenceScores,
@@ -30,52 +44,51 @@ class BatchedNotificationSelector {
 
     _log.info('Processing ${candidates.length} breaking news candidates...');
 
-    // 1. Sort candidates by confidence (Descending)
-    // This ensures that when we iterate, the first match is the best match.
-    candidates.sort((a, b) {
-      final scoreA = confidenceScores[a.id] ?? 0.0;
-      final scoreB = confidenceScores[b.id] ?? 0.0;
-      return scoreB.compareTo(scoreA);
-    });
+    // 1. Group by Topic ID
+    // We use a Map<TopicId, List<Headline>> to create clusters.
+    final byTopic = <String, List<Headline>>{};
 
-    // 2. We delegate the "matching" logic to the PushNotificationService,
-    // but we need to modify how it's called. The standard service method
-    // `sendBreakingNewsNotification` is designed for 1:N (One headline, Many users).
-    //
-    // To achieve "Top-1 per Filter" efficiently without refactoring the entire
-    // `PushNotificationService` to be batch-aware (which would be a massive change),
-    // we will emit notifications sequentially based on priority.
-    //
-    // However, the prompt requirement is specific: "we choose one".
-    //
-    // Since we cannot easily query "Give me all users who match Headline X"
-    // without iterating the entire user base (which `PushNotificationService` does),
-    // calling it N times is expensive.
-    //
-    // OPTIMIZATION: We will select the GLOBAL top 3 highest confidence headlines
-    // from this batch and only attempt to notify for those. This is a heuristic
-    // trade-off. A perfect "per-user" deduplication requires an inverted index
-    // or a specialized notification dispatch service.
-    //
-    // Given the constraints and the current architecture:
-    final topPicks = candidates.take(3).toList();
+    for (final headline in candidates) {
+      final score = confidenceScores[headline.id] ?? 0.0;
+
+      // Filter out noise
+      if (score < 0.7) {
+        _log.finer('Dropped low confidence candidate: ${headline.id} ($score)');
+        continue;
+      }
+
+      byTopic.putIfAbsent(headline.topic.id, () => []).add(headline);
+    }
+
+    // 2. Select the Winner for each Topic Cluster
+    final selectedHeadlines = <Headline>[];
+
+    for (final topicId in byTopic.keys) {
+      final cluster = byTopic[topicId]!;
+
+      // Sort descending by score to find the winner
+      cluster.sort((a, b) {
+        final scoreA = confidenceScores[a.id] ?? 0.0;
+        final scoreB = confidenceScores[b.id] ?? 0.0;
+        return scoreB.compareTo(scoreA);
+      });
+
+      final winner = cluster.first;
+      selectedHeadlines.add(winner);
+
+      _log.info(
+        'Topic Clustering: Selected ${winner.id} (Score: ${confidenceScores[winner.id]}) '
+        'from a cluster of ${cluster.length} articles for topic "${winner.topic.name.values.first}".',
+      );
+    }
 
     _log.info(
-      'Selected top ${topPicks.length} headlines for notification dispatch.',
+      'Dispatching ${selectedHeadlines.length} deduplicated notifications.',
     );
 
-    for (final headline in topPicks) {
+    // 3. Dispatch Notifications
+    for (final headline in selectedHeadlines) {
       try {
-        final score = confidenceScores[headline.id] ?? 0.0;
-        // Only send if confidence is high enough (e.g., > 0.7)
-        if (score < 0.7) {
-          _log.fine('Skipping headline ${headline.id} (Score: $score < 0.7)');
-          continue;
-        }
-
-        _log.info(
-          'Dispatching notification for ${headline.id} (Score: $score)',
-        );
         await _pushService.sendBreakingNewsNotification(headline: headline);
       } catch (e, s) {
         _log.severe('Failed to dispatch notification for ${headline.id}', e, s);
