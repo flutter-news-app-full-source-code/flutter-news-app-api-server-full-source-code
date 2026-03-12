@@ -2,12 +2,13 @@ import 'dart:convert';
 
 import 'package:core/core.dart';
 import 'package:logging/logging.dart';
+import 'package:verity_api/src/clients/intelligence/intelligence_client.dart';
 import 'package:verity_api/src/config/environment_config.dart';
 
 /// {@template open_router_client}
 /// A specialized client for interacting with the OpenRouter.ai API.
 /// {@endtemplate}
-class OpenRouterClient {
+class OpenRouterClient implements IntelligenceClient {
   /// {@macro open_router_client}
   OpenRouterClient({
     required HttpClient httpClient,
@@ -18,10 +19,7 @@ class OpenRouterClient {
   final HttpClient _httpClient;
   final Logger _log;
 
-  /// Dispatches a completion request to OpenRouter.
-  ///
-  /// Returns a [Map] containing the JSON response from the model and
-  /// the usage statistics.
+  @override
   Future<({Map<String, dynamic> data, int totalTokens})> generateCompletion({
     required List<Map<String, String>> messages,
     double temperature = 0.1,
