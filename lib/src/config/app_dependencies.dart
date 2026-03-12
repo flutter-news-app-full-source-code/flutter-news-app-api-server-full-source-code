@@ -21,8 +21,6 @@ import 'package:verity_api/src/models/intelligence/ai_usage.dart';
 import 'package:verity_api/src/models/storage/local_media_finalization_job.dart';
 import 'package:verity_api/src/models/storage/local_upload_token.dart';
 import 'package:verity_api/src/rbac/permission_service.dart';
-import 'package:verity_api/src/services/intelligence/identity_resolution_service.dart';
-import 'package:verity_api/src/services/intelligence/intelligence_service.dart';
 // import 'package:verity_api/src/services/reward/applovin_ssv_verifier.dart';
 import 'package:verity_api/src/services/services.dart';
 import 'package:verity_api/src/utils/gcs_jwt_verifier.dart';
@@ -775,6 +773,7 @@ class AppDependencies {
         ),
         usageRepository: aiUsageRepository,
         remoteConfigRepository: remoteConfigRepository,
+        topicRepository: topicRepository,
         log: Logger('IntelligenceService'),
       );
 
