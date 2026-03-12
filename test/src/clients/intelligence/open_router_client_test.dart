@@ -1,3 +1,5 @@
+// ignore_for_file: inference_failure_on_function_invocation
+
 import 'package:core/core.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
@@ -41,7 +43,7 @@ void main() {
     test('generateCompletion sends correct payload and headers', () async {
       when(
         () => mockHttpClient.post<Map<String, dynamic>>(
-          any(),
+          any<String>(),
           data: any(named: 'data'),
           options: any(named: 'options'),
         ),
@@ -65,7 +67,7 @@ void main() {
       verify(
         () => mockHttpClient.post<Map<String, dynamic>>(
           'chat/completions',
-          data: any(
+          data: any<dynamic>(
             named: 'data',
             that: isA<Map<String, dynamic>>()
                 .having(
@@ -90,7 +92,7 @@ void main() {
     test('strips markdown code blocks from response', () async {
       when(
         () => mockHttpClient.post<Map<String, dynamic>>(
-          any(),
+          any<String>(),
           data: any(named: 'data'),
           options: any(named: 'options'),
         ),
