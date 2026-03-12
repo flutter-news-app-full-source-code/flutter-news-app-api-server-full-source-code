@@ -1,11 +1,13 @@
 import 'package:core/core.dart';
+import 'package:verity_api/src/models/ingestion/ingestion_candidate.dart';
 import 'package:verity_api/src/services/intelligence/strategies/ai_strategy.dart';
 
 /// Result of the AI processing for a single headline in a batch.
 typedef AiEnrichmentResult = ({
   bool isNews,
-  String? topicId,
+  String? topicSlug,
   List<String> extractedPersons,
+  List<String> extractedCountryCodes,
   double breakingConfidence,
   Map<SupportedLanguage, String> translations,
 });
@@ -17,24 +19,27 @@ typedef AiEnrichmentResult = ({
 /// breaking news scoring, and multi-language translation in one pass.
 /// {@endtemplate}
 class IngestionEnrichmentStrategy
-    extends AiStrategy<List<Headline>, Map<String, AiEnrichmentResult>> {
+    extends
+        AiStrategy<List<IngestionCandidate>, Map<String, AiEnrichmentResult>> {
   @override
   String get identifier => 'batch_ingestion';
 
   @override
   List<Map<String, String>> buildPrompt(
-    List<Headline> input, {
+    List<IngestionCandidate> input, {
     required List<SupportedLanguage> enabledLanguages,
+    List<String> activeTopicNames = const [],
   }) {
     final languages = enabledLanguages.map((e) => e.name).join(', ');
 
     // We send a minimal representation to save input tokens.
     final items = input
         .map(
-          (h) => {
-            'id': h.id,
-            'title': h.title.values.first,
-            'url': h.url,
+          (c) => {
+            'id': c.headline.id,
+            'title': c.headline.title.values.first,
+            // Provide description for better context, if available.
+            'description': c.rawDescription,
           },
         )
         .toList();
@@ -44,14 +49,14 @@ class IngestionEnrichmentStrategy
         'role': 'system',
         'content':
             '''
-You are an expert news analyst and translator. 
-Analyze the provided headlines and return a JSON object where the keys are 
-the headline IDs. For each headline:
-1. "isNews": Boolean. False if it is an ad, weather report, help page, or junk.
-2. "topicId": Infer the most relevant topic ID from the context if possible.
-3. "extractedPersons": A list of full names of public figures mentioned.
-4. "breakingConfidence": A float (0.0-1.0) indicating if this is urgent news.
-5. "translations": Translate the title into these languages: [$languages].
+You are an expert news analyst and translator. Analyze the provided articles and return a JSON object where keys are the article IDs.
+For each article, provide:
+1. "isNews": A boolean. It MUST be `false` if the content is a list of links, a weather report, a stock ticker, an ad, a navigational element, or any other non-story content. It must be `true` only for a standard news article.
+2. "topicSlug": A string. From this exact list, select the single most relevant topic slug: [$activeTopicNames]. If none are a perfect match, choose the closest one. A result is mandatory.
+3. "extractedPersons": A list of strings, containing the full names of any public figures mentioned (e.g., politicians, CEOs).
+4. "extractedCountryCodes": A list of 2-letter ISO 3166-1 country codes (e.g. "US", "FR") for countries mentioned in the article.
+5. "breakingConfidence": A float from 0.0 to 1.0 indicating how likely this is to be urgent, breaking news.
+6. "translations": A dictionary translating the original title into these languages: [$languages].
 
 Return ONLY valid JSON.
 ''',
@@ -66,7 +71,7 @@ Return ONLY valid JSON.
   @override
   Map<String, AiEnrichmentResult> mapResponse(
     Map<String, dynamic> data,
-    List<Headline> input,
+    List<IngestionCandidate> input,
   ) {
     final results = <String, AiEnrichmentResult>{};
 
@@ -76,8 +81,13 @@ Return ONLY valid JSON.
 
       results[id] = (
         isNews: val['isNews'] as bool? ?? true,
-        topicId: val['topicId'] as String?,
-        extractedPersons: List<String>.from(val['extractedPersons'] ?? []),
+        topicSlug: val['topicSlug'] as String?,
+        extractedPersons: List<String>.from(
+          val['extractedPersons'] as List? ?? [],
+        ),
+        extractedCountryCodes: List<String>.from(
+          val['extractedCountryCodes'] as List? ?? [],
+        ),
         breakingConfidence:
             (val['breakingConfidence'] as num?)?.toDouble() ?? 0,
         translations: _parseTranslations(val['translations']),
