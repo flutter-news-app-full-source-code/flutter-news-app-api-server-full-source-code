@@ -685,6 +685,20 @@ class DatabaseSeedingService {
       });
       _log.info('Ensured indexes for "ingestion_mappings".');
 
+      // Indexes for ai_usage_logs
+      await _db.runCommand({
+        'createIndexes': 'ai_usage_logs',
+        'indexes': [
+          {
+            // TTL index to auto-delete usage logs after 90 days.
+            'key': {'updatedAt': 1},
+            'name': 'updatedAt_ttl_index',
+            'expireAfterSeconds': 7776000,
+          },
+        ],
+      });
+      _log.info('Ensured indexes for "ai_usage_logs".');
+
       // Indexes for aggregator_source_mappings
       await _db.runCommand({
         'createIndexes': 'aggregator_source_mappings',
