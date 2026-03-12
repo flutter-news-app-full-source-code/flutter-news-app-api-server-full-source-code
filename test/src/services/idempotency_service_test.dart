@@ -18,16 +18,22 @@ void main() {
     late Logger mockLogger;
     late IdempotencyService service;
     const eventId = 'test-event-id';
+    const scope = 'test-scope';
 
-    // Calculate the expected hashed ID (SHA-256 of 'test-event-id' truncated to 24 chars)
+    // Expected hash now includes scope prefix due to normalization
     final expectedDbId = sha256
-        .convert(utf8.encode(eventId))
+        .convert(utf8.encode('$scope:$eventId'))
         .toString()
         .substring(0, 24);
 
     setUpAll(() {
       registerFallbackValue(
-        IdempotencyRecord(id: 'fallback', createdAt: DateTime.now()),
+        IdempotencyRecord(
+          id: 'fallback',
+          scope: 'fb',
+          key: 'fb',
+          createdAt: DateTime.now(),
+        ),
       );
     });
 
@@ -47,11 +53,13 @@ void main() {
         ).thenAnswer(
           (_) async => IdempotencyRecord(
             id: expectedDbId,
+            scope: scope,
+            key: eventId,
             createdAt: DateTime.now(),
           ),
         );
 
-        final result = await service.isEventProcessed(eventId);
+        final result = await service.isEventProcessed(eventId, scope: scope);
 
         expect(result, isTrue);
         verify(
@@ -64,7 +72,7 @@ void main() {
           () => mockRepository.read(id: expectedDbId, userId: null),
         ).thenThrow(const NotFoundException('Not found'));
 
-        final result = await service.isEventProcessed(eventId);
+        final result = await service.isEventProcessed(eventId, scope: scope);
 
         expect(result, isFalse);
       });
@@ -74,10 +82,8 @@ void main() {
           () => mockRepository.read(id: expectedDbId, userId: null),
         ).thenThrow(const ServerException('DB down'));
 
-        expect(
-          () => service.isEventProcessed(eventId),
-          throwsA(isA<ServerException>()),
-        );
+        final call = service.isEventProcessed(eventId, scope: scope);
+        expect(call, throwsA(isA<ServerException>()));
       });
     });
 
@@ -86,11 +92,13 @@ void main() {
         when(() => mockRepository.create(item: any(named: 'item'))).thenAnswer(
           (_) async => IdempotencyRecord(
             id: expectedDbId,
+            scope: scope,
+            key: eventId,
             createdAt: DateTime.now(),
           ),
         );
 
-        await service.recordEvent(eventId);
+        await service.recordEvent(eventId, scope: scope);
 
         final captured =
             verify(
@@ -99,6 +107,8 @@ void main() {
                 as IdempotencyRecord;
 
         expect(captured.id, expectedDbId);
+        expect(captured.scope, scope);
+        expect(captured.key, eventId);
         expect(captured.createdAt, isA<DateTime>());
       });
     });
