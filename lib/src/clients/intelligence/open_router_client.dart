@@ -64,7 +64,7 @@ class OpenRouterClient implements IntelligenceClient {
       final usage = response['usage'] as Map<String, dynamic>?;
       final totalTokens = (usage?['total_tokens'] as num?)?.toInt() ?? 0;
 
-      _log.fine('AI Request successful. Tokens consumed: $totalTokens');
+      _log.info('AI Request successful. Tokens consumed: $totalTokens');
 
       return (
         data: _safeJsonParse(content),

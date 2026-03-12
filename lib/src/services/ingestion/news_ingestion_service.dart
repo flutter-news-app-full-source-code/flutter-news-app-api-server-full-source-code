@@ -578,6 +578,12 @@ class NewsIngestionService {
       savedCount: savedCount,
       error: isSuccess ? null : 'Batch processing failed.',
     );
+
+    _log.info(
+      'Batch Result [Task ${task.id}]: Processed ${candidates.length} items. '
+      '✅ Saved: $savedCount | ⏭️ Skipped: $skippedCount | ❌ Errors: $errorCount',
+    );
+
     return successfullySaved;
   }
 

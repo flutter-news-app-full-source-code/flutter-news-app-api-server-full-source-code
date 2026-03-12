@@ -71,7 +71,13 @@ class IntelligenceService {
         .map((t) => t.name[SupportedLanguage.en] ?? t.id)
         .toList();
 
-    _log.info('[AI:${strategy.identifier}] Building prompt for $input');
+    final inputDescription = input is List
+        ? '${input.length} items'
+        : input.toString().length > 50
+        ? '${input.toString().substring(0, 50)}...'
+        : input.toString();
+
+    _log.info('[AI:${strategy.identifier}] Processing: $inputDescription');
     final messages = strategy.buildPrompt(
       input,
       enabledLanguages: enabledLangs,
