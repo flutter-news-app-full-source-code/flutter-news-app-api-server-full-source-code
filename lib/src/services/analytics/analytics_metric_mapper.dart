@@ -202,6 +202,12 @@ class AnalyticsMetricMapper {
     ChartCardId.contentPersonsMentionsOverTime: const StandardMetricQuery(
       metric: 'database:persons:mentionsOverTime',
     ),
+    ChartCardId.contentPersonsEngagementByEntity: const StandardMetricQuery(
+      metric: 'database:persons:engagement',
+    ),
+    ChartCardId.contentHeadlinesViewsByPerson: const StandardMetricQuery(
+      metric: 'database:headlines:viewsByPerson',
+    ),
     ChartCardId.contentHeadlinesBreakingNewsDistribution:
         const StandardMetricQuery(
           metric: 'database:headlines:breakingNewsDistribution',
