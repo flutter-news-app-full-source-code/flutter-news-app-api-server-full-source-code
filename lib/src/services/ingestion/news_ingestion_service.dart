@@ -9,6 +9,7 @@ import 'package:verity_api/src/config/environment_config.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_catalog_source.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_source_mapping.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_type.dart';
+import 'package:verity_api/src/models/ingestion/ingestion_candidate.dart';
 import 'package:verity_api/src/models/ingestion/ingestion_topic_mapping.dart';
 import 'package:verity_api/src/models/ingestion/ingestion_usage.dart';
 import 'package:verity_api/src/services/idempotency_service.dart';
@@ -18,6 +19,7 @@ import 'package:verity_api/src/services/intelligence/identity_resolution_service
 import 'package:verity_api/src/services/intelligence/intelligence_service.dart';
 import 'package:verity_api/src/services/intelligence/strategies/ingestion_enrichment_strategy.dart';
 import 'package:verity_api/src/services/push_notification/push_notification_service.dart';
+import 'package:verity_api/src/utils/article_validator.dart';
 
 /// {@template news_ingestion_service}
 /// Orchestrates the automated ingestion of news from external aggregators.
@@ -116,6 +118,11 @@ class NewsIngestionService {
         orElse: () => topicCache.values.first,
       );
 
+      // Create a reverse map for slug-based resolution from AI results.
+      final topicSlugMap = {
+        for (final t in topics.items) (t.name[SupportedLanguage.en] ?? t.id): t,
+      };
+
       // Build provider-specific mapping maps: Map<Provider, Map<External, ID>>
       final mappingCache = <AggregatorType, Map<String, String>>{};
       for (final m in mappings.items) {
@@ -157,6 +164,7 @@ class NewsIngestionService {
         topicCache,
         fallbackTopic,
         countryCache,
+        topicSlugMap,
         mappingCache,
       );
     } catch (e, s) {
@@ -287,6 +295,7 @@ class NewsIngestionService {
     Map<String, Topic> topicCache,
     Topic fallbackTopic,
     Map<String, Country> countryCache,
+    Map<String, Topic> topicSlugMap,
     Map<AggregatorType, Map<String, String>> mappingCache,
   ) async {
     // Fetch full Source entities for mapping context
@@ -306,16 +315,17 @@ class NewsIngestionService {
         topicCache: topicCache,
         fallbackTopic: fallbackTopic,
         countryCache: countryCache,
+        topicSlugMap: topicSlugMap,
         mappingCache: mappingCache[providerType] ?? {},
       );
 
       await _incrementQuota();
 
       // Phase 3: AI Enrichment & Processing
-      final allBatchHeadlines = <Headline>[];
+      final allBatchCandidates = <IngestionCandidate>[];
       for (final mapping in mappings) {
         final h = batchResults[mapping.sourceId] ?? [];
-        allBatchHeadlines.addAll(h);
+        allBatchCandidates.addAll(h);
       }
 
       // Map to hold enrichment data (scores, etc) keyed by ID
@@ -323,14 +333,18 @@ class NewsIngestionService {
 
       // 3.1. Batch Enrichment (If Enabled)
       if (EnvironmentConfig.aiIngestionEnabled &&
-          allBatchHeadlines.isNotEmpty) {
+          allBatchCandidates.isNotEmpty) {
         try {
-          enrichmentMap = await _intelligenceService.execute(
-            strategy: IngestionEnrichmentStrategy(),
-            input: allBatchHeadlines,
-          );
+          enrichmentMap = await _intelligenceService
+              .execute<
+                List<IngestionCandidate>,
+                Map<String, AiEnrichmentResult>
+              >(
+                strategy: IngestionEnrichmentStrategy(),
+                input: allBatchCandidates,
+              );
           _log.info(
-            'AI Enrichment complete for ${allBatchHeadlines.length} items.',
+            'AI Enrichment complete for ${allBatchCandidates.length} items.',
           );
         } catch (e) {
           _log.warning('AI Enrichment failed. Proceeding with raw data.', e);
@@ -344,11 +358,13 @@ class NewsIngestionService {
       // Process results for each source in the batch
       for (final mapping in mappings) {
         final task = tasks.firstWhere((t) => t.sourceId == mapping.sourceId);
-        final headlines = batchResults[mapping.sourceId] ?? [];
+        final candidates = batchResults[mapping.sourceId] ?? [];
 
         final saved = await _processHeadlines(
-          headlines,
+          candidates,
           task,
+          countryCache: countryCache,
+          topicSlugMap: topicSlugMap,
           enrichmentMap: enrichmentMap,
         );
 
@@ -390,6 +406,7 @@ class NewsIngestionService {
         topicCache,
         fallbackTopic,
         countryCache,
+        topicSlugMap,
         mappingCache,
       );
     } catch (e, s) {
@@ -412,6 +429,7 @@ class NewsIngestionService {
     Map<String, Topic> topicCache,
     Topic fallbackTopic,
     Map<String, Country> countryCache,
+    Map<String, Topic> topicSlugMap,
     Map<AggregatorType, Map<String, String>> mappingCache,
   ) async {
     for (final mapping in mappings) {
@@ -425,11 +443,17 @@ class NewsIngestionService {
           topicCache: topicCache,
           fallbackTopic: fallbackTopic,
           countryCache: countryCache,
+          topicSlugMap: topicSlugMap,
           mappingCache: mappingCache[providerType] ?? {},
         );
 
         await _incrementQuota();
-        await _processHeadlines(results[mapping.sourceId] ?? [], task);
+        await _processHeadlines(
+          results[mapping.sourceId] ?? [],
+          task,
+          topicSlugMap: topicSlugMap,
+          countryCache: countryCache,
+        );
       } on BadRequestException {
         _log.severe('Poison pill identified: ${mapping.externalId}');
         // Disable the mapping to prevent future batch failures
@@ -456,8 +480,10 @@ class NewsIngestionService {
   }
 
   Future<List<Headline>> _processHeadlines(
-    List<Headline> headlines,
+    List<IngestionCandidate> candidates,
     NewsAutomationTask task, {
+    required Map<String, Country> countryCache,
+    required Map<String, Topic> topicSlugMap,
     Map<String, AiEnrichmentResult>? enrichmentMap,
   }) async {
     var savedCount = 0;
@@ -466,9 +492,10 @@ class NewsIngestionService {
 
     final successfullySaved = <Headline>[];
 
-    for (final raw in headlines) {
+    for (final candidate in candidates) {
+      final raw = candidate.headline;
       // QUALITY CONTROL: Filter noise and siblings
-      if (!_validateArticleQuality(raw, task)) {
+      if (!ArticleValidator.validate(raw)) {
         _log.fine('   [QC] Article rejected: ${raw.url}');
         skippedCount++;
         continue;
@@ -491,11 +518,20 @@ class NewsIngestionService {
           enrichment.extractedPersons,
         );
 
-        // 3. Apply Enrichment
+        // 3. Country Resolution
+        final resolvedCountries = <Country>[];
+        for (final code in enrichment.extractedCountryCodes) {
+          final country = countryCache[code.toLowerCase()];
+          if (country != null) resolvedCountries.add(country);
+        }
+
+        // 4. Apply Enrichment
         finalHeadline = raw.copyWith(
-          // Use inferred topic if available
-          topic: enrichment.topicId != null
-              ? raw.topic.copyWith(id: enrichment.topicId!)
+          // Use AI-inferred topic if available and resolved
+          topic:
+              (enrichment.topicSlug != null &&
+                  topicSlugMap[enrichment.topicSlug] != null)
+              ? topicSlugMap[enrichment.topicSlug]!
               : raw.topic,
           // Merge translations
           title: {
@@ -503,6 +539,7 @@ class NewsIngestionService {
             ...enrichment.translations,
           },
           mentionedPersons: resolvedPersons,
+          mentionedCountries: resolvedCountries,
           // Use AI breaking score threshold (e.g. > 0.8) to set flag
           isBreaking: enrichment.breakingConfidence > 0.8,
         );
@@ -542,53 +579,6 @@ class NewsIngestionService {
       error: isSuccess ? null : 'Batch processing failed.',
     );
     return successfullySaved;
-  }
-
-  /// Validates the quality and relevance of a fetched article.
-  /// Returns `true` if the article should be processed, `false` otherwise.
-  bool _validateArticleQuality(Headline headline, NewsAutomationTask task) {
-    final articleUrl = Uri.parse(headline.url);
-    final sourceUrl = Uri.parse(headline.source.url);
-
-    // 1. Host Consistency Check (Prevents Sibling Leakage)
-    // Ensures 'arabic.cnn.com' is not accepted for 'edition.cnn.com'.
-    // Logic: Article host must contain the Source host (handling subdomains).
-    // Normalization: strip 'www.' for comparison.
-    final cleanArticleHost = articleUrl.host.replaceAll(RegExp(r'^www\.'), '');
-    final cleanSourceHost = sourceUrl.host.replaceAll(RegExp(r'^www\.'), '');
-
-    if (!cleanArticleHost.endsWith(cleanSourceHost)) {
-      // Special Case: Allow if the source host is just a domain and article is subdomain
-      // But reject if source is 'edition.cnn.com' and article is 'arabic.cnn.com'
-      _log.info(
-        '[QC] Host Mismatch (Leakage): Article="$cleanArticleHost" does not end with Source="$cleanSourceHost". URL: ${headline.url}',
-      );
-      return false;
-    }
-
-    // 2. Global Noise Filter (Path Blacklist)
-    // Rejects known non-news patterns like TV schedules, weather, etc.
-    const noisePatterns = [
-      '/programmes/',
-      '/schedules/',
-      '/weather/',
-      '/tv/',
-      '/radio/',
-      '/help/',
-      '/contact/',
-      '/terms',
-      '/privacy',
-    ];
-    if (noisePatterns.any(
-      (pattern) => articleUrl.path.toLowerCase().contains(pattern),
-    )) {
-      _log.info(
-        '[QC] Noise Pattern Detected: URL contains blacklist pattern. URL: ${headline.url}',
-      );
-      return false;
-    }
-
-    return true;
   }
 
   Future<List<NewsAutomationTask>> _claimPendingTasks() async {
