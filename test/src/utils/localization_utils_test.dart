@@ -382,7 +382,7 @@ void main() {
           SupportedLanguage.es: 'Nuevo iPhone',
         },
         source: source,
-        eventCountry: country,
+        mentionedCountries: const [country],
         topic: topic,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -437,7 +437,7 @@ void main() {
         expect(result.source.name, equals({SupportedLanguage.es: 'CNN Es'}));
         expect(result.topic.name, equals({SupportedLanguage.es: 'Tec'}));
         expect(
-          result.eventCountry.name,
+          result.mentionedCountries.first.name,
           equals({SupportedLanguage.es: 'EEUU'}),
         );
       });
