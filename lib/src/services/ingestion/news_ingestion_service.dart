@@ -13,6 +13,11 @@ import 'package:verity_api/src/models/ingestion/ingestion_topic_mapping.dart';
 import 'package:verity_api/src/models/ingestion/ingestion_usage.dart';
 import 'package:verity_api/src/services/idempotency_service.dart';
 import 'package:verity_api/src/services/ingestion/providers/aggregator_provider.dart';
+import 'package:verity_api/src/services/intelligence/batched_notification_selector.dart';
+import 'package:verity_api/src/services/intelligence/identity_resolution_service.dart';
+import 'package:verity_api/src/services/intelligence/intelligence_service.dart';
+import 'package:verity_api/src/services/intelligence/strategies/ingestion_enrichment_strategy.dart';
+import 'package:verity_api/src/services/push_notification/push_notification_service.dart';
 
 /// {@template news_ingestion_service}
 /// Orchestrates the automated ingestion of news from external aggregators.
@@ -33,6 +38,9 @@ class NewsIngestionService {
     required DataRepository<AggregatorSourceMapping> sourceMappingRepository,
     required DataRepository<IngestionUsage> usageRepository,
     required AggregatorProvider provider,
+    required IntelligenceService intelligenceService,
+    required IdentityResolutionService identityResolutionService,
+    required IPushNotificationService pushNotificationService,
     required IdempotencyService idempotencyService,
     required Logger log,
   }) : _taskRepository = taskRepository,
@@ -44,6 +52,9 @@ class NewsIngestionService {
        _sourceMappingRepository = sourceMappingRepository,
        _usageRepository = usageRepository,
        _provider = provider,
+       _intelligenceService = intelligenceService,
+       _identityResolutionService = identityResolutionService,
+       _pushNotificationService = pushNotificationService,
        _idempotencyService = idempotencyService,
        _log = log;
 
@@ -56,6 +67,9 @@ class NewsIngestionService {
   final DataRepository<AggregatorSourceMapping> _sourceMappingRepository;
   final DataRepository<IngestionUsage> _usageRepository;
   final AggregatorProvider _provider;
+  final IntelligenceService _intelligenceService;
+  final IdentityResolutionService _identityResolutionService;
+  final IPushNotificationService _pushNotificationService;
   final IdempotencyService _idempotencyService;
   final Logger _log;
 
@@ -297,12 +311,72 @@ class NewsIngestionService {
 
       await _incrementQuota();
 
+      // Phase 3: AI Enrichment & Processing
+      final allBatchHeadlines = <Headline>[];
+      for (final mapping in mappings) {
+        final h = batchResults[mapping.sourceId] ?? [];
+        allBatchHeadlines.addAll(h);
+      }
+
+      // Map to hold enrichment data (scores, etc) keyed by ID
+      var enrichmentMap = <String, AiEnrichmentResult>{};
+
+      // 3.1. Batch Enrichment (If Enabled)
+      if (EnvironmentConfig.aiIngestionEnabled &&
+          allBatchHeadlines.isNotEmpty) {
+        try {
+          enrichmentMap = await _intelligenceService.execute(
+            strategy: IngestionEnrichmentStrategy(),
+            input: allBatchHeadlines,
+          );
+          _log.info(
+            'AI Enrichment complete for ${allBatchHeadlines.length} items.',
+          );
+        } catch (e) {
+          _log.warning('AI Enrichment failed. Proceeding with raw data.', e);
+        }
+      }
+
+      // Breaking news candidates for this batch
+      final breakingCandidates = <Headline>[];
+      final breakingScores = <String, double>{};
+
       // Process results for each source in the batch
       for (final mapping in mappings) {
         final task = tasks.firstWhere((t) => t.sourceId == mapping.sourceId);
         final headlines = batchResults[mapping.sourceId] ?? [];
 
-        await _processHeadlines(headlines, task);
+        final saved = await _processHeadlines(
+          headlines,
+          task,
+          enrichmentMap: enrichmentMap,
+        );
+
+        // Collect breaking candidates
+        for (final h in saved) {
+          if (h.isBreaking) {
+            breakingCandidates.add(h);
+            final score = enrichmentMap[h.id]?.breakingConfidence ?? 0.0;
+            breakingScores[h.id] = score;
+          }
+        }
+      }
+
+      // Phase 4: Spam-Free Notification Dispatch
+      if (breakingCandidates.isNotEmpty) {
+        // We create the selector here to scope it to the batch context
+        final selector = BatchedNotificationSelector(
+          pushNotificationService: _pushNotificationService,
+          log: Logger('BatchedNotificationSelector'),
+        );
+
+        // Fire and forget - don't block the ingestion worker termination
+        unawaited(
+          selector.processBatch(
+            candidates: breakingCandidates,
+            confidenceScores: breakingScores,
+          ),
+        );
       }
     } on BadRequestException {
       _log.warning(
@@ -381,13 +455,16 @@ class NewsIngestionService {
     }
   }
 
-  Future<void> _processHeadlines(
+  Future<List<Headline>> _processHeadlines(
     List<Headline> headlines,
-    NewsAutomationTask task,
-  ) async {
+    NewsAutomationTask task, {
+    Map<String, AiEnrichmentResult>? enrichmentMap,
+  }) async {
     var savedCount = 0;
     var skippedCount = 0;
     var errorCount = 0;
+
+    final successfullySaved = <Headline>[];
 
     for (final raw in headlines) {
       // QUALITY CONTROL: Filter noise and siblings
@@ -395,6 +472,40 @@ class NewsIngestionService {
         _log.fine('   [QC] Article rejected: ${raw.url}');
         skippedCount++;
         continue;
+      }
+
+      // AI FILTERING & ENRICHMENT
+      var finalHeadline = raw;
+      if (enrichmentMap != null && enrichmentMap.containsKey(raw.id)) {
+        final enrichment = enrichmentMap[raw.id]!;
+
+        // 1. Junk Filter
+        if (!enrichment.isNews) {
+          _log.fine('   [AI Filter] Rejected junk: ${raw.url}');
+          skippedCount++;
+          continue;
+        }
+
+        // 2. Identity Resolution (Resolve names to Person entities)
+        final resolvedPersons = await _identityResolutionService.resolvePersons(
+          enrichment.extractedPersons,
+        );
+
+        // 3. Apply Enrichment
+        finalHeadline = raw.copyWith(
+          // Use inferred topic if available
+          topic: enrichment.topicId != null
+              ? raw.topic.copyWith(id: enrichment.topicId!)
+              : raw.topic,
+          // Merge translations
+          title: {
+            ...raw.title,
+            ...enrichment.translations,
+          },
+          mentionedPersons: resolvedPersons,
+          // Use AI breaking score threshold (e.g. > 0.8) to set flag
+          isBreaking: enrichment.breakingConfidence > 0.8,
+        );
       }
 
       try {
@@ -409,13 +520,14 @@ class NewsIngestionService {
           continue;
         }
 
-        await _headlineRepository.create(item: raw);
+        await _headlineRepository.create(item: finalHeadline);
         await _idempotencyService.recordEvent(
-          '${raw.source.id}:${raw.url}',
+          '${finalHeadline.source.id}:${finalHeadline.url}',
           scope: 'headline_ingestion',
         );
-        _log.fine('   [Success] Saved headline: ${raw.url}');
+        _log.fine('   [Success] Saved headline: ${finalHeadline.url}');
         savedCount++;
+        successfullySaved.add(finalHeadline);
       } catch (e, s) {
         _log.warning('Failed to save headline: ${raw.url}', e, s);
         errorCount++;
@@ -429,6 +541,7 @@ class NewsIngestionService {
       savedCount: savedCount,
       error: isSuccess ? null : 'Batch processing failed.',
     );
+    return successfullySaved;
   }
 
   /// Validates the quality and relevance of a fetched article.
