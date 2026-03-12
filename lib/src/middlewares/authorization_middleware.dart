@@ -24,10 +24,34 @@ final _log = Logger('AuthorizationMiddleware');
 /// It does NOT perform instance-level ownership checks; those are handled
 /// by the route handlers (`index.dart`, `[id].dart`) if required by the
 /// `ModelActionPermission.requiresOwnershipCheck` flag.
+///
+/// If [requiredPermissions] is provided, it takes precedence over ModelConfig
+/// lookups, enforcing only those specific permissions.
 /// {@endtemplate}
-Middleware authorizationMiddleware() {
+Middleware authorizationMiddleware({Set<String>? requiredPermissions}) {
   return (handler) {
     return (context) async {
+      // --- Mode 1: Explicit Permission Check (for custom routes) ---
+      if (requiredPermissions != null && requiredPermissions.isNotEmpty) {
+        // Ensure user is authenticated
+        final user = context.read<User?>();
+        if (user == null) {
+          throw const UnauthorizedException('Authentication required.');
+        }
+
+        final permissionService = context.read<PermissionService>();
+        for (final permission in requiredPermissions) {
+          if (!permissionService.hasPermission(user, permission)) {
+            throw const ForbiddenException(
+              'You do not have the required permission to perform this action.',
+            );
+          }
+        }
+        // Permission granted.
+        return handler(context);
+      }
+
+      // --- Mode 2: ModelConfig-based Check (for generic data routes) ---
       // Read dependencies from the context.
       // User is now read as nullable, as _conditionalAuthenticationMiddleware
       // might provide null for public routes.
