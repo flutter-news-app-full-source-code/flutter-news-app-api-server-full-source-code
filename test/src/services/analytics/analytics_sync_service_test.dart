@@ -10,6 +10,8 @@ import 'package:verity_api/src/services/analytics/analytics.dart';
 // Mocks for all dependencies of AnalyticsSyncService
 class MockDataRepository<T> extends Mock implements DataRepository<T> {}
 
+class MockPersonRepository extends Mock implements DataRepository<Person> {}
+
 class MockAnalyticsReportingClient extends Mock
     implements AnalyticsReportingClient {}
 
@@ -24,6 +26,7 @@ void main() {
     late MockDataRepository<RankedListCardData> mockRankedListCardRepo;
     late MockAnalyticsReportingClient mockAnalyticsClient;
     late MockAnalyticsMetricMapper mockMapper;
+    late MockPersonRepository mockPersonRepo;
 
     // Other repositories that are dependencies but may not be used in all tests
     late MockDataRepository<User> mockUserRepo;
@@ -45,6 +48,7 @@ void main() {
       mockRankedListCardRepo = MockDataRepository<RankedListCardData>();
       mockAnalyticsClient = MockAnalyticsReportingClient();
       mockMapper = MockAnalyticsMetricMapper();
+      mockPersonRepo = MockPersonRepository();
 
       mockUserRepo = MockDataRepository<User>();
       mockTopicRepo = MockDataRepository<Topic>();
@@ -104,6 +108,7 @@ void main() {
         appReviewRepository: mockAppReviewRepo,
         userRewardsRepository: mockUserRewardsRepo,
         mediaAssetRepository: mockMediaAssetRepo,
+        personRepository: mockPersonRepo,
         newsAutomationTaskRepository: mockNewsAutomationTaskRepo,
         ingestionUsageRepository: mockIngestionUsageRepo,
         googleAnalyticsClient: mockAnalyticsClient,
