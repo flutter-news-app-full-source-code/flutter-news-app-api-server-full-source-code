@@ -17,6 +17,8 @@ class IdempotencyRecord extends Equatable {
   /// {@macro idempotency_record}
   const IdempotencyRecord({
     required this.id,
+    required this.scope,
+    required this.key,
     required this.createdAt,
   });
 
@@ -27,6 +29,12 @@ class IdempotencyRecord extends Equatable {
   /// The unique identifier for the event (e.g., transactionId, eventId).
   final String id;
 
+  /// The namespace for the key (e.g., 'ingestion_lock').
+  final String scope;
+
+  /// The raw identifier being tracked within the scope.
+  final String key;
+
   /// The timestamp when this record was created (processed).
   final DateTime createdAt;
 
@@ -34,5 +42,5 @@ class IdempotencyRecord extends Equatable {
   Map<String, dynamic> toJson() => _$IdempotencyRecordToJson(this);
 
   @override
-  List<Object?> get props => [id, createdAt];
+  List<Object?> get props => [id, scope, key, createdAt];
 }
