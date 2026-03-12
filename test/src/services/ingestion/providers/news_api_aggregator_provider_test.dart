@@ -5,7 +5,6 @@ import 'package:test/test.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_source_mapping.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_type.dart';
 import 'package:verity_api/src/models/ingestion/news_api_models.dart';
-import 'package:verity_api/src/services/ingestion/mappers/aggregator_mapper.dart';
 import 'package:verity_api/src/services/ingestion/mappers/news_api_mapper.dart';
 import 'package:verity_api/src/services/ingestion/providers/news_api_aggregator_provider.dart';
 

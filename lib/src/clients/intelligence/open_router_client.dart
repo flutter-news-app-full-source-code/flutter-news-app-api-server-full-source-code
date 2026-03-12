@@ -84,13 +84,13 @@ class OpenRouterClient {
 
   Map<String, dynamic> _safeJsonParse(String content) {
     try {
-      // The model is forced into JSON mode, but we defensively strip 
+      // The model is forced into JSON mode, but we defensively strip
       // any markdown code block artifacts if they appear.
       final clean = content
           .replaceFirst(RegExp('^```json'), '')
           .replaceFirst(RegExp(r'```$'), '')
           .trim();
-      
+
       return jsonDecode(clean) as Map<String, dynamic>;
     } catch (e) {
       _log.severe('Failed to parse AI response as JSON: $content');

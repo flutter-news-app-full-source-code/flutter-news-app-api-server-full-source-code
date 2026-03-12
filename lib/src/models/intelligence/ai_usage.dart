@@ -2,7 +2,8 @@ import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 import 'package:verity_api/src/config/config.dart' show EnvironmentConfig;
-import 'package:verity_api/src/config/environment_config.dart' show EnvironmentConfig;
+import 'package:verity_api/src/config/environment_config.dart'
+    show EnvironmentConfig;
 
 part 'ai_usage.g.dart';
 
