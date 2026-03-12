@@ -156,4 +156,7 @@ abstract class Permissions {
 
   /// Allows managing media assets (e.g., for admins in the dashboard).
   static const String mediaManage = 'media.manage';
+
+  /// Allows using the AI enrichment endpoint.
+  static const String intelligenceEnrich = 'intelligence.enrich';
 }

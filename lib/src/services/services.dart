@@ -11,6 +11,7 @@ export 'finalization_job_service.dart';
 export 'google_auth_service.dart';
 export 'idempotency_service.dart';
 export 'ingestion/ingestion.dart';
+export 'intelligence/intelligence.dart';
 export 'jwt_auth_token_service.dart';
 export 'media_service.dart';
 export 'mongodb_rate_limit_service.dart';
