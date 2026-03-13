@@ -79,6 +79,7 @@ void main() {
     // NewsAPI doesn't provide categories per article, so it should always
     // resolve to the fallback topic (or whatever logic is in resolveTopic).
     expect(headline.topic, fallbackTopic);
+    expect(headline.status, ContentStatus.draft);
   });
 
   test('mapToHeadline uses source language for title key', () {
