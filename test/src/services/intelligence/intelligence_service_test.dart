@@ -109,102 +109,112 @@ void main() {
     EnvironmentConfig.setOverride('AI_DAILY_TOKEN_QUOTA', '1000');
 
     // Default RemoteConfig Mock
-    when(() => mockRemoteConfigRepo.read(id: any(named: 'id'))).thenAnswer(
-      (_) async => RemoteConfig(
-        id: 'config',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        app: const AppConfig(
-          maintenance: MaintenanceConfig(isUnderMaintenance: false),
-          update: UpdateConfig(
-            latestAppVersion: '1.0.0',
-            isLatestVersionOnly: false,
-            iosUpdateUrl: '',
-            androidUpdateUrl: '',
-          ),
-          general: GeneralAppConfig(
-            termsOfServiceUrl: '',
-            privacyPolicyUrl: '',
-          ),
-          localization: LocalizationConfig(
-            enabledLanguages: [SupportedLanguage.en],
-            defaultLanguage: SupportedLanguage.en,
-          ),
-        ),
-        features: const FeaturesConfig(
-          analytics: AnalyticsConfig(
-            enabled: true,
-            activeProvider: AnalyticsProviders.firebase,
-            disabledEvents: {},
-            eventSamplingRates: {},
-          ),
-          ads: AdConfig(
-            enabled: true,
-            primaryAdPlatform: AdPlatformType.admob,
-            platformAdIdentifiers: {},
-            feedAdConfiguration: FeedAdConfiguration(
-              enabled: true,
-              adType: AdType.native,
-              visibleTo: {},
+    when(
+      () => mockRemoteConfigRepo.readAll(
+        pagination: any(named: 'pagination'),
+      ),
+    ).thenAnswer(
+      (_) async => PaginatedResponse(
+        items: [
+          RemoteConfig(
+            id: 'config',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            app: const AppConfig(
+              maintenance: MaintenanceConfig(isUnderMaintenance: false),
+              update: UpdateConfig(
+                latestAppVersion: '1.0.0',
+                isLatestVersionOnly: false,
+                iosUpdateUrl: '',
+                androidUpdateUrl: '',
+              ),
+              general: GeneralAppConfig(
+                termsOfServiceUrl: '',
+                privacyPolicyUrl: '',
+              ),
+              localization: LocalizationConfig(
+                enabledLanguages: [SupportedLanguage.en],
+                defaultLanguage: SupportedLanguage.en,
+              ),
             ),
-            navigationAdConfiguration: NavigationAdConfiguration(
-              enabled: true,
-              visibleTo: {},
+            features: const FeaturesConfig(
+              analytics: AnalyticsConfig(
+                enabled: true,
+                activeProvider: AnalyticsProviders.firebase,
+                disabledEvents: {},
+                eventSamplingRates: {},
+              ),
+              ads: AdConfig(
+                enabled: true,
+                primaryAdPlatform: AdPlatformType.admob,
+                platformAdIdentifiers: {},
+                feedAdConfiguration: FeedAdConfiguration(
+                  enabled: true,
+                  adType: AdType.native,
+                  visibleTo: {},
+                ),
+                navigationAdConfiguration: NavigationAdConfiguration(
+                  enabled: true,
+                  visibleTo: {},
+                ),
+              ),
+              pushNotifications: PushNotificationConfig(
+                enabled: true,
+                primaryProvider: PushNotificationProviders.firebase,
+                deliveryConfigs: {},
+              ),
+              feed: FeedConfig(
+                itemClickBehavior: FeedItemClickBehavior.defaultBehavior,
+                decorators: {},
+              ),
+              community: CommunityConfig(
+                enabled: true,
+                engagement: EngagementConfig(
+                  enabled: true,
+                  engagementMode: EngagementMode.reactionsAndComments,
+                ),
+                reporting: ReportingConfig(
+                  enabled: true,
+                  headlineReportingEnabled: true,
+                  sourceReportingEnabled: true,
+                  commentReportingEnabled: true,
+                ),
+                appReview: AppReviewConfig(
+                  enabled: true,
+                  interactionCycleThreshold: 5,
+                  initialPromptCooldownDays: 30,
+                  eligiblePositiveInteractions: [],
+                  isNegativeFeedbackFollowUpEnabled: true,
+                  isPositiveFeedbackFollowUpEnabled: false,
+                ),
+              ),
+              rewards: RewardsConfig(enabled: true, rewards: {}),
+              onboarding: OnboardingConfig(
+                isEnabled: true,
+                appTour: AppTourConfig(isEnabled: true, isSkippable: true),
+                initialPersonalization: InitialPersonalizationConfig(
+                  isEnabled: true,
+                  isSkippable: true,
+                  isCountrySelectionEnabled: true,
+                  isTopicSelectionEnabled: true,
+                  isSourceSelectionEnabled: true,
+                ),
+              ),
+            ),
+            user: const UserConfig(
+              limits: UserLimitsConfig(
+                followedItems: {},
+                savedHeadlines: {},
+                savedHeadlineFilters: {},
+                reactionsPerDay: {},
+                commentsPerDay: {},
+                reportsPerDay: {},
+              ),
             ),
           ),
-          pushNotifications: PushNotificationConfig(
-            enabled: true,
-            primaryProvider: PushNotificationProviders.firebase,
-            deliveryConfigs: {},
-          ),
-          feed: FeedConfig(
-            itemClickBehavior: FeedItemClickBehavior.defaultBehavior,
-            decorators: {},
-          ),
-          community: CommunityConfig(
-            enabled: true,
-            engagement: EngagementConfig(
-              enabled: true,
-              engagementMode: EngagementMode.reactionsAndComments,
-            ),
-            reporting: ReportingConfig(
-              enabled: true,
-              headlineReportingEnabled: true,
-              sourceReportingEnabled: true,
-              commentReportingEnabled: true,
-            ),
-            appReview: AppReviewConfig(
-              enabled: true,
-              interactionCycleThreshold: 5,
-              initialPromptCooldownDays: 30,
-              eligiblePositiveInteractions: [],
-              isNegativeFeedbackFollowUpEnabled: true,
-              isPositiveFeedbackFollowUpEnabled: false,
-            ),
-          ),
-          rewards: RewardsConfig(enabled: true, rewards: {}),
-          onboarding: OnboardingConfig(
-            isEnabled: true,
-            appTour: AppTourConfig(isEnabled: true, isSkippable: true),
-            initialPersonalization: InitialPersonalizationConfig(
-              isEnabled: true,
-              isSkippable: true,
-              isCountrySelectionEnabled: true,
-              isTopicSelectionEnabled: true,
-              isSourceSelectionEnabled: true,
-            ),
-          ),
-        ),
-        user: const UserConfig(
-          limits: UserLimitsConfig(
-            followedItems: {},
-            savedHeadlines: {},
-            savedHeadlineFilters: {},
-            reactionsPerDay: {},
-            commentsPerDay: {},
-            reportsPerDay: {},
-          ),
-        ),
+        ],
+        cursor: null,
+        hasMore: false,
       ),
     );
 
@@ -356,7 +366,10 @@ void main() {
       ];
       when(
         () => mockHeadlineRepo.readAll(
-          filter: {'lastEnrichedAt': null},
+          filter: {
+            'status': ContentStatus.draft.name,
+            'lastEnrichedAt': null,
+          },
           pagination: any(named: 'pagination'),
         ),
       ).thenAnswer((_) async => responses.removeAt(0));
@@ -366,7 +379,12 @@ void main() {
         draftHeadline.id: {
           'isNews': true,
           'topicSlug': 'Technology',
-          'extractedPersons': ['Elon Musk'],
+          'extractedPersons': [
+            {
+              'name': {'en': 'Elon Musk'},
+              'description': {'en': 'Tech Entrepreneur'},
+            },
+          ],
           'extractedCountryCodes': ['US'],
           'breakingConfidence': 0.9,
           'translations': {'es': 'Titulo'},
@@ -392,7 +410,6 @@ void main() {
         (_) async => (
           persons: [const Person(id: 'p1', name: {}, description: {})],
           createdCount: 0,
-          reusedCount: 1,
         ),
       );
 
@@ -447,7 +464,10 @@ void main() {
       ];
       when(
         () => mockHeadlineRepo.readAll(
-          filter: {'lastEnrichedAt': null},
+          filter: {
+            'status': ContentStatus.draft.name,
+            'lastEnrichedAt': null,
+          },
           pagination: any(named: 'pagination'),
         ),
       ).thenAnswer((_) async => responses.removeAt(0));
@@ -500,7 +520,10 @@ void main() {
     test('stops when no drafts found', () async {
       when(
         () => mockHeadlineRepo.readAll(
-          filter: {'lastEnrichedAt': null},
+          filter: {
+            'status': ContentStatus.draft.name,
+            'lastEnrichedAt': null,
+          },
           pagination: any(named: 'pagination'),
         ),
       ).thenAnswer(
@@ -512,7 +535,10 @@ void main() {
 
       verify(
         () => mockHeadlineRepo.readAll(
-          filter: {'lastEnrichedAt': null},
+          filter: {
+            'status': ContentStatus.draft.name,
+            'lastEnrichedAt': null,
+          },
           pagination: any(named: 'pagination'),
         ),
       ).called(1);
