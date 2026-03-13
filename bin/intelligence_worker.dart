@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:logging/logging.dart';
@@ -27,6 +28,12 @@ Future<void> main(List<String> args) async {
   final log = Logger('IntelligenceWorkerMain');
   log.info('Intelligence worker process started.');
 
+  // Safety Valve: Hard kill after 10 minutes to prevent zombie processes.
+  final watchdog = Timer(const Duration(minutes: 10), () {
+    log.severe('Worker timed out after 10 minutes. Forcing exit.');
+    exit(1);
+  });
+
   try {
     // 2. Initialize Dependencies
     await AppDependencies.instance.init();
@@ -35,7 +42,11 @@ Future<void> main(List<String> args) async {
     // 3. Run Worker
     final intelligenceService = AppDependencies.instance.intelligenceService;
     await intelligenceService.run();
+
+    // If we get here, the work finished successfully. Cancel the watchdog.
+    watchdog.cancel();
   } catch (e, s) {
+    watchdog.cancel(); // Cancel watchdog to allow immediate exit
     log.severe('Fatal error in intelligence worker.', e, s);
     exit(1);
   } finally {
