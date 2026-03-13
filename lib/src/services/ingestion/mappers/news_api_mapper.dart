@@ -42,7 +42,7 @@ class NewsApiMapper extends AggregatorMapper<NewsApiArticle> {
       status: ContentStatus.draft,
       isBreaking: false,
       lastEnrichedAt: null,
-      mentionedCountries: [source.headquarters],
+      mentionedCountries: const [],
       mentionedPersons: const [],
     );
   }
