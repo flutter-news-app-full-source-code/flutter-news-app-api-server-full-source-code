@@ -123,8 +123,9 @@ void main() {
         topic: fallbackTopic,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
-        status: ContentStatus.active,
+        status: ContentStatus.draft,
         isBreaking: false,
+        lastEnrichedAt: null,
       );
 
       when(
@@ -143,13 +144,12 @@ void main() {
         sourceMap: {source.id: source},
         topicCache: topicCache,
         fallbackTopic: fallbackTopic,
-        topicSlugMap: topicSlugMap,
         countryCache: countryCache,
         mappingCache: mappingCache,
       );
 
       expect(result[source.id], isNotNull);
-      expect(result[source.id]!.first.headline, expectedHeadline);
+      expect(result[source.id]!.first, expectedHeadline);
 
       verify(
         () => mockHttpClient.get<Map<String, dynamic>>(
@@ -218,7 +218,6 @@ void main() {
       sourceMap: sourceMap,
       topicCache: {},
       fallbackTopic: fallbackTopic,
-      topicSlugMap: {},
       countryCache: {},
       mappingCache: {},
     );
