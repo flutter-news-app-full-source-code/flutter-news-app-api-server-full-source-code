@@ -2,6 +2,13 @@ import 'package:core/core.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 
+/// The result of a person resolution operation, including statistics.
+typedef PersonResolutionResult = ({
+  List<Person> persons,
+  int createdCount,
+  int reusedCount,
+});
+
 /// {@template identity_resolution_service}
 /// Resolves extracted names into persistent [Person] entities.
 ///
@@ -22,51 +29,65 @@ class IdentityResolutionService {
   final Logger _log;
 
   /// Resolves a list of raw names into a list of full [Person] entities.
-  Future<List<Person>> resolvePersons(List<String> names) async {
-    if (names.isEmpty) return const [];
+  Future<PersonResolutionResult> resolvePersons(
+    List<Person> extractions,
+  ) async {
+    if (extractions.isEmpty) {
+      return (persons: <Person>[], createdCount: 0, reusedCount: 0);
+    }
 
-    _log.info('Resolving identities for names: $names');
+    final extractionNames = extractions
+        .map((e) => e.name[SupportedLanguage.en] ?? 'Unknown')
+        .toList();
+
+    _log.info('Resolving identities for: $extractionNames');
     final resolved = <Person>[];
+    var createdCount = 0;
+    var reusedCount = 0;
 
-    for (final name in names) {
+    for (final extraction in extractions) {
+      final enName = extraction.name[SupportedLanguage.en];
+      if (enName == null) continue;
+
       try {
         // 1. Search existing (case-insensitive fuzzy match)
         final response = await _personRepository.readAll(
-          filter: {'q': name},
+          filter: {'q': enName},
           pagination: const PaginationOptions(limit: 1),
         );
 
         if (response.items.isNotEmpty) {
-          _log.fine(
-            'Identity match found for: $name -> ${response.items.first.id}',
-          );
+          // Optimization: We could potentially update the existing person's
+          // description if it's missing, but we'll skip that for now.
           resolved.add(response.items.first);
+          reusedCount++;
           continue;
         }
 
         // 2. Create new (Automation Policy: All created as active)
-        final newPerson = await _createNewPerson(name);
+        final newPerson = await _createNewPerson(extraction);
         resolved.add(newPerson);
+        createdCount++;
       } catch (e, s) {
-        _log.severe('Failed to resolve identity for: $name', e, s);
+        _log.severe('Failed to resolve identity for: ${extraction.name}', e, s);
         // We don't block the whole process if one person fails.
       }
     }
 
-    return resolved;
+    return (
+      persons: resolved,
+      createdCount: createdCount,
+      reusedCount: reusedCount,
+    );
   }
 
-  Future<Person> _createNewPerson(String name) async {
-    _log.info('No match for "$name". Creating new persistent entity.');
+  Future<Person> _createNewPerson(Person extraction) async {
+    final enName = extraction.name[SupportedLanguage.en] ?? 'Unknown';
+    _log.info('No match for "$enName". Creating new persistent entity.');
 
-    // We assume English as the primary name key for auto-created items.
-    final person = Person(
+    // Generate a valid database ID and keep the AI-generated localized data.
+    final person = extraction.copyWith(
       id: ObjectId().oid,
-      name: {SupportedLanguage.en: name},
-      description: const {
-        SupportedLanguage.en: 'Automatically identified figure.',
-      },
-      // Status is handled via metadata or defaults to active in MongoDB client
     );
 
     try {
@@ -74,7 +95,7 @@ class IdentityResolutionService {
     } on ConflictException {
       // Handle race conditions where another worker created the person
       final retry = await _personRepository.readAll(
-        filter: {'q': name},
+        filter: {'q': enName},
         pagination: const PaginationOptions(limit: 1),
       );
       return retry.items.first;
