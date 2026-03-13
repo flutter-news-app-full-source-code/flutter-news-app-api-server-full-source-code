@@ -38,8 +38,10 @@ class NewsApiMapper extends AggregatorMapper<NewsApiArticle> {
       topic: resolveTopic(null, topicCache, fallbackTopic, mappingCache),
       createdAt: now,
       updatedAt: now,
-      status: ContentStatus.active,
+      // All ingested content starts as draft until processed by Intelligence Worker.
+      status: ContentStatus.draft,
       isBreaking: false,
+      lastEnrichedAt: null,
       mentionedCountries: [source.headquarters],
       mentionedPersons: const [],
     );
