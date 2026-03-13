@@ -48,7 +48,7 @@ class SingleEnrichmentStrategy
         'content':
             '''
 You are an expert news editor. Based on the provided headline title, return a valid JSON object with the following fields:
-1. "topicSlug": A string. From this exact list, select the single most relevant topic slug: [$predefinedChoices].
+2. "topicSlug": A string. You MUST select the single most relevant topic slug from this list: [$predefinedChoices]. If the content does not fit any of these specific categories, return null. Do NOT invent slugs.
 2. "extractedPersons": A list of strings, containing the full names of any public figures mentioned.
 3. "extractedCountryCodes": A list of 2-letter ISO 3166-1 country codes (e.g. "US", "FR") representing any mentioned countries, or the parent countries of any specific cities, regions, or landmarks found in the headline.
 4. "translations": A dictionary translating the title into these languages: [$missingLanguages]. Do NOT include an image URL.
