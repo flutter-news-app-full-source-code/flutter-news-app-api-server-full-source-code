@@ -84,7 +84,13 @@ class IntelligenceService {
 
     // 3. Execution: Prepare prompt with enabled languages and active topics
     _log.finer('Fetching remote config for AI prompt context...');
-    final config = await _remoteConfigRepository.read(id: kRemoteConfigId);
+    final configResponse = await _remoteConfigRepository.readAll(
+      pagination: const PaginationOptions(limit: 1),
+    );
+    if (configResponse.items.isEmpty) {
+      throw const ServerException('Remote configuration not found.');
+    }
+    final config = configResponse.items.first;
     final enabledLangs = config.app.localization.enabledLanguages;
 
     // Fetch active topics to provide as a strict choice list to the AI.
@@ -139,6 +145,13 @@ class IntelligenceService {
 
     _log.info('Starting Intelligence enrichment cycle...');
 
+    final configResponse = await _remoteConfigRepository.readAll(
+      pagination: const PaginationOptions(limit: 1),
+    );
+    if (configResponse.items.isEmpty) {
+      throw const ServerException('Remote configuration not found.');
+    }
+
     // 1. Calculate Batch Size
     const kEstTokensPerItem = 60;
     const kSystemPromptBuffer = 1000;
@@ -179,6 +192,8 @@ class IntelligenceService {
     var statsTopics = 0;
     var statsPersons = 0;
     var statsCountries = 0;
+    var statsPersonsCreated = 0;
+    var statsPersonsReused = 0;
     var statsTranslations = 0;
 
     while (hasMore && totalProcessed < maxHeadlinesPerRun) {
@@ -232,8 +247,12 @@ class IntelligenceService {
           }
 
           // 2. Identity & Country Resolution
-          final resolvedPersons = await _identityResolutionService
+          final personResolution = await _identityResolutionService
               .resolvePersons(result.extractedPersons);
+
+          final resolvedPersons = personResolution.persons;
+          statsPersonsCreated += personResolution.createdCount;
+          statsPersonsReused += personResolution.reusedCount;
 
           final resolvedCountries = <Country>[];
           for (final code in result.extractedCountryCodes) {
@@ -324,6 +343,11 @@ class IntelligenceService {
         ? (statsEnriched / statsScanned * 100).toStringAsFixed(1)
         : '0';
 
+    final totalResolved = statsPersonsCreated + statsPersonsReused;
+    final reusedPct = totalResolved > 0
+        ? (statsPersonsReused / totalResolved * 100).toStringAsFixed(1)
+        : '0';
+
     _log.info('''
 ------------------------------------------------------------
 ENRICHMENT CYCLE COMPLETE
@@ -335,6 +359,7 @@ JUNK FILTERED:    $statsJunk items
 RESOLUTION HIT RATE (of enriched):
 Topics Resolved:  $statsTopics
 Linked Persons:   $statsPersons
+  ↳ Reused: $reusedPct% ($statsPersonsReused existing / $statsPersonsCreated new)
 Linked Countries: $statsCountries
 Translations:     $statsTranslations total generated
 ------------------------------------------------------------
