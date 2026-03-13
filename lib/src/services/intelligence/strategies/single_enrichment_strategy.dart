@@ -4,7 +4,7 @@ import 'package:verity_api/src/services/intelligence/strategies/ai_strategy.dart
 /// The result of a single headline enrichment operation.
 typedef SingleEnrichmentResult = ({
   String? topicSlug,
-  List<String> extractedPersons,
+  List<Person> extractedPersons,
   List<String> extractedCountryCodes,
   Map<SupportedLanguage, String> translations,
 });
@@ -47,13 +47,29 @@ class SingleEnrichmentStrategy
         'role': 'system',
         'content':
             '''
-You are an expert news editor. Based on the provided headline title, return a valid JSON object with the following fields:
-2. "topicSlug": A string. You MUST select the single most relevant topic slug from this list: [$predefinedChoices]. If the content does not fit any of these specific categories, return null. Do NOT invent slugs.
-2. "extractedPersons": A list of strings, containing the full names of any public figures mentioned.
-3. "extractedCountryCodes": A list of 2-letter ISO 3166-1 country codes (e.g. "US", "FR") representing any mentioned countries, or the parent countries of any specific cities, regions, or landmarks found in the headline.
-4. "translations": A dictionary translating the title into these languages: [$missingLanguages]. Do NOT include an image URL.
+You are an expert news editor. Your task is to analyze the provided headline and return a single, valid JSON object with the following strict schema:
+1.  `topicSlug` (string | null): The single most relevant topic slug from this list: [$predefinedChoices]. You MUST NOT invent slugs. If no topic matches, return `null`.
+2.  `extractedPersons` (array of objects): An array of all public figures mentioned. Each object in the array MUST have the following structure:
+    - `name` (object): A dictionary mapping language codes to the person's FULL NAME.
+    - `description` (object): A dictionary mapping language codes to a brief, factual description of the person's role (e.g., "CEO of X", "Senator from Y"). If the role is unknown, use "...".
+    The required languages for these translations are: [$missingLanguages].
+3.  `extractedCountryCodes` (array of strings): A list of 2-letter ISO 3166-1 country codes (e.g., "US", "FR") for any mentioned countries.
+4.  `translations` (object): A dictionary translating the original headline title into these languages: [$missingLanguages].
 
-Return ONLY valid JSON. Do not generate fields that were not requested.
+EXAMPLE of the expected output JSON:
+{
+  "topicSlug": "Technology",
+  "extractedPersons": [
+    {
+      "name": { "es": "Satya Nadella" },
+      "description": { "es": "CEO de Microsoft" }
+    }
+  ],
+  "extractedCountryCodes": ["US"],
+  "translations": { "es": "Microsoft anuncia nuevo chip de IA." }
+}
+
+Return ONLY the valid JSON object. Do not include any other text, explanations, or markdown.
 ''',
       },
       {
@@ -67,6 +83,7 @@ Return ONLY valid JSON. Do not generate fields that were not requested.
   SingleEnrichmentResult mapResponse(
     Map<String, dynamic> data,
     Headline input,
+    List<SupportedLanguage> enabledLanguages,
   ) {
     final rawTranslations = data['translations'] as Map<String, dynamic>? ?? {};
     final translations = <SupportedLanguage, String>{};
@@ -81,13 +98,55 @@ Return ONLY valid JSON. Do not generate fields that were not requested.
 
     return (
       topicSlug: data['topicSlug'] as String?,
-      extractedPersons: List<String>.from(
+      extractedPersons: _parsePersons(
         data['extractedPersons'] as List? ?? [],
+        enabledLanguages,
       ),
       extractedCountryCodes: List<String>.from(
         data['extractedCountryCodes'] as List? ?? [],
       ),
       translations: translations,
     );
+  }
+
+  List<Person> _parsePersons(
+    List<dynamic> raw,
+    List<SupportedLanguage> enabledLanguages,
+  ) {
+    return raw.map((e) {
+      final map = e as Map<String, dynamic>;
+      return Person(
+        id: 'temp',
+        name: _parseGenericTranslations(map['name'], enabledLanguages),
+        description: _parseGenericTranslations(
+          map['description'],
+          enabledLanguages,
+        ),
+      );
+    }).toList();
+  }
+
+  Map<SupportedLanguage, String> _parseGenericTranslations(
+    dynamic raw,
+    List<SupportedLanguage> enabledLanguages,
+  ) {
+    final rawMap = raw is Map ? raw : <String, dynamic>{};
+    final result = <SupportedLanguage, String>{};
+
+    String getFallback() {
+      if (rawMap.containsKey('en')) return rawMap['en'].toString();
+      if (rawMap.isNotEmpty) return rawMap.values.first.toString();
+      return '...';
+    }
+
+    for (final lang in enabledLanguages) {
+      final key = lang.name;
+      if (rawMap.containsKey(key)) {
+        result[lang] = rawMap[key].toString();
+      } else {
+        result[lang] = getFallback();
+      }
+    }
+    return result;
   }
 }

@@ -48,7 +48,11 @@ class FakeAiStrategy extends Fake implements AiStrategy<String, String> {
   }
 
   @override
-  String mapResponse(Map<String, dynamic> data, String input) {
+  String mapResponse(
+    Map<String, dynamic> data,
+    String input,
+    List<SupportedLanguage> enabledLanguages,
+  ) {
     return data['result'] as String;
   }
 }

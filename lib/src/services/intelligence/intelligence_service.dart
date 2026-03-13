@@ -130,7 +130,7 @@ class IntelligenceService {
 
     // 5. Mapping: Return domain objects
     _log.finer('Mapping AI response to domain objects...');
-    final output = strategy.mapResponse(response.data, input);
+    final output = strategy.mapResponse(response.data, input, enabledLangs);
     _log.finer('Response mapping complete.');
     return output;
   }

@@ -21,5 +21,6 @@ abstract class AiStrategy<TInput, TOutput> {
   TOutput mapResponse(
     Map<String, dynamic> data,
     TInput input,
+    List<SupportedLanguage> enabledLanguages,
   );
 }
