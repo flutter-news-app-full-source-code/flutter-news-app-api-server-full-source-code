@@ -32,6 +32,8 @@ Future<void> main(List<String> args) async {
     exit(1);
   });
 
+  var exitCode = 0;
+
   try {
     // 2. Initialize Production Dependencies
     // This connects to MongoDB and sets up Repositories.
@@ -50,11 +52,11 @@ Future<void> main(List<String> args) async {
   } catch (e, s) {
     watchdog.cancel(); // Cancel watchdog to allow immediate exit
     log.severe('Fatal error in worker process.', e, s);
-    exit(1);
+    exitCode = 1;
   } finally {
     // 4. Graceful Shutdown
     await AppDependencies.instance.dispose();
     log.info('Worker process exiting.');
-    exit(0);
+    exit(exitCode);
   }
 }

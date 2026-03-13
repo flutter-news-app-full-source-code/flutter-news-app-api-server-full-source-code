@@ -34,6 +34,8 @@ Future<void> main(List<String> args) async {
     exit(1);
   });
 
+  var exitCode = 0;
+
   try {
     // 2. Initialize Dependencies
     await AppDependencies.instance.init();
@@ -48,9 +50,9 @@ Future<void> main(List<String> args) async {
   } catch (e, s) {
     watchdog.cancel(); // Cancel watchdog to allow immediate exit
     log.severe('Fatal error in intelligence worker.', e, s);
-    exit(1);
+    exitCode = 1;
   } finally {
     await AppDependencies.instance.dispose();
-    exit(0);
+    exit(exitCode);
   }
 }
