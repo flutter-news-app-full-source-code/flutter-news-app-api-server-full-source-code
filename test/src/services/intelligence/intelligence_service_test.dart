@@ -410,6 +410,7 @@ void main() {
         (_) async => (
           persons: [const Person(id: 'p1', name: {}, description: {})],
           createdCount: 0,
+          reusedCount: 1,
         ),
       );
 
