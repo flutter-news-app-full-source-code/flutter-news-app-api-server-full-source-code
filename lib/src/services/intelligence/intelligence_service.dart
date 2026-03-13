@@ -266,6 +266,11 @@ class IntelligenceService {
         }
       } catch (e, s) {
         _log.severe('Batch processing failed.', e, s);
+        // TODO(fulleni): Implement admin alert for billing failures.
+        // If the exception `e` is an `UnknownException` containing "402" or
+        // "Insufficient credits", create a persistent, high-priority system
+        // notification for the admin dashboard. This prevents silent failures
+        // when the AI provider's billing is exhausted.
         // Break loop on critical failure to prevent infinite error loops
         break;
       }
