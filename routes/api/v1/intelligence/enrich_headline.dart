@@ -25,9 +25,11 @@ Future<Response> onRequest(RequestContext context) async {
 
     // 1. Resolve Persons (creates them if they don't exist)
     final identityService = context.read<IdentityResolutionService>();
-    final persons = await identityService.resolvePersons(
+
+    final resolutionResult = await identityService.resolvePersons(
       result.extractedPersons,
     );
+    final persons = resolutionResult.persons;
 
     // 2. Resolve Topic (by slug)
     var topic = partialHeadline.topic;
