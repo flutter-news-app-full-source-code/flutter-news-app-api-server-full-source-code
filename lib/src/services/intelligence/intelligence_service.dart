@@ -54,6 +54,32 @@ class IntelligenceService {
   final IPushNotificationService _pushNotificationService;
   final Logger _log;
 
+  RemoteConfig? _cachedRemoteConfig;
+  DateTime? _remoteConfigCacheTimestamp;
+
+  // Helper to get config with caching to reduce database load.
+  Future<RemoteConfig> _getRemoteConfig() async {
+    const cacheDuration = Duration(minutes: 5);
+    if (_cachedRemoteConfig != null &&
+        _remoteConfigCacheTimestamp != null &&
+        DateTime.now().toUtc().difference(_remoteConfigCacheTimestamp!) <
+            cacheDuration) {
+      _log.finer('Using cached RemoteConfig.');
+      return _cachedRemoteConfig!;
+    }
+
+    _log.info('Fetching fresh RemoteConfig and caching it.');
+    final configResponse = await _remoteConfigRepository.readAll(
+      pagination: const PaginationOptions(limit: 1),
+    );
+    if (configResponse.items.isEmpty) {
+      throw const ServerException('Remote configuration not found.');
+    }
+    _cachedRemoteConfig = configResponse.items.first;
+    _remoteConfigCacheTimestamp = DateTime.now().toUtc();
+    return _cachedRemoteConfig!;
+  }
+
   /// Processes input through a specific [AiStrategy].
   ///
   /// This method performs the "Guard-Quota-Execute-Log" cycle.
@@ -84,13 +110,7 @@ class IntelligenceService {
 
     // 3. Execution: Prepare prompt with enabled languages and active topics
     _log.finer('Fetching remote config for AI prompt context...');
-    final configResponse = await _remoteConfigRepository.readAll(
-      pagination: const PaginationOptions(limit: 1),
-    );
-    if (configResponse.items.isEmpty) {
-      throw const ServerException('Remote configuration not found.');
-    }
-    final config = configResponse.items.first;
+    final config = await _getRemoteConfig();
     final enabledLangs = config.app.localization.enabledLanguages;
 
     // Fetch active topics to provide as a strict choice list to the AI.
@@ -144,13 +164,6 @@ class IntelligenceService {
     const maxHeadlinesPerRun = 500;
 
     _log.info('Starting Intelligence enrichment cycle...');
-
-    final configResponse = await _remoteConfigRepository.readAll(
-      pagination: const PaginationOptions(limit: 1),
-    );
-    if (configResponse.items.isEmpty) {
-      throw const ServerException('Remote configuration not found.');
-    }
 
     // 1. Calculate Batch Size
     const kEstTokensPerItem = 60;

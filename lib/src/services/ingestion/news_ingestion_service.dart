@@ -388,15 +388,13 @@ class NewsIngestionService {
     }
   }
 
-  Future<List<Headline>> _processHeadlines(
+  Future<void> _processHeadlines(
     List<Headline> headlines,
     NewsAutomationTask task,
   ) async {
     var savedCount = 0;
     var skippedCount = 0;
     var errorCount = 0;
-
-    final successfullySaved = <Headline>[];
 
     for (final raw in headlines) {
       _log.finer('Processing draft headline: ${raw.url}');
@@ -437,7 +435,6 @@ class NewsIngestionService {
         );
         _log.fine('   [Success] Persisted headline: ${finalHeadline.url}');
         savedCount++;
-        successfullySaved.add(finalHeadline);
       } catch (e, s) {
         _log.warning('Failed to save headline: ${raw.url}', e, s);
         errorCount++;
@@ -456,8 +453,6 @@ class NewsIngestionService {
       'Batch Result [Task ${task.id}]: Processed ${headlines.length} items. '
       '✅ Saved: $savedCount | ⏭️ Skipped: $skippedCount | ❌ Errors: $errorCount',
     );
-
-    return successfullySaved;
   }
 
   Future<List<NewsAutomationTask>> _claimPendingTasks() async {
