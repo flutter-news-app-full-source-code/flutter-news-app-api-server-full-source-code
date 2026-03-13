@@ -785,6 +785,10 @@ class AppDependencies {
         usageRepository: aiUsageRepository,
         remoteConfigRepository: remoteConfigRepository,
         topicRepository: topicRepository,
+        headlineRepository: headlineRepository,
+        countryRepository: countryRepository,
+        identityResolutionService: identityResolutionService,
+        pushNotificationService: pushNotificationService,
         log: Logger('IntelligenceService'),
       );
 
@@ -839,9 +843,6 @@ class AppDependencies {
         mappingRepository: mappingRepository,
         sourceMappingRepository: sourceMappingRepository,
         usageRepository: ingestionUsageRepository,
-        intelligenceService: intelligenceService,
-        identityResolutionService: identityResolutionService,
-        pushNotificationService: pushNotificationService,
         provider: activeAggregatorProvider,
         idempotencyService: idempotencyService,
         log: Logger('NewsIngestionService'),
