@@ -3,7 +3,6 @@
 import 'dart:async';
 
 import 'package:core/core.dart';
-import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 import 'package:verity_api/src/clients/analytics/analytics.dart';
 import 'package:verity_api/src/clients/email/email_client.dart';

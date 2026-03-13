@@ -29,7 +29,6 @@ void main() {
   late Topic fallbackTopic;
   late Map<String, Topic> topicCache;
   late Map<String, Country> countryCache;
-  late Map<String, Topic> topicSlugMap;
   late Map<String, String> mappingCache;
   late AggregatorSourceMapping mapping;
 
@@ -77,7 +76,6 @@ void main() {
     );
     topicCache = {};
     countryCache = {};
-    topicSlugMap = {};
     mappingCache = {};
 
     mapping = AggregatorSourceMapping(
