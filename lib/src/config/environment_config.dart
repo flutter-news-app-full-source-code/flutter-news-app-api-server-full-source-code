@@ -200,6 +200,11 @@ abstract final class EnvironmentConfig {
   static int get aiDailyTokenQuota =>
       int.tryParse(_getEnv('AI_DAILY_TOKEN_QUOTA') ?? '100000') ?? 100000;
 
+  /// Retrieves the maximum input tokens allowed for AI batching.
+  /// Defaults to 8192 (Safe buffer for standard 8k/32k models).
+  static int get aiMaxInputTokens =>
+      int.tryParse(_getEnv('AI_MAX_INPUT_TOKENS') ?? '8192') ?? 8192;
+
   /// Retrieves the SendGrid API URL from the environment, if provided.
   ///
   /// Returns `null` if the `SENDGRID_API_URL` is not set.
