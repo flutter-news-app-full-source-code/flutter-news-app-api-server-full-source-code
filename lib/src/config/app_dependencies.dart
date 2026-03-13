@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:core/core.dart';
+import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 import 'package:verity_api/src/clients/analytics/analytics.dart';
 import 'package:verity_api/src/clients/email/email_client.dart';
@@ -769,6 +770,11 @@ class AppDependencies {
         final intelligenceHttpClient = HttpClient(
           baseUrl: 'https://openrouter.ai/api/v1/',
           tokenProvider: () async => null,
+          options: BaseOptions(
+            connectTimeout: const Duration(seconds: 30),
+            // Allow 3 minutes for complex AI generation tasks
+            receiveTimeout: const Duration(minutes: 3),
+          ),
           logger: Logger('OpenRouterHttpClient'),
         );
         intelligenceClient = OpenRouterClient(
@@ -780,6 +786,11 @@ class AppDependencies {
         throw StateError('Unknown AI Provider: $aiProvider');
       }
 
+      identityResolutionService = IdentityResolutionService(
+        personRepository: personRepository,
+        log: Logger('IdentityResolutionService'),
+      );
+
       intelligenceService = IntelligenceService(
         client: intelligenceClient,
         usageRepository: aiUsageRepository,
@@ -790,11 +801,6 @@ class AppDependencies {
         identityResolutionService: identityResolutionService,
         pushNotificationService: pushNotificationService,
         log: Logger('IntelligenceService'),
-      );
-
-      identityResolutionService = IdentityResolutionService(
-        personRepository: personRepository,
-        log: Logger('IdentityResolutionService'),
       );
 
       // --- News Ingestion Provider Factory ---
