@@ -39,7 +39,7 @@ void main() {
   group('IdentityResolutionService', () {
     test('returns empty list for empty input', () async {
       final result = await service.resolvePersons([]);
-      expect(result, isEmpty);
+      expect(result.persons, isEmpty);
       verifyNever(() => mockRepo.readAll(filter: any(named: 'filter')));
     });
 
@@ -63,10 +63,20 @@ void main() {
         ),
       );
 
-      final result = await service.resolvePersons(['John Doe']);
+      final result = await service.resolvePersons(
+        [
+          const Person(
+            id: 'temp',
+            name: {SupportedLanguage.en: 'John Doe'},
+            description: {},
+          ),
+        ],
+      );
 
-      expect(result, hasLength(1));
-      expect(result.first.id, existing.id);
+      expect(result.persons, hasLength(1));
+      expect(result.persons.first.id, existing.id);
+      expect(result.reusedCount, 1);
+      expect(result.createdCount, 0);
       verifyNever(() => mockRepo.create(item: any(named: 'item')));
     });
 
@@ -90,10 +100,20 @@ void main() {
         (invocation) async => invocation.namedArguments[#item] as Person,
       );
 
-      final result = await service.resolvePersons(['Jane Doe']);
+      final result = await service.resolvePersons(
+        [
+          const Person(
+            id: 'temp',
+            name: {SupportedLanguage.en: 'Jane Doe'},
+            description: {SupportedLanguage.en: 'CEO'},
+          ),
+        ],
+      );
 
-      expect(result, hasLength(1));
-      expect(result.first.name[SupportedLanguage.en], 'Jane Doe');
+      expect(result.persons, hasLength(1));
+      expect(result.persons.first.name[SupportedLanguage.en], 'Jane Doe');
+      expect(result.createdCount, 1);
+      expect(result.reusedCount, 0);
       verify(() => mockRepo.create(item: any(named: 'item'))).called(1);
     });
 
@@ -157,10 +177,18 @@ void main() {
         );
       });
 
-      final result = await service.resolvePersons(['Jane Doe']);
+      final result = await service.resolvePersons(
+        [
+          const Person(
+            id: 'temp',
+            name: {SupportedLanguage.en: 'Jane Doe'},
+            description: {},
+          ),
+        ],
+      );
 
-      expect(result, hasLength(1));
-      expect(result.first.id, 'p1');
+      expect(result.persons, hasLength(1));
+      expect(result.persons.first.id, 'p1');
       verify(() => mockRepo.create(item: any(named: 'item'))).called(1);
       verify(
         () => mockRepo.readAll(
