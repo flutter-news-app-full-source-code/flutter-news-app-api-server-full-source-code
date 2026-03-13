@@ -2,7 +2,6 @@ import 'package:core/core.dart';
 import 'package:logging/logging.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_catalog_source.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_source_mapping.dart';
-import 'package:verity_api/src/models/ingestion/ingestion_candidate.dart';
 import 'package:verity_api/src/models/ingestion/news_api_models.dart';
 import 'package:verity_api/src/services/ingestion/mappers/aggregator_mapper.dart';
 import 'package:verity_api/src/services/ingestion/providers/aggregator_provider.dart';
@@ -58,17 +57,16 @@ class NewsApiAggregatorProvider implements AggregatorProvider {
   }
 
   @override
-  Future<Map<String, List<IngestionCandidate>>> fetchBatchHeadlines(
+  Future<Map<String, List<Headline>>> fetchBatchHeadlines(
     List<AggregatorSourceMapping> mappings, {
     required Map<String, Source> sourceMap,
     required Map<String, Topic> topicCache,
     required Topic fallbackTopic,
     required Map<String, Country> countryCache,
-    required Map<String, Topic> topicSlugMap,
     required Map<String, String> mappingCache,
   }) async {
     _log.info('Fetching NewsAPI headlines for ${mappings.length} sources...');
-    final results = <String, List<IngestionCandidate>>{};
+    final results = <String, List<Headline>>{};
 
     // Chunk mappings to respect provider limits and ensure article density.
     for (var i = 0; i < mappings.length; i += _kMaxBatchSize) {
@@ -111,14 +109,7 @@ class NewsApiAggregatorProvider implements AggregatorProvider {
               mappingCache: mappingCache,
             );
 
-            results
-                .putIfAbsent(mapping.sourceId, () => [])
-                .add(
-                  IngestionCandidate(
-                    headline: headline,
-                    rawDescription: article.description,
-                  ),
-                );
+            results.putIfAbsent(mapping.sourceId, () => []).add(headline);
             _log.finest('Successfully mapped article: ${article.title}');
           } catch (e, s) {
             _log.warning(
