@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:verity_api/src/models/ingestion/media_stack_models.dart';
+import 'package:veritai_api/src/models/ingestion/media_stack_models.dart';
 
 void main() {
   group('MediaStackArticle', () {

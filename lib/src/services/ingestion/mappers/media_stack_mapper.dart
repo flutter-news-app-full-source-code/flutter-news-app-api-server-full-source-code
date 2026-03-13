@@ -1,7 +1,7 @@
 import 'package:core/core.dart';
 import 'package:mongo_dart/mongo_dart.dart';
-import 'package:verity_api/src/models/ingestion/media_stack_models.dart';
-import 'package:verity_api/src/services/ingestion/mappers/aggregator_mapper.dart';
+import 'package:veritai_api/src/models/ingestion/media_stack_models.dart';
+import 'package:veritai_api/src/services/ingestion/mappers/aggregator_mapper.dart';
 
 /// {@template media_stack_mapper}
 /// Mapper for MediaStack API responses.

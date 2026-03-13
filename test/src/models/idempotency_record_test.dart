@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:verity_api/src/models/idempotency_record.dart';
+import 'package:veritai_api/src/models/idempotency_record.dart';
 
 void main() {
   group('IdempotencyRecord', () {

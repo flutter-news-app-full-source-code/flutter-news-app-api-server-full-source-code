@@ -1,5 +1,5 @@
 import 'package:core/core.dart';
-import 'package:verity_api/src/models/models.dart';
+import 'package:veritai_api/src/models/models.dart';
 
 /// {@template analytics_reporting_client}
 /// An abstract interface for a client that fetches aggregated analytics data

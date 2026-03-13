@@ -1,8 +1,8 @@
 import 'package:core/core.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
-import 'package:verity_api/src/database/mongo/data_mongodb.dart';
-import 'package:verity_api/src/models/storage/local_media_finalization_job.dart';
+import 'package:veritai_api/src/database/mongo/data_mongodb.dart';
+import 'package:veritai_api/src/models/storage/local_media_finalization_job.dart';
 
 /// {@template finalization_job_service}
 /// A service for handling atomic operations on [LocalMediaFinalizationJob]s.

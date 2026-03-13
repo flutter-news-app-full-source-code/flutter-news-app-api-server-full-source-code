@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:verity_api/src/rbac/permissions.dart';
+import 'package:veritai_api/src/rbac/permissions.dart';
 
 void main() {
   group('Permissions Constants', () {

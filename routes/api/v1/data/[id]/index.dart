@@ -3,11 +3,11 @@ import 'dart:io';
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:logging/logging.dart';
-import 'package:verity_api/src/helpers/response_helper.dart';
-import 'package:verity_api/src/middlewares/ownership_check_middleware.dart';
-import 'package:verity_api/src/rbac/permission_service.dart';
-import 'package:verity_api/src/registry/data_operation_registry.dart';
-import 'package:verity_api/src/registry/model_registry.dart';
+import 'package:veritai_api/src/helpers/response_helper.dart';
+import 'package:veritai_api/src/middlewares/ownership_check_middleware.dart';
+import 'package:veritai_api/src/rbac/permission_service.dart';
+import 'package:veritai_api/src/registry/data_operation_registry.dart';
+import 'package:veritai_api/src/registry/model_registry.dart';
 
 // Create a logger for this file.
 final _logger = Logger('data_item_handler');

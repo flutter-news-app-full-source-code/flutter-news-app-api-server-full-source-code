@@ -5,10 +5,10 @@ import 'package:dart_frog/dart_frog.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 import 'package:path/path.dart' as p;
-import 'package:verity_api/src/config/environment_config.dart';
-import 'package:verity_api/src/rbac/permission_service.dart';
-import 'package:verity_api/src/rbac/permissions.dart';
-import 'package:verity_api/src/services/storage/i_storage_service.dart';
+import 'package:veritai_api/src/config/environment_config.dart';
+import 'package:veritai_api/src/rbac/permission_service.dart';
+import 'package:veritai_api/src/rbac/permissions.dart';
+import 'package:veritai_api/src/services/storage/i_storage_service.dart';
 
 final _log = Logger('RequestUploadUrlRoute');
 

@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:core/core.dart';
 import 'package:logging/logging.dart';
-import 'package:verity_api/src/clients/intelligence/intelligence_client.dart';
-import 'package:verity_api/src/config/environment_config.dart';
+import 'package:veritai_api/src/clients/intelligence/intelligence_client.dart';
+import 'package:veritai_api/src/config/environment_config.dart';
 
 /// {@template open_router_client}
 /// A specialized client for interacting with the OpenRouter.ai API.

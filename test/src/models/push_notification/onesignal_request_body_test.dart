@@ -1,6 +1,6 @@
 import 'package:core/core.dart';
 import 'package:test/test.dart';
-import 'package:verity_api/src/models/models.dart';
+import 'package:veritai_api/src/models/models.dart';
 
 void main() {
   group('OneSignalRequestBody', () {

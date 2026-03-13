@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
-import 'package:verity_api/src/models/storage/s3_notification.dart'
+import 'package:veritai_api/src/models/storage/s3_notification.dart'
     show S3Notification;
 
 part 'sns_notification.g.dart';

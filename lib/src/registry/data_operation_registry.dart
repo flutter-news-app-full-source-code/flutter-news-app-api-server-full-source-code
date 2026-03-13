@@ -3,17 +3,17 @@ import 'dart:async';
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:logging/logging.dart';
-import 'package:verity_api/src/middlewares/ownership_check_middleware.dart';
-import 'package:verity_api/src/models/ingestion/ingestion_usage.dart';
-import 'package:verity_api/src/rbac/permission_service.dart';
-import 'package:verity_api/src/rbac/permissions.dart';
-import 'package:verity_api/src/services/content_enrichment_service.dart';
-import 'package:verity_api/src/services/country_query_service.dart';
-import 'package:verity_api/src/services/push_notification/push_notification_service.dart';
-import 'package:verity_api/src/services/storage/i_storage_service.dart';
-import 'package:verity_api/src/services/user_action_limit_service.dart';
-import 'package:verity_api/src/utils/localization_utils.dart';
-import 'package:verity_api/src/utils/media_asset_utils.dart';
+import 'package:veritai_api/src/middlewares/ownership_check_middleware.dart';
+import 'package:veritai_api/src/models/ingestion/ingestion_usage.dart';
+import 'package:veritai_api/src/rbac/permission_service.dart';
+import 'package:veritai_api/src/rbac/permissions.dart';
+import 'package:veritai_api/src/services/content_enrichment_service.dart';
+import 'package:veritai_api/src/services/country_query_service.dart';
+import 'package:veritai_api/src/services/push_notification/push_notification_service.dart';
+import 'package:veritai_api/src/services/storage/i_storage_service.dart';
+import 'package:veritai_api/src/services/user_action_limit_service.dart';
+import 'package:veritai_api/src/utils/localization_utils.dart';
+import 'package:veritai_api/src/utils/media_asset_utils.dart';
 
 // --- Typedefs for Data Operations ---
 

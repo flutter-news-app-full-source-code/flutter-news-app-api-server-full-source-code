@@ -1,7 +1,7 @@
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
-import 'package:verity_api/src/clients/email/email.dart';
+import 'package:veritai_api/src/clients/email/email.dart';
 
 class MockLogger extends Mock implements Logger {}
 

@@ -2,8 +2,8 @@
 
 import 'package:core/core.dart';
 import 'package:logging/logging.dart';
-import 'package:verity_api/src/clients/email/email_client.dart';
-import 'package:verity_api/src/models/email/sendgrid_request.dart';
+import 'package:veritai_api/src/clients/email/email_client.dart';
+import 'package:veritai_api/src/models/email/sendgrid_request.dart';
 
 /// {@template email_sendgrid_client}
 /// A client for sending emails using the SendGrid API.

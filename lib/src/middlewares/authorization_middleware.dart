@@ -1,8 +1,8 @@
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:logging/logging.dart';
-import 'package:verity_api/src/rbac/permission_service.dart';
-import 'package:verity_api/src/registry/model_registry.dart';
+import 'package:veritai_api/src/rbac/permission_service.dart';
+import 'package:veritai_api/src/registry/model_registry.dart';
 
 final _log = Logger('AuthorizationMiddleware');
 

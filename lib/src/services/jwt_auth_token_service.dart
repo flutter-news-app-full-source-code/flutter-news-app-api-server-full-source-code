@@ -2,9 +2,9 @@ import 'package:core/core.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
-import 'package:verity_api/src/config/environment_config.dart';
-import 'package:verity_api/src/services/auth_token_service.dart';
-import 'package:verity_api/src/services/token_blacklist_service.dart';
+import 'package:veritai_api/src/config/environment_config.dart';
+import 'package:veritai_api/src/services/auth_token_service.dart';
+import 'package:veritai_api/src/services/token_blacklist_service.dart';
 
 /// {@template jwt_auth_token_service}
 /// An implementation of [AuthTokenService] using JSON Web Tokens (JWT).

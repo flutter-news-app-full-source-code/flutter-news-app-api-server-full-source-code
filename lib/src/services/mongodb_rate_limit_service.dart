@@ -1,8 +1,8 @@
 import 'package:core/core.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
-import 'package:verity_api/src/database/mongo/data_mongodb.dart';
-import 'package:verity_api/src/services/rate_limit_service.dart';
+import 'package:veritai_api/src/database/mongo/data_mongodb.dart';
+import 'package:veritai_api/src/services/rate_limit_service.dart';
 
 /// The name of the MongoDB collection for storing rate limit attempts.
 const String kRateLimitAttemptsCollection = 'rate_limit_attempts';

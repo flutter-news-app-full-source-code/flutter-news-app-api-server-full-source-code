@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:core/core.dart';
 import 'package:logging/logging.dart';
-import 'package:verity_api/src/services/storage/i_storage_service.dart';
+import 'package:veritai_api/src/services/storage/i_storage_service.dart';
 
 final _log = Logger('MediaAssetUtils');
 

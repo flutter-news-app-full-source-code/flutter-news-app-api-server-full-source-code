@@ -2,8 +2,8 @@ import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
-import 'package:verity_api/src/middlewares/rate_limiter_middleware.dart';
-import 'package:verity_api/src/services/rate_limit_service.dart';
+import 'package:veritai_api/src/middlewares/rate_limiter_middleware.dart';
+import 'package:veritai_api/src/services/rate_limit_service.dart';
 
 import '../helpers/test_helpers.dart';
 

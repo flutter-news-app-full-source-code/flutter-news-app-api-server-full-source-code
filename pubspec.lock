@@ -191,7 +191,7 @@ packages:
       path: "."
       ref: "8bad7fafc2b2284ff1e7cdab5208ec5fd5a6687e"
       resolved-ref: "8bad7fafc2b2284ff1e7cdab5208ec5fd5a6687e"
-      url: "https://github.com/verity-hq/core.git"
+      url: "https://github.com/veritai-news/core.git"
     source: git
     version: "2.1.0"
   coverage:

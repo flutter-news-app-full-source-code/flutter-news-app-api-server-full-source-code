@@ -2,8 +2,8 @@ import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
-import 'package:verity_api/src/middlewares/gcs_jwt_verification_middleware.dart';
-import 'package:verity_api/src/utils/gcs_jwt_verifier.dart';
+import 'package:veritai_api/src/middlewares/gcs_jwt_verification_middleware.dart';
+import 'package:veritai_api/src/utils/gcs_jwt_verifier.dart';
 
 import '../helpers/test_helpers.dart';
 

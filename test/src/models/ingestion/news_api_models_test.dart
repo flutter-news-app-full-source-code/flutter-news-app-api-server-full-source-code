@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:verity_api/src/models/ingestion/news_api_models.dart';
+import 'package:veritai_api/src/models/ingestion/news_api_models.dart';
 
 void main() {
   group('NewsApiSource', () {

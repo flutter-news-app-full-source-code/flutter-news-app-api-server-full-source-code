@@ -1,7 +1,7 @@
 import 'package:dart_frog/dart_frog.dart';
-import 'package:verity_api/src/middlewares/authentication_middleware.dart';
-import 'package:verity_api/src/middlewares/authorization_middleware.dart';
-import 'package:verity_api/src/rbac/permissions.dart';
+import 'package:veritai_api/src/middlewares/authentication_middleware.dart';
+import 'package:veritai_api/src/middlewares/authorization_middleware.dart';
+import 'package:veritai_api/src/rbac/permissions.dart';
 
 /// Secures all routes within the `/api/v1/intelligence` group.
 ///

@@ -1,9 +1,9 @@
 import 'package:core/core.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart' show ObjectId;
-import 'package:verity_api/src/clients/analytics/analytics_reporting_client.dart';
-import 'package:verity_api/src/models/models.dart';
-import 'package:verity_api/src/services/analytics/analytics.dart';
+import 'package:veritai_api/src/clients/analytics/analytics_reporting_client.dart';
+import 'package:veritai_api/src/models/models.dart';
+import 'package:veritai_api/src/services/analytics/analytics.dart';
 
 /// {@template analytics_sync_service}
 /// The core orchestrator for the background worker.

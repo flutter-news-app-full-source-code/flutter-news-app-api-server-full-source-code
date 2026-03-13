@@ -1,7 +1,7 @@
 import 'package:core/core.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:verity_api/src/models/ingestion/aggregator_type.dart';
+import 'package:veritai_api/src/models/ingestion/aggregator_type.dart';
 
 part 'ingestion_topic_mapping.g.dart';
 

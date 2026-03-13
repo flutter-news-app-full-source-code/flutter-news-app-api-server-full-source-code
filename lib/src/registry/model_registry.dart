@@ -2,8 +2,8 @@
 
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:verity_api/src/rbac/permissions.dart';
-import 'package:verity_api/src/utils/localization_utils.dart';
+import 'package:veritai_api/src/rbac/permissions.dart';
+import 'package:veritai_api/src/utils/localization_utils.dart';
 
 /// Defines the type of permission check required for a specific action.
 enum RequiredPermissionType {

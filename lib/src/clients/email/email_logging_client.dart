@@ -1,5 +1,5 @@
 import 'package:logging/logging.dart';
-import 'package:verity_api/src/clients/email/email_client.dart';
+import 'package:veritai_api/src/clients/email/email_client.dart';
 
 /// {@template email_logging_client}
 /// A development-only email client that logs email details to the console.

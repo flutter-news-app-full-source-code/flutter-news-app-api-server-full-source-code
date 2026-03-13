@@ -4,8 +4,8 @@ import 'package:core/core.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
-import 'package:verity_api/src/clients/intelligence/open_router_client.dart';
-import 'package:verity_api/src/config/environment_config.dart';
+import 'package:veritai_api/src/clients/intelligence/open_router_client.dart';
+import 'package:veritai_api/src/config/environment_config.dart';
 
 class MockHttpClient extends Mock implements HttpClient {}
 

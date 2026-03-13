@@ -1,7 +1,7 @@
 import 'package:core/core.dart';
 import 'package:test/test.dart';
-import 'package:verity_api/src/models/analytics/analytics_query.dart';
-import 'package:verity_api/src/services/analytics/analytics.dart';
+import 'package:veritai_api/src/models/analytics/analytics_query.dart';
+import 'package:veritai_api/src/services/analytics/analytics.dart';
 
 void main() {
   group('AnalyticsMetricMapper', () {

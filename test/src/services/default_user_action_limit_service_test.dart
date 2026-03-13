@@ -2,7 +2,7 @@ import 'package:core/core.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
-import 'package:verity_api/src/services/default_user_action_limit_service.dart';
+import 'package:veritai_api/src/services/default_user_action_limit_service.dart';
 
 class MockRemoteConfigRepository extends Mock
     implements DataRepository<RemoteConfig> {}

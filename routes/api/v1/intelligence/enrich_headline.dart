@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:uuid/uuid.dart';
-import 'package:verity_api/src/services/services.dart';
+import 'package:veritai_api/src/services/services.dart';
 
 const _uuid = Uuid();
 

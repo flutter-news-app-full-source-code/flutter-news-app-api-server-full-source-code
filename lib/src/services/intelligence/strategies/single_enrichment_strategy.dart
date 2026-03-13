@@ -1,5 +1,5 @@
 import 'package:core/core.dart';
-import 'package:verity_api/src/services/intelligence/strategies/ai_strategy.dart';
+import 'package:veritai_api/src/services/intelligence/strategies/ai_strategy.dart';
 
 /// The result of a single headline enrichment operation.
 typedef SingleEnrichmentResult = ({

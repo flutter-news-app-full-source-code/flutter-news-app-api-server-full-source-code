@@ -4,8 +4,8 @@ import 'package:core/core.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
-import 'package:verity_api/src/models/reward/verified_reward_payload.dart';
-import 'package:verity_api/src/services/reward/applovin_ssv_verifier.dart';
+import 'package:veritai_api/src/models/reward/verified_reward_payload.dart';
+import 'package:veritai_api/src/services/reward/applovin_ssv_verifier.dart';
 
 void main() {
   group('AppLovinSsvVerifier', () {

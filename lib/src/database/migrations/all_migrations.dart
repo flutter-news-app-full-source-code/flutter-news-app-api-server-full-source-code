@@ -1,5 +1,5 @@
-import 'package:verity_api/src/database/migration.dart';
-import 'package:verity_api/src/services/database_migration_service.dart'
+import 'package:veritai_api/src/database/migration.dart';
+import 'package:veritai_api/src/services/database_migration_service.dart'
     show DatabaseMigrationService;
 
 /// A central list of all database migrations to be applied.

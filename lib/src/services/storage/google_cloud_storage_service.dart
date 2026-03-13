@@ -5,11 +5,11 @@ import 'package:core/core.dart';
 import 'package:jose/jose.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
-import 'package:verity_api/src/config/environment_config.dart';
-import 'package:verity_api/src/services/google_auth_service.dart';
-import 'package:verity_api/src/services/storage/i_storage_service.dart'
+import 'package:veritai_api/src/config/environment_config.dart';
+import 'package:veritai_api/src/services/google_auth_service.dart';
+import 'package:veritai_api/src/services/storage/i_storage_service.dart'
     show IStorageService;
-import 'package:verity_api/src/services/storage/i_storage_service.dart';
+import 'package:veritai_api/src/services/storage/i_storage_service.dart';
 
 /// {@template google_cloud_storage_service}
 /// A concrete implementation of [IStorageService] that interacts with

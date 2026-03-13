@@ -2,9 +2,9 @@ import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
-import 'package:verity_api/src/middlewares/data_fetch_middleware.dart';
-import 'package:verity_api/src/middlewares/ownership_check_middleware.dart';
-import 'package:verity_api/src/registry/data_operation_registry.dart';
+import 'package:veritai_api/src/middlewares/data_fetch_middleware.dart';
+import 'package:veritai_api/src/middlewares/ownership_check_middleware.dart';
+import 'package:veritai_api/src/registry/data_operation_registry.dart';
 
 import '../helpers/test_helpers.dart';
 

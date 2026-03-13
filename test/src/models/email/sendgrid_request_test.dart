@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:verity_api/src/models/email/sendgrid_request.dart';
+import 'package:veritai_api/src/models/email/sendgrid_request.dart';
 
 void main() {
   group('SendGridRequest', () {

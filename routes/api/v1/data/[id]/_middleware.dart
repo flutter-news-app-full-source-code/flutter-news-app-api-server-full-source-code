@@ -1,6 +1,6 @@
 import 'package:dart_frog/dart_frog.dart';
-import 'package:verity_api/src/middlewares/data_fetch_middleware.dart';
-import 'package:verity_api/src/middlewares/ownership_check_middleware.dart';
+import 'package:veritai_api/src/middlewares/data_fetch_middleware.dart';
+import 'package:veritai_api/src/middlewares/ownership_check_middleware.dart';
 
 /// Middleware specific to the item-level `/api/v1/data/[id]` route path.
 ///

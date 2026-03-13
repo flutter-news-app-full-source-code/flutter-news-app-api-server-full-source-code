@@ -2,7 +2,7 @@ import 'package:core/core.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
-import 'package:verity_api/src/utils/converters/date_time_converter.dart';
+import 'package:veritai_api/src/utils/converters/date_time_converter.dart';
 
 part 'local_upload_token.g.dart';
 

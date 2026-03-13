@@ -1,8 +1,8 @@
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
-import 'package:verity_api/src/services/intelligence/batched_notification_selector.dart';
-import 'package:verity_api/src/services/push_notification/push_notification_service.dart';
+import 'package:veritai_api/src/services/intelligence/batched_notification_selector.dart';
+import 'package:veritai_api/src/services/push_notification/push_notification_service.dart';
 
 import '../../helpers/test_helpers.dart';
 

@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:core/core.dart';
-import 'package:verity_api/src/models/ingestion/aggregator_catalog_source.dart';
-import 'package:verity_api/src/models/ingestion/aggregator_source_mapping.dart';
+import 'package:veritai_api/src/models/ingestion/aggregator_catalog_source.dart';
+import 'package:veritai_api/src/models/ingestion/aggregator_source_mapping.dart';
 
 /// {@template aggregator_provider}
 /// Abstract contract for external news aggregator integrations.

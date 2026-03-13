@@ -1,5 +1,5 @@
 import 'package:core/core.dart';
-import 'package:verity_api/src/rbac/role_permissions.dart';
+import 'package:veritai_api/src/rbac/role_permissions.dart';
 
 /// {@template permission_service}
 /// Service responsible for checking if a user has a specific permission.

@@ -1,7 +1,7 @@
 import 'package:core/core.dart';
 import 'package:test/test.dart';
-import 'package:verity_api/src/models/ingestion/news_api_models.dart';
-import 'package:verity_api/src/services/ingestion/mappers/news_api_mapper.dart';
+import 'package:veritai_api/src/models/ingestion/news_api_models.dart';
+import 'package:veritai_api/src/services/ingestion/mappers/news_api_mapper.dart';
 
 void main() {
   late NewsApiMapper mapper;

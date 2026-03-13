@@ -3,14 +3,14 @@ import 'dart:convert';
 import 'package:core/core.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
-import 'package:verity_api/src/clients/intelligence/intelligence_client.dart';
-import 'package:verity_api/src/config/environment_config.dart';
-import 'package:verity_api/src/models/intelligence/ai_usage.dart';
-import 'package:verity_api/src/services/intelligence/batched_notification_selector.dart';
-import 'package:verity_api/src/services/intelligence/identity_resolution_service.dart';
-import 'package:verity_api/src/services/intelligence/strategies/ai_strategy.dart';
-import 'package:verity_api/src/services/intelligence/strategies/ingestion_enrichment_strategy.dart';
-import 'package:verity_api/src/services/push_notification/push_notification_service.dart';
+import 'package:veritai_api/src/clients/intelligence/intelligence_client.dart';
+import 'package:veritai_api/src/config/environment_config.dart';
+import 'package:veritai_api/src/models/intelligence/ai_usage.dart';
+import 'package:veritai_api/src/services/intelligence/batched_notification_selector.dart';
+import 'package:veritai_api/src/services/intelligence/identity_resolution_service.dart';
+import 'package:veritai_api/src/services/intelligence/strategies/ai_strategy.dart';
+import 'package:veritai_api/src/services/intelligence/strategies/ingestion_enrichment_strategy.dart';
+import 'package:veritai_api/src/services/push_notification/push_notification_service.dart';
 
 /// {@template intelligence_service}
 /// Orchestrates all AI-powered operations with strict token governance.

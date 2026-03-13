@@ -5,15 +5,15 @@ import 'package:core/core.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
-import 'package:verity_api/src/config/environment_config.dart';
-import 'package:verity_api/src/models/ingestion/aggregator_catalog_source.dart';
-import 'package:verity_api/src/models/ingestion/aggregator_source_mapping.dart';
-import 'package:verity_api/src/models/ingestion/aggregator_type.dart';
-import 'package:verity_api/src/models/ingestion/ingestion_topic_mapping.dart';
-import 'package:verity_api/src/models/ingestion/ingestion_usage.dart';
-import 'package:verity_api/src/services/idempotency_service.dart';
-import 'package:verity_api/src/services/ingestion/providers/aggregator_provider.dart';
-import 'package:verity_api/src/utils/article_validator.dart';
+import 'package:veritai_api/src/config/environment_config.dart';
+import 'package:veritai_api/src/models/ingestion/aggregator_catalog_source.dart';
+import 'package:veritai_api/src/models/ingestion/aggregator_source_mapping.dart';
+import 'package:veritai_api/src/models/ingestion/aggregator_type.dart';
+import 'package:veritai_api/src/models/ingestion/ingestion_topic_mapping.dart';
+import 'package:veritai_api/src/models/ingestion/ingestion_usage.dart';
+import 'package:veritai_api/src/services/idempotency_service.dart';
+import 'package:veritai_api/src/services/ingestion/providers/aggregator_provider.dart';
+import 'package:veritai_api/src/utils/article_validator.dart';
 
 /// {@template news_ingestion_service}
 /// Orchestrates the automated ingestion of news from external aggregators.

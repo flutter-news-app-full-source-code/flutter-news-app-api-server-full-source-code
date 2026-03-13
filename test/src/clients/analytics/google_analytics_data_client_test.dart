@@ -4,9 +4,9 @@ import 'package:core/core.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
-import 'package:verity_api/src/clients/analytics/google_analytics_data_client.dart';
-import 'package:verity_api/src/models/models.dart';
-import 'package:verity_api/src/services/google_auth_service.dart';
+import 'package:veritai_api/src/clients/analytics/google_analytics_data_client.dart';
+import 'package:veritai_api/src/models/models.dart';
+import 'package:veritai_api/src/services/google_auth_service.dart';
 
 class MockHttpClient extends Mock implements HttpClient {}
 

@@ -4,8 +4,8 @@ import 'dart:math';
 import 'package:core/core.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';
-import 'package:verity_api/src/database/mongo/data_mongodb.dart';
-import 'package:verity_api/src/services/verification_code_storage_service.dart';
+import 'package:veritai_api/src/database/mongo/data_mongodb.dart';
+import 'package:veritai_api/src/services/verification_code_storage_service.dart';
 
 /// The name of the MongoDB collection for storing verification codes.
 const String kVerificationCodesCollection = 'verification_codes';

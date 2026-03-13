@@ -2,7 +2,7 @@ import 'package:core/core.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
-import 'package:verity_api/src/services/intelligence/identity_resolution_service.dart';
+import 'package:veritai_api/src/services/intelligence/identity_resolution_service.dart';
 
 import '../../helpers/test_helpers.dart';
 

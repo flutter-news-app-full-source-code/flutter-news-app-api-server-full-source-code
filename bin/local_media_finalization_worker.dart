@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:logging/logging.dart';
-import 'package:verity_api/src/config/app_dependencies.dart';
+import 'package:veritai_api/src/config/app_dependencies.dart';
 
 final _log = Logger('LocalMediaFinalizationWorker');
 

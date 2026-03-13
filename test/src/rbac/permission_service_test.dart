@@ -1,7 +1,7 @@
 import 'package:core/core.dart';
 import 'package:test/test.dart';
-import 'package:verity_api/src/rbac/permission_service.dart';
-import 'package:verity_api/src/rbac/permissions.dart';
+import 'package:veritai_api/src/rbac/permission_service.dart';
+import 'package:veritai_api/src/rbac/permissions.dart';
 
 void main() {
   group('PermissionService', () {

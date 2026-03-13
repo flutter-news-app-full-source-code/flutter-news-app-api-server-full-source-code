@@ -1,15 +1,15 @@
 <p align="center">
 <img src="https://img.shields.io/badge/coverage-50%25-green?style=for-the-badge" alt="coverage">
-<a href="https://github.com/verity-hq/verity-api/wiki/Local-Setup"><img src="https://img.shields.io/badge/DOCUMENTATION-READ-slategray?style=for-the-badge" alt="Documentation: Read"></a>
+<a href="https://github.com/veritai-news/veritai-api/wiki/Local-Setup"><img src="https://img.shields.io/badge/DOCUMENTATION-READ-slategray?style=for-the-badge" alt="Documentation: Read"></a>
 <a href="LICENSE"><img src="https://img.shields.io/badge/TRIAL_LICENSE-VIEW_TERMS-blue?style=for-the-badge" alt="Trial License: View Terms"></a>
-<a href="https://github.com/sponsors/verity-hq"><img src="https://img.shields.io/badge/LIFETIME_LICENSE-PURCHASE-purple?style=for-the-badge" alt="Lifetime License: Purchase"></a>
+<a href="https://github.com/sponsors/veritai-news"><img src="https://img.shields.io/badge/LIFETIME_LICENSE-PURCHASE-purple?style=for-the-badge" alt="Lifetime License: Purchase"></a>
 </p>
 
 ---
 
-Part of the **[Verity News Stack](https://github.com/verity-hq)**.
+Part of the **[veritai News Stack](https://github.com/veritai-news)**.
 
-The Verity API is a high-performance backend gateway built with **Dart Frog**. It serves as the secure data engine for both the Mobile Client and the Web Dashboard.
+The veritai API is a high-performance backend gateway built with **Dart Frog**. It serves as the secure data engine for both the Mobile Client and the Web Dashboard.
 
 ---
 
@@ -207,10 +207,10 @@ Say goodbye to risky manual database updates. A professional, versioned migratio
 
 ## 🚀 Getting Started & Running Locally
 
-For a complete guide on setting up your local environment and running this project, please see the [Wiki](https://github.com/verity-hq/verity-api/wiki) tab in this repository.
+For a complete guide on setting up your local environment and running this project, please see the [Wiki](https://github.com/veritai-news/veritai-api/wiki) tab in this repository.
 
 ## 🔑 Licensing
 
 This source code is licensed for commercial use and is provided for local evaluation. A **Lifetime Commercial License** is required for any production or public-facing application.
 
-Please visit the main [Verity News Stack](https://github.com/verity-hq) organization page to review the full license terms and to purchase.
+Please visit the main [veritai News Stack](https://github.com/veritai-news) organization page to review the full license terms and to purchase.

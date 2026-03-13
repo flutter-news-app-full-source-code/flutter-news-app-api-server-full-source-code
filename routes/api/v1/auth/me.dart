@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:verity_api/src/helpers/response_helper.dart';
+import 'package:veritai_api/src/helpers/response_helper.dart';
 
 /// Handles GET requests to `/api/v1/auth/me`.
 ///

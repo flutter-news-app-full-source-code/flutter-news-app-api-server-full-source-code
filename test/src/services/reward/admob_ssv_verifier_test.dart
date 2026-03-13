@@ -6,8 +6,8 @@ import 'package:jose/jose.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
-import 'package:verity_api/src/models/reward/verified_reward_payload.dart';
-import 'package:verity_api/src/services/reward/admob_ssv_verifier.dart';
+import 'package:veritai_api/src/models/reward/verified_reward_payload.dart';
+import 'package:veritai_api/src/services/reward/admob_ssv_verifier.dart';
 
 class MockHttpClient extends Mock implements HttpClient {}
 

@@ -1,6 +1,6 @@
 import 'package:core/core.dart';
 import 'package:logging/logging.dart';
-import 'package:verity_api/src/services/push_notification/push_notification_service.dart';
+import 'package:veritai_api/src/services/push_notification/push_notification_service.dart';
 
 /// {@template batched_notification_selector}
 /// Selects the best breaking news headlines to notify users about, preventing spam.

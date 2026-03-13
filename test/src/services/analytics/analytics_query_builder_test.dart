@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
-import 'package:verity_api/src/models/models.dart';
-import 'package:verity_api/src/services/analytics/analytics.dart';
+import 'package:veritai_api/src/models/models.dart';
+import 'package:veritai_api/src/services/analytics/analytics.dart';
 
 void main() {
   group('AnalyticsQueryBuilder', () {

@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:core/core.dart';
-import 'package:verity_api/src/models/reward/verified_reward_payload.dart';
+import 'package:veritai_api/src/models/reward/verified_reward_payload.dart';
 
 /// {@template reward_verifier}
 /// Defines the contract for verifying reward callbacks from different providers.

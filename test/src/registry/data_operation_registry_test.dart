@@ -2,10 +2,10 @@ import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
-import 'package:verity_api/src/middlewares/ownership_check_middleware.dart';
-import 'package:verity_api/src/rbac/permission_service.dart';
-import 'package:verity_api/src/registry/data_operation_registry.dart';
-import 'package:verity_api/src/services/services.dart';
+import 'package:veritai_api/src/middlewares/ownership_check_middleware.dart';
+import 'package:veritai_api/src/rbac/permission_service.dart';
+import 'package:veritai_api/src/registry/data_operation_registry.dart';
+import 'package:veritai_api/src/services/services.dart';
 
 import '../helpers/test_helpers.dart' as helpers;
 

@@ -2,7 +2,7 @@ import 'package:core/core.dart' show Source;
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
-import 'package:verity_api/src/models/ingestion/aggregator_type.dart';
+import 'package:veritai_api/src/models/ingestion/aggregator_type.dart';
 
 part 'aggregator_source_mapping.g.dart';
 

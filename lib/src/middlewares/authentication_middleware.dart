@@ -2,7 +2,7 @@ import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:logging/logging.dart';
-import 'package:verity_api/src/services/auth_token_service.dart';
+import 'package:veritai_api/src/services/auth_token_service.dart';
 
 final _log = Logger('AuthMiddleware');
 

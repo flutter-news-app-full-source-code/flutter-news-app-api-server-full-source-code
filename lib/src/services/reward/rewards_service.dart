@@ -1,7 +1,7 @@
 import 'package:core/core.dart';
 import 'package:logging/logging.dart';
-import 'package:verity_api/src/services/idempotency_service.dart';
-import 'package:verity_api/src/services/reward/reward_verifier.dart';
+import 'package:veritai_api/src/services/idempotency_service.dart';
+import 'package:veritai_api/src/services/reward/reward_verifier.dart';
 
 /// {@template rewards_service}
 /// Service responsible for managing the Time-Based Reward system.

@@ -4,18 +4,18 @@ import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:dart_frog_test/dart_frog_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:verity_api/src/middlewares/ownership_check_middleware.dart';
-import 'package:verity_api/src/models/request_id.dart';
-import 'package:verity_api/src/rbac/permission_service.dart';
-import 'package:verity_api/src/registry/data_operation_registry.dart';
-import 'package:verity_api/src/registry/model_registry.dart';
-import 'package:verity_api/src/services/auth_token_service.dart';
-import 'package:verity_api/src/services/country_query_service.dart';
-import 'package:verity_api/src/services/idempotency_service.dart';
-import 'package:verity_api/src/services/rate_limit_service.dart';
-import 'package:verity_api/src/services/storage/i_storage_service.dart';
-import 'package:verity_api/src/services/user_action_limit_service.dart';
-import 'package:verity_api/src/utils/gcs_jwt_verifier.dart';
+import 'package:veritai_api/src/middlewares/ownership_check_middleware.dart';
+import 'package:veritai_api/src/models/request_id.dart';
+import 'package:veritai_api/src/rbac/permission_service.dart';
+import 'package:veritai_api/src/registry/data_operation_registry.dart';
+import 'package:veritai_api/src/registry/model_registry.dart';
+import 'package:veritai_api/src/services/auth_token_service.dart';
+import 'package:veritai_api/src/services/country_query_service.dart';
+import 'package:veritai_api/src/services/idempotency_service.dart';
+import 'package:veritai_api/src/services/rate_limit_service.dart';
+import 'package:veritai_api/src/services/storage/i_storage_service.dart';
+import 'package:veritai_api/src/services/user_action_limit_service.dart';
+import 'package:veritai_api/src/utils/gcs_jwt_verifier.dart';
 
 class MockRequestContext extends Mock implements RequestContext {}
 

@@ -2,8 +2,8 @@ import 'package:core/core.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
-import 'package:verity_api/src/services/push_notification/firebase_push_notification_client.dart';
-import 'package:verity_api/src/services/push_notification/push_notification_client.dart';
+import 'package:veritai_api/src/services/push_notification/firebase_push_notification_client.dart';
+import 'package:veritai_api/src/services/push_notification/push_notification_client.dart';
 
 class MockDataRepository<T> extends Mock implements DataRepository<T> {}
 

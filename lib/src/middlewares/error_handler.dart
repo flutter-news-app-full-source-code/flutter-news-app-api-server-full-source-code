@@ -7,7 +7,7 @@ import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:logging/logging.dart';
-import 'package:verity_api/src/config/environment_config.dart';
+import 'package:veritai_api/src/config/environment_config.dart';
 
 final _log = Logger('ErrorHandler');
 

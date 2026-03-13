@@ -1,6 +1,6 @@
 import 'package:core/core.dart';
 import 'package:test/test.dart';
-import 'package:verity_api/src/utils/localization_utils.dart';
+import 'package:veritai_api/src/utils/localization_utils.dart';
 
 void main() {
   group('LocalizationUtils', () {

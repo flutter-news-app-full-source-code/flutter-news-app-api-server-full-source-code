@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:core/core.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
-import 'package:verity_api/src/models/idempotency_record.dart';
+import 'package:veritai_api/src/models/idempotency_record.dart';
 
 /// {@template idempotency_service}
 /// A generic service for ensuring operations are performed exactly once.

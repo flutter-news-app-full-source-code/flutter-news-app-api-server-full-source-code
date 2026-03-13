@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:core/core.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:logging/logging.dart';
-import 'package:verity_api/src/services/reward/rewards_service.dart';
+import 'package:veritai_api/src/services/reward/rewards_service.dart';
 
 final _log = Logger('AdMobWebhookHandler');
 
