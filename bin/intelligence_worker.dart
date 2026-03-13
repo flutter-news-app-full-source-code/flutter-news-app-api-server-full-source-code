@@ -2,7 +2,8 @@ import 'dart:io';
 
 import 'package:logging/logging.dart';
 import 'package:verity_api/src/config/app_dependencies.dart';
-import 'package:verity_api/src/services/intelligence/intelligence.dart' show IntelligenceService;
+import 'package:verity_api/src/services/intelligence/intelligence.dart'
+    show IntelligenceService;
 
 /// Standalone entry point for the Intelligence Worker (Cron B).
 ///
