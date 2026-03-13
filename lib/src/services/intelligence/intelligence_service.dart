@@ -172,6 +172,15 @@ class IntelligenceService {
     var totalProcessed = 0;
     String? cursor;
 
+    // Statistical Accumulators
+    var statsScanned = 0;
+    var statsEnriched = 0;
+    var statsJunk = 0;
+    var statsTopics = 0;
+    var statsPersons = 0;
+    var statsCountries = 0;
+    var statsTranslations = 0;
+
     while (hasMore && totalProcessed < maxHeadlinesPerRun) {
       // Polling Logic: Fetch draft headlines that have not been enriched.
       final response = await _headlineRepository.readAll(
@@ -184,6 +193,7 @@ class IntelligenceService {
 
       totalProcessed += response.items.length;
       final drafts = response.items;
+      statsScanned += drafts.length;
       if (drafts.isEmpty) {
         _log.info('No more drafts to process.');
         break;
@@ -216,6 +226,7 @@ class IntelligenceService {
           // 1. Junk Filter
           if (!result.isNews) {
             _log.info('Hard Deleting Junk Content: ${draft.id}');
+            statsJunk++;
             await _headlineRepository.delete(id: draft.id);
             continue;
           }
@@ -236,21 +247,27 @@ class IntelligenceService {
             resolvedTopic = topicSlugMap[result.topicSlug];
           }
 
+          // Log metrics for resolution accuracy
+          if (resolvedTopic != null) statsTopics++;
+          if (resolvedPersons.isNotEmpty) statsPersons++;
+          if (resolvedCountries.isNotEmpty) statsCountries++;
+          statsTranslations += result.translations.length;
+
           // 4. Breaking News Detection
           final isBreaking = result.breakingConfidence > 0.8;
 
           final resolvedTopicName =
               resolvedTopic?.name[SupportedLanguage.en] ?? 'None (Draft)';
 
-          _log.info('--- Enrichment Report: ${draft.id} ---');
-          _log.info('  > Topic: $resolvedTopicName');
-          _log.info(
+          _log.fine('--- Enrichment Report: ${draft.id} ---');
+          _log.fine('  > Topic: $resolvedTopicName');
+          _log.fine(
             '  > Persons: ${resolvedPersons.map((p) => p.name[SupportedLanguage.en]).join(", ")}',
           );
-          _log.info(
+          _log.fine(
             '  > Countries: ${resolvedCountries.map((c) => c.isoCode).join(", ")}',
           );
-          _log.info(
+          _log.fine(
             '  > Translations: ${result.translations.keys.map((k) => k.name).join(", ")}',
           );
 
@@ -269,6 +286,7 @@ class IntelligenceService {
 
           await _headlineRepository.update(id: draft.id, item: activeHeadline);
           _log.fine('Persistence successful for: ${draft.id}');
+          statsEnriched++;
 
           if (isBreaking) {
             breakingCandidates.add(activeHeadline);
@@ -302,7 +320,25 @@ class IntelligenceService {
       hasMore = response.hasMore;
     }
 
-    _log.info('Intelligence cycle completed.');
+    final successPct = statsScanned > 0
+        ? (statsEnriched / statsScanned * 100).toStringAsFixed(1)
+        : '0';
+
+    _log.info('''
+------------------------------------------------------------
+ENRICHMENT CYCLE COMPLETE
+------------------------------------------------------------
+TOTAL SCAN:       $statsScanned items
+SUCCESS RATE:     $successPct% ($statsEnriched enriched)
+JUNK FILTERED:    $statsJunk items
+
+RESOLUTION HIT RATE (of enriched):
+Topics Resolved:  $statsTopics
+Linked Persons:   $statsPersons
+Linked Countries: $statsCountries
+Translations:     $statsTranslations total generated
+------------------------------------------------------------
+''');
   }
 
   Future<AiUsage> _getUsage(String id) async {
