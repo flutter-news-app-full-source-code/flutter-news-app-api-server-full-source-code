@@ -440,6 +440,11 @@ class DatabaseSeedingService {
             'key': {'createdAt': 1, 'isBreaking': 1},
             'name': 'analytics_headline_breaking_index',
           },
+          {
+            // For the Intelligence Worker polling query.
+            'key': {'status': 1, 'lastEnrichedAt': 1},
+            'name': 'intelligence_worker_polling_index',
+          },
         ],
       });
       _log.info('Ensured analytics indexes for "headlines".');

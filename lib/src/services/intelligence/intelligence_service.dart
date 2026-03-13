@@ -134,6 +134,9 @@ class IntelligenceService {
   /// Polls for headlines in [ContentStatus.draft], batches them, applies
   /// enrichment, and updates their status to [ContentStatus.active].
   Future<void> run() async {
+    // Internal ceiling to prevent runaway jobs.
+    const maxHeadlinesPerRun = 500;
+
     _log.info('Starting Intelligence enrichment cycle...');
 
     // 1. Calculate Batch Size
@@ -166,15 +169,20 @@ class IntelligenceService {
 
     // 3. Processing Loop
     var hasMore = true;
+    var totalProcessed = 0;
     String? cursor;
 
-    while (hasMore) {
-      // Polling Logic: Fetch ANY headline that hasn't been enriched yet.
+    while (hasMore && totalProcessed < maxHeadlinesPerRun) {
+      // Polling Logic: Fetch draft headlines that have not been enriched.
       final response = await _headlineRepository.readAll(
-        filter: {'lastEnrichedAt': null},
+        filter: {
+          'status': ContentStatus.draft.name,
+          'lastEnrichedAt': null,
+        },
         pagination: PaginationOptions(cursor: cursor, limit: batchSize),
       );
 
+      totalProcessed += response.items.length;
       final drafts = response.items;
       if (drafts.isEmpty) {
         _log.info('No more drafts to process.');
@@ -231,6 +239,21 @@ class IntelligenceService {
           // 4. Breaking News Detection
           final isBreaking = result.breakingConfidence > 0.8;
 
+          final resolvedTopicName =
+              resolvedTopic?.name[SupportedLanguage.en] ?? 'None (Draft)';
+
+          _log.info('--- Enrichment Report: ${draft.id} ---');
+          _log.info('  > Topic: $resolvedTopicName');
+          _log.info(
+            '  > Persons: ${resolvedPersons.map((p) => p.name[SupportedLanguage.en]).join(", ")}',
+          );
+          _log.info(
+            '  > Countries: ${resolvedCountries.map((c) => c.isoCode).join(", ")}',
+          );
+          _log.info(
+            '  > Translations: ${result.translations.keys.map((k) => k.name).join(", ")}',
+          );
+
           final activeHeadline = draft.copyWith(
             status: resolvedTopic != null
                 ? ContentStatus.active
@@ -245,7 +268,7 @@ class IntelligenceService {
           );
 
           await _headlineRepository.update(id: draft.id, item: activeHeadline);
-          _log.fine('Activated headline: ${draft.id}');
+          _log.fine('Persistence successful for: ${draft.id}');
 
           if (isBreaking) {
             breakingCandidates.add(activeHeadline);
@@ -275,7 +298,7 @@ class IntelligenceService {
         break;
       }
 
-      cursor = null;
+      cursor = response.cursor;
       hasMore = response.hasMore;
     }
 
