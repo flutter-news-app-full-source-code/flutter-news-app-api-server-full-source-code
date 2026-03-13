@@ -1,3 +1,4 @@
+// ignore_for_file: inference_failure_on_function_invocation, unnecessary_lambdas, inference_failure_on_collection_literal
 import 'package:core/core.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
@@ -5,8 +6,10 @@ import 'package:test/test.dart';
 import 'package:verity_api/src/clients/intelligence/intelligence_client.dart';
 import 'package:verity_api/src/config/environment_config.dart';
 import 'package:verity_api/src/models/intelligence/ai_usage.dart';
+import 'package:verity_api/src/services/intelligence/identity_resolution_service.dart';
 import 'package:verity_api/src/services/intelligence/intelligence_service.dart';
 import 'package:verity_api/src/services/intelligence/strategies/ai_strategy.dart';
+import 'package:verity_api/src/services/push_notification/push_notification_service.dart';
 
 class MockIntelligenceClient extends Mock implements IntelligenceClient {}
 
@@ -16,6 +19,16 @@ class MockTopicRepository extends Mock implements DataRepository<Topic> {}
 
 class MockRemoteConfigRepository extends Mock
     implements DataRepository<RemoteConfig> {}
+
+class MockHeadlineRepository extends Mock implements DataRepository<Headline> {}
+
+class MockCountryRepository extends Mock implements DataRepository<Country> {}
+
+class MockIdentityResolutionService extends Mock
+    implements IdentityResolutionService {}
+
+class MockPushNotificationService extends Mock
+    implements IPushNotificationService {}
 
 class MockLogger extends Mock implements Logger {}
 
@@ -40,6 +53,12 @@ class FakeAiStrategy extends Fake implements AiStrategy<String, String> {
   }
 }
 
+class FakeHeadline extends Fake implements Headline {}
+
+class FakeAiUsage extends Fake implements AiUsage {}
+
+class FakePerson extends Fake implements Person {}
+
 void main() {
   late IntelligenceService service;
   late MockIntelligenceClient mockClient;
@@ -47,21 +66,37 @@ void main() {
   late MockTopicRepository mockTopicRepo;
   late MockRemoteConfigRepository mockRemoteConfigRepo;
   late MockLogger mockLogger;
+  late MockHeadlineRepository mockHeadlineRepo;
+  late MockCountryRepository mockCountryRepo;
+  late MockIdentityResolutionService mockIdentityService;
+  late MockPushNotificationService mockPushService;
+
+  late Headline draftHeadline;
 
   setUp(() {
     mockClient = MockIntelligenceClient();
     mockUsageRepo = MockUsageRepository();
     mockTopicRepo = MockTopicRepository();
     mockRemoteConfigRepo = MockRemoteConfigRepository();
+    mockHeadlineRepo = MockHeadlineRepository();
+    mockCountryRepo = MockCountryRepository();
+    mockIdentityService = MockIdentityResolutionService();
+    mockPushService = MockPushNotificationService();
     mockLogger = MockLogger();
 
     registerFallbackValue(FakeAiUsage());
+    registerFallbackValue(FakeHeadline());
+    registerFallbackValue(const PaginationOptions());
 
     service = IntelligenceService(
       client: mockClient,
       usageRepository: mockUsageRepo,
       topicRepository: mockTopicRepo,
       remoteConfigRepository: mockRemoteConfigRepo,
+      headlineRepository: mockHeadlineRepo,
+      countryRepository: mockCountryRepo,
+      identityResolutionService: mockIdentityService,
+      pushNotificationService: mockPushService,
       log: mockLogger,
     );
 
@@ -169,6 +204,42 @@ void main() {
       ),
     );
 
+    draftHeadline = Headline(
+      id: 'h1',
+      title: const {SupportedLanguage.en: 'Draft Title'},
+      url: '',
+      source: Source(
+        id: 's1',
+        name: const {SupportedLanguage.en: 'Source'},
+        description: const {},
+        url: '',
+        sourceType: SourceType.blog,
+        language: SupportedLanguage.en,
+        headquarters: const Country(
+          id: 'c1',
+          isoCode: 'US',
+          name: {},
+          flagUrl: '',
+        ),
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        updatedAt: DateTime.fromMillisecondsSinceEpoch(0),
+        status: ContentStatus.active,
+      ),
+      topic: Topic(
+        id: 't1',
+        name: const {SupportedLanguage.en: 'Tech'},
+        description: const {},
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        updatedAt: DateTime.fromMillisecondsSinceEpoch(0),
+        status: ContentStatus.active,
+      ),
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      status: ContentStatus.draft,
+      isBreaking: false,
+      lastEnrichedAt: null,
+    );
+
     // Default Topic Repo Mock
     when(
       () => mockTopicRepo.readAll(
@@ -251,6 +322,193 @@ void main() {
       ).called(1);
     });
   });
-}
 
-class FakeAiUsage extends Fake implements AiUsage {}
+  group('IntelligenceService.run (Worker)', () {
+    setUp(() {
+      // Default mocks for cache warming
+      when(
+        () => mockCountryRepo.readAll(pagination: any(named: 'pagination')),
+      ).thenAnswer(
+        (_) async =>
+            const PaginatedResponse(items: [], cursor: null, hasMore: false),
+      );
+      when(
+        () => mockTopicRepo.readAll(pagination: any(named: 'pagination')),
+      ).thenAnswer(
+        (_) async =>
+            const PaginatedResponse(items: [], cursor: null, hasMore: false),
+      );
+    });
+
+    test('processes drafts and activates them', () async {
+      // Arrange: Return 1 draft, then empty to stop loop
+      final responses = <PaginatedResponse<Headline>>[
+        PaginatedResponse(
+          items: [draftHeadline],
+          cursor: 'next',
+          hasMore: true,
+        ),
+        const PaginatedResponse(items: [], cursor: null, hasMore: false),
+      ];
+      when(
+        () => mockHeadlineRepo.readAll(
+          filter: {'lastEnrichedAt': null},
+          pagination: any(named: 'pagination'),
+        ),
+      ).thenAnswer((_) async => responses.removeAt(0));
+
+      // Arrange: AI Response
+      final aiResponseData = {
+        draftHeadline.id: {
+          'isNews': true,
+          'topicSlug': 'Technology',
+          'extractedPersons': ['Elon Musk'],
+          'extractedCountryCodes': ['US'],
+          'breakingConfidence': 0.9,
+          'translations': {'es': 'Titulo'},
+        },
+      };
+
+      when(
+        () => mockClient.generateCompletion(
+          messages: any(named: 'messages'),
+          temperature: any(named: 'temperature'),
+          maxTokens: any(named: 'maxTokens'),
+        ),
+      ).thenAnswer(
+        (_) async => (data: aiResponseData, totalTokens: 50),
+      );
+
+      // Arrange: Identity Resolution
+      when(
+        () => mockIdentityService.resolvePersons(any()),
+      ).thenAnswer(
+        (_) async => [const Person(id: 'p1', name: {}, description: {})],
+      );
+
+      // Arrange: Updates
+      when(
+        () => mockHeadlineRepo.update(
+          id: any(named: 'id'),
+          item: any(named: 'item'),
+        ),
+      ).thenAnswer((_) async => draftHeadline); // Return anything, ignored
+
+      // Arrange: Notifications
+      when(
+        () => mockPushService.sendBreakingNewsNotification(
+          headline: any(named: 'headline'),
+        ),
+      ).thenAnswer((_) async {});
+
+      // Act
+      await service.run();
+
+      // Assert: Headline updated to active
+      verify(
+        () => mockHeadlineRepo.update(
+          id: draftHeadline.id,
+          item: any(
+            named: 'item',
+            that: isA<Headline>()
+                .having((h) => h.lastEnrichedAt, 'lastEnrichedAt', isNotNull)
+                .having((h) => h.isBreaking, 'isBreaking', true),
+          ),
+        ),
+      ).called(1);
+
+      // Assert: Notification sent
+      verify(
+        () => mockPushService.sendBreakingNewsNotification(
+          headline: any(named: 'headline'),
+        ),
+      ).called(1);
+    });
+
+    test('hard deletes junk content', () async {
+      // Arrange: Return 1 draft
+      final responses = <PaginatedResponse<Headline>>[
+        PaginatedResponse(
+          items: [draftHeadline],
+          cursor: 'next',
+          hasMore: true,
+        ),
+        const PaginatedResponse(items: [], cursor: null, hasMore: false),
+      ];
+      when(
+        () => mockHeadlineRepo.readAll(
+          filter: {'lastEnrichedAt': null},
+          pagination: any(named: 'pagination'),
+        ),
+      ).thenAnswer((_) async => responses.removeAt(0));
+
+      // Arrange: AI says not news
+      final aiResponseData = {
+        draftHeadline.id: {
+          'isNews': false, // JUNK
+          'topicSlug': null,
+          'extractedPersons': [],
+          'extractedCountryCodes': [],
+          'breakingConfidence': 0.0,
+          'translations': {},
+        },
+      };
+
+      when(
+        () => mockClient.generateCompletion(
+          messages: any(named: 'messages'),
+        ),
+      ).thenAnswer(
+        (_) async => (data: aiResponseData, totalTokens: 10),
+      );
+
+      // Arrange: Update mock
+      when(
+        () => mockHeadlineRepo.delete(id: any(named: 'id')),
+      ).thenAnswer((_) async {});
+
+      // Act
+      await service.run();
+
+      // Assert: Purged from DB
+      verify(() => mockHeadlineRepo.delete(id: draftHeadline.id)).called(1);
+      verifyNever(
+        () => mockHeadlineRepo.update(
+          id: any(named: 'id'),
+          item: any(named: 'item'),
+        ),
+      );
+
+      // Assert: No notification
+      verifyNever(
+        () => mockPushService.sendBreakingNewsNotification(
+          headline: any(named: 'headline'),
+        ),
+      );
+    });
+
+    test('stops when no drafts found', () async {
+      when(
+        () => mockHeadlineRepo.readAll(
+          filter: {'lastEnrichedAt': null},
+          pagination: any(named: 'pagination'),
+        ),
+      ).thenAnswer(
+        (_) async =>
+            const PaginatedResponse(items: [], cursor: null, hasMore: false),
+      );
+
+      await service.run();
+
+      verify(
+        () => mockHeadlineRepo.readAll(
+          filter: {'lastEnrichedAt': null},
+          pagination: any(named: 'pagination'),
+        ),
+      ).called(1);
+      verifyNever(
+        () => mockClient.generateCompletion(messages: any(named: 'messages')),
+      );
+    });
+  });
+}
