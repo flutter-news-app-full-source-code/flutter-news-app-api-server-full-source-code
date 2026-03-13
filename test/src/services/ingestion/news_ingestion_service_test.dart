@@ -9,17 +9,11 @@ import 'package:verity_api/src/config/environment_config.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_catalog_source.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_source_mapping.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_type.dart';
-import 'package:verity_api/src/models/ingestion/ingestion_candidate.dart';
 import 'package:verity_api/src/models/ingestion/ingestion_topic_mapping.dart';
 import 'package:verity_api/src/models/ingestion/ingestion_usage.dart';
 import 'package:verity_api/src/services/idempotency_service.dart';
 import 'package:verity_api/src/services/ingestion/news_ingestion_service.dart';
 import 'package:verity_api/src/services/ingestion/providers/aggregator_provider.dart';
-import 'package:verity_api/src/services/intelligence/identity_resolution_service.dart';
-import 'package:verity_api/src/services/intelligence/intelligence_service.dart';
-import 'package:verity_api/src/services/intelligence/strategies/ai_strategy.dart';
-import 'package:verity_api/src/services/intelligence/strategies/ingestion_enrichment_strategy.dart';
-import 'package:verity_api/src/services/push_notification/push_notification_service.dart';
 
 class MockTaskRepository extends Mock
     implements DataRepository<NewsAutomationTask> {}
@@ -43,14 +37,6 @@ class MockUsageRepository extends Mock
 
 class MockAggregatorProvider extends Mock implements AggregatorProvider {}
 
-class MockIntelligenceService extends Mock implements IntelligenceService {}
-
-class MockIdentityResolutionService extends Mock
-    implements IdentityResolutionService {}
-
-class MockPushNotificationService extends Mock
-    implements IPushNotificationService {}
-
 class MockIdempotencyService extends Mock implements IdempotencyService {}
 
 class MockLogger extends Mock implements Logger {}
@@ -72,14 +58,6 @@ class FakeNewsAutomationTask extends Fake implements NewsAutomationTask {}
 class FakeAggregatorSourceMapping extends Fake
     implements AggregatorSourceMapping {}
 
-class FakeIngestionCandidate extends Fake implements IngestionCandidate {}
-
-class FakeAiStrategy extends Fake implements AiStrategy<dynamic, dynamic> {}
-
-class FakeIngestionEnrichmentStrategy extends Fake
-    implements
-        AiStrategy<List<IngestionCandidate>, Map<String, AiEnrichmentResult>> {}
-
 void main() {
   late NewsIngestionService service;
   late MockTaskRepository mockTaskRepo;
@@ -92,9 +70,6 @@ void main() {
   late MockUsageRepository mockUsageRepo;
   late MockIdempotencyService mockIdempotency;
   late MockLogger mockLogger;
-  late MockIntelligenceService mockIntelligenceService;
-  late MockIdentityResolutionService mockIdentityResolutionService;
-  late MockPushNotificationService mockPushNotificationService;
   late MockAggregatorProvider mockProvider;
 
   late Topic generalTopic;
@@ -112,7 +87,6 @@ void main() {
     registerFallbackValue(FakeIngestionTopicMapping());
     registerFallbackValue(FakeNewsAutomationTask());
     registerFallbackValue(FakeAggregatorSourceMapping());
-    registerFallbackValue(FakeIngestionCandidate());
     registerFallbackValue(const PaginationOptions());
     registerFallbackValue(<AggregatorSourceMapping>[]);
     registerFallbackValue(<String, Source>{});
@@ -126,8 +100,6 @@ void main() {
     registerFallbackValue(
       const AggregatorCatalogSource(externalId: '', name: ''),
     );
-    registerFallbackValue(FakeAiStrategy());
-    registerFallbackValue(FakeIngestionEnrichmentStrategy());
   });
 
   setUp(() {
@@ -141,9 +113,6 @@ void main() {
     mockUsageRepo = MockUsageRepository();
     mockIdempotency = MockIdempotencyService();
     mockLogger = MockLogger();
-    mockIntelligenceService = MockIntelligenceService();
-    mockIdentityResolutionService = MockIdentityResolutionService();
-    mockPushNotificationService = MockPushNotificationService();
     mockProvider = MockAggregatorProvider();
 
     service = NewsIngestionService(
@@ -156,9 +125,6 @@ void main() {
       sourceMappingRepository: mockSourceMappingRepo,
       usageRepository: mockUsageRepo,
       provider: mockProvider,
-      intelligenceService: mockIntelligenceService,
-      identityResolutionService: mockIdentityResolutionService,
-      pushNotificationService: mockPushNotificationService,
       idempotencyService: mockIdempotency,
       log: mockLogger,
     );
@@ -266,14 +232,6 @@ void main() {
     when(
       () => mockIdempotency.isDuplicate(any<String>(), any<String>()),
     ).thenAnswer((_) async => false);
-
-    // Default AI mocks
-    when(
-      () => mockIntelligenceService.execute<dynamic, dynamic>(
-        strategy: any<AiStrategy<dynamic, dynamic>>(named: 'strategy'),
-        input: any(named: 'input'),
-      ),
-    ).thenAnswer((_) async => <String, AiEnrichmentResult>{});
   });
 
   group('NewsIngestionService', () {
@@ -314,7 +272,7 @@ void main() {
       ).thenAnswer((_) async => source);
 
       // Arrange: Provider returns 1 candidate
-      final headline = Headline(
+      final draftHeadline = Headline(
         // Note: Using ObjectId().oid to ensure valid ID
         id: ObjectId().oid,
         title: const {SupportedLanguage.en: 'Test Headline'},
@@ -325,13 +283,9 @@ void main() {
         topic: generalTopic,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
-        status: ContentStatus.active,
+        status: ContentStatus.draft,
         isBreaking: false,
-      );
-
-      final candidate = IngestionCandidate(
-        headline: headline,
-        rawDescription: 'Test Description',
+        lastEnrichedAt: null,
       );
 
       final mapping = AggregatorSourceMapping(
@@ -363,43 +317,12 @@ void main() {
           topicCache: any(named: 'topicCache'),
           fallbackTopic: any(named: 'fallbackTopic'),
           countryCache: any(named: 'countryCache'),
-          topicSlugMap: any(named: 'topicSlugMap'),
           mappingCache: any(named: 'mappingCache'),
         ),
       ).thenAnswer(
         (_) async => {
-          source.id: [candidate],
+          source.id: [draftHeadline],
         },
-      );
-
-      // Arrange: AI Enrichment
-      final aiResult = (
-        isNews: true,
-        topicSlug: 'General',
-        extractedPersons: ['John Doe'],
-        extractedCountryCodes: ['US'],
-        breakingConfidence: 0.9,
-        translations: {SupportedLanguage.es: 'Hola Mundo'},
-      );
-
-      when(
-        () => mockIntelligenceService
-            .execute<List<IngestionCandidate>, Map<String, AiEnrichmentResult>>(
-              strategy: any(named: 'strategy'),
-              input: any(named: 'input'),
-            ),
-      ).thenAnswer((_) async => {headline.id: aiResult});
-
-      // Arrange: Identity Resolution
-      const resolvedPerson = Person(
-        id: 'person-1',
-        name: {SupportedLanguage.en: 'John Doe'},
-        description: {},
-      );
-      when(
-        () => mockIdentityResolutionService.resolvePersons(any<List<String>>()),
-      ).thenAnswer(
-        (_) async => [resolvedPerson],
       );
 
       // Arrange: Quota increment
@@ -418,7 +341,7 @@ void main() {
         () => mockHeadlineRepo.create(
           item: any(named: 'item'),
         ),
-      ).thenAnswer((_) async => headline);
+      ).thenAnswer((_) async => draftHeadline);
 
       // Arrange: Task Finalization
       when(
@@ -427,13 +350,6 @@ void main() {
           item: any(named: 'item'),
         ),
       ).thenAnswer((_) async => task);
-
-      // Arrange: Push Notification Dispatch
-      when(
-        () => mockPushNotificationService.sendBreakingNewsNotification(
-          headline: any(named: 'headline'),
-        ),
-      ).thenAnswer((_) async {});
 
       // Act
       await service.run();
@@ -444,17 +360,11 @@ void main() {
           item: any(
             named: 'item',
             that: isA<Headline>()
-                .having((h) => h.url, 'url', headline.url)
-                .having((h) => h.isBreaking, 'isBreaking', true)
+                .having((h) => h.url, 'url', draftHeadline.url)
                 .having(
-                  (h) => h.title[SupportedLanguage.es],
-                  'spanish translation',
-                  'Hola Mundo',
-                )
-                .having(
-                  (h) => h.mentionedPersons.first,
-                  'person',
-                  resolvedPerson,
+                  (h) => h.status,
+                  'status',
+                  ContentStatus.draft,
                 ),
           ),
         ),
@@ -468,20 +378,6 @@ void main() {
               (t) => t.status,
               'status',
               IngestionStatus.active,
-            ),
-          ),
-        ),
-      ).called(1);
-
-      // Assert: Breaking news notification was dispatched
-      verify(
-        () => mockPushNotificationService.sendBreakingNewsNotification(
-          headline: any(
-            named: 'headline',
-            that: isA<Headline>().having(
-              (h) => h.isBreaking,
-              'isBreaking',
-              true,
             ),
           ),
         ),
@@ -527,13 +423,11 @@ void main() {
         topic: generalTopic,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
-        status: ContentStatus.active,
+        status: ContentStatus.draft,
         isBreaking: false,
+        lastEnrichedAt: null,
       );
       final h2 = h1.copyWith(id: ObjectId().oid, url: 'https://example.com/u2');
-
-      final c1 = IngestionCandidate(headline: h1, rawDescription: '');
-      final c2 = IngestionCandidate(headline: h2, rawDescription: '');
 
       // Arrange: Ensure source is found for batch execution
       when(
@@ -550,12 +444,11 @@ void main() {
           topicCache: any(named: 'topicCache'),
           fallbackTopic: any(named: 'fallbackTopic'),
           countryCache: any(named: 'countryCache'),
-          topicSlugMap: any(named: 'topicSlugMap'),
           mappingCache: any(named: 'mappingCache'),
         ),
       ).thenAnswer(
         (_) async => {
-          source.id: [c1, c2],
+          source.id: [h1, h2],
         },
       );
 
@@ -701,7 +594,6 @@ void main() {
             topicCache: any(named: 'topicCache'),
             fallbackTopic: any(named: 'fallbackTopic'),
             countryCache: any(named: 'countryCache'),
-            topicSlugMap: any(named: 'topicSlugMap'),
             mappingCache: any(named: 'mappingCache'),
           ),
         ).thenAnswer((_) async => {});
@@ -760,7 +652,6 @@ void main() {
             topicCache: any(named: 'topicCache'),
             fallbackTopic: any(named: 'fallbackTopic'),
             countryCache: any(named: 'countryCache'),
-            topicSlugMap: any(named: 'topicSlugMap'),
             mappingCache: any(named: 'mappingCache'),
           ),
         ).thenThrow(const BadRequestException('Invalid Source'));
