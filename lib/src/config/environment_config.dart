@@ -164,8 +164,8 @@ abstract final class EnvironmentConfig {
   static String get otpTemplateId => _getRequiredEnv('OTP_TEMPLATE_ID');
 
   /// Retrieves the News Aggregator API key from the environment.
-  static String? get newsAggregatorProviderKey =>
-      _getEnv('NEWS_AGGREGATOR_PROVIDER_KEY');
+  static String? get newsAggregatorProviderApiKey =>
+      _getEnv('NEWS_AGGREGATOR_PROVIDER_API_KEY');
 
   /// Retrieves the aggregator provider from the environment.
   static String get aggregatorProvider =>
@@ -180,6 +180,30 @@ abstract final class EnvironmentConfig {
   static int get ingestionDailyQuota {
     return int.tryParse(_getEnv('INGESTION_DAILY_QUOTA') ?? '100') ?? 100;
   }
+
+  /// AI Toggle: Global switch for AI-powered enrichment and translation.
+  static bool get aiIngestionEnabled =>
+      (_getEnv('AI_INGESTION_ENABLED') ?? 'false').toLowerCase() == 'true';
+
+  /// Retrieves the AI provider from the environment.
+  static String get aiProvider =>
+      _getEnv('AI_PROVIDER')?.toLowerCase() ?? 'openrouter';
+
+  /// OpenRouter API Key.
+  static String? get aiApiKey => _getEnv('AI_API_KEY');
+
+  /// The specific AI model identifier from OpenRouter.
+  static String get aiModel =>
+      _getEnv('AI_MODEL') ?? 'google/gemini-3.1-flash-lite-preview';
+
+  /// Daily token quota for AI operations.
+  static int get aiDailyTokenQuota =>
+      int.tryParse(_getEnv('AI_DAILY_TOKEN_QUOTA') ?? '100000') ?? 100000;
+
+  /// Retrieves the maximum input tokens allowed for AI batching.
+  /// Defaults to 8192 (Safe buffer for standard 8k/32k models).
+  static int get aiMaxInputTokens =>
+      int.tryParse(_getEnv('AI_MAX_INPUT_TOKENS') ?? '8192') ?? 8192;
 
   /// Retrieves the SendGrid API URL from the environment, if provided.
   ///

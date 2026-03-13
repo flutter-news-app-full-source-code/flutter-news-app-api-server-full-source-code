@@ -84,6 +84,9 @@ final Set<String> _publisherRolePermissions = {
 
   // Publishers can send breaking news notifications.
   Permissions.pushNotificationSendBreakingNews,
+
+  // Publishers can use AI enrichment tools.
+  Permissions.intelligenceEnrich,
 };
 
 final Set<String> _adminRolePermissions = {

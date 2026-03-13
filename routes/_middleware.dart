@@ -22,6 +22,7 @@ import 'package:verity_api/src/services/country_query_service.dart';
 import 'package:verity_api/src/services/email/email_service.dart';
 import 'package:verity_api/src/services/google_auth_service.dart';
 import 'package:verity_api/src/services/idempotency_service.dart';
+import 'package:verity_api/src/services/intelligence/identity_resolution_service.dart';
 import 'package:verity_api/src/services/media_service.dart';
 import 'package:verity_api/src/services/push_notification/push_notification_service.dart';
 import 'package:verity_api/src/services/rate_limit_service.dart';
@@ -330,6 +331,11 @@ Handler middleware(Handler handler) {
               .use(
                 provider<ContentEnrichmentService>(
                   (_) => deps.contentEnrichmentService,
+                ),
+              )
+              .use(
+                provider<IdentityResolutionService>(
+                  (_) => deps.identityResolutionService,
                 ),
               )
               .call(context);

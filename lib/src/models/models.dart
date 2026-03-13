@@ -2,6 +2,7 @@ export 'analytics/analytics.dart';
 export 'email/email.dart';
 export 'idempotency_record.dart';
 export 'ingestion/ingestion.dart';
+export 'intelligence/intelligence.dart';
 export 'push_notification/push_notification.dart';
 export 'request_id.dart';
 export 'reward/reward.dart';

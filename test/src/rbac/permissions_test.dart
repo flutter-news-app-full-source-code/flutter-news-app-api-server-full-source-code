@@ -62,6 +62,7 @@ void main() {
       Permissions.analyticsRead,
       Permissions.mediaRequestUploadUrl,
       Permissions.mediaManage,
+      Permissions.intelligenceEnrich,
     ];
 
     test('All permission strings are unique', () {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:logging/logging.dart';
 import 'package:verity_api/src/config/app_dependencies.dart';
@@ -25,6 +26,14 @@ Future<void> main(List<String> args) async {
   final log = Logger('NewsIngestionWorker');
   log.info('Worker process started.');
 
+  // Safety Valve: Hard kill after 5 minutes to prevent zombie processes.
+  final watchdog = Timer(const Duration(minutes: 5), () {
+    log.severe('Worker timed out after 5 minutes. Forcing exit.');
+    exit(1);
+  });
+
+  var exitCode = 0;
+
   try {
     // 2. Initialize Production Dependencies
     // This connects to MongoDB and sets up Repositories.
@@ -37,13 +46,17 @@ Future<void> main(List<String> args) async {
     await ingestionService.run();
 
     log.info('Ingestion cycle completed successfully.');
+
+    // If we get here, the work finished successfully. Cancel the watchdog.
+    watchdog.cancel();
   } catch (e, s) {
+    watchdog.cancel(); // Cancel watchdog to allow immediate exit
     log.severe('Fatal error in worker process.', e, s);
-    exit(1);
+    exitCode = 1;
   } finally {
     // 4. Graceful Shutdown
     await AppDependencies.instance.dispose();
     log.info('Worker process exiting.');
-    exit(0);
+    exit(exitCode);
   }
 }

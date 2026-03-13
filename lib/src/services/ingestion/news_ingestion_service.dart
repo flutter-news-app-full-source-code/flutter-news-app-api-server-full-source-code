@@ -13,6 +13,7 @@ import 'package:verity_api/src/models/ingestion/ingestion_topic_mapping.dart';
 import 'package:verity_api/src/models/ingestion/ingestion_usage.dart';
 import 'package:verity_api/src/services/idempotency_service.dart';
 import 'package:verity_api/src/services/ingestion/providers/aggregator_provider.dart';
+import 'package:verity_api/src/utils/article_validator.dart';
 
 /// {@template news_ingestion_service}
 /// Orchestrates the automated ingestion of news from external aggregators.
@@ -297,12 +298,15 @@ class NewsIngestionService {
 
       await _incrementQuota();
 
-      // Process results for each source in the batch
+      // Phase 3: Raw Persistence (Drafts)
       for (final mapping in mappings) {
         final task = tasks.firstWhere((t) => t.sourceId == mapping.sourceId);
         final headlines = batchResults[mapping.sourceId] ?? [];
 
-        await _processHeadlines(headlines, task);
+        await _processHeadlines(
+          headlines,
+          task,
+        );
       }
     } on BadRequestException {
       _log.warning(
@@ -355,7 +359,10 @@ class NewsIngestionService {
         );
 
         await _incrementQuota();
-        await _processHeadlines(results[mapping.sourceId] ?? [], task);
+        await _processHeadlines(
+          results[mapping.sourceId] ?? <Headline>[],
+          task,
+        );
       } on BadRequestException {
         _log.severe('Poison pill identified: ${mapping.externalId}');
         // Disable the mapping to prevent future batch failures
@@ -390,31 +397,43 @@ class NewsIngestionService {
     var errorCount = 0;
 
     for (final raw in headlines) {
+      _log.finer('Processing draft headline: ${raw.url}');
       // QUALITY CONTROL: Filter noise and siblings
-      if (!_validateArticleQuality(raw, task)) {
+      if (!ArticleValidator.validate(raw)) {
         _log.fine('   [QC] Article rejected: ${raw.url}');
         skippedCount++;
         continue;
       }
 
+      // Hard Business Rule: All ingested content MUST be draft.
+      // LastEnrichedAt: Ensure NULL so Intelligence Worker picks it up.
+      final finalHeadline = raw.copyWith(
+        status: ContentStatus.draft,
+        lastEnrichedAt: const ValueWrapper(null),
+      );
+
       try {
+        _log.finer('Checking for duplicates for URL: ${finalHeadline.url}');
         final isDuplicate = await _idempotencyService.isDuplicate(
           'headline_ingestion',
-          '${raw.source.id}:${raw.url}',
+          '${finalHeadline.source.id}:${finalHeadline.url}',
         );
 
         if (isDuplicate) {
-          _log.finer('   [Dedupe] Skipped duplicate: ${raw.url}');
+          _log.fine('   [Dedupe] Skipped duplicate: ${finalHeadline.url}');
           skippedCount++;
           continue;
         }
 
-        await _headlineRepository.create(item: raw);
+        _log.finer(
+          'Persisting raw draft headline: ${finalHeadline.id}',
+        );
+        await _headlineRepository.create(item: finalHeadline);
         await _idempotencyService.recordEvent(
-          '${raw.source.id}:${raw.url}',
+          '${finalHeadline.source.id}:${finalHeadline.url}',
           scope: 'headline_ingestion',
         );
-        _log.fine('   [Success] Saved headline: ${raw.url}');
+        _log.fine('   [Success] Persisted headline: ${finalHeadline.url}');
         savedCount++;
       } catch (e, s) {
         _log.warning('Failed to save headline: ${raw.url}', e, s);
@@ -429,53 +448,11 @@ class NewsIngestionService {
       savedCount: savedCount,
       error: isSuccess ? null : 'Batch processing failed.',
     );
-  }
 
-  /// Validates the quality and relevance of a fetched article.
-  /// Returns `true` if the article should be processed, `false` otherwise.
-  bool _validateArticleQuality(Headline headline, NewsAutomationTask task) {
-    final articleUrl = Uri.parse(headline.url);
-    final sourceUrl = Uri.parse(headline.source.url);
-
-    // 1. Host Consistency Check (Prevents Sibling Leakage)
-    // Ensures 'arabic.cnn.com' is not accepted for 'edition.cnn.com'.
-    // Logic: Article host must contain the Source host (handling subdomains).
-    // Normalization: strip 'www.' for comparison.
-    final cleanArticleHost = articleUrl.host.replaceAll(RegExp(r'^www\.'), '');
-    final cleanSourceHost = sourceUrl.host.replaceAll(RegExp(r'^www\.'), '');
-
-    if (!cleanArticleHost.endsWith(cleanSourceHost)) {
-      // Special Case: Allow if the source host is just a domain and article is subdomain
-      // But reject if source is 'edition.cnn.com' and article is 'arabic.cnn.com'
-      _log.info(
-        '[QC] Host Mismatch (Leakage): Article="$cleanArticleHost" does not end with Source="$cleanSourceHost". URL: ${headline.url}',
-      );
-      return false;
-    }
-
-    // 2. Global Noise Filter (Path Blacklist)
-    // Rejects known non-news patterns like TV schedules, weather, etc.
-    const noisePatterns = [
-      '/programmes/',
-      '/schedules/',
-      '/weather/',
-      '/tv/',
-      '/radio/',
-      '/help/',
-      '/contact/',
-      '/terms',
-      '/privacy',
-    ];
-    if (noisePatterns.any(
-      (pattern) => articleUrl.path.toLowerCase().contains(pattern),
-    )) {
-      _log.info(
-        '[QC] Noise Pattern Detected: URL contains blacklist pattern. URL: ${headline.url}',
-      );
-      return false;
-    }
-
-    return true;
+    _log.info(
+      'Batch Result [Task ${task.id}]: Processed ${headlines.length} items. '
+      '✅ Saved: $savedCount | ⏭️ Skipped: $skippedCount | ❌ Errors: $errorCount',
+    );
   }
 
   Future<List<NewsAutomationTask>> _claimPendingTasks() async {
@@ -567,7 +544,9 @@ class NewsIngestionService {
 
   String _getUsageId(DateTime now) {
     // Generate a deterministic 24-character hex string for the date.
-    final dateStr = '${now.year}-${now.month}-${now.day}';
+    final dateStr =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')}';
     final bytes = utf8.encode('usage:$dateStr');
     return sha256.convert(bytes).toString().substring(0, 24);
   }

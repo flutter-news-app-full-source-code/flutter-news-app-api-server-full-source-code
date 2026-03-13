@@ -9,6 +9,8 @@ import 'package:verity_api/src/clients/email/email_client.dart';
 import 'package:verity_api/src/clients/email/email_logging_client.dart';
 import 'package:verity_api/src/clients/email/email_onesignal_client.dart';
 import 'package:verity_api/src/clients/email/email_sendgrid_client.dart';
+import 'package:verity_api/src/clients/intelligence/intelligence_client.dart';
+import 'package:verity_api/src/clients/intelligence/open_router_client.dart';
 import 'package:verity_api/src/config/environment_config.dart';
 import 'package:verity_api/src/database/migrations/all_migrations.dart';
 import 'package:verity_api/src/database/mongo/data_mongodb.dart';
@@ -16,6 +18,7 @@ import 'package:verity_api/src/models/idempotency_record.dart';
 import 'package:verity_api/src/models/ingestion/aggregator_source_mapping.dart';
 import 'package:verity_api/src/models/ingestion/ingestion_topic_mapping.dart';
 import 'package:verity_api/src/models/ingestion/ingestion_usage.dart';
+import 'package:verity_api/src/models/intelligence/ai_usage.dart';
 import 'package:verity_api/src/models/storage/local_media_finalization_job.dart';
 import 'package:verity_api/src/models/storage/local_upload_token.dart';
 import 'package:verity_api/src/rbac/permission_service.dart';
@@ -74,6 +77,7 @@ class AppDependencies {
   late final DataRepository<IngestionTopicMapping> mappingRepository;
   late final DataRepository<AggregatorSourceMapping> sourceMappingRepository;
   late final DataRepository<IngestionUsage> ingestionUsageRepository;
+  late final DataRepository<AiUsage> aiUsageRepository;
   late final DataRepository<LocalMediaFinalizationJob>
   localMediaFinalizationJobRepository;
 
@@ -106,6 +110,8 @@ class AppDependencies {
   late final UploadTokenService uploadTokenService;
   late final LocalMediaFinalizationJobService finalizationJobService;
   late final ContentEnrichmentService contentEnrichmentService;
+  late final IntelligenceService intelligenceService;
+  late final IdentityResolutionService identityResolutionService;
   late final NewsIngestionService newsIngestionService;
 
   late final IGcsJwtVerifier gcsJwtVerifier;
@@ -294,6 +300,14 @@ class AppDependencies {
         logger: Logger('DataMongodb<IngestionUsage>'),
       );
 
+      final aiUsageClient = DataMongodb<AiUsage>(
+        connectionManager: _mongoDbConnectionManager,
+        modelName: 'ai_usage_logs',
+        fromJson: AiUsage.fromJson,
+        toJson: (item) => item.toJson(),
+        logger: Logger('DataMongodb<AiUsage>'),
+      );
+
       final localMediaFinalizationJobClient =
           DataMongodb<LocalMediaFinalizationJob>(
             connectionManager: _mongoDbConnectionManager,
@@ -465,6 +479,7 @@ class AppDependencies {
       ingestionUsageRepository = DataRepository(
         dataClient: ingestionUsageClient,
       );
+      aiUsageRepository = DataRepository(dataClient: aiUsageClient);
       idempotencyRepository = DataRepository(dataClient: idempotencyClient);
       localMediaFinalizationJobRepository = DataRepository(
         dataClient: localMediaFinalizationJobClient,
@@ -746,6 +761,47 @@ class AppDependencies {
         log: Logger('ContentEnrichmentService'),
       );
 
+      // --- Intelligence Client Factory ---
+      final aiProvider = EnvironmentConfig.aiProvider;
+      final IntelligenceClient intelligenceClient;
+
+      if (aiProvider == 'openrouter') {
+        final intelligenceHttpClient = HttpClient(
+          baseUrl: 'https://openrouter.ai/api/v1/',
+          tokenProvider: () async => null,
+          options: BaseOptions(
+            connectTimeout: const Duration(seconds: 30),
+            // Allow 3 minutes for complex AI generation tasks
+            receiveTimeout: const Duration(minutes: 3),
+          ),
+          logger: Logger('OpenRouterHttpClient'),
+        );
+        intelligenceClient = OpenRouterClient(
+          httpClient: intelligenceHttpClient,
+          log: Logger('OpenRouterClient'),
+        );
+      } else {
+        // Fallback or error if an unknown provider is specified
+        throw StateError('Unknown AI Provider: $aiProvider');
+      }
+
+      identityResolutionService = IdentityResolutionService(
+        personRepository: personRepository,
+        log: Logger('IdentityResolutionService'),
+      );
+
+      intelligenceService = IntelligenceService(
+        client: intelligenceClient,
+        usageRepository: aiUsageRepository,
+        remoteConfigRepository: remoteConfigRepository,
+        topicRepository: topicRepository,
+        headlineRepository: headlineRepository,
+        countryRepository: countryRepository,
+        identityResolutionService: identityResolutionService,
+        pushNotificationService: pushNotificationService,
+        log: Logger('IntelligenceService'),
+      );
+
       // --- News Ingestion Provider Factory ---
       final aggregatorProviderType = EnvironmentConfig.aggregatorProvider;
       final AggregatorProvider activeAggregatorProvider;
@@ -761,7 +817,7 @@ class AppDependencies {
               InterceptorsWrapper(
                 onRequest: (options, handler) {
                   options.queryParameters['access_key'] =
-                      EnvironmentConfig.newsAggregatorProviderKey;
+                      EnvironmentConfig.newsAggregatorProviderApiKey;
                   return handler.next(options);
                 },
               ),
@@ -777,7 +833,7 @@ class AppDependencies {
           httpClient: HttpClient(
             baseUrl: 'https://newsapi.org/v2/',
             tokenProvider: () async =>
-                EnvironmentConfig.newsAggregatorProviderKey,
+                EnvironmentConfig.newsAggregatorProviderApiKey,
             logger: Logger('NewsApiHttpClient'),
           ),
         );

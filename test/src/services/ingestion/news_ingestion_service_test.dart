@@ -1,3 +1,5 @@
+// ignore_for_file: inference_failure_on_function_invocation
+
 import 'package:core/core.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
@@ -43,6 +45,8 @@ class FakeHeadline extends Fake implements Headline {}
 
 class FakeSource extends Fake implements Source {}
 
+class FakePerson extends Fake implements Person {}
+
 class FakeTopic extends Fake implements Topic {}
 
 class FakeIngestionUsage extends Fake implements IngestionUsage {}
@@ -75,6 +79,7 @@ void main() {
 
   setUpAll(() {
     registerFallbackValue(AggregatorType.newsApi);
+    registerFallbackValue(FakePerson());
     registerFallbackValue(FakeSource());
     registerFallbackValue(FakeTopic());
     registerFallbackValue(FakeIngestionUsage());
@@ -87,6 +92,7 @@ void main() {
     registerFallbackValue(<String, Source>{});
     registerFallbackValue(<String, Topic>{});
     registerFallbackValue(<String, Country>{});
+    registerFallbackValue(<String, Topic>{});
     registerFallbackValue(<String, String>{});
     registerFallbackValue(
       const PaginationOptions(limit: 300),
@@ -124,6 +130,7 @@ void main() {
     );
 
     // Setup default environment overrides
+    EnvironmentConfig.setOverride('AI_INGESTION_ENABLED', 'true');
     EnvironmentConfig.setOverride('INGESTION_DAILY_QUOTA', '100');
     EnvironmentConfig.setOverride('AGGREGATOR_PROVIDER', 'newsApi');
     EnvironmentConfig.setOverride('INGESTION_REQUEST_DELAY_SECONDS', '0');
@@ -217,10 +224,13 @@ void main() {
 
     // Default idempotency (success/not duplicate)
     when(
-      () => mockIdempotency.recordEvent(any(), scope: any(named: 'scope')),
+      () => mockIdempotency.recordEvent(
+        any<String>(),
+        scope: any(named: 'scope'),
+      ),
     ).thenAnswer((_) async {});
     when(
-      () => mockIdempotency.isDuplicate(any(), any()),
+      () => mockIdempotency.isDuplicate(any<String>(), any<String>()),
     ).thenAnswer((_) async => false);
   });
 
@@ -261,8 +271,8 @@ void main() {
         () => mockSourceRepo.read(id: source.id),
       ).thenAnswer((_) async => source);
 
-      // Arrange: Provider returns 1 headline
-      final headline = Headline(
+      // Arrange: Provider returns 1 candidate
+      final draftHeadline = Headline(
         // Note: Using ObjectId().oid to ensure valid ID
         id: ObjectId().oid,
         title: const {SupportedLanguage.en: 'Test Headline'},
@@ -273,8 +283,9 @@ void main() {
         topic: generalTopic,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
-        status: ContentStatus.active,
+        status: ContentStatus.draft,
         isBreaking: false,
+        lastEnrichedAt: null,
       );
 
       final mapping = AggregatorSourceMapping(
@@ -301,7 +312,7 @@ void main() {
 
       when(
         () => mockProvider.fetchBatchHeadlines(
-          any(),
+          any<List<AggregatorSourceMapping>>(),
           sourceMap: any(named: 'sourceMap'),
           topicCache: any(named: 'topicCache'),
           fallbackTopic: any(named: 'fallbackTopic'),
@@ -310,7 +321,7 @@ void main() {
         ),
       ).thenAnswer(
         (_) async => {
-          source.id: [headline],
+          source.id: [draftHeadline],
         },
       );
 
@@ -330,7 +341,7 @@ void main() {
         () => mockHeadlineRepo.create(
           item: any(named: 'item'),
         ),
-      ).thenAnswer((_) async => headline);
+      ).thenAnswer((_) async => draftHeadline);
 
       // Arrange: Task Finalization
       when(
@@ -348,7 +359,13 @@ void main() {
         () => mockHeadlineRepo.create(
           item: any(
             named: 'item',
-            that: isA<Headline>().having((h) => h.url, 'url', headline.url),
+            that: isA<Headline>()
+                .having((h) => h.url, 'url', draftHeadline.url)
+                .having(
+                  (h) => h.status,
+                  'status',
+                  ContentStatus.draft,
+                ),
           ),
         ),
       ).called(1);
@@ -406,8 +423,9 @@ void main() {
         topic: generalTopic,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
-        status: ContentStatus.active,
+        status: ContentStatus.draft,
         isBreaking: false,
+        lastEnrichedAt: null,
       );
       final h2 = h1.copyWith(id: ObjectId().oid, url: 'https://example.com/u2');
 
@@ -422,11 +440,11 @@ void main() {
       when(
         () => mockProvider.fetchBatchHeadlines(
           any<List<AggregatorSourceMapping>>(),
-          sourceMap: any<Map<String, Source>>(named: 'sourceMap'),
-          topicCache: any<Map<String, Topic>>(named: 'topicCache'),
-          fallbackTopic: any<Topic>(named: 'fallbackTopic'),
-          countryCache: any<Map<String, Country>>(named: 'countryCache'),
-          mappingCache: any<Map<String, String>>(named: 'mappingCache'),
+          sourceMap: any(named: 'sourceMap'),
+          topicCache: any(named: 'topicCache'),
+          fallbackTopic: any(named: 'fallbackTopic'),
+          countryCache: any(named: 'countryCache'),
+          mappingCache: any(named: 'mappingCache'),
         ),
       ).thenAnswer(
         (_) async => {
@@ -572,11 +590,11 @@ void main() {
         when(
           () => mockProvider.fetchBatchHeadlines(
             any<List<AggregatorSourceMapping>>(),
-            sourceMap: any<Map<String, Source>>(named: 'sourceMap'),
-            topicCache: any<Map<String, Topic>>(named: 'topicCache'),
-            fallbackTopic: any<Topic>(named: 'fallbackTopic'),
-            countryCache: any<Map<String, Country>>(named: 'countryCache'),
-            mappingCache: any<Map<String, String>>(named: 'mappingCache'),
+            sourceMap: any(named: 'sourceMap'),
+            topicCache: any(named: 'topicCache'),
+            fallbackTopic: any(named: 'fallbackTopic'),
+            countryCache: any(named: 'countryCache'),
+            mappingCache: any(named: 'mappingCache'),
           ),
         ).thenAnswer((_) async => {});
 
@@ -630,11 +648,11 @@ void main() {
         when(
           () => mockProvider.fetchBatchHeadlines(
             any<List<AggregatorSourceMapping>>(),
-            sourceMap: any<Map<String, Source>>(named: 'sourceMap'),
-            topicCache: any<Map<String, Topic>>(named: 'topicCache'),
-            fallbackTopic: any<Topic>(named: 'fallbackTopic'),
-            countryCache: any<Map<String, Country>>(named: 'countryCache'),
-            mappingCache: any<Map<String, String>>(named: 'mappingCache'),
+            sourceMap: any(named: 'sourceMap'),
+            topicCache: any(named: 'topicCache'),
+            fallbackTopic: any(named: 'fallbackTopic'),
+            countryCache: any(named: 'countryCache'),
+            mappingCache: any(named: 'mappingCache'),
           ),
         ).thenThrow(const BadRequestException('Invalid Source'));
 

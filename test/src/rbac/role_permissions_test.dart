@@ -53,6 +53,10 @@ void main() {
         rolePermissions[UserRole.publisher],
         contains(Permissions.headlineCreate),
       );
+      expect(
+        rolePermissions[UserRole.publisher],
+        contains(Permissions.intelligenceEnrich),
+      );
     });
   });
 }

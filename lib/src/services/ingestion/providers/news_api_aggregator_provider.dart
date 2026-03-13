@@ -110,6 +110,7 @@ class NewsApiAggregatorProvider implements AggregatorProvider {
             );
 
             results.putIfAbsent(mapping.sourceId, () => []).add(headline);
+            _log.finest('Successfully mapped article: ${article.title}');
           } catch (e, s) {
             _log.warning(
               'Failed to map NewsAPI article: ${article.title}',
@@ -118,6 +119,10 @@ class NewsApiAggregatorProvider implements AggregatorProvider {
             );
           }
         }
+        _log.fine(
+          'Batch processing complete for chunk. '
+          'Candidates generated: ${results.values.fold(0, (p, e) => p + e.length)}',
+        );
       } catch (e, s) {
         _log.severe('Batch fetch failed for sources: $sourceIds', e, s);
         // We rethrow to trigger the "De-batching Fallback" in the service.

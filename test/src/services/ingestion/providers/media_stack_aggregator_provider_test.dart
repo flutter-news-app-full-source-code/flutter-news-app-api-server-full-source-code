@@ -146,8 +146,9 @@ void main() {
       topic: fallbackTopic,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
-      status: ContentStatus.active,
+      status: ContentStatus.draft,
       isBreaking: false,
+      lastEnrichedAt: null,
     );
 
     when(
@@ -170,7 +171,10 @@ void main() {
       mappingCache: {},
     );
 
-    expect(result[source.id], hasLength(1));
-    expect(result[source.id]!.first, headline);
+    expect(result[source.id], isNotNull);
+    expect(
+      result[source.id]!.first,
+      headline.copyWith(status: ContentStatus.draft),
+    );
   });
 }

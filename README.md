@@ -78,27 +78,30 @@ The API automatically validates the structure of all incoming data, ensuring tha
 </details>
 
 <details>
+<summary><strong>🧠 Native Intelligence Engine</strong></summary>
+
+### ⚡ Autonomous Intelligence & Data Enrichment
+A standalone, model-agnostic intelligence engine that transforms raw data into structured knowledge. While deeply integrated with the content pipeline, it operates as an independent service layer capable of powering diverse AI workflows beyond simple news processing.
+- **Provider-Agnostic Core:** Built on the Strategy Pattern, the engine completely decouples business logic from the underlying model. Switch between OpenAI, Google Gemini, Anthropic, or Mistral instantly without code changes to optimize for cost or performance.
+- **Asynchronous Enrichment Worker:** A dedicated background worker acts as a "smart consumer," continuously polling for raw draft content to apply heavy processing—junk filtering, entity extraction, translation, and topic inference—without blocking the main ingestion pipeline.
+- **Precision & Governance:** Uses specialized strategies (`IngestionEnrichment` vs. `SingleEnrichment`) to tailor prompt engineering to the specific task. A centralized governance layer enforces strict daily token quotas to prevent billing surprises.
+- **Automated Editorial Watchdog:** The engine autonomously evaluates content for urgency, identifying high-confidence breaking news and triggering intelligent, deduplicated push notifications to relevant subscribers 24/7.
+> **Your Advantage:** Deploy AI features with strategic and financial confidence. Avoid vendor lock-in, leverage the most powerful and cost-effective models on the market, and maintain complete control over your operational spend.
+
+</details>
+
+<details>
 <summary><strong>🤖 Automated News Ingestion & Orchestration</strong></summary>
 
-### 🤖 High-Efficiency News Ingestion Engine
-A professional-grade orchestration pipeline designed to maximize content 
-throughput while minimizing operational costs and ensuring data quality.
-- **Multi-Provider Polymorphism:** Out-of-the-box support for **NewsAPI** 
-  and **MediaStack**, utilizing a unified interface that enables 
-  hot-swappable ingestion strategies via environment configuration.
-- **On-Demand Source Discovery:** Automatically synchronizes internal 
-  sources with provider catalogs using a host-based matching heuristic, 
-  eliminating manual mapping overhead.
-- **Intelligent Cost Control:** Optimizes API credit usage through 
-  high-density batch processing and strictly enforced daily quotas.
-- **Resilient Pipeline Architecture:** Implements a "Poison Pill" isolation 
-  strategy that automatically de-batches and disables problematic sources to 
-  prevent upstream failures from halting the entire ingestion cycle.
-- **Enterprise Deduplication:** Employs a high-performance idempotency 
-  layer to guarantee a unique, high-quality content feed for your users.
-> **Your Advantage:** Drastically reduce operational overhead and API 
-expenditure. The engine self-heals when providers update their catalogs and 
-scales effortlessly as your content network grows.
+### 🚀 High-Velocity Content Acquisition
+A robust, fault-tolerant orchestration pipeline focused purely on the rapid acquisition and staging of external data. It acts as the "mouth" of the system, capturing raw content at scale and normalizing it for downstream processing.
+- **Multi-Provider Polymorphism:** Out-of-the-box support for **NewsAPI** and **MediaStack**, utilizing a unified interface that enables hot-swappable ingestion strategies via environment configuration.
+- **On-Demand Source Discovery:** Automatically synchronizes internal sources with provider catalogs using a host-based matching heuristic, eliminating manual mapping overhead.
+- **Decoupled Staging Architecture:** Implements a high-performance "Worker-Queue" pattern. Content is captured rapidly and saved as `draft` status, creating a clean separation of concerns: Ingestion handles volume, while the Intelligence Engine handles value.
+- **Intelligent Cost Control:** Optimizes API credit usage through high-density batch processing and strictly enforced daily quotas.
+- **Resilient Pipeline Architecture:** Implements a "Poison Pill" isolation strategy that automatically de-batches and disables problematic sources to prevent upstream failures from halting the entire ingestion cycle.
+- **Enterprise Deduplication:** Employs a high-performance idempotency layer to guarantee a unique, high-quality content feed for your users.
+> **Your Advantage:** A data pipeline that is impossible to clog. By decoupling acquisition from intelligence, the system ensures that slow AI processing or network latency never impacts the freshness or availability of your raw content feed.
 
 ---
 

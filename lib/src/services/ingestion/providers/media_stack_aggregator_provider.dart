@@ -101,7 +101,12 @@ class MediaStackAggregatorProvider implements AggregatorProvider {
               countryCache: countryCache,
               mappingCache: mappingCache,
             );
-            results.putIfAbsent(mapping.sourceId, () => []).add(headline);
+
+            // Enforce Draft status regardless of mapper output
+            final draftHeadline = headline.copyWith(
+              status: ContentStatus.draft,
+            );
+            results.putIfAbsent(mapping.sourceId, () => []).add(draftHeadline);
           } catch (e, s) {
             _log.warning(
               'Failed to map MediaStack article: ${article.title}',
