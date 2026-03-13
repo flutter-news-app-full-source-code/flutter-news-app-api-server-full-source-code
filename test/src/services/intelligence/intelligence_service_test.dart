@@ -381,9 +381,15 @@ void main() {
 
       // Arrange: Identity Resolution
       when(
-        () => mockIdentityService.resolvePersons(any()),
+        () => mockIdentityService.resolvePersons(
+          any(),
+        ),
       ).thenAnswer(
-        (_) async => [const Person(id: 'p1', name: {}, description: {})],
+        (_) async => (
+          persons: [const Person(id: 'p1', name: {}, description: {})],
+          createdCount: 0,
+          reusedCount: 1,
+        ),
       );
 
       // Arrange: Updates
