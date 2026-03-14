@@ -23,6 +23,7 @@ import 'package:veritai_api/src/services/email/email_service.dart';
 import 'package:veritai_api/src/services/google_auth_service.dart';
 import 'package:veritai_api/src/services/idempotency_service.dart';
 import 'package:veritai_api/src/services/intelligence/identity_resolution_service.dart';
+import 'package:veritai_api/src/services/intelligence/intelligence_service.dart';
 import 'package:veritai_api/src/services/media_service.dart';
 import 'package:veritai_api/src/services/push_notification/push_notification_service.dart';
 import 'package:veritai_api/src/services/rate_limit_service.dart';
@@ -336,6 +337,11 @@ Handler middleware(Handler handler) {
               .use(
                 provider<IdentityResolutionService>(
                   (_) => deps.identityResolutionService,
+                ),
+              )
+              .use(
+                provider<IntelligenceService>(
+                  (_) => deps.intelligenceService,
                 ),
               )
               .call(context);
