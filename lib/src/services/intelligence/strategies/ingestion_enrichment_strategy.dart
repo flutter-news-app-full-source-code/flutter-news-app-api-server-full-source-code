@@ -135,6 +135,9 @@ Return ONLY the valid JSON object. Do not include any other text or explanations
           map['description'],
           enabledLanguages,
         ),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        status: ContentStatus.active,
       );
     }).toList();
   }
