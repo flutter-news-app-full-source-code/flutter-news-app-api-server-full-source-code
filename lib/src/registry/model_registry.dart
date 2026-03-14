@@ -154,15 +154,18 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresAuthentication: true,
     ),
     postPermission: const ModelActionPermission(
-      type: RequiredPermissionType.adminOnly,
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.headlineCreate,
       requiresAuthentication: true,
     ),
     putPermission: const ModelActionPermission(
-      type: RequiredPermissionType.adminOnly,
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.headlineUpdate,
       requiresAuthentication: true,
     ),
     deletePermission: const ModelActionPermission(
-      type: RequiredPermissionType.adminOnly,
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.headlineDelete,
       requiresAuthentication: true,
     ),
   ),
@@ -183,15 +186,18 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresAuthentication: true,
     ),
     postPermission: const ModelActionPermission(
-      type: RequiredPermissionType.adminOnly,
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.topicCreate,
       requiresAuthentication: true,
     ),
     putPermission: const ModelActionPermission(
-      type: RequiredPermissionType.adminOnly,
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.topicUpdate,
       requiresAuthentication: true,
     ),
     deletePermission: const ModelActionPermission(
-      type: RequiredPermissionType.adminOnly,
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.topicDelete,
       requiresAuthentication: true,
     ),
   ),
@@ -212,15 +218,18 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresAuthentication: true,
     ),
     postPermission: const ModelActionPermission(
-      type: RequiredPermissionType.adminOnly,
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.sourceCreate,
       requiresAuthentication: true,
     ),
     putPermission: const ModelActionPermission(
-      type: RequiredPermissionType.adminOnly,
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.sourceUpdate,
       requiresAuthentication: true,
     ),
     deletePermission: const ModelActionPermission(
-      type: RequiredPermissionType.adminOnly,
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.sourceDelete,
       requiresAuthentication: true,
     ),
   ),
@@ -240,15 +249,18 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresAuthentication: true,
     ),
     postPermission: const ModelActionPermission(
-      type: RequiredPermissionType.adminOnly,
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.personCreate,
       requiresAuthentication: true,
     ),
     putPermission: const ModelActionPermission(
-      type: RequiredPermissionType.adminOnly,
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.personUpdate,
       requiresAuthentication: true,
     ),
     deletePermission: const ModelActionPermission(
-      type: RequiredPermissionType.adminOnly,
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.personDelete,
       requiresAuthentication: true,
     ),
   ),
@@ -320,7 +332,8 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
     getOwnerId: (dynamic item) =>
         (item as User).id as String?, // User is the owner of their profile
     getCollectionPermission: const ModelActionPermission(
-      type: RequiredPermissionType.adminOnly, // Only admin can list all users
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.userRead,
       requiresAuthentication: true,
     ),
     getItemPermission: const ModelActionPermission(
@@ -461,15 +474,18 @@ final modelRegistry = <String, ModelConfig<dynamic>>{
       requiresAuthentication: false, // Make remote_config GET public
     ),
     postPermission: const ModelActionPermission(
-      type: RequiredPermissionType.adminOnly, // Only administrators can create
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.remoteConfigCreate,
       requiresAuthentication: true,
     ),
     putPermission: const ModelActionPermission(
-      type: RequiredPermissionType.adminOnly, // Only administrators can update
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.remoteConfigUpdate,
       requiresAuthentication: true,
     ),
     deletePermission: const ModelActionPermission(
-      type: RequiredPermissionType.adminOnly, // Only administrators can delete
+      type: RequiredPermissionType.specificPermission,
+      permission: Permissions.remoteConfigDelete,
       requiresAuthentication: true,
     ),
   ),
