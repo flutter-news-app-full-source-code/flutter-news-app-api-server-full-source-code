@@ -10,10 +10,10 @@ import 'package:veritai_api/src/services/intelligence/batched_notification_selec
 import 'package:veritai_api/src/services/intelligence/identity_resolution_service.dart';
 import 'package:veritai_api/src/services/intelligence/strategies/ai_strategy.dart';
 import 'package:veritai_api/src/services/intelligence/strategies/headline_enrichment_strategy.dart';
+import 'package:veritai_api/src/services/intelligence/strategies/ingestion_enrichment_strategy.dart';
 import 'package:veritai_api/src/services/intelligence/strategies/person_enrichment_strategy.dart';
 import 'package:veritai_api/src/services/intelligence/strategies/source_enrichment_strategy.dart';
 import 'package:veritai_api/src/services/intelligence/strategies/topic_enrichment_strategy.dart';
-import 'package:veritai_api/src/services/intelligence/strategies/ingestion_enrichment_strategy.dart';
 import 'package:veritai_api/src/services/push_notification/push_notification_service.dart';
 
 /// {@template intelligence_service}
@@ -183,14 +183,14 @@ class IntelligenceService {
     Topic? resolvedTopic;
     if (result.topicSlug != null) {
       final response = await _topicRepository.readAll(
-        filter: {'name.en': result.topicSlug},
+        filter: {'q': result.topicSlug}, // Language-agnostic regex search
         pagination: const PaginationOptions(limit: 1),
       );
       if (response.items.isNotEmpty) resolvedTopic = response.items.first;
     }
 
     return draft.copyWith(
-      title: {...draft.title, ...result.translations},
+      title: {...draft.title, ...result.title},
       mentionedPersons: personResolution.persons,
       mentionedCountries: resolvedCountries,
       topic: resolvedTopic ?? draft.topic,
@@ -266,7 +266,6 @@ class IntelligenceService {
 
     // 2. Warm up Metadata Caches
     final countryCache = <String, Country>{};
-    final topicSlugMap = <String, Topic>{};
 
     final countries = await _countryRepository.readAll(
       pagination: const PaginationOptions(limit: 300),
@@ -278,9 +277,7 @@ class IntelligenceService {
     final topics = await _topicRepository.readAll(
       pagination: const PaginationOptions(limit: 300),
     );
-    for (final t in topics.items) {
-      topicSlugMap[t.name[SupportedLanguage.en] ?? t.id] = t;
-    }
+    final activeTopicsList = topics.items;
 
     // 3. Processing Loop
     var hasMore = true;
@@ -362,14 +359,20 @@ class IntelligenceService {
           // 3. Topic Inference & Strict Activation
           Topic? resolvedTopic;
           if (result.topicSlug != null) {
-            resolvedTopic = topicSlugMap[result.topicSlug];
+            final slugLower = result.topicSlug!.trim().toLowerCase();
+            resolvedTopic = activeTopicsList.cast<Topic?>().firstWhere(
+              (t) => t!.name.values.any(
+                (n) => n.trim().toLowerCase() == slugLower,
+              ),
+              orElse: () => null,
+            );
           }
 
           // Log metrics for resolution accuracy
           if (resolvedTopic != null) statsTopics++;
           if (resolvedPersons.isNotEmpty) statsPersons++;
           if (resolvedCountries.isNotEmpty) statsCountries++;
-          statsTranslations += result.translations.length;
+          statsTranslations += result.title.length;
 
           // 4. Breaking News Detection
           final isBreaking = result.breakingConfidence > 0.8;
@@ -386,7 +389,7 @@ class IntelligenceService {
             '  > Countries: ${resolvedCountries.map((c) => c.isoCode).join(", ")}',
           );
           _log.fine(
-            '  > Translations: ${result.translations.keys.map((k) => k.name).join(", ")}',
+            '  > Translations: ${result.title.keys.map((k) => k.name).join(", ")}',
           );
 
           final activeHeadline = draft.copyWith(
@@ -396,7 +399,7 @@ class IntelligenceService {
             topic: resolvedTopic ?? draft.topic,
             mentionedPersons: resolvedPersons,
             mentionedCountries: resolvedCountries,
-            title: {...draft.title, ...result.translations},
+            title: {...draft.title, ...result.title},
             isBreaking: isBreaking,
             updatedAt: DateTime.now(),
           );
