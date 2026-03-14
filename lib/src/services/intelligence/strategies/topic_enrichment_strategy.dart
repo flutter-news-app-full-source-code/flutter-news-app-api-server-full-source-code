@@ -1,11 +1,15 @@
 import 'package:core/core.dart';
 import 'package:veritai_api/src/services/intelligence/strategies/ai_strategy.dart';
 
+/// The result of a topic enrichment operation.
 typedef TopicEnrichmentResult = ({
   Map<SupportedLanguage, String> name,
   Map<SupportedLanguage, String> description,
 });
 
+/// {@template topic_enrichment_strategy}
+/// A strategy for enriching news topic metadata via the AI agent.
+/// {@endtemplate}
 class TopicEnrichmentStrategy extends AiStrategy<Topic, TopicEnrichmentResult> {
   @override
   String get identifier => 'topic_enrichment';

@@ -1,12 +1,16 @@
 import 'package:core/core.dart';
 import 'package:veritai_api/src/services/intelligence/strategies/ai_strategy.dart';
 
+/// The result of a source enrichment operation.
 typedef SourceEnrichmentResult = ({
   Map<SupportedLanguage, String> name,
   Map<SupportedLanguage, String> description,
   String? headquarters,
 });
 
+/// {@template source_enrichment_strategy}
+/// A strategy for enriching news source metadata via the AI agent.
+/// {@endtemplate}
 class SourceEnrichmentStrategy
     extends AiStrategy<Source, SourceEnrichmentResult> {
   @override

@@ -1,13 +1,18 @@
 import 'package:core/core.dart';
 import 'package:veritai_api/src/services/intelligence/strategies/ai_strategy.dart';
 
+/// The result of a single headline enrichment operation.
 typedef HeadlineEnrichmentResult = ({
   String? topicSlug,
   List<Person> extractedPersons,
   List<String> extractedCountryCodes,
-  Map<SupportedLanguage, String> translations,
+  Map<SupportedLanguage, String> title,
 });
 
+/// {@template headline_enrichment_strategy}
+/// A specialized strategy designed to hydrate partial headlines via the
+/// administrative dashboard.
+/// {@endtemplate}
 class HeadlineEnrichmentStrategy
     extends AiStrategy<Headline, HeadlineEnrichmentResult> {
   @override
@@ -36,7 +41,7 @@ You are an expert news editor. Your task is to analyze the provided headline and
    - `name` (object): A dictionary mapping language codes to the person's FULL NAME in these languages: [$missingLanguages].
    - `description` (object): A dictionary mapping language codes to a brief, factual description of the person's role (e.g., "CEO of X"). If unknown, use "...". Required languages: [$missingLanguages].
 3. `extractedCountryCodes` (array of strings): A list of 2-letter ISO 3166-1 country codes (e.g., "US", "FR") for any mentioned countries.
-4. `translations` (object): A dictionary translating the original headline title into these languages: [$missingLanguages].
+4. `title` (object): A dictionary translating the original headline title into these languages: [$missingLanguages].
 
 Return ONLY the valid JSON object. Do not include any other text, explanations, or markdown.
 ''',
@@ -54,7 +59,7 @@ Return ONLY the valid JSON object. Do not include any other text, explanations, 
     Headline input,
     List<SupportedLanguage> enabledLanguages,
   ) {
-    final rawTranslations = data['translations'] as Map<String, dynamic>? ?? {};
+    final rawTranslations = data['title'] as Map<String, dynamic>? ?? {};
     final translations = <SupportedLanguage, String>{};
     for (final entry in rawTranslations.entries) {
       try {
@@ -72,7 +77,7 @@ Return ONLY the valid JSON object. Do not include any other text, explanations, 
       extractedCountryCodes: List<String>.from(
         data['extractedCountryCodes'] as List? ?? [],
       ),
-      translations: translations,
+      title: translations,
     );
   }
 

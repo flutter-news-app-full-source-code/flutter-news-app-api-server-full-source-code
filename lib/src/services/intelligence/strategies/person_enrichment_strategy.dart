@@ -1,11 +1,15 @@
 import 'package:core/core.dart';
 import 'package:veritai_api/src/services/intelligence/strategies/ai_strategy.dart';
 
+/// The result of a person enrichment operation.
 typedef PersonEnrichmentResult = ({
   Map<SupportedLanguage, String> name,
   Map<SupportedLanguage, String> description,
 });
 
+/// {@template person_enrichment_strategy}
+/// A strategy for enriching person metadata via the AI agent.
+/// {@endtemplate}
 class PersonEnrichmentStrategy
     extends AiStrategy<Person, PersonEnrichmentResult> {
   @override
