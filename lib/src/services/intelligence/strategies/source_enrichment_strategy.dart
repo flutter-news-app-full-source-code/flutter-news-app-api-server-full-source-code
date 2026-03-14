@@ -6,6 +6,9 @@ typedef SourceEnrichmentResult = ({
   Map<SupportedLanguage, String> name,
   Map<SupportedLanguage, String> description,
   String? headquarters,
+  String? sourceType,
+  String? primaryLanguage,
+  String? url,
 });
 
 /// {@template source_enrichment_strategy}
@@ -23,6 +26,10 @@ class SourceEnrichmentStrategy
     List<String> predefinedChoices = const [],
   }) {
     final languages = enabledLanguages.map((e) => e.name).join(', ');
+    final sourceTypes = SourceType.values.map((e) => e.name).join(', ');
+    final supportedLangs = SupportedLanguage.values
+        .map((e) => e.name)
+        .join(', ');
 
     return [
       {
@@ -33,7 +40,10 @@ You are an expert metadata researcher. Your task is to enrich a news Source enti
 
 1. `name` (object): A dictionary mapping language codes to the source's FULL NAME in these languages: [$languages].
 2. `description` (object): A dictionary mapping language codes to a professional, factual description of the source in these languages: [$languages].
-3. `headquarters` (string | null): The 2-letter ISO 3166-1 country code of the source's primary headquarters, or null if unknown.
+3. `headquarters` (string | null): The 2-letter ISO 3166-1 country code of the country of ownership or editorial origin, or null if unknown.
+4. `sourceType` (string): Categorize the source using EXACTLY one of these values: [$sourceTypes].
+5. `primaryLanguage` (string): The primary language of the source's content using EXACTLY one of these values: [$supportedLangs].
+6. `url` (string): The canonical, base homepage URL of the news source (e.g., "https://www.nytimes.com").
 
 Return ONLY the valid JSON object. Do not include any other text, explanations, or markdown.
 ''',
@@ -58,6 +68,9 @@ Return ONLY the valid JSON object. Do not include any other text, explanations, 
         enabledLanguages,
       ),
       headquarters: data['headquarters'] as String?,
+      sourceType: data['sourceType'] as String?,
+      primaryLanguage: data['primaryLanguage'] as String?,
+      url: data['url'] as String?,
     );
   }
 
