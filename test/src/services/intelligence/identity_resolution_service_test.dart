@@ -46,6 +46,70 @@ void main() {
       verifyNever(() => mockRepo.readAll(filter: any(named: 'filter')));
     });
 
+    test(
+      'deduplicates identical names within the same batch (Batch Cache)',
+      () async {
+        final existing = Person(
+          id: 'p1',
+          name: const {SupportedLanguage.en: 'Elon Musk'},
+          description: const {},
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          status: ContentStatus.active,
+        );
+
+        when(
+          () => mockRepo.readAll(
+            filter: any(named: 'filter'),
+            pagination: any(named: 'pagination'),
+          ),
+        ).thenAnswer(
+          (_) async => PaginatedResponse(
+            items: [existing],
+            cursor: null,
+            hasMore: false,
+          ),
+        );
+
+        final input = [
+          Person(
+            id: 'temp1',
+            name: const {SupportedLanguage.en: 'Elon Musk'},
+            description: const {},
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: ContentStatus.active,
+          ),
+          Person(
+            id: 'temp2',
+            name: const {
+              SupportedLanguage.en: '  ELON MUSK  ',
+            }, // Test normalization
+            description: const {},
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: ContentStatus.active,
+          ),
+        ];
+
+        final result = await service.resolvePersons(input);
+
+        expect(result.persons, hasLength(2));
+        expect(result.persons[0].id, existing.id);
+        expect(result.persons[1].id, existing.id);
+        expect(result.reusedCount, 2);
+
+        // Verification: The repository was only called ONCE for the search
+        // because the second item hit the batchCache.
+        verify(
+          () => mockRepo.readAll(
+            filter: {'q': 'Elon Musk'},
+            pagination: any(named: 'pagination'),
+          ),
+        ).called(1);
+      },
+    );
+
     test('returns existing person if found', () async {
       final existing = Person(
         id: 'existing-1',

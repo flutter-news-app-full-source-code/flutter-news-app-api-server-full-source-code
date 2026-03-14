@@ -42,12 +42,22 @@ class IdentityResolutionService {
 
     _log.info('Resolving identities for: $extractionNames');
     final resolved = <Person>[];
+    final batchCache = <String, Person>{};
     var createdCount = 0;
     var reusedCount = 0;
 
     for (final extraction in extractions) {
       final enName = extraction.name[SupportedLanguage.en];
       if (enName == null) continue;
+
+      // 0. Check Batch Cache (Prevents race conditions within the same run)
+      final cacheKey = enName.trim().toLowerCase();
+      if (batchCache.containsKey(cacheKey)) {
+        _log.finer('Batch Cache Hit: Reusing resolved person for "$enName"');
+        resolved.add(batchCache[cacheKey]!);
+        reusedCount++;
+        continue;
+      }
 
       try {
         // 1. Search existing (case-insensitive fuzzy match)
@@ -57,15 +67,16 @@ class IdentityResolutionService {
         );
 
         if (response.items.isNotEmpty) {
-          // Optimization: We could potentially update the existing person's
-          // description if it's missing, but we'll skip that for now.
-          resolved.add(response.items.first);
+          final existing = response.items.first;
+          batchCache[cacheKey] = existing;
+          resolved.add(existing);
           reusedCount++;
           continue;
         }
 
         // 2. Create new (Automation Policy: All created as active)
         final newPerson = await _createNewPerson(extraction);
+        batchCache[cacheKey] = newPerson;
         resolved.add(newPerson);
         createdCount++;
       } catch (e, s) {

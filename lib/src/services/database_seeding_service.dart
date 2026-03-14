@@ -458,6 +458,14 @@ class DatabaseSeedingService {
             'name': 'persons_text_index',
           },
           {
+            // Enforces identity integrity. Prevents duplicate persons from being
+            // created during concurrent ingestion runs.
+            'key': {'name.en': 1},
+            'name': 'persons_name_en_unique_index',
+            'unique': true,
+            'collation': {'locale': 'en', 'strength': 2},
+          },
+          {
             // Wildcard index for 'name' map (multi-language search).
             'key': {r'name.$**': 1},
             'name': 'persons_name_wildcard_index',
