@@ -88,6 +88,9 @@ class IdentityResolutionService {
     // Generate a valid database ID and keep the AI-generated localized data.
     final person = extraction.copyWith(
       id: ObjectId().oid,
+      status: ContentStatus.active,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     );
 
     try {
