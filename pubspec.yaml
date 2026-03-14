@@ -24,7 +24,7 @@ dependencies:
   core:
     git:
       url: https://github.com/veritai-news/core.git
-      ref: 8bad7fafc2b2284ff1e7cdab5208ec5fd5a6687e
+      ref: 302aec5e1b87bcfe0762ad557741c6038831d4dc
   crypto: ^3.0.7
   dart_frog: ^1.1.0
   dart_jsonwebtoken: ^3.2.0
