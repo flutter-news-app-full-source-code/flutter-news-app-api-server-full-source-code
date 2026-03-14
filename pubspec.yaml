@@ -1,6 +1,6 @@
 name: veritai_api
 description: " 📡 The veritai API is a high-performance backend gateway built with Dart Frog. It serves as the secure data engine for both the Mobile Client and the Web Dashboard. "
-version: 1.12.0
+version: 1.13.0
 publish_to: none
 homepage: https://github.com/veritai-news
 repository: https://github.com/veritai-news/veritai-api
@@ -24,7 +24,7 @@ dependencies:
   core:
     git:
       url: https://github.com/veritai-news/core.git
-      ref: 302aec5e1b87bcfe0762ad557741c6038831d4dc
+      ref: v2.2.0
   crypto: ^3.0.7
   dart_frog: ^1.1.0
   dart_jsonwebtoken: ^3.2.0

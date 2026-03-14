@@ -189,11 +189,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "302aec5e1b87bcfe0762ad557741c6038831d4dc"
-      resolved-ref: "302aec5e1b87bcfe0762ad557741c6038831d4dc"
+      ref: "v2.2.0"
+      resolved-ref: "01b7135a77b4c4306bb6fa8d2cd8a72ee1933a03"
       url: "https://github.com/veritai-news/core.git"
     source: git
-    version: "2.1.0"
+    version: "2.2.0"
   coverage:
     dependency: transitive
     description:
