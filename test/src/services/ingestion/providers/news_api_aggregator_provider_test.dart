@@ -121,9 +121,8 @@ void main() {
         topic: fallbackTopic,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
-        status: ContentStatus.draft,
+        status: ContentStatus.ingested,
         isBreaking: false,
-        lastEnrichedAt: null,
       );
 
       when(
