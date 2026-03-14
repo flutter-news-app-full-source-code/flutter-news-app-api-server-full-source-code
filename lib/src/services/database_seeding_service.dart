@@ -463,6 +463,7 @@ class DatabaseSeedingService {
             'key': {'name.en': 1},
             'name': 'persons_name_en_unique_index',
             'unique': true,
+            'collation': {'locale': 'en', 'strength': 2},
           },
           {
             // Wildcard index for 'name' map (multi-language search).
