@@ -888,7 +888,10 @@ void main() {
         );
 
         when(
-          () => mockEngagementRepository.create(item: engagement),
+          () => mockEngagementRepository.create(
+            item: any(named: 'item', that: isA<Engagement>()),
+            userId: any(named: 'userId'),
+          ),
         ).thenAnswer((_) async => engagement);
 
         final context = helpers.createMockRequestContext(
@@ -902,11 +905,14 @@ void main() {
         verify(
           () => mockUserActionLimitService.checkEngagementCreationLimit(
             user: standardUser,
-            engagement: engagement,
+            engagement: any(named: 'engagement', that: isA<Engagement>()),
           ),
         ).called(1);
         verify(
-          () => mockEngagementRepository.create(item: engagement),
+          () => mockEngagementRepository.create(
+            item: any(named: 'item', that: isA<Engagement>()),
+            userId: any(named: 'userId'),
+          ),
         ).called(1);
       });
     });
@@ -1318,7 +1324,12 @@ void main() {
         verify(() => mockEnrichmentService.enrichHeadline(any())).called(1);
         verify(
           () => mockHeadlineRepo.create(
-            item: any(named: 'item'),
+            item: any(
+              named: 'item',
+              that: isA<Headline>()
+                  .having((h) => h.status, 'status', ContentStatus.active)
+                  .having((h) => h.createdAt, 'createdAt', isA<DateTime>()),
+            ),
             userId: 'uid',
           ),
         ).called(1);
@@ -1378,7 +1389,12 @@ void main() {
         verify(() => mockEnrichmentService.enrichSource(any())).called(1);
         verify(
           () => mockSourceRepo.create(
-            item: any(named: 'item'),
+            item: any(
+              named: 'item',
+              that: isA<Source>()
+                  .having((s) => s.status, 'status', ContentStatus.active)
+                  .having((s) => s.createdAt, 'createdAt', isA<DateTime>()),
+            ),
             userId: 'uid',
           ),
         ).called(1);

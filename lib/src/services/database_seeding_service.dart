@@ -442,7 +442,7 @@ class DatabaseSeedingService {
           },
           {
             // For the Intelligence Worker polling query.
-            'key': {'status': 1, 'lastEnrichedAt': 1},
+            'key': {'status': 1},
             'name': 'intelligence_worker_polling_index',
           },
         ],

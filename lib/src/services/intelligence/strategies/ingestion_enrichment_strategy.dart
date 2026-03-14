@@ -8,7 +8,7 @@ typedef AiEnrichmentResult = ({
   List<Person> extractedPersons,
   List<String> extractedCountryCodes,
   double breakingConfidence,
-  Map<SupportedLanguage, String> translations,
+  Map<SupportedLanguage, String> title,
 });
 
 /// {@template ingestion_enrichment_strategy}
@@ -55,7 +55,7 @@ For each article ID, the value MUST be a JSON object with the following strict s
     - `description` (object): A dictionary mapping language codes to a brief, factual description of the person's role (e.g., "CEO of X", "Senator from Y"). If the role is unknown, use "...". The required languages for these translations are: [$languages].
 4.  `extractedCountryCodes` (array of strings): A list of 2-letter ISO 3166-1 country codes (e.g., "US", "FR") for any mentioned countries.
 5.  `breakingConfidence` (float): A number between 0.0 and 1.0 indicating the likelihood of this being urgent, breaking news.
-6.  `translations` (object): A dictionary translating the original headline title into these languages: [$languages].
+6.  `title` (object): A dictionary translating the original headline title into these languages: [$languages].
 
 EXAMPLE of a single entry in the output JSON:
 "article-123": {
@@ -64,7 +64,7 @@ EXAMPLE of a single entry in the output JSON:
   "extractedPersons": [],
   "extractedCountryCodes": ["US"],
   "breakingConfidence": 0.2,
-  "translations": { "es": "Microsoft anuncia nuevo chip de IA." }
+  "title": { "es": "Microsoft anuncia nuevo chip de IA." }
 }
 
 Return ONLY the valid JSON object. Do not include any other text or explanations.
@@ -101,7 +101,7 @@ Return ONLY the valid JSON object. Do not include any other text or explanations
         ),
         breakingConfidence:
             (val['breakingConfidence'] as num?)?.toDouble() ?? 0,
-        translations: _parseTranslations(val['translations']),
+        title: _parseTranslations(val['title']),
       );
     }
 
@@ -135,6 +135,9 @@ Return ONLY the valid JSON object. Do not include any other text or explanations
           map['description'],
           enabledLanguages,
         ),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        status: ContentStatus.active,
       );
     }).toList();
   }

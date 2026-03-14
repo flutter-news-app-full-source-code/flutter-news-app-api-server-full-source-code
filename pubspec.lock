@@ -189,8 +189,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "8bad7fafc2b2284ff1e7cdab5208ec5fd5a6687e"
-      resolved-ref: "8bad7fafc2b2284ff1e7cdab5208ec5fd5a6687e"
+      ref: "302aec5e1b87bcfe0762ad557741c6038831d4dc"
+      resolved-ref: "302aec5e1b87bcfe0762ad557741c6038831d4dc"
       url: "https://github.com/veritai-news/core.git"
     source: git
     version: "2.1.0"

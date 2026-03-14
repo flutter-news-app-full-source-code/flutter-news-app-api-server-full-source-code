@@ -33,7 +33,7 @@ class MediaStackMapper extends AggregatorMapper<MediaStackArticle> {
       ),
       createdAt: now,
       updatedAt: now,
-      status: ContentStatus.active,
+      status: ContentStatus.ingested,
       isBreaking: false,
       mentionedCountries: const [],
       mentionedPersons: const [],

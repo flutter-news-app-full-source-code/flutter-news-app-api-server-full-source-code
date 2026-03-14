@@ -105,6 +105,10 @@ void main() {
         // Tamper with the token (change the last character)
         final tamperedToken = '${token.substring(0, token.length - 1)}A';
 
+        when(
+          () => mockBlacklistService.isBlacklisted(any()),
+        ).thenAnswer((_) async => false);
+
         expect(
           () => service.validateToken(tamperedToken),
           throwsA(isA<UnauthorizedException>()),

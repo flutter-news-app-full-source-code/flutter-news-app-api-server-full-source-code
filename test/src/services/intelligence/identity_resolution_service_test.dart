@@ -19,10 +19,13 @@ void main() {
     registerSharedFallbackValues();
     registerFallbackValue(const PaginationOptions());
     registerFallbackValue(
-      const Person(
+      Person(
         id: 'fallback',
-        name: {},
-        description: {},
+        name: const {},
+        description: const {},
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        status: ContentStatus.active,
       ),
     );
   });
@@ -44,10 +47,13 @@ void main() {
     });
 
     test('returns existing person if found', () async {
-      const existing = Person(
+      final existing = Person(
         id: 'existing-1',
-        name: {SupportedLanguage.en: 'John Doe'},
-        description: {},
+        name: const {SupportedLanguage.en: 'John Doe'},
+        description: const {},
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        status: ContentStatus.active,
       );
 
       when(
@@ -56,7 +62,7 @@ void main() {
           pagination: any(named: 'pagination'),
         ),
       ).thenAnswer(
-        (_) async => const PaginatedResponse(
+        (_) async => PaginatedResponse(
           items: [existing],
           cursor: null,
           hasMore: false,
@@ -65,10 +71,13 @@ void main() {
 
       final result = await service.resolvePersons(
         [
-          const Person(
+          Person(
             id: 'temp',
-            name: {SupportedLanguage.en: 'John Doe'},
-            description: {},
+            name: const {SupportedLanguage.en: 'John Doe'},
+            description: const {},
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: ContentStatus.active,
           ),
         ],
       );
@@ -102,10 +111,13 @@ void main() {
 
       final result = await service.resolvePersons(
         [
-          const Person(
+          Person(
             id: 'temp',
-            name: {SupportedLanguage.en: 'Jane Doe'},
-            description: {SupportedLanguage.en: 'CEO'},
+            name: const {SupportedLanguage.en: 'Jane Doe'},
+            description: const {SupportedLanguage.en: 'CEO'},
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: ContentStatus.active,
           ),
         ],
       );
@@ -149,10 +161,13 @@ void main() {
       // Actually, if the first readAll returns empty, the retry will also return empty with this setup, causing crash.
       // We need to change the mock to return empty first, then populated.
 
-      const existing = Person(
+      final existing = Person(
         id: 'p1',
-        name: {SupportedLanguage.en: 'Jane Doe'},
-        description: {},
+        name: const {SupportedLanguage.en: 'Jane Doe'},
+        description: const {},
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        status: ContentStatus.active,
       );
 
       var readCallCount = 0;
@@ -170,7 +185,7 @@ void main() {
             hasMore: false,
           );
         }
-        return const PaginatedResponse(
+        return PaginatedResponse(
           items: [existing],
           cursor: null,
           hasMore: false,
@@ -179,10 +194,13 @@ void main() {
 
       final result = await service.resolvePersons(
         [
-          const Person(
+          Person(
             id: 'temp',
-            name: {SupportedLanguage.en: 'Jane Doe'},
-            description: {},
+            name: const {SupportedLanguage.en: 'Jane Doe'},
+            description: const {},
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: ContentStatus.active,
           ),
         ],
       );

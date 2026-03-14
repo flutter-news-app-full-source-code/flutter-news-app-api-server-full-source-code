@@ -185,11 +185,31 @@ void main() {
     });
 
     test('allows admin access for adminOnly permission type', () async {
+      final adminOnlyConfig = ModelConfig<Headline>(
+        fromJson: Headline.fromJson,
+        getId: (h) => h.id,
+        getCollectionPermission: const ModelActionPermission(
+          type: RequiredPermissionType.adminOnly,
+        ),
+        getItemPermission: const ModelActionPermission(
+          type: RequiredPermissionType.adminOnly,
+        ),
+        postPermission: const ModelActionPermission(
+          type: RequiredPermissionType.adminOnly,
+        ),
+        putPermission: const ModelActionPermission(
+          type: RequiredPermissionType.adminOnly,
+        ),
+        deletePermission: const ModelActionPermission(
+          type: RequiredPermissionType.adminOnly,
+        ),
+      );
+
       final context = createMockRequestContext(
         method: HttpMethod.post,
         authenticatedUser: adminUser,
-        modelConfig: modelRegistry['headline'],
-        modelName: 'headline',
+        modelConfig: adminOnlyConfig,
+        modelName: 'dummy',
         permissionService: mockPermissionService,
         path: '/api/v1/data',
       );

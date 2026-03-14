@@ -249,9 +249,8 @@ void main() {
       ),
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
-      status: ContentStatus.draft,
+      status: ContentStatus.ingested,
       isBreaking: false,
-      lastEnrichedAt: null,
     );
 
     // Default Topic Repo Mock
@@ -367,8 +366,7 @@ void main() {
       when(
         () => mockHeadlineRepo.readAll(
           filter: {
-            'status': ContentStatus.draft.name,
-            'lastEnrichedAt': null,
+            'status': ContentStatus.ingested.name,
           },
           pagination: any(named: 'pagination'),
         ),
@@ -408,7 +406,16 @@ void main() {
         ),
       ).thenAnswer(
         (_) async => (
-          persons: [const Person(id: 'p1', name: {}, description: {})],
+          persons: [
+            Person(
+              id: 'p1',
+              name: const {},
+              description: const {},
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+              status: ContentStatus.active,
+            ),
+          ],
           createdCount: 0,
           reusedCount: 1,
         ),
@@ -439,7 +446,7 @@ void main() {
           item: any(
             named: 'item',
             that: isA<Headline>()
-                .having((h) => h.lastEnrichedAt, 'lastEnrichedAt', isNotNull)
+                .having((h) => h.updatedAt, 'updatedAt', isNotNull)
                 .having((h) => h.isBreaking, 'isBreaking', true),
           ),
         ),
@@ -466,8 +473,7 @@ void main() {
       when(
         () => mockHeadlineRepo.readAll(
           filter: {
-            'status': ContentStatus.draft.name,
-            'lastEnrichedAt': null,
+            'status': ContentStatus.ingested.name,
           },
           pagination: any(named: 'pagination'),
         ),
@@ -522,8 +528,7 @@ void main() {
       when(
         () => mockHeadlineRepo.readAll(
           filter: {
-            'status': ContentStatus.draft.name,
-            'lastEnrichedAt': null,
+            'status': ContentStatus.ingested.name,
           },
           pagination: any(named: 'pagination'),
         ),
@@ -537,8 +542,7 @@ void main() {
       verify(
         () => mockHeadlineRepo.readAll(
           filter: {
-            'status': ContentStatus.draft.name,
-            'lastEnrichedAt': null,
+            'status': ContentStatus.ingested.name,
           },
           pagination: any(named: 'pagination'),
         ),

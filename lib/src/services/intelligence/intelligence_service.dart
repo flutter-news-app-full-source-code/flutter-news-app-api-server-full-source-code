@@ -9,7 +9,11 @@ import 'package:veritai_api/src/models/intelligence/ai_usage.dart';
 import 'package:veritai_api/src/services/intelligence/batched_notification_selector.dart';
 import 'package:veritai_api/src/services/intelligence/identity_resolution_service.dart';
 import 'package:veritai_api/src/services/intelligence/strategies/ai_strategy.dart';
+import 'package:veritai_api/src/services/intelligence/strategies/headline_enrichment_strategy.dart';
 import 'package:veritai_api/src/services/intelligence/strategies/ingestion_enrichment_strategy.dart';
+import 'package:veritai_api/src/services/intelligence/strategies/person_enrichment_strategy.dart';
+import 'package:veritai_api/src/services/intelligence/strategies/source_enrichment_strategy.dart';
+import 'package:veritai_api/src/services/intelligence/strategies/topic_enrichment_strategy.dart';
 import 'package:veritai_api/src/services/push_notification/push_notification_service.dart';
 
 /// {@template intelligence_service}
@@ -155,6 +159,91 @@ class IntelligenceService {
     return output;
   }
 
+  /// Enriches a Headline transiently, persisting any discovered Person entities.
+  Future<Headline> enrichHeadline(Headline draft) async {
+    final result = await execute(
+      strategy: HeadlineEnrichmentStrategy(),
+      input: draft,
+    );
+
+    final personResolution = await _identityResolutionService.resolvePersons(
+      result.extractedPersons,
+    );
+
+    final resolvedCountries = <Country>[];
+    if (result.extractedCountryCodes.isNotEmpty) {
+      final response = await _countryRepository.readAll(
+        filter: {
+          'isoCode': {r'$in': result.extractedCountryCodes},
+        },
+      );
+      resolvedCountries.addAll(response.items);
+    }
+
+    Topic? resolvedTopic;
+    if (result.topicSlug != null) {
+      final response = await _topicRepository.readAll(
+        filter: {'q': result.topicSlug}, // Language-agnostic regex search
+        pagination: const PaginationOptions(limit: 1),
+      );
+      if (response.items.isNotEmpty) resolvedTopic = response.items.first;
+    }
+
+    return draft.copyWith(
+      title: {...draft.title, ...result.title},
+      mentionedPersons: personResolution.persons,
+      mentionedCountries: resolvedCountries,
+      topic: resolvedTopic ?? draft.topic,
+    );
+  }
+
+  /// Enriches a Source transiently.
+  Future<Source> enrichSource(Source partial) async {
+    final result = await execute(
+      strategy: SourceEnrichmentStrategy(),
+      input: partial,
+    );
+
+    Country? hq = partial.headquarters;
+    if (result.headquarters != null) {
+      final response = await _countryRepository.readAll(
+        filter: {'isoCode': result.headquarters},
+        pagination: const PaginationOptions(limit: 1),
+      );
+      if (response.items.isNotEmpty) hq = response.items.first;
+    }
+
+    return partial.copyWith(
+      name: {...partial.name, ...result.name},
+      description: {...partial.description, ...result.description},
+      headquarters: hq,
+    );
+  }
+
+  /// Enriches a Topic transiently.
+  Future<Topic> enrichTopic(Topic partial) async {
+    final result = await execute(
+      strategy: TopicEnrichmentStrategy(),
+      input: partial,
+    );
+    return partial.copyWith(
+      name: {...partial.name, ...result.name},
+      description: {...partial.description, ...result.description},
+    );
+  }
+
+  /// Enriches a Person transiently.
+  Future<Person> enrichPerson(Person partial) async {
+    final result = await execute(
+      strategy: PersonEnrichmentStrategy(),
+      input: partial,
+    );
+    return partial.copyWith(
+      name: {...partial.name, ...result.name},
+      description: {...partial.description, ...result.description},
+    );
+  }
+
   /// Executes the background enrichment cycle.
   ///
   /// Polls for headlines in [ContentStatus.draft], batches them, applies
@@ -177,7 +266,6 @@ class IntelligenceService {
 
     // 2. Warm up Metadata Caches
     final countryCache = <String, Country>{};
-    final topicSlugMap = <String, Topic>{};
 
     final countries = await _countryRepository.readAll(
       pagination: const PaginationOptions(limit: 300),
@@ -189,9 +277,7 @@ class IntelligenceService {
     final topics = await _topicRepository.readAll(
       pagination: const PaginationOptions(limit: 300),
     );
-    for (final t in topics.items) {
-      topicSlugMap[t.name[SupportedLanguage.en] ?? t.id] = t;
-    }
+    final activeTopicsList = topics.items;
 
     // 3. Processing Loop
     var hasMore = true;
@@ -212,10 +298,7 @@ class IntelligenceService {
     while (hasMore && totalProcessed < maxHeadlinesPerRun) {
       // Polling Logic: Fetch draft headlines that have not been enriched.
       final response = await _headlineRepository.readAll(
-        filter: {
-          'status': ContentStatus.draft.name,
-          'lastEnrichedAt': null,
-        },
+        filter: {'status': ContentStatus.ingested.name},
         pagination: PaginationOptions(cursor: cursor, limit: batchSize),
       );
 
@@ -276,14 +359,20 @@ class IntelligenceService {
           // 3. Topic Inference & Strict Activation
           Topic? resolvedTopic;
           if (result.topicSlug != null) {
-            resolvedTopic = topicSlugMap[result.topicSlug];
+            final slugLower = result.topicSlug!.trim().toLowerCase();
+            resolvedTopic = activeTopicsList.cast<Topic?>().firstWhere(
+              (t) => t!.name.values.any(
+                (n) => n.trim().toLowerCase() == slugLower,
+              ),
+              orElse: () => null,
+            );
           }
 
           // Log metrics for resolution accuracy
           if (resolvedTopic != null) statsTopics++;
           if (resolvedPersons.isNotEmpty) statsPersons++;
           if (resolvedCountries.isNotEmpty) statsCountries++;
-          statsTranslations += result.translations.length;
+          statsTranslations += result.title.length;
 
           // 4. Breaking News Detection
           final isBreaking = result.breakingConfidence > 0.8;
@@ -300,7 +389,7 @@ class IntelligenceService {
             '  > Countries: ${resolvedCountries.map((c) => c.isoCode).join(", ")}',
           );
           _log.fine(
-            '  > Translations: ${result.translations.keys.map((k) => k.name).join(", ")}',
+            '  > Translations: ${result.title.keys.map((k) => k.name).join(", ")}',
           );
 
           final activeHeadline = draft.copyWith(
@@ -310,10 +399,9 @@ class IntelligenceService {
             topic: resolvedTopic ?? draft.topic,
             mentionedPersons: resolvedPersons,
             mentionedCountries: resolvedCountries,
-            title: {...draft.title, ...result.translations},
+            title: {...draft.title, ...result.title},
             isBreaking: isBreaking,
             updatedAt: DateTime.now(),
-            lastEnrichedAt: ValueWrapper(DateTime.now()),
           );
 
           await _headlineRepository.update(id: draft.id, item: activeHeadline);

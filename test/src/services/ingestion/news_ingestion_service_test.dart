@@ -283,9 +283,8 @@ void main() {
         topic: generalTopic,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
-        status: ContentStatus.draft,
+        status: ContentStatus.ingested,
         isBreaking: false,
-        lastEnrichedAt: null,
       );
 
       final mapping = AggregatorSourceMapping(
@@ -364,7 +363,7 @@ void main() {
                 .having(
                   (h) => h.status,
                   'status',
-                  ContentStatus.draft,
+                  ContentStatus.ingested,
                 ),
           ),
         ),
@@ -423,9 +422,8 @@ void main() {
         topic: generalTopic,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
-        status: ContentStatus.draft,
+        status: ContentStatus.ingested,
         isBreaking: false,
-        lastEnrichedAt: null,
       );
       final h2 = h1.copyWith(id: ObjectId().oid, url: 'https://example.com/u2');
 
