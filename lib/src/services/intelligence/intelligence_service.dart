@@ -9,6 +9,10 @@ import 'package:veritai_api/src/models/intelligence/ai_usage.dart';
 import 'package:veritai_api/src/services/intelligence/batched_notification_selector.dart';
 import 'package:veritai_api/src/services/intelligence/identity_resolution_service.dart';
 import 'package:veritai_api/src/services/intelligence/strategies/ai_strategy.dart';
+import 'package:veritai_api/src/services/intelligence/strategies/headline_enrichment_strategy.dart';
+import 'package:veritai_api/src/services/intelligence/strategies/person_enrichment_strategy.dart';
+import 'package:veritai_api/src/services/intelligence/strategies/source_enrichment_strategy.dart';
+import 'package:veritai_api/src/services/intelligence/strategies/topic_enrichment_strategy.dart';
 import 'package:veritai_api/src/services/intelligence/strategies/ingestion_enrichment_strategy.dart';
 import 'package:veritai_api/src/services/push_notification/push_notification_service.dart';
 
@@ -155,6 +159,91 @@ class IntelligenceService {
     return output;
   }
 
+  /// Enriches a Headline transiently, persisting any discovered Person entities.
+  Future<Headline> enrichHeadline(Headline draft) async {
+    final result = await execute(
+      strategy: HeadlineEnrichmentStrategy(),
+      input: draft,
+    );
+
+    final personResolution = await _identityResolutionService.resolvePersons(
+      result.extractedPersons,
+    );
+
+    final resolvedCountries = <Country>[];
+    if (result.extractedCountryCodes.isNotEmpty) {
+      final response = await _countryRepository.readAll(
+        filter: {
+          'isoCode': {r'$in': result.extractedCountryCodes},
+        },
+      );
+      resolvedCountries.addAll(response.items);
+    }
+
+    Topic? resolvedTopic;
+    if (result.topicSlug != null) {
+      final response = await _topicRepository.readAll(
+        filter: {'name.en': result.topicSlug},
+        pagination: const PaginationOptions(limit: 1),
+      );
+      if (response.items.isNotEmpty) resolvedTopic = response.items.first;
+    }
+
+    return draft.copyWith(
+      title: {...draft.title, ...result.translations},
+      mentionedPersons: personResolution.persons,
+      mentionedCountries: resolvedCountries,
+      topic: resolvedTopic ?? draft.topic,
+    );
+  }
+
+  /// Enriches a Source transiently.
+  Future<Source> enrichSource(Source partial) async {
+    final result = await execute(
+      strategy: SourceEnrichmentStrategy(),
+      input: partial,
+    );
+
+    Country? hq = partial.headquarters;
+    if (result.headquarters != null) {
+      final response = await _countryRepository.readAll(
+        filter: {'isoCode': result.headquarters},
+        pagination: const PaginationOptions(limit: 1),
+      );
+      if (response.items.isNotEmpty) hq = response.items.first;
+    }
+
+    return partial.copyWith(
+      name: {...partial.name, ...result.name},
+      description: {...partial.description, ...result.description},
+      headquarters: hq,
+    );
+  }
+
+  /// Enriches a Topic transiently.
+  Future<Topic> enrichTopic(Topic partial) async {
+    final result = await execute(
+      strategy: TopicEnrichmentStrategy(),
+      input: partial,
+    );
+    return partial.copyWith(
+      name: {...partial.name, ...result.name},
+      description: {...partial.description, ...result.description},
+    );
+  }
+
+  /// Enriches a Person transiently.
+  Future<Person> enrichPerson(Person partial) async {
+    final result = await execute(
+      strategy: PersonEnrichmentStrategy(),
+      input: partial,
+    );
+    return partial.copyWith(
+      name: {...partial.name, ...result.name},
+      description: {...partial.description, ...result.description},
+    );
+  }
+
   /// Executes the background enrichment cycle.
   ///
   /// Polls for headlines in [ContentStatus.draft], batches them, applies
@@ -212,10 +301,7 @@ class IntelligenceService {
     while (hasMore && totalProcessed < maxHeadlinesPerRun) {
       // Polling Logic: Fetch draft headlines that have not been enriched.
       final response = await _headlineRepository.readAll(
-        filter: {
-          'status': ContentStatus.draft.name,
-          'lastEnrichedAt': null,
-        },
+        filter: {'status': ContentStatus.ingested.name},
         pagination: PaginationOptions(cursor: cursor, limit: batchSize),
       );
 
@@ -313,7 +399,6 @@ class IntelligenceService {
             title: {...draft.title, ...result.translations},
             isBreaking: isBreaking,
             updatedAt: DateTime.now(),
-            lastEnrichedAt: ValueWrapper(DateTime.now()),
           );
 
           await _headlineRepository.update(id: draft.id, item: activeHeadline);
