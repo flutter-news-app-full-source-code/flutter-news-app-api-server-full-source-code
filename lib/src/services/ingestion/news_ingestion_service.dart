@@ -405,11 +405,8 @@ class NewsIngestionService {
         continue;
       }
 
-      // Hard Business Rule: All ingested content MUST be draft.
-      // LastEnrichedAt: Ensure NULL so Intelligence Worker picks it up.
       final finalHeadline = raw.copyWith(
-        status: ContentStatus.draft,
-        lastEnrichedAt: const ValueWrapper(null),
+        status: ContentStatus.ingested,
       );
 
       try {
