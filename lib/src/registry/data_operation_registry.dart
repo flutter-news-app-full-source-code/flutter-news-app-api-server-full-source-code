@@ -601,6 +601,13 @@ class DataOperationRegistry {
       'headline': (c, item, uid) async {
         var headlineToCreate = item as Headline;
 
+        // Inject server-authoritative lifecycle metadata
+        headlineToCreate = headlineToCreate.copyWith(
+          status: ContentStatus.active,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+
         // --- ENRICHMENT: Fetch full entities to store all translations ---
         // The client might send a partial snapshot (e.g., only English names).
         // We fetch the authoritative documents from the DB to ensure the
@@ -640,6 +647,13 @@ class DataOperationRegistry {
       'topic': (c, item, uid) async {
         var topicToCreate = item as Topic;
 
+        // Inject server-authoritative lifecycle metadata
+        topicToCreate = topicToCreate.copyWith(
+          status: ContentStatus.active,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+
         // If a mediaAssetId is provided on creation, ensure iconUrl is null.
         if (topicToCreate.mediaAssetId != null) {
           topicToCreate = topicToCreate.copyWith(
@@ -654,6 +668,12 @@ class DataOperationRegistry {
       },
       'person': (c, item, uid) async {
         var personToCreate = item as Person;
+        // Inject server-authoritative lifecycle metadata
+        personToCreate = personToCreate.copyWith(
+          status: ContentStatus.active,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
         if (personToCreate.mediaAssetId != null) {
           personToCreate = personToCreate.copyWith(
             imageUrl: const ValueWrapper(null),
@@ -666,6 +686,13 @@ class DataOperationRegistry {
       },
       'source': (c, item, uid) async {
         var sourceToCreate = item as Source;
+
+        // Inject server-authoritative lifecycle metadata
+        sourceToCreate = sourceToCreate.copyWith(
+          status: ContentStatus.active,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
 
         // --- ENRICHMENT: Fetch full Country for headquarters ---
         // Ensure the embedded Country object contains all translations, not just
@@ -704,6 +731,12 @@ class DataOperationRegistry {
         final authenticatedUser = context.read<User>();
         final deviceToCreate = item as PushNotificationDevice;
 
+        // Inject server-authoritative lifecycle metadata
+        final finalDevice = deviceToCreate.copyWith(
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+
         // Security Check: Ensure the userId in the payload matches the
         // authenticated user's ID. This prevents a user from registering a
         // device on behalf of another user.
@@ -727,15 +760,19 @@ class DataOperationRegistry {
         // user-owned resources, the scoping is handled by the creator logic
         // itself, not a generic filter in the repository.
         return context.read<DataRepository<PushNotificationDevice>>().create(
-          item: deviceToCreate,
+          item: finalDevice,
           userId: null,
         );
       },
       'engagement': (context, item, uid) async {
         _log.info('Executing custom creator for engagement.');
         final authenticatedUser = context.read<User>();
+
+        // Inject server-authoritative lifecycle metadata
+        final engagementToCreate = (item as Engagement).copyWith(
+          createdAt: DateTime.now(),
+        );
         final userActionLimitService = context.read<UserActionLimitService>();
-        final engagementToCreate = item as Engagement;
 
         // Security Check
         if (engagementToCreate.userId != authenticatedUser.id) {
@@ -779,7 +816,12 @@ class DataOperationRegistry {
         _log.info('Executing custom creator for report.');
         final authenticatedUser = context.read<User>();
         final userActionLimitService = context.read<UserActionLimitService>();
-        final reportToCreate = item as Report;
+
+        // Inject server-authoritative lifecycle metadata
+        final reportToCreate = (item as Report).copyWith(
+          status: ModerationStatus.pendingReview,
+          createdAt: DateTime.now(),
+        );
 
         // Security Check
         if (reportToCreate.reporterUserId != authenticatedUser.id) {
@@ -793,12 +835,19 @@ class DataOperationRegistry {
           user: authenticatedUser,
         );
 
-        return context.read<DataRepository<Report>>().create(item: item);
+        return context.read<DataRepository<Report>>().create(
+          item: reportToCreate,
+        );
       },
       'app_review': (context, item, uid) async {
         _log.info('Executing custom creator for app_review.');
         final authenticatedUser = context.read<User>();
-        final appReviewToCreate = item as AppReview;
+
+        // Inject server-authoritative lifecycle metadata
+        final appReviewToCreate = (item as AppReview).copyWith(
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
 
         // Security Check
         if (appReviewToCreate.userId != authenticatedUser.id) {
@@ -824,7 +873,9 @@ class DataOperationRegistry {
           );
         }
 
-        return context.read<DataRepository<AppReview>>().create(item: item);
+        return context.read<DataRepository<AppReview>>().create(
+          item: appReviewToCreate,
+        );
       },
       'ingestion_usage': (c, item, uid) =>
           c.read<DataRepository<IngestionUsage>>().create(
@@ -882,6 +933,7 @@ class DataOperationRegistry {
             rawHeadline.title,
             requestedUpdateHeadline.title,
           ),
+          updatedAt: DateTime.now(),
         );
 
         // 2. Handle Media Asset Logic
@@ -913,6 +965,7 @@ class DataOperationRegistry {
             rawTopic.description,
             requestedUpdateTopic.description,
           ),
+          updatedAt: DateTime.now(),
         );
 
         if (requestedUpdateTopic.mediaAssetId != rawTopic.mediaAssetId &&
@@ -939,6 +992,7 @@ class DataOperationRegistry {
             rawSource.description,
             requestedUpdateSource.description,
           ),
+          updatedAt: DateTime.now(),
         );
 
         if (requestedUpdateSource.mediaAssetId != rawSource.mediaAssetId &&
@@ -986,6 +1040,7 @@ class DataOperationRegistry {
             rawPerson.description,
             requestedUpdatePerson.description,
           ),
+          updatedAt: DateTime.now(),
         );
 
         if (requestedUpdatePerson.mediaAssetId != rawPerson.mediaAssetId &&
