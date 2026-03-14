@@ -213,10 +213,25 @@ class IntelligenceService {
       if (response.items.isNotEmpty) hq = response.items.first;
     }
 
+    // Resolve SourceType with fallback
+    final sourceType = SourceType.values.firstWhere(
+      (e) => e.name == result.sourceType,
+      orElse: () => partial.sourceType,
+    );
+
+    // Resolve Primary Language with fallback
+    final lang = SupportedLanguage.values.firstWhere(
+      (e) => e.name == result.primaryLanguage,
+      orElse: () => partial.language,
+    );
+
     return partial.copyWith(
       name: {...partial.name, ...result.name},
       description: {...partial.description, ...result.description},
       headquarters: hq,
+      sourceType: sourceType,
+      language: lang,
+      url: result.url ?? partial.url,
     );
   }
 
